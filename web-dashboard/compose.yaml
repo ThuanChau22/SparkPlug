@@ -1,0 +1,12 @@
+services:
+
+  web-dashboard:
+    image: sparkplug-web-dashboard
+    container_name: sparkplug-web-dashboard
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+    ports:
+      - ${NGINX_PORT}:${NGINX_PORT}

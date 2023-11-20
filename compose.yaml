@@ -1,0 +1,24 @@
+services:
+
+  web-dashboard:
+    image: sparkplug-web-dashboard
+    container_name: sparkplug-web-dashboard
+    build:
+      context: ./web-dashboard
+      target: development
+    env_file:
+      - ./.env
+      - ./web-dashboard/.env
+    environment:
+      - PORT=${WEB_DASHBOARD_PORT}
+    ports:
+      - ${WEB_DASHBOARD_PORT}:${WEB_DASHBOARD_PORT}
+    develop:
+      watch:
+        - action: sync
+          path: ./web-dashboard
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./web-dashboard/package.json
