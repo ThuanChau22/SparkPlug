@@ -1565,7 +1565,7 @@ INSERT INTO User (id, user_type, email, password, name, status, created_at, upda
 (145753, 'driver', 'driver979@example.com', 'default', 'driver979', 'normal', '2011-03-31 06:28:34', '2011-04-01 06:28:34'),
 (146059, 'driver', 'driver980@example.com', 'default', 'driver980', 'normal', '2011-03-31 06:28:34', '2011-04-01 06:28:34');
 
-ALTER TABLE User AUTO_INCREMENT = 146060;
+-- ALTER TABLE User AUTO_INCREMENT = 146060;
 
 INSERT INTO Driver (id) VALUES
 (107),
