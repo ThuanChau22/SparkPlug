@@ -79,3 +79,12 @@ CREATE TABLE Station (
     KEY idx_charge_level (charge_level),
     KEY idx_connector_type (connector_type)
 );
+
+CREATE TABLE RFID_map (
+    driver_id INT UNSIGNED NOT NULL,
+    rfid CHAR(16) NOT NULL,
+    PRIMARY KEY (driver_id, rfid),
+    UNIQUE (rfid),
+    CONSTRAINT fk_RFID_map_Driver FOREIGN KEY (driver_id) 
+    REFERENCES Driver(id) ON DELETE RESTRICT ON UPDATE CASCADE
+);
