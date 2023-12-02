@@ -4638,8 +4638,8 @@ INSERT INTO Site (owner_id, name, street_address, zip_code, location, updated_at
 (11, 'PALO ALTO CA / HIGH', '528 High St', 94301, Point(-122.16288, 37.443676), '2011-09-02 20:42:00', '2011-09-03 20:42:00');
 
 INSERT INTO Station (name, charge_level, coords, updated_at, created_at, connector_type, price, site_id, mech_status, elec_status, net_status) VALUES
-('PALO ALTO CA / BRYANT #1', '1 2', Point(-122.162308, 37.446613), '2011-10-13 12:49:00', '2011-10-13 12:49:00', 'J1772 NEMA 5-20R', 0, 691, 'normal', 'normal', 'normal'),
-('PALO ALTO CA / BRYANT #2', '1 2', Point(-122.16214, 37.44651), '2011-10-10 15:23:00', '2011-10-10 15:23:00', 'J1772 NEMA 5-20R', 0, 691, 'normal', 'normal', 'normal'),
-('PALO ALTO CA / HAMILTON #1', '1 2', Point(-122.16037, 37.444489), '2011-07-29 20:17:00', '2011-07-29 20:17:00', 'J1772 NEMA 5-20R', 0, 692, 'normal', 'normal', 'normal'),
-('PALO ALTO CA / HAMILTON #2', '1 2', Point(-122.160263, 37.444607), '2011-08-02 12:26:00', '2011-08-02 12:26:00', 'J1772 NEMA 5-20R', 0, 692, 'normal', 'normal', 'normal'),
-('PALO ALTO CA / HIGH #4', '1 2', Point(-122.16288, 37.443676), '2011-09-02 20:42:00', '2011-09-02 20:42:00', 'J1772 NEMA 5-20R', 0, 693, 'normal', 'normal', 'normal');
+('PALO ALTO CA / BRYANT #1', '1 2', Point(-122.162308, 37.446613), '2011-10-13 12:49:00', '2011-10-13 12:49:00', 'J1772 NEMA520', 0, 691, 'normal', 'normal', 'normal'),
+('PALO ALTO CA / BRYANT #2', '1 2', Point(-122.16214, 37.44651), '2011-10-10 15:23:00', '2011-10-10 15:23:00', 'J1772 NEMA520', 0, 691, 'normal', 'normal', 'normal'),
+('PALO ALTO CA / HAMILTON #1', '1 2', Point(-122.16037, 37.444489), '2011-07-29 20:17:00', '2011-07-29 20:17:00', 'J1772 NEMA520', 0, 692, 'normal', 'normal', 'normal'),
+('PALO ALTO CA / HAMILTON #2', '1 2', Point(-122.160263, 37.444607), '2011-08-02 12:26:00', '2011-08-02 12:26:00', 'J1772 NEMA520', 0, 692, 'normal', 'normal', 'normal'),
+('PALO ALTO CA / HIGH #4', '1 2', Point(-122.16288, 37.443676), '2011-09-02 20:42:00', '2011-09-02 20:42:00', 'J1772 NEMA520', 0, 693, 'normal', 'normal', 'normal');
