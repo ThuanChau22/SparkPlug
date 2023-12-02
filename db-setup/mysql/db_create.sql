@@ -73,9 +73,6 @@ CREATE TABLE Station (
     site_id INT UNSIGNED,
     CONSTRAINT fk_Station_Site FOREIGN KEY (site_id)
     REFERENCES Site(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    KEY idx_mech_status (mech_status),
-    KEY idx_elec_status (elec_status),
-    KEY idx_net_status (net_status),
     KEY idx_charge_level (charge_level),
     KEY idx_connector_type (connector_type)
 );
