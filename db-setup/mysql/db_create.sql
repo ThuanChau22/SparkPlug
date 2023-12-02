@@ -61,7 +61,7 @@ CREATE TABLE Site (
 CREATE TABLE Station (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'available',
+    status VARCHAR(20) NOT NULL DEFAULT 'offline',
     -- elec_status VARCHAR(20) NOT NULL,
     -- net_status VARCHAR(20) NOT NULL,
     price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
