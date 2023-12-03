@@ -83,5 +83,6 @@ CREATE TABLE RFID_map (
     rfid CHAR(16),
     PRIMARY KEY (driver_id, rfid),
     UNIQUE (rfid),
-    FOREIGN KEY (driver_id) REFERENCES Driver(id)
+    CONSTRAINT fk_RFID_map_Driver FOREIGN KEY (driver_id) 
+    REFERENCES Driver(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
