@@ -4,7 +4,7 @@ USE sparkplug;
 
 CREATE TABLE User (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    user_type VARCHAR(10) NOT NULL,
+    -- user_type VARCHAR(10) NOT NULL,
     email VARCHAR(50) NOT NULL,
     password VARCHAR(50) NOT NULL,
     name VARCHAR(50) NOT NULL,
@@ -43,7 +43,9 @@ CREATE TABLE Zip_Code (
 CREATE TABLE Site (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     owner_id INT UNSIGNED NOT NULL,
-    location POINT NOT NULL,
+    -- location POINT NOT NULL,
+	latitude DECIMAL(9,6),
+	longitude DECIMAL(10,6),
     name VARCHAR(255) NOT NULL,
     street_address VARCHAR(255) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -69,7 +71,9 @@ CREATE TABLE Station (
     connector_type VARCHAR(50) NOT NULL,
     created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    coords POINT,
+    -- coords POINT,
+    latitude DECIMAL(9,6),
+	longitude DECIMAL(10,6),
     site_id INT UNSIGNED,
     CONSTRAINT fk_Station_Site FOREIGN KEY (site_id)
     REFERENCES Site(id) ON DELETE RESTRICT ON UPDATE CASCADE,
