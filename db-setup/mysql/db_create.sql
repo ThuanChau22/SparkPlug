@@ -61,9 +61,9 @@ CREATE TABLE Site (
 CREATE TABLE Station (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    mech_status VARCHAR(20) NOT NULL,
-    elec_status VARCHAR(20) NOT NULL,
-    net_status VARCHAR(20) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'offline',
+    -- elec_status VARCHAR(20) NOT NULL,
+    -- net_status VARCHAR(20) NOT NULL,
     price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     charge_level VARCHAR(50) NOT NULL,
     connector_type VARCHAR(50) NOT NULL,
@@ -73,16 +73,14 @@ CREATE TABLE Station (
     site_id INT UNSIGNED,
     CONSTRAINT fk_Station_Site FOREIGN KEY (site_id)
     REFERENCES Site(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    KEY idx_mech_status (mech_status),
-    KEY idx_elec_status (elec_status),
-    KEY idx_net_status (net_status),
+    KEY idx_status (status),
     KEY idx_charge_level (charge_level),
     KEY idx_connector_type (connector_type)
 );
 
 CREATE TABLE RFID_map (
-    driver_id INT UNSIGNED NOT NULL,
-    rfid CHAR(16) NOT NULL,
+    driver_id INT UNSIGNED,
+    rfid CHAR(16),
     PRIMARY KEY (driver_id, rfid),
     UNIQUE (rfid),
     CONSTRAINT fk_RFID_map_Driver FOREIGN KEY (driver_id) 
