@@ -6,3 +6,5 @@ or
 export ENV=prod
 
 the default is prod
+
+pip install -r requirements.txt
