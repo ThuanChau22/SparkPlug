@@ -1,7 +1,7 @@
-Keep 2 .env files: .env.test and .env.prod to keep the testing and production config variables separate
+Keep 2 .env files: .env.dev and .env.prod to keep the development and production config variables separate
 
 before running server.py, set the environment:
-export ENV=test
+export ENV=dev
 or
 export ENV=prod
 
