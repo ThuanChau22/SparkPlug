@@ -23,7 +23,7 @@ services:
         - action: rebuild
           path: ./web-dashboard/package.json
 
-  python-server:
+  station-site-management:
     build: ./station-sites-management/server
     env_file:
       - ./station-sites-management/server/.env.prod
@@ -31,4 +31,4 @@ services:
       - FLASK_ENV=production
       - ENV=prod
     ports:
-      - ${PYTHON_SERVER_PORT}
+      - ${SITE_STATION_MANAGEMENT}
