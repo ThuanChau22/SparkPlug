@@ -1,9 +1,16 @@
-from flask import Flask, json, jsonify, request, Response
-import pymongo
-import pymysql
 import os
 from dotenv import load_dotenv
+
+from flask import Flask, json, jsonify, request, Response
+from flask_cors import CORS
 from bson import json_util
+
+import pymongo
+import pymysql
+
+app = Flask(__name__)
+CORS(app)
+
 
 # For authentication
 from functools import wraps
@@ -52,8 +59,6 @@ sql_user = os.environ['L_SQL_USER']
 sql_pw = os.environ['L_SQL_PW']
 sql_db = os.environ['L_SQL_DB']
 
-
-app = Flask(__name__)
 
 # MongoDB Configuration
 mongo_client = pymongo.MongoClient(mongo_uri)
