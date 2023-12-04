@@ -428,4 +428,4 @@ def delete_station(user, station_id):
 
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=os.environ['SERVER_PORT'], debug=True)
+    app.run(host=os.environ['SERVER_HOST'], port=os.environ['SERVER_PORT'], debug=True)

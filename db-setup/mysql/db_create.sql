@@ -4,7 +4,7 @@ USE sparkplug;
 
 CREATE TABLE User (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    user_type VARCHAR(10) NOT NULL,
+    -- user_type VARCHAR(10) NOT NULL,
     email VARCHAR(50) NOT NULL,
     password VARCHAR(50) NOT NULL,
     name VARCHAR(50) NOT NULL,
@@ -43,7 +43,9 @@ CREATE TABLE Zip_Code (
 CREATE TABLE Site (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     owner_id INT UNSIGNED NOT NULL,
-    location POINT NOT NULL,
+    -- location POINT NOT NULL,
+	latitude VARCHAR(20),
+	longitude VARCHAR(20),
     name VARCHAR(255) NOT NULL,
     street_address VARCHAR(255) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -69,7 +71,9 @@ CREATE TABLE Station (
     connector_type VARCHAR(50) NOT NULL,
     created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    coords POINT,
+    -- coords POINT,
+    latitude VARCHAR(20),
+	longitude VARCHAR(20),
     site_id INT UNSIGNED,
     CONSTRAINT fk_Station_Site FOREIGN KEY (site_id)
     REFERENCES Site(id) ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -86,3 +90,10 @@ CREATE TABLE RFID_map (
     CONSTRAINT fk_RFID_map_Driver FOREIGN KEY (driver_id) 
     REFERENCES Driver(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
+
+CREATE VIEW stations_joined AS
+SELECT Station.id, Station.name, status, price, charge_level, connector_type, 
+Station.created_at, Station.updated_at, Station.latitude, Station.longitude,
+site_id, owner_id, Site.latitude as site_latitude, Site.longitude as site_longitude,
+Site.name as site_name, street_address, zip_code, city, state
+FROM Station JOIN Site ON Station.site_id = Site.id JOIN Zip_Code ON Site.zip_code = Zip_Code.zip;
