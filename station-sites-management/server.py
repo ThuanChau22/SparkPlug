@@ -53,8 +53,8 @@ def get_mysql_connection():
         host=sql_host, 
         user=sql_user, 
         password=sql_pw, 
-        atabase=sql_db, c
-        ursorclass=pymysql.cursors.DictCursor)
+        database=sql_db, 
+        cursorclass=pymysql.cursors.DictCursor)
     return connection
 
 """
@@ -151,11 +151,99 @@ def get_one_site(user, site_id):
         data = cursor.fetchall()
     return jsonify(data)
 
-@app.route('/api/site/add/', methods=[''])
+@app.route('/api/site/add/', methods=['POST'])
 @require_permission('owner', 'staff')
 def add_site(user):
-    
-    pass
+    s_id = request.args.get('id')
+    owner_id = request.args.get('owner_id')
+    latitude = request.args.get('latitude')
+    longitude = request.args.get('longitude')
+    name = request.args.get('name')
+    street_address = request.args.get('street_address')
+    zip_code = request.args.get('zip_code')
+
+    if user['role'] == 'owner': owner_id = user['user_id']
+
+    sql_connection = get_mysql_connection()
+    try:
+        with sql_connection.cursor() as cursor:
+            query = f"INSERT INTO Site (id, owner_id, latitude, longitude, name, street_address, zip_code) VALUES ({s_id}, {owner_id}, '{latitude}', '{longitude}', '{name}', '{street_address}', '{zip_code}')"
+            cursor.execute(query)
+            inserted_id = cursor.lastrowid
+        sql_connection.commit()
+    except pymysql.MySQLError as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        sql_connection.close()
+
+    return jsonify({'message': 'Site added successfully', 'inserted_id': inserted_id})
+
+@app.route('/api/site/delete/<site_id>', methods=['DELETE'])
+@require_permission('owner', 'staff')
+def delete_site(user, site_id):
+    sql_connection = get_mysql_connection()
+    try:
+        with sql_connection.cursor() as cursor:
+            # Prepare the SQL query to delete the site with the given ID
+            query = f"DELETE FROM Site WHERE id={site_id}"
+            # If the user is an owner, add an additional condition to delete only their sites
+            if user['role'] == 'owner':
+                query += f" AND owner_id={user['user_id']}"
+            cursor.execute(query)
+            # Check if any row is affected (means deletion happened)
+            if cursor.rowcount == 0:
+                return jsonify({'message': 'No site found with the given ID or you do not have permission to delete it'}), 404
+        # Commit the changes to the database
+        sql_connection.commit()
+    except pymysql.MySQLError as e:
+        # Return an error message if something goes wrong
+        return jsonify({'error': str(e)}), 500
+    finally:
+        # Close the database connection
+        sql_connection.close()
+
+    # Return a success message
+    return jsonify({'message': 'Site deleted successfully'})
+
+@app.route('/api/site/update/<site_id>', methods=['PATCH'])
+@require_permission('owner', 'staff')
+def update_site(user, site_id):
+    # Extract the data from the request body
+    update_data = request.json
+
+    # Check if there is data to update
+    if not update_data:
+        return jsonify({'message': 'No data provided for update'}), 400
+
+    # Establish a connection to the MySQL database
+    sql_connection = get_mysql_connection()
+    try:
+        with sql_connection.cursor() as cursor:
+            # Construct the SQL query dynamically based on the provided data
+            update_query = ", ".join([f"{key}='{value}'" for key, value in update_data.items()])
+            query = f"UPDATE Site SET {update_query} WHERE id={site_id}"
+            # If the user is an owner, ensure they can only update their own sites
+            if user['role'] == 'owner':
+                query += f" AND owner_id={user['user_id']}"
+
+            cursor.execute(query)
+            # Check if any row is affected (means update happened)
+            if cursor.rowcount == 0:
+                return jsonify({'message': 'No site found with the given ID or you do not have permission to update it'}), 404
+
+        # Commit the changes to the database
+        sql_connection.commit()
+    except pymysql.MySQLError as e:
+        # Return an error message if something goes wrong
+        return jsonify({'error': str(e)}), 500
+    finally:
+        # Close the database connection
+        sql_connection.close()
+
+    # Return a success message
+    return jsonify({'message': 'Site updated successfully'})
+
+
 
 """
 /site
