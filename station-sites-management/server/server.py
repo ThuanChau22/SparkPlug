@@ -12,6 +12,7 @@ app = Flask(__name__)
 CORS(app)
 
 
+
 # For authentication
 from functools import wraps
 
@@ -50,14 +51,20 @@ def sanitize_input(input_string):
 
 
 # Load environment variables
-load_dotenv()
+env = os.environ.get('ENV', 'prod')
+if env == 'test':
+    dotenv_path = '.env.test'
+else:
+    dotenv_path = '.env.prod'
 
-mongo_uri = os.environ['L_MONGO_URI']
+load_dotenv(dotenv_path=dotenv_path)
 
-sql_host = os.environ['L_SQL_HOST']
-sql_user = os.environ['L_SQL_USER']
-sql_pw = os.environ['L_SQL_PW']
-sql_db = os.environ['L_SQL_DB']
+mongo_uri = os.environ['MONGO_URI']
+
+sql_host = os.environ['SQL_HOST']
+sql_user = os.environ['SQL_USER']
+sql_pw = os.environ['SQL_PW']
+sql_db = os.environ['SQL_DB']
 
 
 # MongoDB Configuration
@@ -421,4 +428,4 @@ def delete_station(user, station_id):
 
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    app.run(host='127.0.0.1', port=os.environ['SERVER_PORT'], debug=True)
