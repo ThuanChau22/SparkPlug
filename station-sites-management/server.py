@@ -11,7 +11,7 @@ from functools import wraps
 # Set up dummy user to simulate login
 DUMMY_USER = {
     "user_id": "10",
-    "role": "owner", 
+    "role": "staff", 
 }
 
 # Decorator for access control
@@ -43,9 +43,7 @@ app = Flask(__name__)
 mongo_client = pymongo.MongoClient(mongo_uri)
 db = mongo_client['sparkplug']
 
-# pymongo version
-#connection_uri = mongo_uri
-#mongo_client = pymongo.MongoClient(connection_uri)
+
 
 # MySQL Configuration
 def get_mysql_connection():
@@ -57,14 +55,6 @@ def get_mysql_connection():
         cursorclass=pymysql.cursors.DictCursor)
     return connection
 
-"""
-sql_connection = pymysql.connect(host=sql_host,
-                             user=sql_user,
-                             password=sql_pw,
-                             database=sql_db,
-                             cursorclass=pymysql.cursors.DictCursor)
-
-"""
 
 # Endpoint functions
 @app.route('/api/mongodb', methods=['GET'])
@@ -154,13 +144,15 @@ def get_one_site(user, site_id):
 @app.route('/api/site/add/', methods=['POST'])
 @require_permission('owner', 'staff')
 def add_site(user):
-    s_id = request.args.get('id')
-    owner_id = request.args.get('owner_id')
-    latitude = request.args.get('latitude')
-    longitude = request.args.get('longitude')
-    name = request.args.get('name')
-    street_address = request.args.get('street_address')
-    zip_code = request.args.get('zip_code')
+    params = request.json
+
+    s_id = params.get('id')
+    owner_id = params.get('owner_id')
+    latitude = params.get('latitude')
+    longitude = params.get('longitude')
+    name = params.get('name')
+    street_address = params.get('street_address')
+    zip_code = params.get('zip_code')
 
     if user['role'] == 'owner': owner_id = user['user_id']
 
