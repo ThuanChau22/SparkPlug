@@ -55,7 +55,7 @@ env = os.environ.get('ENV', 'prod')
 if env == 'dev':
     dotenv_path = '.env.dev'
 else:
-    dotenv_path = '.env.prod'
+    dotenv_path = '.env'
 
 load_dotenv(dotenv_path=dotenv_path)
 
@@ -89,7 +89,7 @@ def get_mysql_connection():
 def hello():
     return "Hello World!"
 
-@app.route('/1_trans', methods=['GET'])
+@app.route('/api/1_trans', methods=['GET'])
 def get_mongo_data():
 
     document = db.transactions.find_one()
@@ -98,7 +98,7 @@ def get_mongo_data():
         document['_id'] = str(document['_id'])
     return jsonify(document)
 
-@app.route('/count-transactions', methods=['GET'])
+@app.route('/api/count-transactions', methods=['GET'])
 def count_documents():
     try:
         count = db.transactions.count_documents({})
@@ -106,7 +106,7 @@ def count_documents():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/mysqldb', methods=['GET'])
+@app.route('/api/mysqldb', methods=['GET'])
 def get_mysql_data():
     sql_connection = get_mysql_connection()
     with sql_connection.cursor() as cursor:
@@ -115,7 +115,7 @@ def get_mysql_data():
     return jsonify(data)
 
 # Site management
-@app.route('/site', methods=['GET'])
+@app.route('/api/sites', methods=['GET'])
 @require_permission('owner', 'staff')
 def get_sites(user):
     query = "SELECT * FROM Site JOIN Zip_Code ON Site.zip_code = Zip_Code.zip"
@@ -161,7 +161,7 @@ def get_sites(user):
     #return(query+conditions)
     return jsonify(data)
 
-@app.route('/site/<site_id>', methods=['GET'])
+@app.route('/api/sites/<site_id>', methods=['GET'])
 @require_permission('owner', 'staff')
 def get_one_site(user, site_id):
     query = f"SELECT * FROM Site JOIN Zip_Code ON Site.zip_code = Zip_Code.zip WHERE id={site_id}"
@@ -175,7 +175,7 @@ def get_one_site(user, site_id):
         data = cursor.fetchone()
     return jsonify(data)
 
-@app.route('/site/add', methods=['POST'])
+@app.route('/api/sites', methods=['POST'])
 @require_permission('owner', 'staff')
 def add_site(user):
     params = request.json
@@ -203,7 +203,7 @@ def add_site(user):
 
     return jsonify({'message': 'Site added successfully', 'inserted_id': inserted_id})
 
-@app.route('/site/delete/<site_id>', methods=['DELETE'])
+@app.route('/api/sites/<site_id>', methods=['DELETE'])
 @require_permission('owner', 'staff')
 def delete_site(user, site_id):
     sql_connection = get_mysql_connection()
@@ -230,7 +230,7 @@ def delete_site(user, site_id):
     # Return a success message
     return jsonify({'message': 'Site deleted successfully'})
 
-@app.route('/site/update/<site_id>', methods=['PATCH'])
+@app.route('/api/sites/<site_id>', methods=['PATCH'])
 @require_permission('owner', 'staff')
 def update_site(user, site_id):
     # Extract the data from the request body
@@ -270,7 +270,7 @@ def update_site(user, site_id):
 
 
 # Station management
-@app.route('/station', methods=['GET'])
+@app.route('/api/stations', methods=['GET'])
 @require_permission('owner', 'staff')
 def get_stations(user):
     query = "SELECT * FROM stations_joined"
@@ -324,7 +324,7 @@ def get_stations(user):
     #return(query+conditions)
     return jsonify(data)
 
-@app.route('/station/<station_id>', methods=['GET'])
+@app.route('/api/stations/<station_id>', methods=['GET'])
 @require_permission('owner', 'staff')
 def get_one_station(user, station_id):
     query = f"SELECT * FROM stations_joined WHERE id={station_id}"
@@ -339,7 +339,7 @@ def get_one_station(user, station_id):
     return jsonify(data)
 
 
-@app.route('/station/add', methods=['POST'])
+@app.route('/api/stations', methods=['POST'])
 @require_permission('owner', 'staff')
 def add_station(user):
     params = request.json
@@ -367,7 +367,7 @@ def add_station(user):
 
     return jsonify({'message': 'Station added successfully', 'inserted_id': inserted_id})
 
-@app.route('/station/update/<station_id>', methods=['PATCH'])
+@app.route('/api/stations/<station_id>', methods=['PATCH'])
 @require_permission('owner', 'staff')
 def update_station(user, station_id):
     # Extract the data from the request body
@@ -405,7 +405,7 @@ def update_station(user, station_id):
     # Return a success message
     return jsonify({'message': 'Station updated successfully'})
 
-@app.route('/station/delete/<station_id>', methods=['DELETE'])
+@app.route('/api/stations/<station_id>', methods=['DELETE'])
 @require_permission('owner', 'staff')
 def delete_station(user, station_id):
     sql_connection = get_mysql_connection()

@@ -24,11 +24,24 @@ services:
           path: ./web-dashboard/package.json
 
   station-site-management:
-    build: ./station-sites-management/server
+    image: sparkplug-station-site-management
+    container_name: sparkplug-station-site-management
+    build:
+      context: ./station-sites-management/server
     env_file:
-      - ./station-sites-management/server/.env.prod
+      - ./.env
+      - ./station-sites-management/server/.env
     environment:
       - FLASK_ENV=production
       - ENV=prod
+      - SERVER_HOST=${STATION_SITE_HOST}
+      - SERVER_PORT=${STATION_SITE_PORT}
     ports:
-      - ${SITE_STATION_MANAGEMENT}
+      - ${STATION_SITE_PORT}:${STATION_SITE_PORT}
+    develop:
+      watch:
+        - action: sync
+          path: ./station-sites-management/server
+          target: /app
+        - action: rebuild
+          path: ./station-sites-management/server/requirements.txt
