@@ -6,9 +6,9 @@ import bcrypt from "bcrypt";
 const secretKey = process.env.JWT_SECRET;
 
 const Role = {
-  Staff: "Staff",
-  Owner: "Owner",
-  Driver: "Driver",
+  Staff: "staff",
+  Owner: "owner",
+  Driver: "driver",
 };
 
 export const userSignUp = async (req, res) => {
