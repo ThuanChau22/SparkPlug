@@ -72,6 +72,7 @@ const StationManagement = () => {
         });
     };
 
+    // Function to handle the deletion of a station
     const handleDeleteStation = (stationId) => {
         apiInstance.delete(`http://127.0.0.1:5000/api/stations/${stationId}`)
             .then(response => {
@@ -129,7 +130,7 @@ const StationManagement = () => {
                 isOpen={isDetailsModalOpen}
                 onClose={() => setIsDetailsModalOpen(false)}
                 stationData={selectedStation}
-                onDelete={() => handleDeleteStation(selectedStation.id)}
+                onDelete={handleDeleteStation}
             />
 
             {/* Message Modal */}

@@ -602,8 +602,10 @@ def update_station(user, station_id):
             update_query = ", ".join([f"{key}='{value}'" for key, value in update_data.items()])
             query = f"UPDATE Station SET {update_query} WHERE id={station_id}"
             # If the user is an owner, ensure they can only update their own stations
+            """
             if user['role'] == 'owner':
                 query += f" AND owner_id={user['user_id']}"
+            """
 
             cursor.execute(query)
             # Check if any row is affected (means update happened)
