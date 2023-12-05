@@ -1,89 +1,68 @@
-// Import necessary modules;
+// AuthController.js
 import jwt from "jsonwebtoken";
+import * as authRepository from "../repositories/AuthRepository.js";
 import bcrypt from "bcrypt";
-import db from "../repositories/AuthRepository.js";
 
-// Utility function to execute database queries
-const executeQuery = async (query, params) => {
-  try {
-    const [rows] = await db.promise().query(query, params);
-    return rows;
-  } catch (error) {
-    throw new Error(error.message);
-  }
+const secretKey = process.env.JWT_SECRET;
+
+const Role = {
+  Staff: "Staff",
+  Owner: "Owner",
+  Driver: "Driver",
 };
 
-// Function to generate JWT token
-const generateToken = (user) => {
-  return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
-};
-
-// User login function
-export const userLogin = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const users = await executeQuery("SELECT * FROM User WHERE email = ?", [
-      email,
-    ]);
-
-    if (users.length === 0) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication failed. User not found.",
-      });
-    }
-
-    const user = users[0];
-    const validPassword = await bcrypt.compare(password, user.password);
-
-    if (!validPassword) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication failed. Wrong password.",
-      });
-    }
-
-    const token = generateToken(user);
-    res.json({ success: true, token: token });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// User signup function
 export const userSignUp = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const { email, password, name } = req.body;
+    let user = await authRepository.findUserByEmail(email);
 
-    const existingUsers = await executeQuery(
-      "SELECT * FROM User WHERE email = ?",
-      [email]
-    );
-    if (existingUsers.length > 0) {
-      return res
-        .status(409)
-        .json({ success: false, message: "Email already in use." });
+    if (!user) {
+      const userId = await authRepository.createUser({ email, password, name });
+      await authRepository.addRoleToUser(userId, "Driver"); // Default role
+      user = await authRepository.findUserByEmail(email);
+    } else {
+      const hasRole = await authRepository.findRoleById(user.id, "Driver");
+      if (!hasRole) {
+        return res
+          .status(400)
+          .json({ message: "Email already used for another role" });
+      }
     }
 
-    await executeQuery(
-      "INSERT INTO User (name, email, password) VALUES (?, ?, ?)",
-      [name, email, hashedPassword]
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: "Driver" },
+      secretKey
     );
-
-    const newUser = await executeQuery("SELECT * FROM User WHERE email = ?", [
-      email,
-    ]);
-    const token = generateToken(newUser[0]);
-
-    res.status(201).json({
-      success: true,
-      token: token,
-      user: { id: newUser[0].id, name, email },
-    });
+    res.status(201).json({ token });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const userLogin = async (req, res) => {
+  try {
+    const { email, password, role } = req.body;
+    const user = await authRepository.findUserByEmail(email);
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    let r = "";
+    if (role === Role.Staff) {
+      r = "Staff";
+    } else if (role === Role.Owner) {
+      r = "Station_Owner";
+    } else {
+      r = "Driver";
+    }
+    const hasRole = await authRepository.findRoleById(user.id, r);
+    if (!hasRole) {
+      return res.status(401).json({ message: "Not authorized for this role" });
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email, role }, secretKey);
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
