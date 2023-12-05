@@ -8,13 +8,14 @@ from bson import json_util
 import pymongo
 import pymysql
 
-app = Flask(__name__)
-CORS(app)
-
-
+import datetime
 
 # For authentication
 from functools import wraps
+
+app = Flask(__name__)
+CORS(app)
+
 
 # Set up dummy user to simulate login
 DUMMY_USER = {
@@ -49,6 +50,15 @@ def sanitize_input(input_string):
     
     return sanitized_string
 
+# Process Mongo Date
+def date_to_milliseconds(date_str, date_format='%m/%d/%Y'):
+    try:
+        dt = datetime.datetime.strptime(date_str, date_format)
+        epoch = datetime.datetime.utcfromtimestamp(0)  # Unix epoch start time
+        return int((dt - epoch).total_seconds() * 1000)
+    except ValueError:
+        # Handle the exception if the date_str format is incorrect
+        return None
 
 # Load environment variables
 env = os.environ.get('ENV', 'prod')
@@ -99,7 +109,7 @@ def get_mongo_data():
     return jsonify(document)
 
 @app.route('/api/count-transactions', methods=['GET'])
-def count_documents():
+def count_transactions():
     try:
         count = db.transactions.count_documents({})
         return jsonify({"document_count": count})
@@ -113,6 +123,56 @@ def get_mysql_data():
         cursor.execute("SELECT * FROM Site")  # Replace with your query
         data = cursor.fetchone()
     return jsonify(data)
+
+# MongoDB
+@app.route('/api/transactions/', methods=['GET'])
+@require_permission('owner', 'staff')
+def get_transactions(user):
+    try:
+        # Retrieve query parameters
+        q_station_id = request.args.get('station_id', default=None, type=int)
+        q_charge_level = request.args.get('charge_level', default=None)
+        q_start_date = request.args.get('start_date', default='01/01/2010')
+        q_end_date = request.args.get('end_date', default=datetime.datetime.now().strftime('%m/%d/%Y'))
+
+        # Build query dynamically
+        query = {}
+
+        ## station id
+        if q_station_id is not None:
+            query['station_id'] = q_station_id
+
+        ## charge level
+        if q_charge_level is not None:
+            # Map input values "1" or "2" to "Level 1" or "Level 2"
+            charge_level_map = {'1': 'Level 1', '2': 'Level 2'}
+            charge_levels = [charge_level_map[level] for level in q_charge_level.split() if level in charge_level_map]
+            if charge_levels:
+                query['charge_level'] = {'$in': charge_levels}
+
+        ## date range
+        ### Convert dates to milliseconds since Unix epoch
+        start_ms = date_to_milliseconds(q_start_date)
+        end_ms = date_to_milliseconds(q_end_date)
+        ### Build date range query
+        query['transaction_date'] = {'$gte': start_ms, '$lte': end_ms}
+
+        # Query the MongoDB transactions collection
+        transactions = db.transactions.find(query)
+        
+        # Convert the results to a list
+        transactions_list = list(transactions)
+
+        # Convert each MongoDB ObjectId to string
+        for transaction in transactions_list:
+            transaction['_id'] = str(transaction['_id'])
+
+        return jsonify(transactions_list)
+
+    except Exception as e:
+        # Handle any exceptions that occur
+        return jsonify({"error": str(e)}), 500
+
 
 # Site management
 @app.route('/api/sites', methods=['GET'])
@@ -433,6 +493,7 @@ def delete_station(user, station_id):
     return jsonify({'message': 'Station deleted successfully'})
 
 # Analytics
+
 """
 
 """
