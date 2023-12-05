@@ -90,3 +90,10 @@ CREATE TABLE RFID_map (
     CONSTRAINT fk_RFID_map_Driver FOREIGN KEY (driver_id) 
     REFERENCES Driver(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
+
+CREATE VIEW stations_joined AS
+SELECT Station.id, Station.name, status, price, charge_level, connector_type, 
+Station.created_at, Station.updated_at, Station.latitude, Station.longitude,
+site_id, owner_id, Site.latitude as site_latitude, Site.longitude as site_longitude,
+Site.name as site_name, street_address, zip_code, city, state
+FROM Station JOIN Site ON Station.site_id = Site.id JOIN Zip_Code ON Site.zip_code = Zip_Code.zip;

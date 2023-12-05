@@ -1,0 +1,15 @@
+services:
+
+  station-site-management:
+    image: sparkplug-station-site-management
+    container_name: sparkplug-station-site-management
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      - FLASK_ENV=production
+      - ENV=prod
+    ports:
+      - ${SERVER_PORT}:${SERVER_PORT}
