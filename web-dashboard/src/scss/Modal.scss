@@ -4,15 +4,14 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6); /* Dimmed background */
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000; /* Ensure it's above other content */
+    z-index: 1100; /* Ensure it's above other content */
 }
 
 .modal-content {
-    background: #f4f8fb; /* Non-transparent, off-white blueish background */
+    background: #ffffff; /* Non-transparent, off-white blueish background */
     width: 50%; /* Adjust width as needed */
     max-width: 600px; /* Maximum width */
     padding: 20px;
@@ -20,6 +19,7 @@
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Soft shadow */
     display: flex;
     flex-direction: column;
+    z-index:1200
 }
 
 .modal-header {
@@ -63,7 +63,50 @@
     flex-grow: 2; /* Makes the Add button wider */
 }
 
+/* Message Modal Styles */
+.message-modal-content {
+    background: #ffffff; /* White background */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    width: auto;
+    max-width: 400px; /* Adjust as needed */
+    text-align: center;
+}
 
+.message-modal-content p {
+    margin: 0 0 20px;
+    color: #333;
+    font-size: 1em;
+
+    .edit-button, .delete-button {
+        margin-top: 10px;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .edit-button {
+        background-color: #007bff;
+        color: white;
+
+        &:hover {
+            background-color: #0056b3;
+        }
+    }
+
+    .delete-button {
+        background-color: #dc3545;
+        color: white;
+        margin-left: 10px;
+
+        &:hover {
+            background-color: #c82333;
+        }
+    }
+}
 
 /* Styles for form elements */
 input[type="text"], select {

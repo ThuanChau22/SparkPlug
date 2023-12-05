@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { apiInstance } from 'redux/api';
 import '../scss/StationManagement.scss';
-
-// Other imports
-import Modal from '../components/Modal'; // Adjust the path as necessary
+import Modal from '../components/Modal';
+import StationDetailsModal from '../components/StationDetailsModal';
 
 const StationManagement = () => {
     const [stations, setStations] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedStation, setSelectedStation] = useState(null);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         chargeLevel: '',
@@ -17,6 +18,8 @@ const StationManagement = () => {
         siteId: ''
     });
     const [siteOptions, setSiteOptions] = useState([]);
+    const [message, setMessage] = useState('');
+    const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
 
     useEffect(() => {
         apiInstance.get('http://127.0.0.1:5000/api/stations')
@@ -33,8 +36,9 @@ const StationManagement = () => {
     }, []);
 
     const handleStationClick = (stationId) => {
-        console.log(`Station clicked: ${stationId}`);
-        // Implement further actions here
+        const station = stations.find(s => s.id === stationId);
+        setSelectedStation(station);
+        setIsDetailsModalOpen(true);
     };
 
     const handleInputChange = (e) => {
@@ -43,13 +47,60 @@ const StationManagement = () => {
     };
 
     const handleAddStation = () => {
-        console.log(formData); // Implement the logic to add the station
-        setIsModalOpen(false); // Close the modal after adding
+        const data = {
+            name: formData.name,
+            charge_level: formData.chargeLevel,
+            connector_type: formData.connectorType,
+            latitude: parseFloat(formData.latitude),
+            longitude: parseFloat(formData.longitude),
+            site_id: formData.siteId
+        };
+
+        apiInstance.post('http://127.0.0.1:5000/api/stations', data, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            setMessage(response.data.message);
+            setIsModalOpen(false);
+            setIsMessageModalOpen(true);
+        }).catch(error => {
+            console.error('Error:', error);
+            setMessage('Error adding station');
+            setIsModalOpen(false);
+            setIsMessageModalOpen(true);
+        });
+    };
+
+    const handleDeleteStation = (stationId) => {
+        apiInstance.delete(`http://127.0.0.1:5000/api/stations/${stationId}`)
+            .then(response => {
+                console.log('Station deleted:', response);
+                setIsDetailsModalOpen(false);
+                window.location.reload();
+            })
+            .catch(error => console.error('Error:', error));
+    };
+
+    const handleCloseMessageModal = () => {
+        setIsMessageModalOpen(false);
+        window.location.reload();
     };
 
     return (
         <div>
             <button onClick={() => setIsModalOpen(true)}>Add Station</button>
+
+            {/* Stations List */}
+            <h2>Stations List</h2>
+            <ul className="station-list">
+                {stations.map(station => (
+                    <li key={station.id} className="station-list-item" onClick={() => handleStationClick(station.id)}>
+                        ID: {station.id}, Name: {station.name}
+                    </li>
+                ))}
+            </ul>
+
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 {/* Form for adding a station */}
                 <form>
@@ -72,18 +123,25 @@ const StationManagement = () => {
                     <button type="button" onClick={handleAddStation}>Add</button>
                 </form>
             </Modal>
-            {/* Stations list */}
-            <h2>Stations List</h2>
-            <ul>
-                {stations.map(station => (
-                    <li key={station.id} onClick={() => handleStationClick(station.id)}>
-                        ID: {station.id}, Name: {station.name}
-                    </li>
-                ))}
-            </ul>
+
+            {/* Station Details Modal */}
+            <StationDetailsModal
+                isOpen={isDetailsModalOpen}
+                onClose={() => setIsDetailsModalOpen(false)}
+                stationData={selectedStation}
+                onDelete={() => handleDeleteStation(selectedStation.id)}
+            />
+
+            {/* Message Modal */}
+            <Modal 
+                isOpen={isMessageModalOpen} 
+                onClose={handleCloseMessageModal}
+                className="message-modal-content"
+            >
+                <p>{message}</p>
+            </Modal>
         </div>
     );
 };
 
 export default StationManagement;
-

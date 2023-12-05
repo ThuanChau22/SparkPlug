@@ -632,6 +632,7 @@ def delete_station(user, station_id):
             query = f"DELETE FROM Station WHERE id={station_id}"
             # If the user is an owner, add an additional condition to delete only their stations
             if user['role'] == 'owner':
+                query = f"DELETE Station FROM Station JOIN Site ON Station.site_id - Site.id WHERE Station.id = {station_id} AND Site.owner_id = {user['user_id']}"
                 query += f" AND owner_id={user['user_id']}"
             cursor.execute(query)
             # Check if any row is affected (means deletion happened)
