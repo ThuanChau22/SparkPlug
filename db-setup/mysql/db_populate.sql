@@ -4633,7 +4633,7 @@ INSERT INTO Station (name, charge_level, latitude, longitude, updated_at, create
 ('ZD Wines - Tesla Destination', 2, 38.475782, -122.388661, '2021-03-11 23:22:17+00:00', '2015-08-01 00:00:00', 'TESLA', 0, 690, 'available');
 
 INSERT INTO Site (owner_id, name, street_address, zip_code, latitude, longitude, updated_at, created_at) VALUES
-(11, 'PALO ALTO CA / BRYANT', 'Bryant St', 94301, 37.446373, -122.162331, '2011-10-13 12:49:00', '2011-10-14 12:49:00'),
+(9, 'PALO ALTO CA / BRYANT', 'Bryant St', 94301, 37.446373, -122.162331, '2011-10-13 12:49:00', '2011-10-14 12:49:00'),
 (11, 'PALO ALTO CA / HAMILTON', '250 Hamilton Ave', 94301, 37.444572, -122.160309, '2012-03-27 14:40:00', '2012-03-28 14:40:00'),
 (11, 'PALO ALTO CA / HIGH', '528 High St', 94301, 37.443676, -122.16288, '2011-09-02 20:42:00', '2011-09-03 20:42:00');
 

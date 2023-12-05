@@ -12,6 +12,8 @@ import datetime
 
 import requests
 from urllib.parse import urljoin
+from collections import defaultdict
+
 
 # For authentication
 from functools import wraps
@@ -22,8 +24,8 @@ CORS(app)
 
 # Set up dummy user to simulate login
 DUMMY_USER = {
-    "user_id": "10",
-    "role": "staff", 
+    "user_id": "9",
+    "role": "owner", 
 }
 
 # Decorator for access control
@@ -62,6 +64,14 @@ def date_to_milliseconds(date_str, date_format='%m/%d/%Y'):
     except ValueError:
         # Handle the exception if the date_str format is incorrect
         return None
+
+def time_string_to_hours(time_str):
+    try:
+        hours, minutes, seconds = map(int, time_str.split(':'))
+        return hours + minutes / 60 + seconds / 3600
+    except ValueError:
+        return 0  # Return 0 if the time format is incorrect
+
 
 """
 def fetch_transactions_for_station(station_id, start_date=None, end_date=None, charge_level=None):
@@ -107,11 +117,90 @@ def fetch_transactions_for_station(station_id, start_date=None, end_date=None, c
         return jsonify({"error": str(e)}), 500
 """
 
-# Process Revenue
-def process_revenue(station_id, start_date, end_date, charge_level):
+# Chart data prep
+def generate_charts(raw_docs):
+    revenue_by_date = defaultdict(float)
+    sessions_by_date = defaultdict(int)
+    utilization_by_date = defaultdict(float)
+    hour_counts = [0] * 24
+
+    #return jsonify(raw_docs[0])
+
+    for doc in raw_docs:
+        mongo_timestamp = doc['transaction_date']
+        timestamp_seconds = mongo_timestamp / 1000.0
+        date = datetime.datetime.utcfromtimestamp(timestamp_seconds)
+
+        # Revenue
+        f_date = date.strftime('%Y-%m-%d')
+        revenue_by_date[f_date] += doc['fee']
+        sessions_by_date[f_date] += 1
+
+        # Utilization Rate
+        charging_time_hours = time_string_to_hours(doc['charging_time'])
+        utilization_by_date[f_date] += charging_time_hours
+
+        # Peak Time
+        hour = date.hour
+        hour_counts[hour] += 1
+
+
+    # Calculate utilization rate as a percentage
+    for date in utilization_by_date:
+        utilization_by_date[date] = (utilization_by_date[date] / 24) * 100  # Convert to percentage
+
+
+    sorted_dates = sorted(revenue_by_date.keys())
+    rev_chart_data = {
+        'labels': sorted_dates,
+        'datasets': [{
+            'label': 'Daily Revenue',
+            'data': [revenue_by_date[date] for date in sorted_dates],
+            'backgroundColor': 'rgba(75, 192, 192, 0.6)'
+        }]
+    }
+
+    sessions_chart_data = {
+        'labels': sorted_dates,
+        'datasets': [{
+            'label': 'Number of Sessions',
+            'data': [sessions_by_date[date] for date in sorted_dates],
+            'backgroundColor': 'rgba(255, 99, 132, 0.6)'
+        }]
+    }
+
+    peak_chart_data = {
+        'labels': [f"{i}:00 - {i+1}:00" for i in range(24)],
+        'datasets': [{
+            'label': 'Number of Transactions',
+            'data': hour_counts
+        }]
+    }
+
+    utilization_chart_data = {
+        'labels': sorted_dates,
+        'datasets': [{
+            'label': 'Utilization Rate (%)',
+            'data': [utilization_by_date[date] for date in sorted_dates],
+            'backgroundColor': 'rgba(153, 102, 255, 0.6)'
+        }]
+    }
+
+
+    data_pack = {
+        'revenue': rev_chart_data,
+        'sessions_count': sessions_chart_data,
+        'utilization_rate': utilization_chart_data,
+        'peak_time': peak_chart_data
+    }
+
+    return data_pack
+
+
+def station_charts(station_id, start_date, end_date, charge_level):
 
     base_url = request.host_url  # Get the base URL of the current Flask app
-    transactions_url = urljoin(base_url, f'api/transactions/?station_id={station_id}')
+    transactions_url = urljoin(base_url, f'api/transactions?station_id={station_id}')
 
     if start_date != None:
         transactions_url += f'&start_date={start_date}'
@@ -127,36 +216,54 @@ def process_revenue(station_id, start_date, end_date, charge_level):
 
     if response.status_code == 200:
         raw_docs = response.json()
-        clean_docs = []
-
-        #return jsonify(raw_docs[0])
-
-        for doc in raw_docs:
-            mongo_timestamp = doc['transaction_date']
-            timestamp_seconds = mongo_timestamp / 1000.0
-            date = datetime.datetime.utcfromtimestamp(timestamp_seconds)
-            f_date = date.strftime('%Y-%m-%d')
-            clean_docs.append({'date': f_date, 'fee': doc['fee']})
-
-        return clean_docs
+        data_pack = generate_charts(raw_docs)
+        
+        return jsonify(data_pack)
     else:
-        #return jsonify({'error': 'Failed to fetch transactions', 'url': transactions_url, 'start': start_date, 'end': end_date}), response.status_code
         return jsonify([])
 
 
+def aggregate_charts(site_id, start_date, end_date, charge_level):
+    base_url = request.host_url.rstrip('/')
+    stations_url = urljoin(base_url, 'api/stations')
+    transactions_url = urljoin(base_url, 'api/transactions')
 
-# Function to aggregate revenue by date
-def aggregate_revenue(transactions):
-    revenue_per_day = {}
-    for transaction in transactions:
-        date = transaction['date']
-        fee = transaction['fee']
-        if date in revenue_per_day:
-            revenue_per_day[date] += fee
+    # Constructing query parameters
+    if site_id is not None:
+        stations_url += f'?site_id={site_id}'
+
+    query_params = {}
+    if start_date is not None:
+        query_params['start_date'] = start_date
+    if end_date is not None:
+        query_params['end_date'] = end_date
+    if charge_level is not None:
+        query_params['charge_level'] = charge_level
+
+    # Fetching station IDs
+    st_response = requests.get(stations_url)
+    if st_response.status_code == 200:
+        stations_data = st_response.json()  # Convert response to JSON
+        stations = [doc['id'] for doc in stations_data]
+
+        # Fetching transactions
+        tr_response = requests.get(transactions_url, params=query_params)
+        if tr_response.status_code == 200:
+            transactions_data = tr_response.json()
+            filtered_transactions = [tr for tr in transactions_data if tr['station_id'] in stations]
+
+            # Generate and return chart data
+            return jsonify(generate_charts(filtered_transactions))
         else:
-            revenue_per_day[date] = fee
-    return revenue_per_day
+            return jsonify({'error': 'Failed to fetch transactions'}), tr_response.status_code
+    else:
+        return jsonify({'error': 'Failed to fetch stations'}), st_response.status_code
 
+
+    
+    #return stations
+    #return jsonify(response.json())
+    #return {'url': stations_url}
 
 
 # Load environment variables
@@ -226,7 +333,7 @@ def get_mysql_data():
 
 # 
 """
-@app.route('/api/transactions/', methods=['GET'])
+@app.route('/api/transactions', methods=['GET'])
 @require_permission('owner', 'staff')
 def get_transactions(user):
     q_station_id = request.args.get('station_id', default=None, type=int)
@@ -238,7 +345,7 @@ def get_transactions(user):
     return jsonify(transactions)
 
 """
-@app.route('/api/transactions/', methods=['GET'])
+@app.route('/api/transactions', methods=['GET'])
 @require_permission('owner', 'staff')
 def get_transactions(user):
     try:
@@ -606,41 +713,46 @@ def delete_station(user, station_id):
     return jsonify({'message': 'Station deleted successfully'})
 
 # Analytics
-@app.route('/api/stations/<station_id>/analytics', methods=['GET'])
-def station_analytics(station_id):
+@app.route('/api/stations/analytics/<station_id>', methods=['GET'])
+@require_permission('owner', 'staff')
+def station_analytics(user, station_id):
     # Extract query parameters for date range (optional)
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     charge_level = request.args.get('charge_level')
 
-    #return process_revenue(station_id, start_date, end_date, charge_level)
+    if not start_date: start_date = '01/01/2010'
+    if not end_date: end_date = datetime.datetime.now().strftime('%m/%d/%Y')
+    if not charge_level: charge_level = None
 
-    # Fetch transactions for the station
-    rev_data = process_revenue(station_id, start_date, end_date, charge_level)
+    return station_charts(station_id, start_date, end_date, charge_level)
 
-    # Aggregate revenue by date
-    daily_revenue = aggregate_revenue(rev_data)
+@app.route('/api/stations/analytics', methods=['GET'])
+@require_permission('owner', 'staff')
+def all_stations_analytics(user):
+    # Extract query parameters for date range (optional)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    charge_level = request.args.get('charge_level')
 
-    # Convert to format suitable for charting (list of dicts)
-    rev_chart_data = [{"date": date, "revenue": fee} for date, fee in daily_revenue.items()]
+    if not start_date: start_date = '01/01/2010'
+    if not end_date: end_date = datetime.datetime.now().strftime('%m/%d/%Y')
+    if not charge_level: charge_level = None
 
-    # Dummy pie chart data (replace with actual logic as needed)
-    pie_chart_data = [
-        {"category": "Category A", "value": 40},
-        {"category": "Category B", "value": 30},
-        {"category": "Category C", "value": 30},
-        # ... more categories
-    ]
+    return aggregate_charts(None, start_date, end_date, charge_level)
 
-    # Construct the response object
-    response_data = {
-        "revChartData": rev_chart_data,
-        "pieChartData": pie_chart_data
-    }
+@app.route('/api/sites/analytics/<site_id>', methods=['GET'])
+@require_permission('owner', 'staff')
+def site_analytics(user, site_id):
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    charge_level = request.args.get('charge_level')
 
-    return jsonify(rev_chart_data)
+    if not start_date: start_date = '01/01/2010'
+    if not end_date: end_date = datetime.datetime.now().strftime('%m/%d/%Y')
+    if not charge_level: charge_level = None
 
-    #return jsonify(response_data)
+    return aggregate_charts(site_id, start_date, end_date, charge_level)
 
 """
 
