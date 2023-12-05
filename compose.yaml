@@ -23,6 +23,30 @@ services:
         - action: rebuild
           path: ./web-dashboard/package.json
 
+  user-management:
+    image: sparkplug-user-management
+    container_name: sparkplug-user-management
+    build:
+      context: ./user
+      target: development
+    env_file:
+      - ./.env
+      - ./user/.env
+    environment:
+      - PORT=${USER_MAMANGEMENT_PORT}
+      - WEB_DOMAIN=${WEB_DASHBOARD_PORT}
+    ports:
+      - ${USER_MAMANGEMENT_PORT}:${USER_MAMANGEMENT_PORT}
+    develop:
+      watch:
+        - action: sync
+          path: ./user
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./user/package.json
+
   station-site-management:
     image: sparkplug-station-site-management
     container_name: sparkplug-station-site-management

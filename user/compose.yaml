@@ -1,0 +1,12 @@
+services:
+
+  monitoring:
+    image: sparkplug-user-management
+    container_name: sparkplug-user-management
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+    ports:
+      - ${PORT}:${PORT}
