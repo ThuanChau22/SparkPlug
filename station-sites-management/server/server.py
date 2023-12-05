@@ -432,6 +432,10 @@ def delete_station(user, station_id):
     # Return a success message
     return jsonify({'message': 'Station deleted successfully'})
 
+# Analytics
+"""
+
+"""
 
 if __name__ == '__main__':
     app.run(host=os.environ['SERVER_HOST'], port=os.environ['SERVER_PORT'], debug=True)
