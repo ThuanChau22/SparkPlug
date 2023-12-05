@@ -19,7 +19,7 @@ from collections import defaultdict
 from functools import wraps
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
 
 
 # Set up dummy user to simulate login
@@ -72,50 +72,6 @@ def time_string_to_hours(time_str):
     except ValueError:
         return 0  # Return 0 if the time format is incorrect
 
-
-"""
-def fetch_transactions_for_station(station_id, start_date=None, end_date=None, charge_level=None):
-    try:
-        # Build query dynamically
-        query = {}
-
-        if start_date==None: start_date = '01/01/2010'
-        if end_date==None: end_date = datetime.datetime.now().strftime('%m/%d/%Y')
-
-        ## station id
-        if station_id is not None:
-            query['station_id'] = station_id
-
-        ## charge level
-        if charge_level is not None:
-            # Map input values "1" or "2" to "Level 1" or "Level 2"
-            charge_level_map = {'1': 'Level 1', '2': 'Level 2'}
-            charge_levels = [charge_level_map[level] for level in charge_level.split() if level in charge_level_map]
-            if charge_levels:
-                query['charge_level'] = {'$in': charge_levels}
-        ## date range
-        ### Convert dates to milliseconds since Unix epoch
-        start_ms = date_to_milliseconds(start_date)
-        end_ms = date_to_milliseconds(end_date)
-        ### Build date range query
-        query['transaction_date'] = {'$gte': start_ms, '$lte': end_ms}
-
-        # Query the MongoDB transactions collection
-        transactions = db.transactions.find(query)
-        
-        # Convert the results to a list
-        transactions_list = list(transactions)
-
-        # Convert each MongoDB ObjectId to string
-        for transaction in transactions_list:
-            transaction['_id'] = str(transaction['_id'])
-
-        return jsonify(transactions_list)
-
-    except Exception as e:
-        # Handle any exceptions that occur
-        return jsonify({"error": str(e)}), 500
-"""
 
 # Chart data prep
 def generate_charts(raw_docs):
@@ -260,12 +216,6 @@ def aggregate_charts(site_id, start_date, end_date, charge_level):
         return jsonify({'error': 'Failed to fetch stations'}), st_response.status_code
 
 
-    
-    #return stations
-    #return jsonify(response.json())
-    #return {'url': stations_url}
-
-
 # Load environment variables
 env = os.environ.get('ENV', 'prod')
 if env == 'dev':
@@ -331,20 +281,7 @@ def get_mysql_data():
         data = cursor.fetchone()
     return jsonify(data)
 
-# 
-"""
-@app.route('/api/transactions', methods=['GET'])
-@require_permission('owner', 'staff')
-def get_transactions(user):
-    q_station_id = request.args.get('station_id', default=None, type=int)
-    q_charge_level = request.args.get('charge_level', default=None)
-    q_start_date = request.args.get('start_date', default='01/01/2010')
-    q_end_date = request.args.get('end_date', default=datetime.datetime.now().strftime('%m/%d/%Y'))
 
-    transactions = fetch_transactions_for_station(q_station_id, q_start_date, q_end_date, q_charge_level)
-    return jsonify(transactions)
-
-"""
 @app.route('/api/transactions', methods=['GET'])
 @require_permission('owner', 'staff')
 def get_transactions(user):
@@ -754,9 +691,6 @@ def site_analytics(user, site_id):
 
     return aggregate_charts(site_id, start_date, end_date, charge_level)
 
-"""
-
-"""
 
 if __name__ == '__main__':
     app.run(host=os.environ['SERVER_HOST'], port=os.environ['SERVER_PORT'], debug=True)

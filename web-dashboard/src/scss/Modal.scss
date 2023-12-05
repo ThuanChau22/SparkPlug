@@ -1,0 +1,78 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6); /* Dimmed background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure it's above other content */
+}
+
+.modal-content {
+    background: #f4f8fb; /* Non-transparent, off-white blueish background */
+    width: 50%; /* Adjust width as needed */
+    max-width: 600px; /* Maximum width */
+    padding: 20px;
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Soft shadow */
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee; /* Separator */
+    color: #333;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.modal-body {
+    flex-grow: 1;
+    padding: 10px 0; /* Space around form elements */
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: space-between; /* Distributes space between buttons */
+    align-items: center; /* Align buttons vertically */
+    padding-top: 10px;
+    border-top: 1px solid #eee; /* Separator */
+    gap: 15px; /* Vertical space between buttons */
+}
+
+.modal-footer button {
+    padding: 10px;
+    border-radius: 4px; /* Rounded corners for buttons */
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background-color: #ffffff; /* Button background */
+    transition: background-color 0.3s, color 0.3s;
+
+    &:hover {
+        background-color: #eeeeee; /* Slight change on hover */
+    }
+}
+
+/* Specific styling for the 'Add' button */
+.modal-footer button.add-button {
+    flex-grow: 2; /* Makes the Add button wider */
+}
+
+
+
+/* Styles for form elements */
+input[type="text"], select {
+    width: 100%; /* Full width */
+    padding: 10px; /* More padding for input fields */
+    margin: 8px 0 15px; /* More space between fields */
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px; /* Rounded corners for input fields */
+    box-sizing: border-box;
+}
+

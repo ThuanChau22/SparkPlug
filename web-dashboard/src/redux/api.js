@@ -4,10 +4,10 @@ import {
   selectAuthAuthenticated,
   selectAuthAccessToken,
   selectAuthExpiredTime,
-} from "redux/slices/authSlice";
+} from "redux/auth/authSlice";
 import {
   errorStateSet,
-} from "redux/slices/errorSlice";
+} from "redux/error/errorSlice";
 
 // API enum
 const API_CANCELED = "API Canceled";
