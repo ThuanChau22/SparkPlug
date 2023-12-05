@@ -3,12 +3,15 @@ from dotenv import load_dotenv
 
 from flask import Flask, json, jsonify, request, Response
 from flask_cors import CORS
-from bson import json_util
+from bson import json_util, ObjectId
 
 import pymongo
 import pymysql
 
 import datetime
+
+import requests
+from urllib.parse import urljoin
 
 # For authentication
 from functools import wraps
@@ -60,6 +63,102 @@ def date_to_milliseconds(date_str, date_format='%m/%d/%Y'):
         # Handle the exception if the date_str format is incorrect
         return None
 
+"""
+def fetch_transactions_for_station(station_id, start_date=None, end_date=None, charge_level=None):
+    try:
+        # Build query dynamically
+        query = {}
+
+        if start_date==None: start_date = '01/01/2010'
+        if end_date==None: end_date = datetime.datetime.now().strftime('%m/%d/%Y')
+
+        ## station id
+        if station_id is not None:
+            query['station_id'] = station_id
+
+        ## charge level
+        if charge_level is not None:
+            # Map input values "1" or "2" to "Level 1" or "Level 2"
+            charge_level_map = {'1': 'Level 1', '2': 'Level 2'}
+            charge_levels = [charge_level_map[level] for level in charge_level.split() if level in charge_level_map]
+            if charge_levels:
+                query['charge_level'] = {'$in': charge_levels}
+        ## date range
+        ### Convert dates to milliseconds since Unix epoch
+        start_ms = date_to_milliseconds(start_date)
+        end_ms = date_to_milliseconds(end_date)
+        ### Build date range query
+        query['transaction_date'] = {'$gte': start_ms, '$lte': end_ms}
+
+        # Query the MongoDB transactions collection
+        transactions = db.transactions.find(query)
+        
+        # Convert the results to a list
+        transactions_list = list(transactions)
+
+        # Convert each MongoDB ObjectId to string
+        for transaction in transactions_list:
+            transaction['_id'] = str(transaction['_id'])
+
+        return jsonify(transactions_list)
+
+    except Exception as e:
+        # Handle any exceptions that occur
+        return jsonify({"error": str(e)}), 500
+"""
+
+# Process Revenue
+def process_revenue(station_id, start_date, end_date, charge_level):
+
+    base_url = request.host_url  # Get the base URL of the current Flask app
+    transactions_url = urljoin(base_url, f'api/transactions/?station_id={station_id}')
+
+    if start_date != None:
+        transactions_url += f'&start_date={start_date}'
+    if end_date != None:
+        transactions_url += f'&end_date={end_date}'
+    if charge_level != None:
+        transactions_url += f'&charge_level={charge_level}'
+
+
+    # Additional query parameters can be added as needed
+    # Make the GET request
+    response = requests.get(transactions_url)
+
+    if response.status_code == 200:
+        raw_docs = response.json()
+        clean_docs = []
+
+        #return jsonify(raw_docs[0])
+
+        for doc in raw_docs:
+            mongo_timestamp = doc['transaction_date']
+            timestamp_seconds = mongo_timestamp / 1000.0
+            date = datetime.datetime.utcfromtimestamp(timestamp_seconds)
+            f_date = date.strftime('%Y-%m-%d')
+            clean_docs.append({'date': f_date, 'fee': doc['fee']})
+
+        return clean_docs
+    else:
+        #return jsonify({'error': 'Failed to fetch transactions', 'url': transactions_url, 'start': start_date, 'end': end_date}), response.status_code
+        return jsonify([])
+
+
+
+# Function to aggregate revenue by date
+def aggregate_revenue(transactions):
+    revenue_per_day = {}
+    for transaction in transactions:
+        date = transaction['date']
+        fee = transaction['fee']
+        if date in revenue_per_day:
+            revenue_per_day[date] += fee
+        else:
+            revenue_per_day[date] = fee
+    return revenue_per_day
+
+
+
 # Load environment variables
 env = os.environ.get('ENV', 'prod')
 if env == 'dev':
@@ -99,6 +198,7 @@ def get_mysql_connection():
 def hello():
     return "Hello World!"
 
+
 @app.route('/api/1_trans', methods=['GET'])
 def get_mongo_data():
 
@@ -124,7 +224,20 @@ def get_mysql_data():
         data = cursor.fetchone()
     return jsonify(data)
 
-# MongoDB
+# 
+"""
+@app.route('/api/transactions/', methods=['GET'])
+@require_permission('owner', 'staff')
+def get_transactions(user):
+    q_station_id = request.args.get('station_id', default=None, type=int)
+    q_charge_level = request.args.get('charge_level', default=None)
+    q_start_date = request.args.get('start_date', default='01/01/2010')
+    q_end_date = request.args.get('end_date', default=datetime.datetime.now().strftime('%m/%d/%Y'))
+
+    transactions = fetch_transactions_for_station(q_station_id, q_start_date, q_end_date, q_charge_level)
+    return jsonify(transactions)
+
+"""
 @app.route('/api/transactions/', methods=['GET'])
 @require_permission('owner', 'staff')
 def get_transactions(user):
@@ -493,6 +606,41 @@ def delete_station(user, station_id):
     return jsonify({'message': 'Station deleted successfully'})
 
 # Analytics
+@app.route('/api/stations/<station_id>/analytics', methods=['GET'])
+def station_analytics(station_id):
+    # Extract query parameters for date range (optional)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    charge_level = request.args.get('charge_level')
+
+    #return process_revenue(station_id, start_date, end_date, charge_level)
+
+    # Fetch transactions for the station
+    rev_data = process_revenue(station_id, start_date, end_date, charge_level)
+
+    # Aggregate revenue by date
+    daily_revenue = aggregate_revenue(rev_data)
+
+    # Convert to format suitable for charting (list of dicts)
+    rev_chart_data = [{"date": date, "revenue": fee} for date, fee in daily_revenue.items()]
+
+    # Dummy pie chart data (replace with actual logic as needed)
+    pie_chart_data = [
+        {"category": "Category A", "value": 40},
+        {"category": "Category B", "value": 30},
+        {"category": "Category C", "value": 30},
+        # ... more categories
+    ]
+
+    # Construct the response object
+    response_data = {
+        "revChartData": rev_chart_data,
+        "pieChartData": pie_chart_data
+    }
+
+    return jsonify(rev_chart_data)
+
+    #return jsonify(response_data)
 
 """
 
