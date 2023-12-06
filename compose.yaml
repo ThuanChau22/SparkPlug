@@ -45,7 +45,50 @@ services:
           ignore:
             - node_modules/
         - action: rebuild
-          path: ./monitoring/package.json
+          path: ./monitoring/package.json          
+
+  user-management:
+    image: sparkplug-user-management
+    container_name: sparkplug-user-management
+    build:
+      context: ./user
+      target: development
+    env_file:
+      - ./.env
+      - ./user/.env
+    environment:
+      - PORT=${USER_MAMANGEMENT_PORT}
+      - WEB_DOMAIN=${WEB_DASHBOARD_PORT}
+    ports:
+      - ${USER_MAMANGEMENT_PORT}:${USER_MAMANGEMENT_PORT}
+    develop:
+      watch:
+        - action: sync
+          path: ./user
+          path: ./user/package.json
+
+  station-site-management:
+    image: sparkplug-station-site-management
+    container_name: sparkplug-station-site-management
+    build:
+      context: ./station-sites-management/server
+    env_file:
+      - ./.env
+      - ./station-sites-management/server/.env
+    environment:
+      - FLASK_ENV=production
+      - ENV=prod
+      - SERVER_HOST=${STATION_SITE_HOST}
+      - SERVER_PORT=${STATION_SITE_PORT}
+    ports:
+      - ${STATION_SITE_PORT}:${STATION_SITE_PORT}
+    develop:
+      watch:
+        - action: sync
+          path: ./station-sites-management/server
+          target: /app
+        - action: rebuild
+          path: ./station-sites-management/server/requirements.txt
 
   simulator-client:
     image: sparkplug-simulator-client
@@ -71,7 +114,7 @@ services:
             - node_modules/
         - action: rebuild
           path: ./simulator/client/package.json
-
+  
   simulator-server:
     image: sparkplug-simulator-server
     container_name: sparkplug-simulator-server
