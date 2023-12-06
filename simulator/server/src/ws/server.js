@@ -1,5 +1,15 @@
 import ms from "ms";
-import { WebSocketServer } from "ws";
+import WebSocket, { WebSocketServer } from "ws";
+
+import {
+  Action,
+  stateSync,
+  handleMeterValue,
+  handleScanRFID,
+  handlePluginCable,
+  handleUnplugCable,
+  handleReset,
+} from "./message.js";
 
 const initWebSocketServer = () => {
   const wss = new WebSocketServer({ noServer: true });
@@ -35,33 +45,35 @@ const initWebSocketServer = () => {
   return { wss, handleUpgrade, on, close };
 };
 
+const sockets = new Set();
 const server = initWebSocketServer();
-
-server.on("connection", async (ws, req) => {
+server.on("connection", async (ws) => {
   try {
-    // Extract session id from client request
-    // const [_, params] = req?.url?.split("?");
-    // const searchParams = new URLSearchParams(params);
-    // const sessionId = searchParams.get("sessionId");
-    // const userId = searchParams.get("userId");
+    sockets.add(ws);
 
-    // Close socket if no session id provided
-    // if (!sessionId || !userId) return ws.close(1000);
-
-    // Signal connecting
-    ws.send(JSON.stringify({
-      message: "connecting",
-    }));
+    stateSync();
 
     // Handle incoming message
     ws.on("message", async (data) => {
       try {
         if (data.toString() === "ping") {
-          ws.send("pong");
-        } else {
-          console.log(`Received: ${data}`);
-          // const { message } = JSON.parse(data);
-          // console.log(message);
+          return ws.send("pong");
+        }
+        const { action, payload } = JSON.parse(data);
+        if (action === Action.METER_VALUE) {
+          return await handleMeterValue(payload);
+        }
+        if (action === Action.SCAN_RFID) {
+          return await handleScanRFID(payload);
+        }
+        if (action === Action.PLUGIN_CABLE) {
+          return await handlePluginCable(payload);
+        }
+        if (action === Action.UNPLUG_CABLE) {
+          return await handleUnplugCable(payload);
+        }
+        if (action === Action.RESET) {
+          return await handleReset(payload);
         }
       } catch (error) {
         console.log({ error });
@@ -69,26 +81,32 @@ server.on("connection", async (ws, req) => {
     });
 
     // Handle socket on error
-    ws.on("error", (error) => {
-      console.log({ error });
+    ws.on("error", () => {
+      sockets.delete(ws);
     });
 
     // Handle socket on close
-    ws.on("close", async () => {
+    ws.on("close", () => {
       try {
-        console.log("closing");
+        for (const ws of sockets) {
+          ws.close();
+        }
+        console.log("Close Connection");
       } catch (error) {
         console.log(error);
       }
     });
-
-    // Signal connected
-    ws.send(JSON.stringify({
-      message: "connected",
-    }));
   } catch (error) {
     console.log({ error });
   }
 });
+
+export const sendJsonMessage = (payload) => {
+  for (const ws of sockets) {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(payload));
+    }
+  }
+};
 
 export default server;

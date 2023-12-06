@@ -1,5 +1,5 @@
 {
-  "name": "simulator",
+  "name": "simulator-server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,8 @@
     "express": "^4.18.2",
     "helmet": "^7.1.0",
     "ms": "^2.1.3",
-    "ocpp-rpc": "^2.0.2"
+    "ocpp-rpc": "^2.0.2",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
