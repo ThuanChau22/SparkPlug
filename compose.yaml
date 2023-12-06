@@ -65,6 +65,7 @@ services:
       watch:
         - action: sync
           path: ./user
+        - action: rebuild
           path: ./user/package.json
 
   station-site-management:
