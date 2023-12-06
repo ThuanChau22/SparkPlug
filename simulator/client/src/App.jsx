@@ -47,6 +47,7 @@ const App = () => {
   } = socket;
 
   const WebSocketAction = useMemo(() => ({
+    METER_VALUE: "MeterValue",
     SCAN_RFID: "ScanRFID",
     PLUGIN_CABLE: "PluginCable",
     UNPLUG_CABLE: "UnplugCable",
@@ -58,11 +59,6 @@ const App = () => {
   const [isRFIDScanned, setIsRFIDScanned] = useState(false);
   const [isCablePluggedIn, setIsCablePluggedIn] = useState(false);
   const [message, setMessage] = useState({ text: "", style: "" });
-
-  // Delete later
-  useEffect(() => {
-    setWattage(3247);
-  }, []);
 
   useEffect(() => {
     if (readyState === ReadyState.OPEN) {
@@ -85,9 +81,23 @@ const App = () => {
   }, [readyState]);
 
   useEffect(() => {
-    const { action } = lastJsonMessage || {};
+    const { action, payload } = lastJsonMessage || {};
+    if (action === WebSocketAction.METER_VALUE) {
+      setWattage(payload.value);
+    }
     if (action === WebSocketAction.SCAN_RFID) {
-      setIsRFIDScanned(true);
+      if (payload.status === "Accepted") {
+        setIsRFIDScanned(true);
+        setRFID("");
+      } else if (payload.status === "Ended") {
+        setIsRFIDScanned(false);
+        setRFID("");
+      } else {
+        setMessage({
+          text: "Invalid",
+          style: "text-danger",
+        });
+      }
     }
     if (action === WebSocketAction.PLUGIN_CABLE) {
       setIsCablePluggedIn(true);
@@ -101,6 +111,7 @@ const App = () => {
   }, [lastJsonMessage, WebSocketAction]);
 
   const handleScanRFID = () => {
+    setMessage({ text: "", style: "" });
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: WebSocketAction.SCAN_RFID,
@@ -188,6 +199,7 @@ const App = () => {
                               name="RFID"
                               placeholder="Enter RFID Code"
                               className="text-center border border-primary shadow-none"
+                              value={rfid}
                               onChange={(e) => setRFID(e.target.value)}
                             />
                           </CInputGroup>
@@ -234,7 +246,7 @@ const App = () => {
                             </CButton>
                           </CInputGroup>
                         </CCol>
-                        <CCol xs={12}>
+                        {/* <CCol xs={12}>
                           <CInputGroup>
                             <CInputGroupText className="border border-primary">
                               <RestartAlt />
@@ -248,7 +260,7 @@ const App = () => {
                               Reset
                             </CButton>
                           </CInputGroup>
-                        </CCol>
+                        </CCol> */}
                       </CRow>
                     </CCol>
                   </CRow>
