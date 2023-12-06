@@ -19,7 +19,7 @@ from collections import defaultdict
 from functools import wraps
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+CORS(app)
 
 
 # Set up dummy user to simulate login
