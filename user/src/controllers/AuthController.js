@@ -1,67 +1,55 @@
-// AuthController.js
-import jwt from "jsonwebtoken";
-import * as authRepository from "../repositories/AuthRepository.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
-const secretKey = process.env.JWT_SECRET;
+import { JWT_SECRET } from "../config.js";
+import userRepository, { Role } from "../repositories/UserRepository.js";
 
-const Role = {
-  Staff: "staff",
-  Owner: "owner",
-  Driver: "driver",
-};
-
-export const userSignUp = async (req, res) => {
+export const signup = async (req, res) => {
   try {
-    const { email, password, name } = req.body;
-    let user = await authRepository.findUserByEmail(email);
-
-    if (!user) {
-      const userId = await authRepository.createUser({ email, password, name });
-      await authRepository.addRoleToUser(userId, "Driver"); // Default role
-      user = await authRepository.findUserByEmail(email);
-    } else {
-      const hasRole = await authRepository.findRoleById(user.id, "Driver");
-      if (!hasRole) {
-        return res
-          .status(400)
-          .json({ message: "Email already used for another role" });
+    const { email, password, name, role = Role.Driver } = req.body;
+    let user;
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const userId = await userRepository.createUser({ email, hashedPassword, name });
+      user = await userRepository.getUserById(userId);
+    } catch (error) {
+      if (error.errno === 1062) {
+        user = await userRepository.getUserByEmail(email);
+        if (!await bcrypt.compare(password, user.password)) {
+          return res.status(401).json({ message: "Invalid credentials" });
+        }
+        if (await userRepository.getUserByIdAndRole(user.id, role)) {
+          return res.status(409).json({ message: "User already existed" });
+        }
+      } else {
+        throw error;
       }
     }
-
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: "Driver" },
-      secretKey
-    );
+    await userRepository.addRole(user.id, role);
+    const token = jwt.sign({
+      id: user.id,
+      email: user.email,
+      role: role,
+    }, JWT_SECRET, { expiresIn: "1h" });
     res.status(201).json({ token });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-export const userLogin = async (req, res) => {
+export const login = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
-    const user = await authRepository.findUserByEmail(email);
-
+    const { email, password, role = Role.Driver } = req.body;
+    const user = await userRepository.getUserByEmailAndRole(email, role);
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    let r = "";
-    if (role === Role.Staff) {
-      r = "Staff";
-    } else if (role === Role.Owner) {
-      r = "Station_Owner";
-    } else {
-      r = "Driver";
-    }
-    const hasRole = await authRepository.findRoleById(user.id, r);
-    if (!hasRole) {
-      return res.status(401).json({ message: "Not authorized for this role" });
-    }
-
-    const token = jwt.sign({ id: user.id, email: user.email, role }, secretKey);
-    res.json({ token });
+    const token = jwt.sign({
+      id: user.id,
+      email: user.email,
+      role: role,
+    }, JWT_SECRET, { expiresIn: "1h" });
+    res.status(201).json({ token });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

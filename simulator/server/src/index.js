@@ -5,7 +5,7 @@ import { PORT, STATION_IDENTITY, WEB_DOMAIN } from "./config.js";
 
 app.listen(PORT, async () => {
   try {
-    console.log(`Simulation server running on port: ${PORT}`);
+    console.log(`Simulator server running on port: ${PORT}`);
     await connectCSMS();
   } catch (error) {
     console.log(error);
