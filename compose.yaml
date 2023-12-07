@@ -23,6 +23,53 @@ services:
         - action: rebuild
           path: ./web-dashboard/package.json
 
+  user:
+    image: sparkplug-user
+    container_name: sparkplug-user
+    build:
+      context: ./user
+      target: development
+    env_file:
+      - ./.env
+      - ./user/.env
+    environment:
+      - PORT=${USER_PORT}
+      - WEB_DOMAIN=${WEB_DASHBOARD_PORT}
+    ports:
+      - ${USER_PORT}:${USER_PORT}
+    develop:
+      watch:
+        - action: sync
+          path: ./user
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./user/package.json
+
+  site-station-analytics:
+    image: sparkplug-site-station-analytics
+    container_name: sparkplug-site-station-analytics
+    build:
+      context: ./station-sites-management/server
+    env_file:
+      - ./.env
+      - ./station-sites-management/server/.env
+    environment:
+      - FLASK_ENV=production
+      - ENV=prod
+      - SERVER_HOST=${SITE_STATION_ANALYTICS_HOST}
+      - SERVER_PORT=${SITE_STATION_ANALYTICS_PORT}
+    ports:
+      - ${SITE_STATION_ANALYTICS_PORT}:${SITE_STATION_ANALYTICS_PORT}
+    develop:
+      watch:
+        - action: sync
+          path: ./station-sites-management/server
+          target: /app
+        - action: rebuild
+          path: ./station-sites-management/server/requirements.txt
+
   monitoring:
     image: sparkplug-monitoring
     container_name: sparkplug-monitoring
@@ -45,51 +92,7 @@ services:
           ignore:
             - node_modules/
         - action: rebuild
-          path: ./monitoring/package.json          
-
-  user-management:
-    image: sparkplug-user-management
-    container_name: sparkplug-user-management
-    build:
-      context: ./user
-      target: development
-    env_file:
-      - ./.env
-      - ./user/.env
-    environment:
-      - PORT=${USER_MAMANGEMENT_PORT}
-      - WEB_DOMAIN=${WEB_DASHBOARD_PORT}
-    ports:
-      - ${USER_MAMANGEMENT_PORT}:${USER_MAMANGEMENT_PORT}
-    develop:
-      watch:
-        - action: sync
-          path: ./user
-        - action: rebuild
-          path: ./user/package.json
-
-  station-site-management:
-    image: sparkplug-station-site-management
-    container_name: sparkplug-station-site-management
-    build:
-      context: ./station-sites-management/server
-    env_file:
-      - ./.env
-      - ./station-sites-management/server/.env
-    environment:
-      - FLASK_ENV=production
-      - ENV=prod
-      - SERVER_HOST=${STATION_SITE_HOST}
-      - SERVER_PORT=${STATION_SITE_PORT}
-    ports:
-      - ${STATION_SITE_PORT}:${STATION_SITE_PORT}
-    develop:
-      watch:
-        - action: sync
-          path: ./station-sites-management/server
-          target: /app
-        - action: rebuild
-          path: ./station-sites-management/server/requirements.txt
+          path: ./monitoring/package.json
 
   simulator-client:
     image: sparkplug-simulator-client
@@ -103,7 +106,6 @@ services:
     environment:
       - PORT=${SIMULATOR_CLIENT_PORT}
       - REACT_APP_WS_ENDPOINT=${SIMULATOR_WS_ENDPOINT}
-      - REACT_APP_STATION_IDENTITY=${SIMULATOR_STATION_IDENTITY}
     ports:
       - ${SIMULATOR_CLIENT_PORT}:${SIMULATOR_CLIENT_PORT}
     develop:
@@ -129,8 +131,6 @@ services:
       - PORT=${SIMULATOR_SERVER_PORT}
       - WEB_DOMAIN=${SIMULATOR_CLIENT_DOMAIN}
       - STATION_MANAGEMENT_WS_ENDPOINT=${STATION_MANAGEMENT_WS_ENDPOINT}
-      - STATION_IDENTITY=${SIMULATOR_STATION_IDENTITY}
-      - STATION_PASSWORD=${SIMULATOR_STATION_PASSWORD}
     ports:
       - ${SIMULATOR_SERVER_PORT}:${SIMULATOR_SERVER_PORT}
     depends_on:

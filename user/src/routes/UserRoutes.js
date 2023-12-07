@@ -1,25 +1,24 @@
 import express from "express";
-// import authorityJWT from "../middlewares/authorityJWT.js";
 
 import {
   getAllUsers,
   getUserById,
-  addUser,
   updateUserById,
   deleteUserById,
-  getUserByRfid,
 } from "../controllers/UserController.js";
+import {
+  authenticate,
+  authorizeRole,
+  authorizeResource,
+} from "../middlewares/auth.js";
+import {
+  Role,
+} from "../repositories/UserRepository.js";
 
 const router = express.Router();
-router.get("/", getAllUsers);
-router.get("/rfid", getUserByRfid);
-router.get("/:id", getUserById);
-router.post("/", addUser);
-router.put("/:id", updateUserById);
-router.delete("/:id", deleteUserById);
-
-// router.get("/protected-route", authenticateJWT, (req, res) => {
-//   // ... protected route logic ...
-// });
+router.get("/", authenticate, authorizeRole(Role.Staff), getAllUsers);
+router.get("/:id", authenticate, authorizeResource, getUserById);
+router.put("/:id", authenticate, authorizeResource, updateUserById);
+router.delete("/:id", authenticate, authorizeResource, deleteUserById);
 
 export default router;

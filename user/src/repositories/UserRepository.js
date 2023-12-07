@@ -1,54 +1,86 @@
-// UserRepository.js
-import db from "./config.js";
+import { db } from "../config.js";
 
-export const findAllUsers = async () => {
-  const [users] = await db.query(
-    "SELECT id, email, name, status, created_at, updated_at FROM User"
-  );
+const repository = {};
+
+export const Role = {
+  Staff: "staff",
+  Owner: "owner",
+  Driver: "driver",
+};
+
+const roleToTable = (role) => {
+  return role === Role.Staff
+    ? "Staff"
+    : role === Role.Owner
+      ? "Station_Owner"
+      : "Driver";
+};
+
+repository.addRole = async (userId, role) => {
+  role = roleToTable(role);
+  await db.query(`INSERT INTO ${role} (id) VALUES (?)`, [userId]);
+};
+
+repository.getAllUsers = async () => {
+  const select = "id, email, name, status, created_at, updated_at";
+  const [users] = await db.query(`SELECT ${select} FROM User`);
   return users;
 };
 
-export const findUserById = async (userId) => {
-  const [user] = await db.query(
-    "SELECT id, email, name, status, created_at, updated_at FROM User WHERE id = ?",
-    [userId]
-  );
-  return user[0];
+repository.getUserById = async (userId) => {
+  const select = "id, email, name, status, created_at, updated_at";
+  const [users] = await db.query(`SELECT ${select} FROM User WHERE id = ?`, [userId]);
+  return users[0];
 };
 
-export const findUserByRfid = async (rfid) => {
-  const [result] = await db.query(
-    "select id, email, name, status, created_at, updated_at from User join RFID_map on id=driver_id where rfid = ?",
-    [rfid]
-  );
-  return result;
+repository.getUserByIdAndRole = async (userId, role) => {
+  role = roleToTable(role);
+  const [result] = await db.query(`SELECT id FROM ${role} WHERE id = ?`, [userId]);
+  return result.length > 0;
 };
 
-export const createUser = async (userData) => {
-  const { email, password, name, status } = userData;
+repository.getUserByEmail = async (email) => {
+  const [users] = await db.query(`SELECT * FROM User WHERE email = ?`, [email]);
+  return users[0];
+};
+
+repository.getUserByEmailAndRole = async (email, role) => {
+  role = roleToTable(role);
+  const [users] = await db.query(
+    `SELECT * FROM User JOIN ${role} USING(id) WHERE email = ?`,
+    [email],
+  );
+  return users[0];
+};
+
+repository.createUser = async (userData) => {
+  const { email, hashedPassword, name, status = "normal" } = userData;
   const [result] = await db.query(
     "INSERT INTO User (email, password, name, status) VALUES (?, ?, ?, ?)",
-    [email, password, name, status]
+    [email, hashedPassword, name, status],
   );
-  const newUser = {
-    id: result.insertId,
-    email,
-    name,
-    status,
-  };
-  return newUser;
+  return result.insertId;
 };
 
-export const updateUserById = async (userId, updateData) => {
-  const { email, name, status } = updateData;
-  await db.query(
+repository.updateUserById = async (userData) => {
+  const { id, email, name, status } = userData;
+  const [result] = await db.query(
     "UPDATE User SET email = ?, name = ?, status = ? WHERE id = ?",
-    [email, name, status, userId]
+    [email, name, status, id]
   );
-  return findUserById(userId);
-};
-
-export const deleteUserById = async (userId) => {
-  const [result] = await db.query("DELETE FROM User WHERE id = ?", [userId]);
   return result.affectedRows > 0;
 };
+
+repository.deleteUserById = async (userId) => {
+  try {
+    await db.query("DELETE FROM Staff WHERE id = ?", [userId]);
+    await db.query("DELETE FROM Driver WHERE id = ?", [userId]);
+    await db.query("DELETE FROM Station_Owner WHERE id = ?", [userId]);
+    const [result] = await db.query("DELETE FROM User WHERE id = ?", [userId]);
+    return result.affectedRows > 0;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export default repository;
