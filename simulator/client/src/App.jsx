@@ -82,13 +82,16 @@ const App = () => {
   }, [readyState]);
 
   useEffect(() => {
+    clearTimeout(meterTimeout);
+    setMeterTimeout(setTimeout(() => {
+      setMeterValue(0);
+    }, ms("5s")));
+  }, [meterValue]);
+
+  useEffect(() => {
     const { action, payload } = lastJsonMessage || {};
     if (action === WebSocketAction.METER_VALUE) {
       setMeterValue(payload.value);
-      clearTimeout(meterTimeout);
-      setMeterTimeout(setTimeout(() => {
-        setMeterValue(0);
-      }, ms("5s")));
     }
     if (action === WebSocketAction.SCAN_RFID) {
       if (payload.status === "Accepted") {
