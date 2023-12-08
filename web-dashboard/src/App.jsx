@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   useNavigate,
   useLocation,
@@ -9,13 +9,32 @@ import {
 import Footer from "components/Footer";
 import Header from "redux/header/Header";
 import Sidebar from "redux/sidebar/Sidebar";
-import { selectAuthAuthenticated } from "redux/auth/authSlice";
+import {
+  authStateSet,
+  authStateClear,
+  selectAuthAuthenticated,
+  selectAuthExpiredTime,
+  selectAuthSecureStorage,
+} from "redux/auth/authSlice";
 import routes from "routes";
 
 const App = () => {
   const authenticated = useSelector(selectAuthAuthenticated);
+  const expiredTime = useSelector(selectAuthExpiredTime);
+  const token = useSelector(selectAuthSecureStorage);
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  useEffect(() => {
+    if (token) {
+      dispatch(authStateSet({ token }));
+    }
+  }, [token]);
+  useEffect(() => {
+    if (authenticated && expiredTime <= Date.now()) {
+      dispatch(authStateClear());
+    }
+  }, [authenticated, expiredTime]);
   useEffect(() => {
     const options = { replace: true };
     if (!authenticated) {

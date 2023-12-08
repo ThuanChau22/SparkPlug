@@ -9,7 +9,7 @@ import {
 
 const NotFound = () => {
   return (
-    <div className="bg-light h-100 position-relative">
+    <div className="bg-light min-vh-100 position-relative">
       <CContainer className="position-absolute top-50 start-50 translate-middle">
         <CRow className="justify-content-center">
           <CCol md={6}>
