@@ -3,7 +3,6 @@ import WebSocket, { WebSocketServer } from "ws";
 
 import {
   Action,
-  handleMeterValue,
   handleRemoteStart,
   handleRemoteStop,
 } from "./message.js";
@@ -34,10 +33,15 @@ const initWebSocketServer = () => {
     wss.on(event, handler);
   };
   const close = () => {
-    for (const ws of wss.clients) {
-      ws.close(1000);
-    }
     wss.close();
+    wss.clients.forEach((ws) => {
+      ws.close();
+    });
+    setTimeout(() => {
+      wss.clients.forEach((ws) => {
+        ws.terminate();
+      });
+    }, ms("5s"));
   };
   return { wss, handleUpgrade, on, close };
 };
@@ -74,9 +78,7 @@ server.on("connection", async (ws) => {
     // Handle socket on close
     ws.on("close", () => {
       try {
-        for (const ws of sockets) {
-          ws.close();
-        }
+        sockets.forEach((ws) => ws.close());
         console.log("Close Connection");
       } catch (error) {
         console.log(error);
