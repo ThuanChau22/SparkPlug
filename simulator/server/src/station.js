@@ -47,7 +47,6 @@ const station = {
     OrganizationName: "",
   },
   TxCtrlr: {
-    EVConnectionTimeOut: 0,
     StopTxOnEVSideDisconnect: false,
     TxStartPoint: [""],
     TxStopPoint: [""],
@@ -55,6 +54,7 @@ const station = {
   Auth: {
     Authenticated: false,
     IdToken: {},
+    RemoteStartId: undefined,
   },
   Transaction: {
     Id: "",
@@ -66,6 +66,7 @@ const station = {
 station.initialize = () => {
   station.Auth.Authenticated = false;
   station.Auth.IdToken = {};
+  station.RemoteStartId = undefined;
   station.Transaction.Id = "";
   station.Transaction.OnGoing = false;
   station.Transaction.SeqNo = 0;
