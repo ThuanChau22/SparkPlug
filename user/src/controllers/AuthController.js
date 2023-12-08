@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config.js";
 import userRepository, { Role } from "../repositories/UserRepository.js";
 
+const tokenLimit = "15d";
+
 export const signup = async (req, res) => {
   try {
     const { email, password, name, role = Role.Driver } = req.body;
@@ -30,7 +32,7 @@ export const signup = async (req, res) => {
       id: user.id,
       email: user.email,
       role: role,
-    }, JWT_SECRET, { expiresIn: "1h" });
+    }, JWT_SECRET, { expiresIn: tokenLimit });
     res.status(201).json({ token });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -48,7 +50,7 @@ export const login = async (req, res) => {
       id: user.id,
       email: user.email,
       role: role,
-    }, JWT_SECRET, { expiresIn: "1h" });
+    }, JWT_SECRET, { expiresIn: tokenLimit });
     res.status(201).json({ token });
   } catch (error) {
     res.status(500).json({ message: error.message });

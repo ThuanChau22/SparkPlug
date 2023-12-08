@@ -13,7 +13,7 @@ export const authenticate = (req, res, next) => {
     req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch (error) {
-    res.status(401).json({ message: "Missing access token" });
+    res.status(401).json({ message: "Token expired" });
   }
 };
 
