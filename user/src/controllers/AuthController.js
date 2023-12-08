@@ -9,6 +9,7 @@ const tokenLimit = "15d";
 export const signup = async (req, res) => {
   try {
     const { email, password, name, role = Role.Driver } = req.body;
+    const assignedRole = role === Role.Staff ? Role.Driver : role;
     let user;
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -20,18 +21,18 @@ export const signup = async (req, res) => {
         if (!await bcrypt.compare(password, user.password)) {
           return res.status(401).json({ message: "Invalid credentials" });
         }
-        if (await userRepository.getUserByIdAndRole(user.id, role)) {
+        if (await userRepository.getUserByIdAndRole(user.id, assignedRole)) {
           return res.status(409).json({ message: "User already existed" });
         }
       } else {
         throw error;
       }
     }
-    await userRepository.addRole(user.id, role);
+    await userRepository.addRole(user.id, assignedRole);
     const token = jwt.sign({
       id: user.id,
       email: user.email,
-      role: role,
+      role: assignedRole,
     }, JWT_SECRET, { expiresIn: tokenLimit });
     res.status(201).json({ token });
   } catch (error) {

@@ -113,6 +113,7 @@ const Register = () => {
                       options={[
                         { label: "Select Role" },
                         ...Object.entries(Roles)
+                          .filter(([_, value]) => value !== Roles.Staff)
                           .map(([label, value]) => ({ label, value })),
                       ]}
                       name="role"

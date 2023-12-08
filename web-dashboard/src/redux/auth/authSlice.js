@@ -55,7 +55,7 @@ export const authSignup = createAsyncThunk(
   async (userData, { dispatch }) => {
     try {
       const { data } = await apiInstance.post(`${AuthAPI}/signup`, userData);
-      console.log(data);
+      dispatch(authStateSet(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
