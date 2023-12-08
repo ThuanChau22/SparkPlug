@@ -13,6 +13,9 @@ services:
       - PORT=${WEB_DASHBOARD_PORT}
       - REACT_APP_AUTH_API_ENDPOINT=${AUTH_API_ENDPOINT}
       - REACT_APP_USER_API_ENDPOINT=${USER_API_ENDPOINT}
+      - REACT_APP_SITE_API_ENDPOINT=${SITE_API_ENDPOINT}
+      - REACT_APP_STATION_API_ENDPOINT=${STATION_API_ENDPOINT}
+      - REACT_APP_MONITORING_WS_ENDPOINT=${MONITORING_WS_ENDPOINT}
     ports:
       - ${WEB_DASHBOARD_PORT}:${WEB_DASHBOARD_PORT}
     develop:
@@ -116,6 +119,8 @@ services:
       - REACT_APP_WS_ENDPOINT=${SIMULATOR_WS_ENDPOINT}
     ports:
       - ${SIMULATOR_CLIENT_PORT}:${SIMULATOR_CLIENT_PORT}
+    depends_on:
+      - simulator-server
     develop:
       watch:
         - action: sync

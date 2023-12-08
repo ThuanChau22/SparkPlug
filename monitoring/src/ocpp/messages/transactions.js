@@ -1,31 +1,48 @@
+import { Monitoring } from "../../db/model.js";
 import { idTokens } from "../server.js";
-import remoteControl from "./remote-control.js";
-import { handleMeterValue } from "../../ws/message.js"
+
+const transactionStart = ({ idToken, transactionInfo }) => {
+  const response = { idTokenInfo: { status: "Unknown" } };
+  if (idTokens.has(idToken?.idToken)) {
+    if (idTokens.get(idToken.idToken) !== "") {
+      response.idTokenInfo.status = "ConcurrentTx";
+      return response;
+    }
+    const { transactionId } = transactionInfo;
+    idTokens.set(idToken.idToken, transactionId);
+    response.idTokenInfo.status = "Accepted";
+    return response;
+  }
+  return response;
+};
+
+const transactionStop = ({ idToken, transactionInfo }) => {
+  const response = { idTokenInfo: { status: "Unknown" } };
+  const { transactionId } = transactionInfo;
+  if (idTokens.get(idToken?.idToken) === transactionId) {
+    idTokens.delete(idToken.idToken);
+    response.idTokenInfo.status = "Accepted";
+    return response;
+  }
+  return response;
+};
 
 const transactions = {};
 
-transactions.transactionEventResponse = ({ client, params }) => {
-  console.log(`TransactionEvent from ${client.identity}:`, params);
-  const response = {};
-  const { eventType, idToken, transactionInfo } = params;
-  if (eventType === "Started" && idTokens.has(idToken?.idToken)) {
-    const { transactionId } = transactionInfo;
-    idTokens.set(idToken.idToken, transactionId);
-    response.idTokenInfo = {
-      status: "Accepted",
-    };
+transactions.transactionEventResponse = async ({ client, method, params }) => {
+  await Monitoring.add({
+    stationId: client.identity,
+    event: method,
+    payload: params,
+  });
+  const { eventType } = params;
+  if (eventType === "Started") {
+    return transactionStart(params);
   }
-  if (eventType === "Ended" && idTokens.has(idToken?.idToken)) {
-    idTokens.delete(idToken.idToken);
-    if (remoteControl.idToken === idToken.idToken) {
-      delete remoteControl.idToken;
-    }
-    response.idTokenInfo = {
-      status: "Accepted",
-    };
+  if (eventType === "Ended") {
+    return transactionStop(params);
   }
-  handleMeterValue(params);
-  return response;
+  return {};
 };
 
 export default transactions;

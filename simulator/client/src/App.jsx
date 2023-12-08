@@ -21,7 +21,7 @@ import {
   PinOutlined,
   Power,
   PowerOutlined,
-  RestartAlt,
+  // RestartAlt,
 } from '@mui/icons-material';
 
 import EVChargingStationImage from "assets/ev-charging-station.png";
@@ -54,7 +54,8 @@ const App = () => {
     RESET: "Reset",
   }), []);
 
-  const [wattage, setWattage] = useState(0);
+  const [meterValue, setMeterValue] = useState(0);
+  const [meterTimeout, setMeterTimeout] = useState(0);
   const [rfid, setRFID] = useState("");
   const [isRFIDScanned, setIsRFIDScanned] = useState(false);
   const [isCablePluggedIn, setIsCablePluggedIn] = useState(false);
@@ -81,9 +82,16 @@ const App = () => {
   }, [readyState]);
 
   useEffect(() => {
+    clearTimeout(meterTimeout);
+    setMeterTimeout(setTimeout(() => {
+      setMeterValue(0);
+    }, ms("5s")));
+  }, [meterValue]);
+
+  useEffect(() => {
     const { action, payload } = lastJsonMessage || {};
     if (action === WebSocketAction.METER_VALUE) {
-      setWattage(payload.value);
+      setMeterValue(payload.value);
     }
     if (action === WebSocketAction.SCAN_RFID) {
       if (payload.status === "Accepted") {
@@ -182,7 +190,7 @@ const App = () => {
                               <EvStation color="warning" />
                             </CInputGroupText>
                             <div className="border border-warning rounded-end text-center text-warning fw-bold flex-grow-1">
-                              <h5 className="p-1 m-0">{wattage} Wh</h5>
+                              <h5 className="p-1 m-0">{meterValue} Wh</h5>
                             </div>
                           </CInputGroup>
                         </CCol>

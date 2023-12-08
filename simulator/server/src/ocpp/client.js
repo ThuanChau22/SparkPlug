@@ -3,7 +3,7 @@ import { RPCClient } from "ocpp-rpc";
 import { v4 as uuid } from "uuid";
 
 import station from "../station.js";
-import { Action, stateSync } from "../ws/message.js";
+import { Action } from "../ws/message.js";
 import { sendJsonMessage } from "../ws/server.js";
 import { STATION_MANAGEMENT_WS_ENDPOINT } from "../config.js";
 
@@ -71,69 +71,63 @@ export const connectCSMS = async () => {
   }
 };
 
-export const startTransaction = async ({ triggerReason, remoteStartId }) => {
-  const meterValue = generateMeterValue();
-  station.Transaction.Id = uuid();
-  station.Transaction.OnGoing = true;
+export const handleStartTransaction = async ({ triggerReason }) => {
+  const { TxStartPoint } = station.TxCtrlr;
+  const isPowerPathClosed = TxStartPoint.includes("PowerPathClosed");
+  const isAuthenticated = station.Auth.Authenticated;
   const [evse] = station.EVSEs;
-  const [connector] = evse.Connectors;
-  const { TxStartedMeasurands } = station.SampledDataCtrlr;
-  const [txStartedMeasurands] = TxStartedMeasurands;
-  const transactionEventResponse = await ocppClientCall("TransactionEvent", {
-    eventType: "Started",
-    timestamp: new Date().toISOString(),
-    triggerReason: triggerReason,
-    seqNo: station.Transaction.SeqNo++,
-    transactionInfo: {
-      transactionId: station.Transaction.Id,
-      chargingState: "Charging",
-      remoteStartId
-    },
-    idToken: station.Auth.IdToken,
-    evse: {
-      id: evse.Id,
-      connectorId: connector.Id,
-    },
-    meterValue: [
-      {
-        timestamp: new Date().toISOString(),
-        sampledValue: [
-          {
-            value: meterValue,
-            measurand: txStartedMeasurands,
-          }
-        ]
-      }
-    ],
-  });
-  if (transactionEventResponse.idTokenInfo?.status === "Accepted") {
-    sendJsonMessage({
-      action: Action.METER_VALUE,
-      payload: {
-        value: meterValue,
-      },
-    });
-    await updateTransaction();
-  } else {
-    await ocppClientCall("TransactionEvent", {
-      eventType: "Updated",
+  const isOccupied = evse.AvailabilityState === "Occupied";
+  if (isPowerPathClosed && isAuthenticated && isOccupied) {
+    const transactionId = uuid();
+    const meterValue = generateMeterValue();
+    const [connector] = evse.Connectors;
+    const [txStartedMeasurands] = station.SampledDataCtrlr.TxStartedMeasurands;
+    const { idTokenInfo: { status } } = await ocppClientCall("TransactionEvent", {
+      eventType: "Started",
       timestamp: new Date().toISOString(),
-      triggerReason: "Deauthorized",
-      seqNo: station.Transaction.SeqNo++,
+      triggerReason: triggerReason,
+      seqNo: station.Transaction.SeqNo,
       transactionInfo: {
-        transactionId: station.Transaction.Id,
-        chargingState: "SuspendedEVSE",
+        transactionId: transactionId,
+        chargingState: "Charging",
+        remoteStartId: station.Auth.RemoteStartId,
       },
+      idToken: station.Auth.IdToken,
+      evse: {
+        id: evse.Id,
+        connectorId: connector.Id,
+      },
+      meterValue: [
+        {
+          timestamp: new Date().toISOString(),
+          sampledValue: [
+            {
+              value: meterValue,
+              measurand: txStartedMeasurands,
+            }
+          ]
+        }
+      ],
     });
-    station.initialize();
-    stateSync();
+    if (status === "Accepted") {
+      station.Transaction.Id = transactionId;
+      station.Transaction.OnGoing = true;
+      station.Transaction.SeqNo++;
+      sendJsonMessage({
+        action: Action.METER_VALUE,
+        payload: {
+          value: meterValue,
+        },
+      });
+      await handleUpdateTransaction();
+    }
   }
 };
 
-let updateTimeout = 0;
-export const updateTransaction = async () => {
-  clearTimeout(updateTimeout);
-  updateTimeout = setTimeout(async () => {
+let transactionUpdateTimeoutId = 0;
+export const handleUpdateTransaction = async () => {
+  clearTimeout(transactionUpdateTimeoutId);
+  transactionUpdateTimeoutId = setTimeout(async () => {
     const meterValue = generateMeterValue();
     const { TxUpdatedMeasurands } = station.SampledDataCtrlr;
     const [txStartedMeasurands] = TxUpdatedMeasurands;
@@ -163,71 +157,79 @@ export const updateTransaction = async () => {
         value: meterValue,
       },
     });
-    await updateTransaction();
+    await handleUpdateTransaction();
   }, ms(`${station.SampledDataCtrlr.TxUpdatedInterval}s`));
 };
 
-export const stopTransaction = async ({ reason }) => {
-  clearTimeout(updateTimeout);
-  const { TxEndedMeasurands } = station.SampledDataCtrlr;
-  const [txEndedMeasurands] = TxEndedMeasurands;
-  const meterValue = generateMeterValue();
-  const transactionEventResponse = await ocppClientCall("TransactionEvent", {
-    eventType: "Ended",
-    timestamp: new Date().toISOString(),
-    triggerReason: "StopAuthorized",
-    seqNo: station.Transaction.SeqNo++,
-    transactionInfo: {
-      transactionId: station.Transaction.Id,
-      stoppedReason: reason,
-    },
-    idToken: station.Auth.IdToken,
-    meterValue: [
-      {
-        timestamp: new Date().toISOString(),
-        sampledValue: [
-          {
-            value: meterValue,
-            measurand: txEndedMeasurands,
-          }
-        ]
-      }
-    ],
-  });
-  if (transactionEventResponse.idTokenInfo?.status === "Accepted") {
-    station.initialize();
+export const handleStopTransaction = async ({ triggerReason, stoppedReason }) => {
+  const { OnGoing } = station.Transaction;
+  const { TxStopPoint, StopTxOnEVSideDisconnect } = station.TxCtrlr;
+  const isPowerPathClosed = TxStopPoint.includes("PowerPathClosed");
+  const isStoppedByIdToken = triggerReason === "StopAuthorized";
+  const isUnplugged = triggerReason === "EVCommunicationLost" && StopTxOnEVSideDisconnect;
+  if (isPowerPathClosed && OnGoing && (isStoppedByIdToken || isUnplugged)) {
+    clearTimeout(transactionUpdateTimeoutId);
+    const meterValue = generateMeterValue();
+    const [txEndedMeasurands] = station.SampledDataCtrlr.TxEndedMeasurands;
+    const { idTokenInfo: { status } } = await ocppClientCall("TransactionEvent", {
+      eventType: "Ended",
+      timestamp: new Date().toISOString(),
+      triggerReason: triggerReason,
+      seqNo: station.Transaction.SeqNo++,
+      transactionInfo: {
+        transactionId: station.Transaction.Id,
+        stoppedReason: stoppedReason,
+      },
+      idToken: station.Auth.IdToken,
+      meterValue: [
+        {
+          timestamp: new Date().toISOString(),
+          sampledValue: [
+            {
+              value: meterValue,
+              measurand: txEndedMeasurands,
+            }
+          ]
+        }
+      ],
+    });
+    if (status === "Accepted") {
+      station.initialize();
+      sendJsonMessage({
+        action: Action.METER_VALUE,
+        payload: {
+          value: meterValue,
+        },
+      });
+      sendJsonMessage({
+        action: Action.SCAN_RFID,
+        payload: { status: "Ended" },
+      });
+    }
   }
-  sendJsonMessage({
-    action: Action.METER_VALUE,
-    payload: {
-      value: meterValue,
-    },
-  });
 };
 
 ocppClient.handle("RequestStartTransaction", ({ params }) => {
-  if (station.Transaction.OnGoing) {
+  const [evse] = station.EVSEs;
+  if (evse.AvailabilityState !== "Available") {
     return { status: "Rejected" };
   }
   const { idToken, remoteStartId } = params;
   station.Auth.Authenticated = true;
   station.Auth.IdToken = idToken;
-  const { TxStartPoint } = station.TxCtrlr;
-  const isPowerPathClosed = TxStartPoint.includes("PowerPathClosed");
-  const [evse] = station.EVSEs;
-  const isOccupied = evse.AvailabilityState === "Occupied";
-  if (isPowerPathClosed && isOccupied) {
-    startTransaction({ triggerReason: "RemoteStart", remoteStartId });
-  }
+  station.Auth.RemoteStartId = remoteStartId
+  handleStartTransaction({
+    triggerReason: "RemoteStart",
+  });
   return { status: "Accepted" };
 });
 
 ocppClient.handle("RequestStopTransaction", ({ params }) => {
-  if (!station.Transaction.OnGoing) {
+  const { transactionId } = params;
+  if (station.Transaction.Id !== transactionId) {
     return { status: "Rejected" };
   }
-  const { transactionId } = params;
-  clearTimeout(updateTimeout);
+  clearTimeout(transactionUpdateTimeoutId);
   const meterValue = generateMeterValue();
   const { TxUpdatedMeasurands } = station.SampledDataCtrlr;
   const [txStartedMeasurands] = TxUpdatedMeasurands;

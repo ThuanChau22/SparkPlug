@@ -1,30 +1,35 @@
 import { idTokens } from "../server.js";
 import { v4 as uuid } from "uuid";
 
+const transactions = new Map();
+
 const remoteControl = {};
 
 remoteControl.requestStartTransactionRequest = async ({ client }) => {
-  console.log(`RequestStartTransaction to ${client.identity}`);
   const idToken = uuid();
   idTokens.set(idToken, "");
   const { status } = await client.call("RequestStartTransaction", {
-    remoteStartId: 1234,
+    remoteStartId: 0,
     idToken: {
       idToken: idToken,
       type: "Central",
     },
   });
   if (status === "Accepted") {
-    remoteControl.idToken = idToken;
+    transactions.set(client.identity, idToken);
   }
   return { status };
 };
 
 remoteControl.requestStopTransactionRequest = async ({ client }) => {
-  console.log(`RequestStopTransaction to ${client.identity}`);
-  return await client.call("RequestStopTransaction", {
-    transactionId: idTokens.get(remoteControl.idToken),
+  const idToken = remoteControl.transactions.get(client.identity);
+  const { status } = await client.call("RequestStopTransaction", {
+    transactionId: idTokens.get(idToken),
   });
+  if (status === "Accepted") {
+    transactions.delete(client.identity);
+  }
+  return { status };
 };
 
 export default remoteControl;

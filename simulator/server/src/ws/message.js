@@ -1,7 +1,7 @@
 import {
   ocppClientCall,
-  startTransaction,
-  stopTransaction,
+  handleStartTransaction,
+  handleStopTransaction,
 } from "../ocpp/client.js";
 import station from "../station.js";
 import { sendJsonMessage } from "./server.js";
@@ -43,39 +43,28 @@ export const handleMeterValue = async (payload) => {
 };
 
 export const handleScanRFID = async (payload) => {
+  if (station.Auth.IdToken.idToken === payload.id) {
+    await handleStopTransaction({
+      triggerReason: "StopAuthorized",
+      stoppedReason: "Local",
+    });
+    return;
+  }
   if (!station.Transaction.OnGoing) {
-    const idToken = {
-      idToken: payload.id,
-      type: "ISO15693",
-    };
+    const idToken = { idToken: payload.id, type: "ISO15693" };
     const authorizeResponse = await ocppClientCall("Authorize", { idToken });
-    const { status } = authorizeResponse.idTokenInfo;
+    const { idTokenInfo: { status } } = authorizeResponse;
     if (status === "Accepted") {
       station.Auth.Authenticated = true;
       station.Auth.IdToken = idToken;
-      const { TxStartPoint } = station.TxCtrlr;
-      const isPowerPathClosed = TxStartPoint.includes("PowerPathClosed");
-      const [evse] = station.EVSEs;
-      const isOccupied = evse.AvailabilityState === "Occupied";
-      if (isPowerPathClosed && isOccupied) {
-        await startTransaction({ triggerReason: "ChargingStateChanged" });
-      }
+      await handleStartTransaction({
+        triggerReason: "ChargingStateChanged",
+      });
     }
     sendJsonMessage({
       action: Action.SCAN_RFID,
       payload: { status },
     });
-  } else {
-    const { idToken } = station.Auth.IdToken;
-    const { TxStopPoint } = station.TxCtrlr;
-    const isPowerPathClosed = TxStopPoint.includes("PowerPathClosed");
-    if (isPowerPathClosed && idToken === payload.id) {
-      await stopTransaction({ reason: "Local" });
-      sendJsonMessage({
-        action: Action.SCAN_RFID,
-        payload: { status: "Ended" },
-      });
-    }
   }
 };
 
@@ -91,12 +80,9 @@ export const handlePluginCable = async () => {
   });
   evse.AvailabilityState = status;
   connector.AvailabilityState = status;
-  const { TxStartPoint } = station.TxCtrlr;
-  const isPowerPathClosed = TxStartPoint.includes("PowerPathClosed");
-  const isAuthenticated = station.Auth.Authenticated;
-  if (isPowerPathClosed && isAuthenticated) {
-    await startTransaction({ triggerReason: "ChargingStateChanged" });
-  }
+  await handleStartTransaction({
+    triggerReason: "ChargingStateChanged",
+  });
   sendJsonMessage({
     action: Action.PLUGIN_CABLE,
     payload: {},
@@ -104,6 +90,10 @@ export const handlePluginCable = async () => {
 };
 
 export const handleUnplugCable = async () => {
+  await handleStopTransaction({
+    triggerReason: "EVCommunicationLost",
+    stoppedReason: "EVDisconnected",
+  });
   const [evse] = station.EVSEs;
   const [connector] = evse.Connectors;
   const status = "Available";
@@ -119,15 +109,6 @@ export const handleUnplugCable = async () => {
     action: Action.UNPLUG_CABLE,
     payload: {},
   });
-  const { TxStopPoint } = station.TxCtrlr;
-  const isPowerPathClosed = TxStopPoint.includes("PowerPathClosed");
-  if (station.Transaction.OnGoing && isPowerPathClosed) {
-    await stopTransaction({ reason: "EVDisconnected" });
-    sendJsonMessage({
-      action: Action.SCAN_RFID,
-      payload: { status: "Ended" },
-    });
-  }
 };
 
 export const handleReset = async (payload) => {

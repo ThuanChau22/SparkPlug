@@ -1,10 +1,19 @@
 import ocppServer from "./ocpp/server.js";
 import wsServer from "./ws/server.js";
 import app from "./app.js";
-import { PORT } from "./config.js";
+import {
+  PORT,
+  connectMongoDB,
+  setGracefulShutdown,
+} from "./config.js";
 
-app.listen(PORT, () => {
-  console.log(`Monitoring server running on port: ${PORT}`);
+const server = app.listen(PORT, async () => {
+  try {
+    await connectMongoDB();
+    console.log(`Monitoring server running on port: ${PORT}`);
+  } catch (error) {
+    console.log(error);
+  }
 }).on("upgrade", (request, socket, head) => {
   const [_, path] = request.url.split("/");
   if (path && path === "monitoring") {
@@ -15,3 +24,4 @@ app.listen(PORT, () => {
     socket.destroy();
   }
 });
+setGracefulShutdown({ server, ocppServer, wsServer });
