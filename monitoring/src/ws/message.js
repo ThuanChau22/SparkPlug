@@ -3,32 +3,31 @@ import { clients } from "../ocpp/server.js";
 import { sendJsonMessage } from "./server.js";
 
 export const Action = {
-  METER_VALUE: "MeterValue",
+  MONITORING: "Monitoring",
   REMOTE_START: "RemoteStart",
   REMOTE_STOP: "RemoteStop",
 };
 
-export const handleMeterValue = async (payload) => {
+export const handleMonitoring = async (payload) => {
+  const { stationId, event, content } = payload;
   sendJsonMessage({
-    action: Action.METER_VALUE,
-    payload,
+    action: Action.MONITORING,
+    payload: { stationId, event, content },
   });
 };
 
 export const handleRemoteStart = async (payload) => {
   const client = clients.get(payload.identity);
-  const response = await remoteControl.requestStartTransactionRequest({ client });
   sendJsonMessage({
     action: Action.REMOTE_START,
-    payload: { response },
+    payload: await remoteControl.requestStartTransactionRequest({ client }),
   });
 };
 
 export const handleRemoteStop = async (payload) => {
   const client = clients.get(payload.identity);
-  const response = await remoteControl.requestStopTransactionRequest({ client });
   sendJsonMessage({
     action: Action.REMOTE_STOP,
-    payload: { response },
+    payload: await remoteControl.requestStopTransactionRequest({ client }),
   });
 };

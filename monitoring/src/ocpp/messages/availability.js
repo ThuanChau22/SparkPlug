@@ -1,12 +1,22 @@
+import { Monitoring } from "../../db/model.js";
+
 const availability = {};
 
-availability.statusNotificationResponse = ({ client, params }) => {
-  console.log(`StatusNotification from ${client.identity}:`, params);
+availability.statusNotificationResponse = async ({ client, method, params }) => {
+  await Monitoring.add({
+    stationId: client.identity,
+    event: method,
+    payload: params,
+  });
   return {};
 };
 
-availability.heartbeatResponse = ({ client, params }) => {
-  console.log(`Heartbeat from ${client.identity}:`, params);
+availability.heartbeatResponse = async ({ client, method, params }) => {
+  await Monitoring.add({
+    stationId: client.identity,
+    event: method,
+    payload: params,
+  });
   return { currentTime: new Date().toISOString() };
 };
 

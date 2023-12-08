@@ -1,7 +1,13 @@
+import { Monitoring } from "../../db/model.js";
+
 const provisioning = {};
 
-provisioning.bootNotificationResponse = ({ client, params }) => {
-  console.log(`BootNotification from ${client.identity}:`, params);
+provisioning.bootNotificationResponse = async ({ client, method, params }) => {
+  await Monitoring.add({
+    stationId: client.identity,
+    event: method,
+    payload: params,
+  });
   return {
     status: "Accepted",
     interval: 300,
