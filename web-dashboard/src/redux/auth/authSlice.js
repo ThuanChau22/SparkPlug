@@ -1,25 +1,90 @@
-import { createSlice } from "@reduxjs/toolkit";
-// import secureStorage from "react-secure-storage";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import secureStorage from "react-secure-storage";
 import { jwtDecode } from "jwt-decode";
 
-const Roles = {
-  Admin: "ADMIN",
-  Owner: "OWNER",
-  Driver: "DRIVER",
+import {
+  apiInstance,
+  clearHeader,
+  handleError,
+} from "redux/api";
+
+const AuthAPI = process.env.REACT_APP_AUTH_API_ENDPOINT;
+
+export const Roles = {
+  Staff: "staff",
+  Owner: "owner",
+  Driver: "driver",
 };
 
 const initialState = {
-  authenticated: true,
+  authenticated: false,
   userId: "",
-  role: Roles.Admin,
+  email: "",
+  role: "",
   accessToken: "",
 };
 
 export const authSlice = createSlice({
   name: "auth",
   initialState,
-  reducers: {},
+  reducers: {
+    authStateSet(state, { payload }) {
+      const { token } = payload;
+      const { id, email, role } = jwtDecode(token);
+      state.userId = id;
+      state.email = email;
+      state.role = role;
+      state.accessToken = token;
+      state.authenticated = true;
+      secureStorage.setItem(authSlice.name, token);
+    },
+    authStateClear(_) {
+      secureStorage.removeItem(authSlice.name);
+      return initialState;
+    },
+  },
 });
+
+export const {
+  authStateSet,
+  authStateClear,
+} = authSlice.actions;
+
+export const authSignup = createAsyncThunk(
+  `${authSlice.name}/signup`,
+  async (userData, { dispatch }) => {
+    try {
+      const { data } = await apiInstance.post(`${AuthAPI}/signup`, userData);
+      console.log(data);
+    } catch (error) {
+      handleError({ error, dispatch });
+    }
+  }
+);
+
+export const authLogin = createAsyncThunk(
+  `${authSlice.name}/login`,
+  async (userData, { dispatch }) => {
+    try {
+      const { data } = await apiInstance.post(`${AuthAPI}/login`, userData);
+      dispatch(authStateSet(data));
+    } catch (error) {
+      handleError({ error, dispatch });
+    }
+  }
+);
+
+export const authLogout = createAsyncThunk(
+  `${authSlice.name}/logout`,
+  async (_, { dispatch }) => {
+    try {
+      dispatch(authStateClear());
+      clearHeader();
+    } catch (error) {
+      handleError({ error, dispatch });
+    }
+  },
+);
 
 export const selectAuth = (state) => state[authSlice.name];
 
@@ -27,7 +92,7 @@ export const selectAuthAuthenticated = (state) => selectAuth(state).authenticate
 
 export const selectAuthUserId = (state) => selectAuth(state).userId;
 
-export const selectAuthRoleIsAdmin = (state) => selectAuth(state).role === Roles.Admin;
+export const selectAuthRoleIsStaff = (state) => selectAuth(state).role === Roles.Staff;
 
 export const selectAuthRoleIsOwner = (state) => selectAuth(state).role === Roles.Owner;
 
@@ -35,9 +100,15 @@ export const selectAuthRoleIsDriver = (state) => selectAuth(state).role === Role
 
 export const selectAuthAccessToken = (state) => selectAuth(state).accessToken;
 
+export const selectAuthSecureStorage = (_) => secureStorage.getItem(authSlice.name);
+
 export const selectAuthExpiredTime = (state) => {
-  const { exp } = jwtDecode(selectAuthAccessToken(state));
-  return exp ? exp * 1000 : Date.now();
+  const token = selectAuthAccessToken(state);
+  if (token) {
+    const { exp } = jwtDecode(token);
+    return exp * 1000;
+  }
+  return Date.now();
 };
 
 export default authSlice.reducer;

@@ -11,6 +11,8 @@ services:
       - ./web-dashboard/.env
     environment:
       - PORT=${WEB_DASHBOARD_PORT}
+      - REACT_APP_AUTH_API_ENDPOINT=${AUTH_API_ENDPOINT}
+      - REACT_APP_USER_API_ENDPOINT=${USER_API_ENDPOINT}
     ports:
       - ${WEB_DASHBOARD_PORT}:${WEB_DASHBOARD_PORT}
     develop:
@@ -22,6 +24,8 @@ services:
             - node_modules/
         - action: rebuild
           path: ./web-dashboard/package.json
+        - action: rebuild
+          path: ./web-dashboard/.env
 
   user:
     image: sparkplug-user
@@ -34,7 +38,7 @@ services:
       - ./user/.env
     environment:
       - PORT=${USER_PORT}
-      - WEB_DOMAIN=${WEB_DASHBOARD_PORT}
+      - WEB_DOMAIN=${WEB_DASHBOARD_DOMAIN}
     ports:
       - ${USER_PORT}:${USER_PORT}
     develop:
@@ -46,6 +50,8 @@ services:
             - node_modules/
         - action: rebuild
           path: ./user/package.json
+        - action: rebuild
+          path: ./user/.env
 
   site-station-analytics:
     image: sparkplug-site-station-analytics
@@ -93,6 +99,8 @@ services:
             - node_modules/
         - action: rebuild
           path: ./monitoring/package.json
+        - action: rebuild
+          path: ./monitoring/.env
 
   simulator-client:
     image: sparkplug-simulator-client
@@ -117,6 +125,8 @@ services:
             - node_modules/
         - action: rebuild
           path: ./simulator/client/package.json
+        - action: rebuild
+          path: ./simulator/client/.env
   
   simulator-server:
     image: sparkplug-simulator-server
@@ -144,3 +154,5 @@ services:
             - node_modules/
         - action: rebuild
           path: ./simulator/server/package.json
+        - action: rebuild
+          path: ./simulator/server/.env
