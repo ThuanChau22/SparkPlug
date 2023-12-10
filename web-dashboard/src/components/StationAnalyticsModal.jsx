@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CChart } from '@coreui/react-chartjs';
-import { apiInstance } from 'redux/api'; // Ensure this path is correct
+import { apiInstance } from 'redux/api';
+import '../scss/StationAnalyticsModal.scss'
 
 const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => {
     const [analyticsData, setAnalyticsData] = useState(null);
@@ -8,7 +9,8 @@ const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => {
     useEffect(() => {
         // Fetch data using your Axios instance
         if (stationId) {
-            apiInstance.get(`/api/stations/analytics/${stationId}`)
+
+            apiInstance.get(`http://127.0.0.1:5000/api/stations/analytics/${stationId}`)
                 .then(response => {
                     setAnalyticsData(response.data);
                 })
