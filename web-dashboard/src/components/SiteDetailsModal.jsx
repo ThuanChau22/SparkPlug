@@ -9,14 +9,6 @@ const SiteManagement = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedSite, setSelectedSite] = useState(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-    const [newSiteData, setNewSiteData] = useState({
-        name: '',
-        owner_id: '',
-        street_address: '',
-        zip_code: '',
-        latitude: '',
-        longitude: '',
-    });
     const [message, setMessage] = useState('');
     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
 
@@ -34,40 +26,17 @@ const SiteManagement = () => {
         setIsDetailsModalOpen(true);
     };
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setNewSiteData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleAddSite = () => {
-        apiInstance.post('http://127.0.0.1:5000/api/sites', newSiteData, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }).then(response => {
-            setMessage('Site added successfully');
-            setIsModalOpen(false);
-            setIsMessageModalOpen(true);
-            setNewSiteData({
-                name: '',
-                owner_id: '',
-                street_address: '',
-                zip_code: '',
-                latitude: '',
-                longitude: '',
-            });
-        }).catch(error => {
-            console.error('Error:', error);
-            setMessage('Error adding site');
-            setIsModalOpen(false);
-            setIsMessageModalOpen(true);
-        });
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        window.location.reload(); // Reload page when modal is closed
     };
 
     const handleCloseMessageModal = () => {
         setIsMessageModalOpen(false);
-        window.location.reload(); // Reload the page to reflect new changes
+        window.location.reload(); // Reload page when message modal is closed
     };
+
+    // Add other handlers and functions as needed
 
     return (
         <div>
@@ -84,9 +53,8 @@ const SiteManagement = () => {
             </ul>
 
             {/* Add Site Modal */}
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                {/* Form for adding a site */}
-                {/* ... */}
+            <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
+                {/* ... Form for adding a site */}
             </Modal>
 
             {/* Site Details Modal */}
