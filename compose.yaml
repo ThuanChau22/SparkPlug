@@ -91,6 +91,8 @@ services:
     environment:
       - PORT=${MONITORING_PORT}
       - WEB_DOMAIN=${WEB_DASHBOARD_DOMAIN}
+      - AUTH_API_ENDPOINT=${MONITORING_AUTH_API_ENDPOINT}
+      - STATION_API_ENDPOINT=${MONITORING_STATION_API_ENDPOINT}
     ports:
       - ${MONITORING_PORT}:${MONITORING_PORT}
     develop:
@@ -119,8 +121,6 @@ services:
       - REACT_APP_WS_ENDPOINT=${SIMULATOR_WS_ENDPOINT}
     ports:
       - ${SIMULATOR_CLIENT_PORT}:${SIMULATOR_CLIENT_PORT}
-    depends_on:
-      - simulator-server
     develop:
       watch:
         - action: sync

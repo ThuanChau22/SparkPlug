@@ -57,3 +57,19 @@ export const login = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const verify = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(401).json({ message: "Missing token" });
+    }
+    jwt.verify(token, JWT_SECRET);
+    return res.status(200).json({ message: "Accepted" });
+  } catch (error) {
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
