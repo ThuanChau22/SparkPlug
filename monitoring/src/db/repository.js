@@ -1,0 +1,12 @@
+import { mysql } from "../config.js";
+
+export const getUserByRFID = async (rfid) => {
+  try {
+    const field = "id, email, name, rfid, status, created_at, updated_at";
+    const query = `SELECT ${field} FROM User JOIN RFID_map ON id=driver_id WHERE rfid=?`;
+    const [[result]] = await mysql.query(query, [rfid]);
+    return result;
+  } catch (error) {
+    console.log(error);
+  }
+};

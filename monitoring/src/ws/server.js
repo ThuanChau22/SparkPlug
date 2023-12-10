@@ -1,0 +1,100 @@
+import ms from "ms";
+import WebSocket, { WebSocketServer } from "ws";
+
+import {
+  Action,
+  handleRemoteStart,
+  handleRemoteStop,
+} from "./message.js";
+
+const initWebSocketServer = () => {
+  const wss = new WebSocketServer({ noServer: true });
+  const pingInterval = setInterval(() => {
+    for (const ws of wss.clients) {
+      if (ws.isAlive) {
+        ws.isAlive = false;
+        ws.ping();
+      } else {
+        ws.terminate();
+      };
+    }
+  }, ms("30s"));
+  wss.on("close", () => {
+    clearInterval(pingInterval);
+  });
+  const handleUpgrade = (request, socket, head) => {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit("connection", ws, request);
+      ws.on("pong", () => ws.isAlive = true);
+      ws.ping();
+    });
+  };
+  const on = (event, handler) => {
+    wss.on(event, handler);
+  };
+  const close = () => {
+    wss.close();
+    wss.clients.forEach((ws) => {
+      ws.close();
+    });
+    setTimeout(() => {
+      wss.clients.forEach((ws) => {
+        ws.terminate();
+      });
+    }, ms("5s"));
+  };
+  return { wss, handleUpgrade, on, close };
+};
+
+const sockets = new Set();
+const server = initWebSocketServer();
+server.on("connection", async (ws) => {
+  try {
+    sockets.add(ws);
+
+    // Handle incoming message
+    ws.on("message", async (data) => {
+      try {
+        if (data.toString() === "ping") {
+          return ws.send("pong");
+        }
+        const { action, payload } = JSON.parse(data);
+        if (action === Action.REMOTE_START) {
+          return await handleRemoteStart(payload);
+        }
+        if (action === Action.REMOTE_STOP) {
+          return await handleRemoteStop(payload);
+        }
+      } catch (error) {
+        console.log({ error });
+      }
+    });
+
+    // Handle socket on error
+    ws.on("error", () => {
+      sockets.delete(ws);
+    });
+
+    // Handle socket on close
+    ws.on("close", () => {
+      try {
+        sockets.forEach((ws) => ws.close());
+        console.log("Close Connection");
+      } catch (error) {
+        console.log(error);
+      }
+    });
+  } catch (error) {
+    console.log({ error });
+  }
+});
+
+export const sendJsonMessage = (payload) => {
+  for (const ws of sockets) {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(payload));
+    }
+  }
+};
+
+export default server;
