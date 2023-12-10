@@ -28,4 +28,33 @@
         counter-increment: item;
         margin-right: 10px;
     }
+
+    // Styling for the station information
+    .station-info {
+        // Add any additional styling you want for the text
+    }
+
+    // Styling for the buttons
+    .station-actions {
+        button {
+            margin-left: 10px; // Space between buttons
+        }
+    }
+}
+
+.filter-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+
+    select, button {
+        padding: 5px;
+        min-width: 100px;
+    }
+
+    label {
+        margin-right: 5px;
+    }
 }

@@ -11,7 +11,8 @@
 }
 
 .modal-content {
-    background: #ffffff; /* Non-transparent, off-white blueish background */
+    background: #ffffff; 
+    background-color: #ffffff !important;
     width: 50%; /* Adjust width as needed */
     max-width: 600px; /* Maximum width */
     padding: 20px;
@@ -66,6 +67,7 @@
 /* Message Modal Styles */
 .message-modal-content {
     background: #ffffff; /* White background */
+    background-color: #ffffff !important;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
@@ -78,6 +80,7 @@
     margin: 0 0 20px;
     color: #333;
     font-size: 1em;
+    background-color: #ffffff !important;
 
     .edit-button, .delete-button {
         margin-top: 10px;

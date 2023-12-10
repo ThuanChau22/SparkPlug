@@ -1,0 +1,64 @@
+.site-management {
+    button {
+        margin: 10px;
+        padding: 10px 20px;
+        background-color: #28a745; // Green shade for differentiation
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s, transform 0.2s;
+
+        &:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+    }
+
+    .site-list {
+        list-style-type: none;
+        margin: 0;
+        padding-left: 0;
+
+        .site-list-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease, background-color 0.3s ease;
+
+            &:hover {
+                background-color: #e9ecef;
+                box-shadow: 0 5px 8px rgba(0, 0, 0, 0.15);
+            }
+
+            span {
+                font-size: 1.1em;
+                font-weight: bold;
+            }
+        }
+    }
+
+    .modal-overlay {
+        // Define styles for modal overlay
+    }
+
+    .modal-content {
+        // Define styles for modal content
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+
+        .edit-button, .delete-button, .close-button {
+            margin-top: 15px;
+            border-radius: 6px;
+            padding: 8px 15px;
+            font-size: 0.9em;
+            // Define distinct styles for these buttons
+        }
+    }
+}

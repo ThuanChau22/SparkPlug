@@ -510,7 +510,7 @@ def get_stations(user):
         conditions += f" city LIKE '%{q_city}%'"
     if q_zip:
         if conditions: conditions += " AND"
-        conditions += f" zip={q_zip}"
+        conditions += f" zip_code={q_zip}"
     if q_owner_id:
         if conditions: conditions += " AND"
         conditions += f" owner_id={q_owner_id}"
