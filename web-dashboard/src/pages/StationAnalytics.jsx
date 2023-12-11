@@ -84,6 +84,7 @@ const StationAnalytics = () => {
     };
 
     const applyFilters = () => {
+        //let query = process.env.REACT_APP_
         let query = 'http://127.0.0.1:5000/api/stations';
         let queryParams = [];
         if (filterState !== 'all') queryParams.push(`state=${filterState}`);

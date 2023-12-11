@@ -49,7 +49,7 @@ const SiteAddModal = ({ isOpen, onClose, onAddsite, fetchSites }) => {
         .then(data => {
             console.log("Response Data:", data); // Debugging line
             onClose(); // Close the modal after submission
-            fetchSites();
+            window.location.reload();
         })
         .catch(error => console.error('Error:', error));
     };

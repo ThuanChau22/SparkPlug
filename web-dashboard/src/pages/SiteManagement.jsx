@@ -36,12 +36,22 @@ const SiteManagement = () => {
                 fetchSites();
             })
             .catch(error => console.error('Error:', error));
+        fetchSites();
     };
 
     const handleEditSite = (evt, site) => {
         evt.stopPropagation();
         setEditingSite(site);
         setIsDetailsModalOpen(false);
+        fetchSites();
+    };
+
+    const saveEditedSite = (id, name) => {
+        apiInstance.patch(`http://127.0.0.1:5000/api/sites/${id}`, {
+            name: name,
+        }).then(() => {
+            window.location.reload();;
+        }).catch(error => console.error('Error:', error));
     };
 
     const handleDeleteSite = (evt, siteId) => {
@@ -89,6 +99,7 @@ const SiteManagement = () => {
                     isOpen={Boolean(editingSite)}
                     onClose={() => setEditingSite(null)}
                     siteData={editingSite}
+                    onSave={saveEditedSite}
                 />
             )}
         </div>
