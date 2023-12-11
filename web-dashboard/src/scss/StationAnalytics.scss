@@ -1,0 +1,33 @@
+.station-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto; // Center the ul
+  max-width: 600px; // Set a max-width for the ul if desired
+
+  .station-list-item {
+    display: flex;
+    justify-content: space-between; // This will create space between the ID and Name
+    align-items: center;
+    margin: 10px 0;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .station-info {
+      flex-grow: 1; // Allows the name to take up the remaining space
+      text-align: left; // Align the text to the left
+    }
+
+    .station-id {
+      min-width: 50px; // Adjust the width of the ID container as needed
+      text-align: left; // Align the ID text to the left
+    }
+
+    .station-name {
+      text-align: left; // Align the Name text to the left
+    }
+  }
+}

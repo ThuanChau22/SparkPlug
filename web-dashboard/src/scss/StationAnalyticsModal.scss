@@ -21,3 +21,38 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); // Optional: adds a subtle shadow
     }
 }
+
+.modal-content {
+    .analytics-filters {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        margin-bottom: 20px; // Adds space below the filter bar
+
+        input[type="date"],
+        select {
+            padding: 5px;
+            margin-right: 10px; // Adds space between each filter element
+            border: 1px solid #ccc;
+            border-radius: 4px;
+
+            &:focus {
+                outline: none;
+                border-color: #007bff;
+            }
+        }
+
+        button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+
+            &:hover {
+                background-color: darken(#007bff, 5%);
+            }
+        }
+    }
+}
