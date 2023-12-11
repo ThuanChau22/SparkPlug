@@ -580,6 +580,7 @@ def add_station(user):
             inserted_id = cursor.lastrowid
         sql_connection.commit()
     except pymysql.MySQLError as e:
+        print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         sql_connection.close()

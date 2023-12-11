@@ -17,13 +17,28 @@ const SiteManagement = () => {
         latitude: '',
         longitude: '',
     });
+    const [filterState, setFilterState] = useState('all');
+    const [filterCity, setFilterCity] = useState('all');
+    const [filterZip, setFilterZip] = useState('all');
+    const [states, setStates] = useState([]);
+    const [cities, setCities] = useState([]);
+    const [zipCodes, setZipCodes] = useState([]);
     const [message, setMessage] = useState('');
     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
 
     useEffect(() => {
         apiInstance.get('http://127.0.0.1:5000/api/sites')
             .then(response => {
-                setSites(response.data);
+                const fetchedSites = response.data;
+                setSites(fetchedSites);
+
+                const uniqueStates = [...new Set(fetchedSites.map(site => site.state))];
+                const uniqueCities = [...new Set(fetchedSites.map(site => site.city))];
+                const uniqueZips = [...new Set(fetchedSites.map(site => site.zip_code))];
+
+                setStates(['all', ...uniqueStates]);
+                setCities(['all', ...uniqueCities]);
+                setZipCodes(['all', ...uniqueZips]);
             })
             .catch(error => console.error('Error:', error));
     }, []);
@@ -40,40 +55,52 @@ const SiteManagement = () => {
     };
 
     const handleAddSite = () => {
-        apiInstance.post('http://127.0.0.1:5000/api/sites', newSiteData, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }).then(response => {
-            setMessage('Site added successfully');
-            setIsModalOpen(false);
-            setIsMessageModalOpen(true);
-            setNewSiteData({
-                name: '',
-                owner_id: '',
-                street_address: '',
-                zip_code: '',
-                latitude: '',
-                longitude: '',
+        apiInstance.post('http://127.0.0.1:5000/api/sites', newSiteData)
+            .then(response => {
+                setMessage('Site added successfully');
+                setIsModalOpen(false);
+            })
+            .catch(error => {
+                setMessage('Error adding site');
+                setIsModalOpen(false);
             });
-        }).catch(error => {
-            console.error('Error:', error);
-            setMessage('Error adding site');
-            setIsModalOpen(false);
-            setIsMessageModalOpen(true);
-        });
     };
 
-    const handleCloseMessageModal = () => {
-        setIsMessageModalOpen(false);
-        window.location.reload(); // Reload the page to reflect new changes
+    const applyFilters = () => {
+        let queryParams = '';
+        if (filterState !== 'all') queryParams += `state=${filterState}&`;
+        if (filterCity !== 'all') queryParams += `city=${filterCity}&`;
+        if (filterZip !== 'all') queryParams += `zip=${filterZip}&`;
+
+        apiInstance.get(`http://127.0.0.1:5000/api/sites?${queryParams}`)
+            .then(response => {
+                setSites(response.data);
+            })
+            .catch(error => console.error('Error:', error));
     };
 
     return (
         <div>
+            <div className="filter-container">
+                <select value={filterState} onChange={(e) => setFilterState(e.target.value)}>
+                    {states.map(state => (
+                        <option key={state} value={state}>{state}</option>
+                    ))}
+                </select>
+                <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)}>
+                    {cities.map(city => (
+                        <option key={city} value={city}>{city}</option>
+                    ))}
+                </select>
+                <select value={filterZip} onChange={(e) => setFilterZip(e.target.value)}>
+                    {zipCodes.map(zip => (
+                        <option key={zip} value={zip}>{zip}</option>
+                    ))}
+                </select>
+                <button onClick={applyFilters}>Apply Filters</button>
+            </div>
             <button onClick={() => setIsModalOpen(true)}>Add Site</button>
 
-            {/* Sites List */}
             <h2>Sites List</h2>
             <ul className="site-list">
                 {sites.map(site => (
@@ -83,24 +110,20 @@ const SiteManagement = () => {
                 ))}
             </ul>
 
-            {/* Add Site Modal */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 {/* Form for adding a site */}
                 {/* ... */}
             </Modal>
 
-            {/* Site Details Modal */}
             <SiteDetailsModal
                 isOpen={isDetailsModalOpen}
                 onClose={() => setIsDetailsModalOpen(false)}
                 siteData={selectedSite}
-                // Add onDelete or other functions if needed
             />
 
-            {/* Message Modal */}
             <Modal 
                 isOpen={isMessageModalOpen} 
-                onClose={handleCloseMessageModal}
+                onClose={() => setMessage('')}
                 className="message-modal-content"
             >
                 <p>{message}</p>
