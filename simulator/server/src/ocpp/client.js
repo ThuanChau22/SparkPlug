@@ -37,37 +37,43 @@ export const ocppClientCall = async (action, payload) => {
 };
 
 export const connectCSMS = async () => {
-  // connect to the OCPP server
-  await ocppClient.connect();
+  try {
+    // connect to the OCPP server
+    await ocppClient.connect();
 
-  // send a BootNotification request and await the response
-  const bootResponse = await ocppClient.call("BootNotification", {
-    reason: "PowerUp",
-    chargingStation: {
-      vendorName: station.SecurityCtrlr.OrganizationName,
-      model: station.Model,
-    },
-  });
+    // send a BootNotification request and await the response
+    const bootResponse = await ocppClient.call("BootNotification", {
+      reason: "PowerUp",
+      chargingStation: {
+        vendorName: station.SecurityCtrlr.OrganizationName,
+        model: station.Model,
+      },
+    });
 
-  // check that the server accepted the client
-  if (bootResponse.status === "Accepted") {
-    // read the current server time
-    console.log("Server time:", bootResponse.currentTime);
+    // check that the server accepted the client
+    if (bootResponse.status === "Accepted") {
+      // read the current server time
+      console.log("Server time:", bootResponse.currentTime);
 
-    // set heartbeat interval
-    station.OCPPCommCtrlr.HeartbeatInterval = bootResponse.interval;
+      // set heartbeat interval
+      station.OCPPCommCtrlr.HeartbeatInterval = bootResponse.interval;
 
-    // send a StatusNotification request for the controller
-    for (const evse of station.EVSEs) {
-      for (const connector of evse.Connectors) {
-        await ocppClientCall("StatusNotification", {
-          evseId: evse.Id,
-          connectorId: connector.Id,
-          connectorStatus: "Available",
-          timestamp: new Date().toISOString(),
-        });
+      // send a StatusNotification request for the controller
+      for (const evse of station.EVSEs) {
+        for (const connector of evse.Connectors) {
+          await ocppClientCall("StatusNotification", {
+            evseId: evse.Id,
+            connectorId: connector.Id,
+            connectorStatus: "Available",
+            timestamp: new Date().toISOString(),
+          });
+        }
       }
     }
+  } catch (error) {
+    setTimeout(async () => {
+      await connectCSMS();
+    }, ms("5s"));
   }
 };
 
@@ -195,12 +201,6 @@ export const handleStopTransaction = async ({ triggerReason, stoppedReason }) =>
     });
     if (status === "Accepted") {
       station.initialize();
-      sendJsonMessage({
-        action: Action.METER_VALUE,
-        payload: {
-          value: meterValue,
-        },
-      });
       sendJsonMessage({
         action: Action.SCAN_RFID,
         payload: { status: "Ended" },

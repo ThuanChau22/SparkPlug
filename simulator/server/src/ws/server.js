@@ -88,10 +88,7 @@ server.on("connection", async (ws) => {
     // Handle socket on close
     ws.on("close", () => {
       try {
-        for (const ws of sockets) {
-          ws.close();
-        }
-        console.log("Close Connection");
+        sockets.delete(ws);
       } catch (error) {
         console.log(error);
       }
