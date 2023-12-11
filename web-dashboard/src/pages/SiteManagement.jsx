@@ -1,47 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { apiInstance } from 'redux/api';
 import '../scss/SiteManagement.scss';
-import Modal from '../components/Modal';
 import SiteDetailsModal from '../components/SiteDetailsModal';
+import SiteAddModal from '../components/SiteAddModal';
+import SiteEditModal from '../components/SiteEditModal';
 
 const SiteManagement = () => {
     const [sites, setSites] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedSite, setSelectedSite] = useState(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-    const [newSiteData, setNewSiteData] = useState({
-        name: '',
-        owner_id: '',
-        street_address: '',
-        zip_code: '',
-        latitude: '',
-        longitude: '',
-    });
-    const [filterState, setFilterState] = useState('all');
-    const [filterCity, setFilterCity] = useState('all');
-    const [filterZip, setFilterZip] = useState('all');
-    const [states, setStates] = useState([]);
-    const [cities, setCities] = useState([]);
-    const [zipCodes, setZipCodes] = useState([]);
-    const [message, setMessage] = useState('');
-    const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [selectedSite, setSelectedSite] = useState(null);
+    const [editingSite, setEditingSite] = useState(null);
 
     useEffect(() => {
+        fetchSites();
+    }, []);
+
+    const fetchSites = () => {
         apiInstance.get('http://127.0.0.1:5000/api/sites')
             .then(response => {
-                const fetchedSites = response.data;
-                setSites(fetchedSites);
-
-                const uniqueStates = [...new Set(fetchedSites.map(site => site.state))];
-                const uniqueCities = [...new Set(fetchedSites.map(site => site.city))];
-                const uniqueZips = [...new Set(fetchedSites.map(site => site.zip_code))];
-
-                setStates(['all', ...uniqueStates]);
-                setCities(['all', ...uniqueCities]);
-                setZipCodes(['all', ...uniqueZips]);
+                setSites(response.data);
             })
             .catch(error => console.error('Error:', error));
-    }, []);
+    };
 
     const handleSiteClick = (siteId) => {
         const site = sites.find(s => s.id === siteId);
@@ -49,71 +30,47 @@ const SiteManagement = () => {
         setIsDetailsModalOpen(true);
     };
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setNewSiteData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleAddSite = () => {
-        apiInstance.post('http://127.0.0.1:5000/api/sites', newSiteData)
-            .then(response => {
-                setMessage('Site added successfully');
-                setIsModalOpen(false);
+    const handleAddSite = (siteData) => {
+        apiInstance.post('http://127.0.0.1:5000/api/sites', siteData)
+            .then(() => {
+                fetchSites();
             })
-            .catch(error => {
-                setMessage('Error adding site');
-                setIsModalOpen(false);
-            });
+            .catch(error => console.error('Error:', error));
     };
 
-    const applyFilters = () => {
-        let queryParams = '';
-        if (filterState !== 'all') queryParams += `state=${filterState}&`;
-        if (filterCity !== 'all') queryParams += `city=${filterCity}&`;
-        if (filterZip !== 'all') queryParams += `zip=${filterZip}&`;
+    const handleEditSite = (evt, site) => {
+        evt.stopPropagation();
+        setEditingSite(site);
+        setIsDetailsModalOpen(false);
+    };
 
-        apiInstance.get(`http://127.0.0.1:5000/api/sites?${queryParams}`)
-            .then(response => {
-                setSites(response.data);
+    const handleDeleteSite = (evt, siteId) => {
+        evt.stopPropagation();
+        apiInstance.delete(`http://127.0.0.1:5000/api/sites/${siteId}`)
+            .then(() => {
+                fetchSites();
             })
             .catch(error => console.error('Error:', error));
     };
 
     return (
         <div>
-            <div className="filter-container">
-                <select value={filterState} onChange={(e) => setFilterState(e.target.value)}>
-                    {states.map(state => (
-                        <option key={state} value={state}>{state}</option>
-                    ))}
-                </select>
-                <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)}>
-                    {cities.map(city => (
-                        <option key={city} value={city}>{city}</option>
-                    ))}
-                </select>
-                <select value={filterZip} onChange={(e) => setFilterZip(e.target.value)}>
-                    {zipCodes.map(zip => (
-                        <option key={zip} value={zip}>{zip}</option>
-                    ))}
-                </select>
-                <button onClick={applyFilters}>Apply Filters</button>
-            </div>
-            <button onClick={() => setIsModalOpen(true)}>Add Site</button>
+            <button onClick={() => setIsAddModalOpen(true)}>Add Site</button>
 
             <h2>Sites List</h2>
             <ul className="site-list">
                 {sites.map(site => (
                     <li key={site.id} className="site-list-item" onClick={() => handleSiteClick(site.id)}>
-                        ID: {site.id}, Name: {site.name}
+                        <span className="site-info">
+                            ID: {site.id}, Name: {site.name}
+                        </span>
+                        <div className="site-actions">
+                            <button onClick={(evt) => handleEditSite(evt, site)}>Edit</button>
+                            <button onClick={(evt) => handleDeleteSite(evt, site.id)}>Delete</button>
+                        </div>
                     </li>
                 ))}
             </ul>
-
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                {/* Form for adding a site */}
-                {/* ... */}
-            </Modal>
 
             <SiteDetailsModal
                 isOpen={isDetailsModalOpen}
@@ -121,13 +78,19 @@ const SiteManagement = () => {
                 siteData={selectedSite}
             />
 
-            <Modal 
-                isOpen={isMessageModalOpen} 
-                onClose={() => setMessage('')}
-                className="message-modal-content"
-            >
-                <p>{message}</p>
-            </Modal>
+            <SiteAddModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onAddSite={handleAddSite}
+            />
+
+            {editingSite && (
+                <SiteEditModal
+                    isOpen={Boolean(editingSite)}
+                    onClose={() => setEditingSite(null)}
+                    siteData={editingSite}
+                />
+            )}
         </div>
     );
 };
