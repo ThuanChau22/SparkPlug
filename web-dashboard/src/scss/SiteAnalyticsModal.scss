@@ -1,0 +1,58 @@
+// SiteAnalyticsModal.scss
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5); // Slightly transparent background
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; // Ensure it's above other content
+
+    .modal-content {
+        background-color: white; // Non-transparent background
+        padding: 20px;
+        border-radius: 8px;
+        max-height: 90vh; // Adjust as needed
+        overflow-y: auto; // Makes content scrollable
+        width: 80%; // Adjust width as needed
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); // Optional: adds a subtle shadow
+    }
+}
+
+.modal-content {
+    .analytics-filters {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        margin-bottom: 20px; // Adds space below the filter bar
+
+        input[type="date"],
+        select {
+            padding: 5px;
+            margin-right: 10px; // Adds space between each filter element
+            border: 1px solid #ccc;
+            border-radius: 4px;
+
+            &:focus {
+                outline: none;
+                border-color: #007bff;
+            }
+        }
+
+        button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+
+            &:hover {
+                background-color: darken(#007bff, 5%);
+            }
+        }
+    }
+}

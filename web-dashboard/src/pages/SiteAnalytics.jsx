@@ -14,9 +14,6 @@ const SiteAnalytics = () => {
     const [filterState, setFilterState] = useState('all');
     const [filterCity, setFilterCity] = useState('all');
     const [filterZip, setFilterZip] = useState('all');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [chargeLevel, setChargeLevel] = useState('all');
 
     const [states, setStates] = useState([]);
     const [cities, setCities] = useState([]);
@@ -39,44 +36,7 @@ const SiteAnalytics = () => {
                 setZipCodes(['all', ...uniqueZips]);
             })
             .catch(error => console.error('Error:', error));
-
-        fetchAggregateData();
     }, []);
-
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        let month = '' + (date.getMonth() + 1);
-        let day = '' + date.getDate();
-        const year = date.getFullYear();
-
-        if (month.length < 2) month = '0' + month;
-        if (day.length < 2) day = '0' + day;
-
-        return [month, day, year].join('/');
-    };
-
-    const fetchAggregateData = () => {
-        // Construct query parameters based on filters
-        let queryParams = [];
-        if (startDate) queryParams.push(`start_date=${formatDate(startDate)}`);
-        if (endDate) queryParams.push(`end_date=${formatDate(endDate)}`);
-        if (chargeLevel !== 'all') queryParams.push(`charge_level=${chargeLevel}`);
-        let query = 'http://127.0.0.1:5000/api/sites/analytics';
-        if (queryParams.length > 0) query += '?' + queryParams.join('&');
-
-        apiInstance.get(query)
-            .then(response => {
-                setAggregateData(response.data); // Set the aggregateData state with the response
-            })
-            .catch(error => console.error('Error:', error));
-    };
-
-    const updateAnalyticsData = () => {
-        // Trigger useEffect to refetch data
-        setAnalyticsData(null); // Clear existing data
-        // useEffect will automatically be called since dependencies have changed
-    };
 
     const handleSiteClick = (siteId) => {
         setSelectedSite(siteId);
@@ -139,31 +99,6 @@ const SiteAnalytics = () => {
                 onClose={() => setIsAnalyticsModalOpen(false)}
                 siteId={selectedSite}
             />
-
-            {/* Container for aggregate analytics charts and filters */}
-            <div className="site-analytics-container">
-                <div className="analytics-filters">
-                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                    <select value={chargeLevel} onChange={(e) => setChargeLevel(e.target.value)}>
-                        <option value="all">All Levels</option>
-                        <option value="1">Level 1</option>
-                        <option value="2">Level 2</option>
-                        <option value="3">Level 3</option>
-                    </select>
-                    <button onClick={fetchAggregateData}>Update</button>
-                </div>
-                <div className="charts-container">
-                    {aggregateData && (
-                        <>
-                            <CChart type="line" data={aggregateData.revenue} options={{ /* chart options here */ }} />
-                            <CChart type="bar" data={aggregateData.peak_time} options={{ /* chart options here */ }} />
-                            <CChart type="line" data={aggregateData.utilization_rate} options={{ /* chart options here */ }} />
-                            <CChart type="bar" data={aggregateData.sessions_count} options={{ /* chart options here */ }} />
-                        </>
-                    )}
-                </div>
-            </div>
         </div>
     );
 };

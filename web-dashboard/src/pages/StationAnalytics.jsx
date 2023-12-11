@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiInstance } from 'redux/api';
 import { CChart } from '@coreui/react-chartjs';
-import '../scss/StationManagement.scss';
+import '../scss/StationAnalytics.scss';
 import StationAnalyticsModal from '../components/StationAnalyticsModal';
 
 const StationAnalytics = () => {
