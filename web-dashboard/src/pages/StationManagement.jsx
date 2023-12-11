@@ -29,12 +29,14 @@ const StationManagement = () => {
     const [zipCodes, setZipCodes] = useState([]);
     const [message, setMessage] = useState('');
 
+    const stationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
+
     useEffect(() => {
         fetchStations();
     }, []);
 
     const fetchStations = (queryParams = '') => {
-        const url = `http://127.0.0.1:5000/api/stations${queryParams}`;
+        const url = `${stationAPI}${queryParams}`;
         console.log("HTTP Request URL:", url); // Log the URL to the console
 
         apiInstance.get(url)
@@ -69,7 +71,7 @@ const StationManagement = () => {
 
     const handleDeleteStation = (evt, stationId) => {
         evt.stopPropagation();
-        apiInstance.delete(`http://127.0.0.1:5000/api/stations/${stationId}`)
+        apiInstance.delete(`${stationAPI}/${stationId}`)
             .then(() => {
                 setStations(stations.filter(station => station.id !== stationId));
             })
@@ -91,7 +93,7 @@ const StationManagement = () => {
             site_id: formData.siteId
         };
 
-        apiInstance.post('http://127.0.0.1:5000/api/stations', data)
+        apiInstance.post(stationAPI, data)
             .then(response => {
                 setMessage(response.data.message);
                 setIsAddModalOpen(false);
@@ -103,7 +105,7 @@ const StationManagement = () => {
     };
 
     const saveEditedStation = (id, name, price) => {
-        apiInstance.patch(`http://127.0.0.1:5000/api/stations/${id}`, {
+        apiInstance.patch(`${stationAPI}/${id}`, {
             name: name,
             price: parseFloat(price)
         }).then(() => {

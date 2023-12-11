@@ -253,37 +253,6 @@ def get_mysql_connection():
 
 
 # Endpoint functions
-@app.route('/')
-def hello():
-    return "Hello World!"
-
-
-@app.route('/api/1_trans', methods=['GET'])
-def get_mongo_data():
-
-    document = db.transactions.find_one()
-    # This step is necessary to convert ObjectID to string so Flask can recognize it
-    if document: 
-        document['_id'] = str(document['_id'])
-    return jsonify(document)
-
-@app.route('/api/count-transactions', methods=['GET'])
-def count_transactions():
-    try:
-        count = db.transactions.count_documents({})
-        return jsonify({"document_count": count})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/mysqldb', methods=['GET'])
-def get_mysql_data():
-    sql_connection = get_mysql_connection()
-    with sql_connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM Site")  # Replace with your query
-        data = cursor.fetchone()
-    return jsonify(data)
-
-
 @app.route('/api/transactions', methods=['GET'])
 @require_permission('owner', 'staff')
 def get_transactions(user):

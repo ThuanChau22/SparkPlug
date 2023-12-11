@@ -9,6 +9,9 @@ const SiteAnalyticsModal = ({ isOpen, onClose, siteId }) => {
     const [endDate, setEndDate] = useState('');
     const [chargeLevel, setChargeLevel] = useState('all');
 
+    const siteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
+    const siteAnalyticsAPI = process.env.REACT_APP_SITE_ANALYTICS_API_ENDPOINT
+
     useEffect(() => {
         fetchData();
     }, [siteId]);
@@ -28,7 +31,7 @@ const SiteAnalyticsModal = ({ isOpen, onClose, siteId }) => {
 
     const fetchData = () => {
         if (siteId) {
-            let query = `http://127.0.0.1:5000/api/sites/analytics/${siteId}`;
+            let query = `${siteAnalyticsAPI}/${siteId}`;
             let queryParams = [];
             if (startDate) queryParams.push(`start_date=${formatDate(startDate)}`);
             if (endDate) queryParams.push(`end_date=${formatDate(endDate)}`);

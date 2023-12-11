@@ -12,12 +12,14 @@ const SiteManagement = () => {
     const [selectedSite, setSelectedSite] = useState(null);
     const [editingSite, setEditingSite] = useState(null);
 
+    const siteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
+
     useEffect(() => {
         fetchSites();
     }, []);
 
     const fetchSites = () => {
-        apiInstance.get('http://127.0.0.1:5000/api/sites')
+        apiInstance.get(siteAPI)
             .then(response => {
                 setSites(response.data);
             })
@@ -31,7 +33,7 @@ const SiteManagement = () => {
     };
 
     const handleAddSite = (siteData) => {
-        apiInstance.post('http://127.0.0.1:5000/api/sites', siteData)
+        apiInstance.post(siteAPI, siteData)
             .then(() => {
                 fetchSites();
             })
@@ -47,7 +49,7 @@ const SiteManagement = () => {
     };
 
     const saveEditedSite = (id, name) => {
-        apiInstance.patch(`http://127.0.0.1:5000/api/sites/${id}`, {
+        apiInstance.patch(`${siteAPI}/${id}`, {
             name: name,
         }).then(() => {
             window.location.reload();;
@@ -56,7 +58,7 @@ const SiteManagement = () => {
 
     const handleDeleteSite = (evt, siteId) => {
         evt.stopPropagation();
-        apiInstance.delete(`http://127.0.0.1:5000/api/sites/${siteId}`)
+        apiInstance.delete(`${siteAPI}/${siteId}`)
             .then(() => {
                 fetchSites();
             })

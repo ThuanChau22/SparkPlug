@@ -24,8 +24,11 @@ const StationAnalytics = () => {
 
     const [analyticsData, setAnalyticsData] = useState(null);
 
+    const stationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
+    const stationAnalyticsAPI = process.env.REACT_APP_STATION_ANALYTICS_API_ENDPOINT;
+
     useEffect(() => {
-        apiInstance.get('http://127.0.0.1:5000/api/stations')
+        apiInstance.get(stationAPI)
             .then(response => {
                 const fetchedStations = response.data;
                 setStations(fetchedStations);
@@ -62,7 +65,7 @@ const StationAnalytics = () => {
         if (startDate) queryParams.push(`start_date=${formatDate(startDate)}`);
         if (endDate) queryParams.push(`end_date=${formatDate(endDate)}`);
         if (chargeLevel !== 'all') queryParams.push(`charge_level=${chargeLevel}`);
-        let query = 'http://127.0.0.1:5000/api/stations/analytics';
+        let query = stationAnalyticsAPI;
         if (queryParams.length > 0) query += '?' + queryParams.join('&');
 
         apiInstance.get(query)
@@ -85,7 +88,7 @@ const StationAnalytics = () => {
 
     const applyFilters = () => {
         //let query = process.env.REACT_APP_
-        let query = 'http://127.0.0.1:5000/api/stations';
+        let query = stationAPI;
         let queryParams = [];
         if (filterState !== 'all') queryParams.push(`state=${filterState}`);
         if (filterCity !== 'all') queryParams.push(`city=${filterCity}`);

@@ -21,8 +21,12 @@ const SiteAnalytics = () => {
 
     const [analyticsData, setAnalyticsData] = useState(null);
 
+    const siteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
+
+
     useEffect(() => {
-        apiInstance.get('http://127.0.0.1:5000/api/sites')
+        //console.log(process.env.REACT_APP_SITE_API_ENDPOINT)
+        apiInstance.get(siteAPI)
             .then(response => {
                 const fetchedSites = response.data;
                 setSites(fetchedSites);
@@ -44,8 +48,7 @@ const SiteAnalytics = () => {
     };
 
     const applyFilters = () => {
-        //let query = process.env.REACT_APP_
-        let query = 'http://127.0.0.1:5000/api/sites';
+        let query = siteAPI;
         let queryParams = [];
         if (filterState !== 'all') queryParams.push(`state=${filterState}`);
         if (filterCity !== 'all') queryParams.push(`city=${filterCity}`);

@@ -12,8 +12,10 @@ const SiteAddModal = ({ isOpen, onClose, onAddsite, fetchSites }) => {
     });
     const [siteOptions, setSiteOptions] = useState([]);
 
+    const siteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
+
     useEffect(() => {
-        fetch('http://127.0.0.1:5000/api/sites')
+        fetch(siteAPI)
             .then(response => response.json())
             .then(data => {
                 const siteIds = data.map(site => site.id);
@@ -30,7 +32,7 @@ const SiteAddModal = ({ isOpen, onClose, onAddsite, fetchSites }) => {
     const handleSubmit = (event) => {
         event.preventDefault(); // Prevent default form submission behavior
 
-        const apiUrl = 'http://127.0.0.1:5000/api/sites';
+        const apiUrl = siteAPI;
         fetch(apiUrl, {
             method: 'POST',
             headers: {

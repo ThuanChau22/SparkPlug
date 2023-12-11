@@ -9,6 +9,8 @@ const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => {
     const [endDate, setEndDate] = useState('');
     const [chargeLevel, setChargeLevel] = useState('all');
 
+    const stationAnalyticsAPI = process.env.REACT_APP_STATION_ANALYTICS_API_ENDPOINT;
+
     useEffect(() => {
         fetchData();
     }, [stationId]);
@@ -28,7 +30,7 @@ const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => {
 
     const fetchData = () => {
         if (stationId) {
-            let query = `http://127.0.0.1:5000/api/stations/analytics/${stationId}`;
+            let query = `${stationAnalyticsAPI}/${stationId}`;
             let queryParams = [];
             if (startDate) queryParams.push(`start_date=${formatDate(startDate)}`);
             if (endDate) queryParams.push(`end_date=${formatDate(endDate)}`);
