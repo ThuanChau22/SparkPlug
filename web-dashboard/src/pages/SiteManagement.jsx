@@ -19,6 +19,14 @@ const SiteManagement = () => {
     const [selectedSite, setSelectedSite] = useState(null);
     const [editingSite, setEditingSite] = useState(null);
 
+    const [filterState, setFilterState] = useState('all');
+    const [filterCity, setFilterCity] = useState('all');
+    const [filterZip, setFilterZip] = useState('all');
+    const [states, setStates] = useState([]);
+    const [cities, setCities] = useState([]);
+    const [zipCodes, setZipCodes] = useState([]);
+
+
     const siteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
 
     useEffect(() => {
@@ -28,10 +36,20 @@ const SiteManagement = () => {
     const fetchSites = () => {
         apiInstance.get(siteAPI)
             .then(response => {
-                setSites(response.data);
+                const fetchedSites = response.data;
+                setSites(fetchedSites);
+
+                const uniqueStates = [...new Set(fetchedSites.map(site => site.state))];
+                const uniqueCities = [...new Set(fetchedSites.map(site => site.city))];
+                const uniqueZips = [...new Set(fetchedSites.map(site => site.zip_code))];
+
+                setStates(['all', ...uniqueStates]);
+                setCities(['all', ...uniqueCities]);
+                setZipCodes(['all', ...uniqueZips]);
             })
             .catch(error => console.error('Error:', error));
     };
+
 
     const handleSiteClick = (siteId) => {
         const site = sites.find(s => s.id === siteId);
@@ -72,6 +90,24 @@ const SiteManagement = () => {
             .catch(error => console.error('Error:', error));
     };
 
+    const applyFilters = () => {
+        let query = siteAPI;
+        let queryParams = [];
+        if (filterState !== 'all') queryParams.push(`state=${filterState}`);
+        if (filterCity !== 'all') queryParams.push(`city=${filterCity}`);
+        if (filterZip !== 'all') queryParams.push(`zip=${filterZip}`);
+        if (queryParams.length > 0) {
+            query += '?' + queryParams.join('&');
+        }
+
+        apiInstance.get(query)
+            .then(response => {
+                setSites(response.data);
+            })
+            .catch(error => console.error('Error:', error));
+    };
+
+
     const renderSiteMarker = site => (
         <SiteMarker
           key={site.id}
@@ -83,6 +119,24 @@ const SiteManagement = () => {
 
     return (
         <div>
+            <div className="filter-container">
+                <select value={filterState} onChange={(e) => setFilterState(e.target.value)}>
+                    {states.map(state => (
+                        <option key={state} value={state}>{state}</option>
+                    ))}
+                </select>
+                <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)}>
+                    {cities.map(city => (
+                        <option key={city} value={city}>{city}</option>
+                    ))}
+                </select>
+                <select value={filterZip} onChange={(e) => setFilterZip(e.target.value)}>
+                    {zipCodes.map(zip => (
+                        <option key={zip} value={zip}>{zip}</option>
+                    ))}
+                </select>
+                <button onClick={applyFilters}>Apply Filters</button>
+            </div>
             <button onClick={() => setIsAddModalOpen(true)}>Add Site</button>
 
             <MapContainer
