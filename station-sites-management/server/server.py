@@ -11,33 +11,57 @@ import pymysql
 import datetime
 
 import requests
+
+import jwt
+
 from urllib.parse import urljoin
 from collections import defaultdict
-
 
 # For authentication
 from functools import wraps
 
+# Load environment variables
+env = os.environ.get('ENV', 'prod')
+if env == 'dev':
+    dotenv_path = '.env.dev'
+else:
+    dotenv_path = '.env'
+load_dotenv(dotenv_path=dotenv_path)
+SERVER_HOST=os.environ['SERVER_HOST']
+SERVER_PORT=os.environ['SERVER_PORT']
+MONGO_URI = os.environ['MONGO_URI']
+MONGO_DB = os.environ['MONGO_DB']
+SQL_HOST = os.environ['SQL_HOST']
+SQL_PORT = os.environ['SQL_PORT']
+SQL_USER = os.environ['SQL_USER']
+SQL_PW = os.environ['SQL_PW']
+SQL_DB = os.environ['SQL_DB']
+WEB_DOMAIN=os.environ['WEB_DOMAIN']
+AUTH_API_ENDPOINT = os.environ['AUTH_API_ENDPOINT']
+
 app = Flask(__name__)
-#CORS(app)
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
-
-
-
-# Set up dummy user to simulate login
-DUMMY_USER = {
-    "user_id": "11",
-    "role": "staff", 
-}
+# CORS(app)
+CORS(app, resources={r"/api/*": {"origins": WEB_DOMAIN}})
 
 # Decorator for access control
 def require_permission(*allowed_roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            if DUMMY_USER['role'] not in allowed_roles:
+            if 'Authorization' not in request.headers:
+                return {"message": "Missing token"}, 401
+            _, token = request.headers['Authorization'].split(" ")
+            r = requests.post(f"{AUTH_API_ENDPOINT}/verify", json={"token": token})
+            if not r.status_code == 200:
+              return r.json(), r.status_code
+            user = jwt.decode(token, options={"verify_signature": False})
+            if user['role'] not in allowed_roles:
                 return {"message": "Permission denied"}, 403
-            return f(*args, **kwargs, user=DUMMY_USER)
+            valid_user = {
+                "user_id": user['id'],
+                "role": user['role'],
+            }
+            return f(*args, **kwargs, user=valid_user)
         return decorated_function
     return decorator
 
@@ -246,36 +270,22 @@ def aggregate_charts(site_id, start_date, end_date, charge_level, user_role, use
         return jsonify({'error': 'Failed to fetch stations'}), st_response.status_code
 
 
-# Load environment variables
-env = os.environ.get('ENV', 'prod')
-if env == 'dev':
-    dotenv_path = '.env.dev'
-else:
-    dotenv_path = '.env'
-
-load_dotenv(dotenv_path=dotenv_path)
-
-mongo_uri = os.environ['MONGO_URI']
-
-sql_host = os.environ['SQL_HOST']
-sql_user = os.environ['SQL_USER']
-sql_pw = os.environ['SQL_PW']
-sql_db = os.environ['SQL_DB']
 
 
 # MongoDB Configuration
-mongo_client = pymongo.MongoClient(mongo_uri)
-db = mongo_client['sparkplug']
+mongo_client = pymongo.MongoClient(MONGO_URI)
+db = mongo_client[MONGO_DB]
 
 
 
 # MySQL Configuration
 def get_mysql_connection():
     connection = pymysql.connect(
-        host=sql_host, 
-        user=sql_user, 
-        password=sql_pw, 
-        database=sql_db, 
+        host=SQL_HOST,
+        port=int(SQL_PORT),
+        user=SQL_USER,
+        password=SQL_PW,
+        database=SQL_DB,
         cursorclass=pymysql.cursors.DictCursor)
     return connection
 
@@ -713,4 +723,4 @@ def site_analytics(user, site_id):
 
 
 if __name__ == '__main__':
-    app.run(host=os.environ['SERVER_HOST'], port=os.environ['SERVER_PORT'], debug=True)
+    app.run(host=SERVER_HOST, port=SERVER_PORT, debug=True)

@@ -1,0 +1,12 @@
+services:
+
+  simulator-server:
+    image: sparkplug-simulator-server
+    container_name: sparkplug-simulator-server
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+    ports:
+      - ${PORT}:${PORT}

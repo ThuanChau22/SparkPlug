@@ -1,3 +1,4 @@
+import { useDispatch } from "react-redux";
 import {
   NavLink,
 } from "react-router-dom";
@@ -19,7 +20,13 @@ import CIcon from "@coreui/icons-react";
 import defaultAvatar from "assets/default-avatar.jpg";
 import routes from "routes";
 
+import { authLogout } from "redux/auth/authSlice";
+
 const HeaderDropdown = () => {
+  const dispatch = useDispatch();
+  const handleLogout = () => {
+    dispatch(authLogout());
+  };
   return (
     <CDropdown variant="nav-item">
       <CDropdownToggle placement="bottom-end" className="py-0" caret={false}>
@@ -36,7 +43,7 @@ const HeaderDropdown = () => {
           {routes.Settings.name}
         </CDropdownItem>
         <CDropdownDivider />
-        <CDropdownItem onClick={() => { console.log("Handle Logout") }}>
+        <CDropdownItem onClick={handleLogout}>
           <CIcon icon={cilAccountLogout} className="me-2" />
           Logout
         </CDropdownItem>
