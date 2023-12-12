@@ -148,8 +148,6 @@ services:
       - STATION_MANAGEMENT_WS_ENDPOINT=${STATION_MANAGEMENT_WS_ENDPOINT}
     ports:
       - ${SIMULATOR_SERVER_PORT}:${SIMULATOR_SERVER_PORT}
-    depends_on:
-      - monitoring
     develop:
       watch:
         - action: sync
