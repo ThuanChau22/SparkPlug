@@ -39,7 +39,6 @@ SQL_DB = os.environ['SQL_DB']
 WEB_DOMAIN=os.environ['WEB_DOMAIN']
 AUTH_API_ENDPOINT = os.environ['AUTH_API_ENDPOINT']
 
-
 app = Flask(__name__)
 # CORS(app)
 CORS(app, resources={r"/api/*": {"origins": WEB_DOMAIN}})

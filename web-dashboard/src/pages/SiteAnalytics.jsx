@@ -3,56 +3,51 @@ import { apiInstance } from 'redux/api';
 import { CChart } from '@coreui/react-chartjs';
 import '../scss/SiteManagement.scss';
 import SiteAnalyticsModal from '../components/SiteAnalyticsModal';
+import LocationFilter from '../components/LocationFilter';
+
+import { siteIcon } from '../components/mapIcons';
+import { MapContainer as LeafletMap, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import MapContainer from '../components/MapContainer';
+import SiteMarker from '../components/SiteMarker';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const SiteAnalytics = () => {
     const [sites, setSites] = useState([]);
     const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
     const [selectedSite, setSelectedSite] = useState(null);
-    const [aggregateData, setAggregateData] = useState(null);
-
-
-    const [filterState, setFilterState] = useState('all');
-    const [filterCity, setFilterCity] = useState('all');
-    const [filterZip, setFilterZip] = useState('all');
 
     const [states, setStates] = useState([]);
     const [cities, setCities] = useState([]);
     const [zipCodes, setZipCodes] = useState([]);
-
-    const [analyticsData, setAnalyticsData] = useState(null);
+    const [filteredCities, setFilteredCities] = useState([]);
 
     const siteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
 
-
     useEffect(() => {
-        //console.log(process.env.REACT_APP_SITE_API_ENDPOINT)
         apiInstance.get(siteAPI)
             .then(response => {
                 const fetchedSites = response.data;
                 setSites(fetchedSites);
 
-                const uniqueStates = [...new Set(fetchedSites.map(site => site.state))];
-                const uniqueCities = [...new Set(fetchedSites.map(site => site.city))];
-                const uniqueZips = [...new Set(fetchedSites.map(site => site.zip_code))];
+                const uniqueStates = Array.from(new Set(fetchedSites.map(site => site.state))).sort((a, b) => a.localeCompare(b));
+                const uniqueCities = Array.from(new Set(fetchedSites.map(site => site.city))).sort((a, b) => a.localeCompare(b));
+                const uniqueZips = Array.from(new Set(fetchedSites.map(site => site.zip_code))).sort((a, b) => a.localeCompare(b));
 
-                setStates(['all', ...uniqueStates]);
-                setCities(['all', ...uniqueCities]);
-                setZipCodes(['all', ...uniqueZips]);
+                setStates(['All', ...uniqueStates]);
+                setCities(['All', ...uniqueCities]);
+                setZipCodes(['All', ...uniqueZips]);
+                setFilteredCities(['All', ...uniqueCities]);
             })
             .catch(error => console.error('Error:', error));
     }, []);
 
-    const handleSiteClick = (siteId) => {
-        setSelectedSite(siteId);
-        setIsAnalyticsModalOpen(true);
-    };
-
-    const applyFilters = () => {
+    const applyFilters = (state, city, zip) => {
         let query = siteAPI;
         let queryParams = [];
-        if (filterState !== 'all') queryParams.push(`state=${filterState}`);
-        if (filterCity !== 'all') queryParams.push(`city=${filterCity}`);
-        if (filterZip !== 'all') queryParams.push(`zip=${filterZip}`);
+        if (state !== 'All') queryParams.push(`state=${state}`);
+        if (city !== 'All') queryParams.push(`city=${city}`);
+        if (zip !== 'All') queryParams.push(`zip=${zip}`);
         if (queryParams.length > 0) {
             query += '?' + queryParams.join('&');
         }
@@ -64,29 +59,38 @@ const SiteAnalytics = () => {
             .catch(error => console.error('Error:', error));
     };
 
+    const onFiltersChange = (newState, newCity, newZip) => {
+        applyFilters(newState, newCity, newZip);
+    };
+
+    const handleSiteClick = (siteId) => {
+        setSelectedSite(siteId);
+        setIsAnalyticsModalOpen(true);
+    };
+
+    const renderSiteMarker = site => (
+        <SiteMarker
+          key={site.id}
+          site={site}
+          icon={siteIcon}
+          onSiteClick={handleSiteClick}
+        />
+    );
+
     return (
         <div>
-            {/* Filter container for aggregate data */}
-            <div className="filter-container">
-                <select value={filterState} onChange={(e) => setFilterState(e.target.value)}>
-                    {states.map(state => (
-                        <option key={state} value={state}>{state}</option>
-                    ))}
-                </select>
-                <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)}>
-                    {cities.map(city => (
-                        <option key={city} value={city}>{city}</option>
-                    ))}
-                </select>
-                <select value={filterZip} onChange={(e) => setFilterZip(e.target.value)}>
-                    {zipCodes.map(zip => (
-                        <option key={zip} value={zip}>{zip}</option>
-                    ))}
-                </select>
-                <button onClick={applyFilters}>Apply Filters</button>
-            </div>
+            <LocationFilter
+                states={states}
+                filteredCities={filteredCities}
+                zipCodes={zipCodes}
+                onFiltersChange={onFiltersChange}
+            />
 
-            {/* Sites List */}
+            <MapContainer
+                locations={sites}
+                renderMarker={renderSiteMarker}
+            />
+
             <h2>Sites List</h2>
             <ul className="site-list">
                 {sites.map(site => (
@@ -96,12 +100,13 @@ const SiteAnalytics = () => {
                 ))}
             </ul>
 
-            {/* site Analytics Modal for individual site details */}
-            <SiteAnalyticsModal
-                isOpen={isAnalyticsModalOpen}
-                onClose={() => setIsAnalyticsModalOpen(false)}
-                siteId={selectedSite}
-            />
+            {isAnalyticsModalOpen && (
+                <SiteAnalyticsModal
+                    isOpen={isAnalyticsModalOpen}
+                    onClose={() => setIsAnalyticsModalOpen(false)}
+                    siteId={selectedSite}
+                />
+            )}
         </div>
     );
 };
