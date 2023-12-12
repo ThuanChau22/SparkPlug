@@ -5,13 +5,14 @@ import Modal from '../components/Modal';
 import StationDetailsModal from '../components/StationDetailsModal';
 import StationEditModal from '../components/StationEditModal';
 import StationAddModal from '../components/StationAddModal';
+import LocationFilter from '../components/LocationFilter';
 
 import { stationIcon } from '../components/mapIcons';
 import { MapContainer as LeafletMap, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import MapContainer from '../components/MapContainer';
+import StationMarker from '../components/StationMarker';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import StationMarker from '../components/StationMarker';
 
 const StationManagement = () => {
     const [stations, setStations] = useState([]);
@@ -28,12 +29,11 @@ const StationManagement = () => {
         longitude: '',
         siteId: ''
     });
-    const [filterState, setFilterState] = useState('all');
-    const [filterCity, setFilterCity] = useState('all');
-    const [filterZip, setFilterZip] = useState('all');
+
     const [states, setStates] = useState([]);
     const [cities, setCities] = useState([]);
     const [zipCodes, setZipCodes] = useState([]);
+    const [filteredCities, setFilteredCities] = useState([]);
     const [message, setMessage] = useState('');
 
     const stationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
@@ -44,24 +44,44 @@ const StationManagement = () => {
 
     const fetchStations = (queryParams = '') => {
         const url = `${stationAPI}${queryParams}`;
-        console.log("HTTP Request URL:", url); // Log the URL to the console
-
         apiInstance.get(url)
             .then(response => {
                 const fetchedStations = response.data;
                 setStations(fetchedStations);
 
                 if (!queryParams) {
-                    const uniqueStates = [...new Set(fetchedStations.map(station => station.state))];
-                    const uniqueCities = [...new Set(fetchedStations.map(station => station.city))];
-                    const uniqueZips = [...new Set(fetchedStations.map(station => station.zip_code))];
+                    const uniqueStates = Array.from(new Set(fetchedStations.map(station => station.state))).sort((a, b) => a.localeCompare(b));
+                    const uniqueCities = Array.from(new Set(fetchedStations.map(station => station.city))).sort((a, b) => a.localeCompare(b));
+                    const uniqueZips = Array.from(new Set(fetchedStations.map(station => station.zip_code))).sort((a, b) => a.localeCompare(b));
 
                     setStates(['all', ...uniqueStates]);
                     setCities(['all', ...uniqueCities]);
                     setZipCodes(['all', ...uniqueZips]);
+                    setFilteredCities(['all', ...uniqueCities]);
                 }
             })
             .catch(error => console.error('Error:', error));
+    };
+
+    const applyFilters = (state, city, zip) => {
+        let queryParams = [];
+        if (zip !== 'all') {
+            queryParams.push(`zip=${encodeURIComponent(zip)}`);
+        } else {
+            if (state !== 'all') {
+                queryParams.push(`state=${encodeURIComponent(state)}`);
+            }
+            if (city !== 'all') {
+                queryParams.push(`city=${encodeURIComponent(city)}`);
+            }
+        }
+
+        const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+        fetchStations(queryString);
+    };
+
+    const onFiltersChange = (newState, newCity, newZip) => {
+        applyFilters(newState, newCity, newZip);
     };
 
     const handleStationClick = (stationId) => {
@@ -120,49 +140,6 @@ const StationManagement = () => {
         }).catch(error => console.error('Error:', error));
     };
 
-    const applyFilters = () => {
-        let queryParams = [];
-
-        if (filterZip !== 'all') {
-            queryParams.push(`zip=${encodeURIComponent(filterZip)}`);
-        } else {
-            if (filterState !== 'all') {
-                queryParams.push(`state=${encodeURIComponent(filterState)}`);
-            }
-            if (filterCity !== 'all') {
-                queryParams.push(`city=${encodeURIComponent(filterCity)}`);
-            }
-        }
-
-        const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-        fetchStations(queryString);
-    };
-
-        const handleZipChange = (e) => {
-        const newZip = e.target.value;
-        setFilterZip(newZip);
-        if (newZip !== 'all') {
-            setFilterState('all');
-            setFilterCity('all');
-        }
-    };
-
-    const handleStateChange = (e) => {
-        const newState = e.target.value;
-        setFilterState(newState);
-        if (newState !== 'all') {
-            setFilterZip('all');
-        }
-    };
-
-    const handleCityChange = (e) => {
-        const newCity = e.target.value;
-        setFilterCity(newCity);
-        if (newCity !== 'all') {
-            setFilterZip('all');
-        }
-    };
-
     const refreshPage = () => {
         window.location.reload();
     };
@@ -178,30 +155,12 @@ const StationManagement = () => {
 
     return (
         <div>
-            <div className="filter-container">
-                <label htmlFor="stateFilter">State:</label>
-                <select id="stateFilter" value={filterState} onChange={(e) => handleStateChange(e)}>
-                    {states.map(state => (
-                        <option key={state} value={state}>{state}</option>
-                    ))}
-                </select>
-
-                <label htmlFor="cityFilter">City:</label>
-                <select id="cityFilter" value={filterCity} onChange={(e) => handleCityChange(e)}>
-                    {cities.map(city => (
-                        <option key={city} value={city}>{city}</option>
-                    ))}
-                </select>
-
-                <label htmlFor="zipFilter">Zip:</label>
-                <select id="zipFilter" value={filterZip} onChange={(e) => handleZipChange(e)}>
-                    {zipCodes.map(zip => (
-                        <option key={zip} value={zip}>{zip}</option>
-                    ))}
-                </select>
-
-                <button onClick={applyFilters}>Apply Filters</button>
-            </div>
+            <LocationFilter
+                states={states}
+                filteredCities={filteredCities}
+                zipCodes={zipCodes}
+                onFiltersChange={onFiltersChange}
+            />
             <button onClick={() => setIsAddModalOpen(true)}>Add Station</button>
 
             <MapContainer locations={stations} renderMarker={renderStationMarker} />

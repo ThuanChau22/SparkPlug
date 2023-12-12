@@ -51,3 +51,4 @@ const LocationFilter = ({ states, filteredCities, zipCodes, onFiltersChange }) =
 };
 
 export default LocationFilter;
+
