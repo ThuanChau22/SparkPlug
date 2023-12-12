@@ -19,8 +19,8 @@ from collections import defaultdict
 from functools import wraps
 
 app = Flask(__name__)
-# CORS(app)
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+CORS(app)
+#CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
 
 
 
@@ -83,12 +83,14 @@ def fetch_station_data(query_params):
         if value:
             if conditions: 
                 conditions += " AND"
-            if param == 'state' or param == 'status':
+            if param in ['state', 'status', 'owner_id', 'site_id']:
                 conditions += f" {param}='{value}'"
-            elif param == 'city' or param == 'name':
+            elif param in ['city', 'name']:
                 conditions += f" {param} LIKE '%{value}%'"
-            else:
-                conditions += f" {param}={value}"
+            elif param == 'zip':
+                conditions += f" zip_code={value}"
+            elif param == 'id':
+                conditions += f" id={value}"
 
     if conditions:
         conditions = " WHERE" + conditions
@@ -99,6 +101,47 @@ def fetch_station_data(query_params):
         data = cursor.fetchall()
 
     return data
+
+
+def fetch_transactions_data(station_id=None, charge_level=None, start_date='01/01/2010', end_date=None):
+    if end_date is None:
+        end_date = datetime.datetime.now().strftime('%m/%d/%Y')
+
+    # Build query dynamically
+    query = {}
+
+    if station_id is not None:
+        query['station_id'] = int(station_id)
+        print(f"Checking for station_id: {station_id}")
+
+    if charge_level is not None:
+        charge_level_map = {'1': 'Level 1', '2': 'Level 2'}
+        charge_levels = [charge_level_map[level] for level in charge_level.split() if level in charge_level_map]
+        if charge_levels:
+            query['charge_level'] = {'$in': charge_levels}
+
+    start_ms = date_to_milliseconds(start_date)
+    end_ms = date_to_milliseconds(end_date)
+    query['transaction_date'] = {'$gte': start_ms, '$lte': end_ms}
+
+    # Debugging: Print the query parameters
+    print(f"Query Params: Station ID: {station_id}, Charge Level: {charge_level}, Start Date: {start_date}, End Date: {end_date}")
+
+    # Debugging: Print the MongoDB query
+    print(f"MongoDB Query: {query}")
+
+    # Query the MongoDB transactions collection
+    transactions = db.transactions.find(query)
+
+   
+    # Convert the results to a list and format
+    transactions_list = list(transactions)
+    print(f"Number of transactions found: {len(transactions_list)}")
+
+    for transaction in transactions_list:
+        transaction['_id'] = str(transaction['_id'])
+
+    return transactions_list
 
 # Chart data prep
 def generate_charts(raw_docs):
@@ -179,35 +222,45 @@ def generate_charts(raw_docs):
 
     return data_pack
 
-
 def station_charts(station_id, start_date, end_date, charge_level):
+    # Call the refactored fetch_transactions_data function
+    transactions_data = fetch_transactions_data(station_id, charge_level, start_date, end_date)
 
-    base_url = request.host_url  # Get the base URL of the current Flask app
-    transactions_url = urljoin(base_url, f'api/transactions?station_id={station_id}')
-
-    if start_date != None:
-        transactions_url += f'&start_date={start_date}'
-    if end_date != None:
-        transactions_url += f'&end_date={end_date}'
-    if charge_level != None:
-        transactions_url += f'&charge_level={charge_level}'
-
-
-    # Additional query parameters can be added as needed
-    # Make the GET request
-    response = requests.get(transactions_url)
-
-    if response.status_code == 200:
-        raw_docs = response.json()
-        data_pack = generate_charts(raw_docs)
-        
+    if transactions_data:
+        data_pack = generate_charts(transactions_data)
         return jsonify(data_pack)
     else:
+        print("No transaction data found")
         return jsonify([])
 
+# def station_charts(station_id, start_date, end_date, charge_level):
+#     base_url = request.host_url  # Get the base URL of the current Flask app
+#     transactions_url = urljoin(base_url, f'api/transactions?station_id={station_id}')
+
+#     if start_date != None:
+#         transactions_url += f'&start_date={start_date}'
+#     if end_date != None:
+#         transactions_url += f'&end_date={end_date}'
+#     if charge_level != None:
+#         transactions_url += f'&charge_level={charge_level}'
+
+
+#     # Additional query parameters can be added as needed
+#     # Make the GET request
+#     response = requests.get(transactions_url)
+
+#     if response.status_code == 200:
+#         raw_docs = response.json()
+#         data_pack = generate_charts(raw_docs)
+        
+#         return jsonify(data_pack)
+#     else:
+#         return jsonify([])
+
 def aggregate_charts(site_id, start_date, end_date, charge_level):
-    base_url = request.host_url.rstrip('/')
-    transactions_url = urljoin(base_url, 'api/transactions')
+
+    # base_url = request.host_url.rstrip('/')
+    # transactions_url = urljoin(base_url, 'api/transactions')
 
     # Constructing query parameters
     query_params = {}
@@ -226,15 +279,14 @@ def aggregate_charts(site_id, start_date, end_date, charge_level):
     stations = [doc['id'] for doc in stations_data]
 
     # Fetching transactions
-    tr_response = requests.get(transactions_url, params=query_params)
-    if tr_response.status_code == 200:
-        transactions_data = tr_response.json()
+    transactions_data = fetch_transactions_data(None, charge_level, start_date, end_date)
+    if transactions_data:
+        stations_data = fetch_station_data({'site_id': site_id})
+        stations = [doc['id'] for doc in stations_data]
         filtered_transactions = [tr for tr in transactions_data if tr['station_id'] in stations]
-
-        # Generate and return chart data
         return jsonify(generate_charts(filtered_transactions))
     else:
-        return jsonify({'error': 'Failed to fetch transactions'}), tr_response.status_code
+        return jsonify({'error': 'Failed to fetch transactions'}), 500, tr_response.status_code
 
 # def aggregate_charts(site_id, start_date, end_date, charge_level):
 #     base_url = request.host_url.rstrip('/')
