@@ -34,10 +34,10 @@ const SiteAnalytics = () => {
                 const uniqueCities = Array.from(new Set(fetchedSites.map(site => site.city))).sort((a, b) => a.localeCompare(b));
                 const uniqueZips = Array.from(new Set(fetchedSites.map(site => site.zip_code))).sort((a, b) => a.localeCompare(b));
 
-                setStates(['all', ...uniqueStates]);
-                setCities(['all', ...uniqueCities]);
-                setZipCodes(['all', ...uniqueZips]);
-                setFilteredCities(['all', ...uniqueCities]);
+                setStates(['All', ...uniqueStates]);
+                setCities(['All', ...uniqueCities]);
+                setZipCodes(['All', ...uniqueZips]);
+                setFilteredCities(['All', ...uniqueCities]);
             })
             .catch(error => console.error('Error:', error));
     }, []);
@@ -45,9 +45,9 @@ const SiteAnalytics = () => {
     const applyFilters = (state, city, zip) => {
         let query = siteAPI;
         let queryParams = [];
-        if (state !== 'all') queryParams.push(`state=${state}`);
-        if (city !== 'all') queryParams.push(`city=${city}`);
-        if (zip !== 'all') queryParams.push(`zip=${zip}`);
+        if (state !== 'All') queryParams.push(`state=${state}`);
+        if (city !== 'All') queryParams.push(`city=${city}`);
+        if (zip !== 'All') queryParams.push(`zip=${zip}`);
         if (queryParams.length > 0) {
             query += '?' + queryParams.join('&');
         }

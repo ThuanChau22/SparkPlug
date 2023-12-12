@@ -2,31 +2,31 @@
 import React, { useState } from 'react';
 
 const LocationFilter = ({ states, filteredCities, zipCodes, onFiltersChange }) => {
-    const [localFilterState, setLocalFilterState] = useState('all');
-    const [localFilterCity, setLocalFilterCity] = useState('all');
-    const [localFilterZip, setLocalFilterZip] = useState('all');
+    const [localFilterState, setLocalFilterState] = useState('All');
+    const [localFilterCity, setLocalFilterCity] = useState('All');
+    const [localFilterZip, setLocalFilterZip] = useState('All');
 
     const handleStateChange = (e) => {
         const newState = e.target.value;
         setLocalFilterState(newState);
-        setLocalFilterCity('all');
-        setLocalFilterZip('all');
-        onFiltersChange(newState, 'all', 'all');
+        setLocalFilterCity('All');
+        setLocalFilterZip('All');
+        onFiltersChange(newState, 'All', 'All');
     };
 
     const handleCityChange = (e) => {
         const newCity = e.target.value;
         setLocalFilterCity(newCity);
-        setLocalFilterZip('all');
-        onFiltersChange(localFilterState, newCity, 'all');
+        setLocalFilterZip('All');
+        onFiltersChange(localFilterState, newCity, 'All');
     };
 
     const handleZipChange = (e) => {
         const newZip = e.target.value;
         setLocalFilterZip(newZip);
-        setLocalFilterState('all');
-        setLocalFilterCity('all');
-        onFiltersChange('all', 'all', newZip);
+        setLocalFilterState('All');
+        setLocalFilterCity('All');
+        onFiltersChange('All', 'All', newZip);
     };
 
     return (

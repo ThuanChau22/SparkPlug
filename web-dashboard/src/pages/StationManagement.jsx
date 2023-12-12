@@ -54,10 +54,10 @@ const StationManagement = () => {
                     const uniqueCities = Array.from(new Set(fetchedStations.map(station => station.city))).sort((a, b) => a.localeCompare(b));
                     const uniqueZips = Array.from(new Set(fetchedStations.map(station => station.zip_code))).sort((a, b) => a.localeCompare(b));
 
-                    setStates(['all', ...uniqueStates]);
-                    setCities(['all', ...uniqueCities]);
-                    setZipCodes(['all', ...uniqueZips]);
-                    setFilteredCities(['all', ...uniqueCities]);
+                    setStates(['All', ...uniqueStates]);
+                    setCities(['All', ...uniqueCities]);
+                    setZipCodes(['All', ...uniqueZips]);
+                    setFilteredCities(['All', ...uniqueCities]);
                 }
             })
             .catch(error => console.error('Error:', error));
@@ -65,13 +65,13 @@ const StationManagement = () => {
 
     const applyFilters = (state, city, zip) => {
         let queryParams = [];
-        if (zip !== 'all') {
+        if (zip !== 'All') {
             queryParams.push(`zip=${encodeURIComponent(zip)}`);
         } else {
-            if (state !== 'all') {
+            if (state !== 'All') {
                 queryParams.push(`state=${encodeURIComponent(state)}`);
             }
-            if (city !== 'all') {
+            if (city !== 'All') {
                 queryParams.push(`city=${encodeURIComponent(city)}`);
             }
         }

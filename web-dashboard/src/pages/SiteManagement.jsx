@@ -21,9 +21,9 @@ const SiteManagement = () => {
     const [selectedSite, setSelectedSite] = useState(null);
     const [editingSite, setEditingSite] = useState(null);
 
-    const [filterState, setFilterState] = useState('all');
-    const [filterCity, setFilterCity] = useState('all');
-    const [filterZip, setFilterZip] = useState('all');
+    const [filterState, setFilterState] = useState('All');
+    const [filterCity, setFilterCity] = useState('All');
+    const [filterZip, setFilterZip] = useState('All');
     const [states, setStates] = useState([]);
     const [cities, setCities] = useState([]);
     const [zipCodes, setZipCodes] = useState([]);
@@ -38,14 +38,14 @@ const SiteManagement = () => {
     }, []);
 
     useEffect(() => {
-        if (filterState !== 'all') {
+        if (filterState !== 'All') {
             const citiesInState = Array.from(new Set(sites
                 .filter(site => site.state === filterState)
                 .map(site => site.city)))
                 .sort((a, b) => a.localeCompare(b));
-            setFilteredCities(['all', ...citiesInState]);
+            setFilteredCities(['All', ...citiesInState]);
         } else {
-            setFilteredCities(['all', ...Array.from(new Set(sites.map(site => site.city))).sort((a, b) => a.localeCompare(b))]);
+            setFilteredCities(['All', ...Array.from(new Set(sites.map(site => site.city))).sort((a, b) => a.localeCompare(b))]);
         }
     }, [filterState, sites]);
 
@@ -64,9 +64,9 @@ const SiteManagement = () => {
                 const uniqueCities = Array.from(new Set(fetchedSites.map(site => site.city))).sort((a, b) => a.localeCompare(b));
                 const uniqueZips = Array.from(new Set(fetchedSites.map(site => site.zip_code))).sort((a, b) => a.localeCompare(b));
 
-                setStates(['all', ...uniqueStates]);
-                setCities(['all', ...uniqueCities]);
-                setZipCodes(['all', ...uniqueZips]);
+                setStates(['All', ...uniqueStates]);
+                setCities(['All', ...uniqueCities]);
+                setZipCodes(['All', ...uniqueZips]);
             })
             .catch(error => console.error('Error:', error));
     };
@@ -116,9 +116,9 @@ const SiteManagement = () => {
     const applyFilters = (state, city, zip) => {
         let query = siteAPI;
         let queryParams = [];
-        if (state !== 'all') queryParams.push(`state=${state}`);
-        if (city !== 'all') queryParams.push(`city=${city}`);
-        if (zip !== 'all') queryParams.push(`zip=${zip}`);
+        if (state !== 'All') queryParams.push(`state=${state}`);
+        if (city !== 'All') queryParams.push(`city=${city}`);
+        if (zip !== 'All') queryParams.push(`zip=${zip}`);
         if (queryParams.length > 0) {
             query += '?' + queryParams.join('&');
         }
