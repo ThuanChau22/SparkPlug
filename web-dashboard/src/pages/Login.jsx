@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   useNavigate,
   Link,
@@ -13,23 +13,53 @@ import {
   CContainer,
   CForm,
   CFormInput,
+  CFormSelect,
   CInputGroup,
   CInputGroupText,
   CRow,
 } from "@coreui/react";
 import CIcon from "@coreui/icons-react";
-import { cilLockLocked, cilUser } from "@coreui/icons";
+import { cilGroup, cilLockLocked, cilUser } from "@coreui/icons";
 
-import { selectAuthAuthenticated } from "redux/auth/authSlice";
+import {
+  Roles,
+  authLogin,
+  authStateSet,
+  selectAuthAuthenticated,
+  selectAuthSecureStorage,
+} from "redux/auth/authSlice";
 
 const Login = () => {
   const authenticated = useSelector(selectAuthAuthenticated);
+  const token = useSelector(selectAuthSecureStorage);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [input, setInput] = useState({
+    email: "",
+    password: "",
+    role: "",
+  });
+  useEffect(() => {
+    if (token) {
+      dispatch(authStateSet({ token }));
+    }
+  }, [token]);
   useEffect(() => {
     if (authenticated) {
       navigate("/", { replace: true });
     }
   }, [authenticated, navigate]);
+  const handleInputChanged = ({ target }) => {
+    const { name, value } = target;
+    setInput({ ...input, [name]: value });
+  };
+  const handleSubmit = () => {
+    const { email, password, role } = input;
+    if (!email || !password || !role) {
+      return;
+    }
+    dispatch(authLogin({ email, password, role }));
+  };
   return (
     <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
       <CContainer>
@@ -45,7 +75,13 @@ const Login = () => {
                       <CInputGroupText>
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
-                      <CFormInput placeholder="Username" autoComplete="username" />
+                      <CFormInput
+                        placeholder="Username"
+                        autoComplete="username"
+                        name="email"
+                        value={input.email}
+                        onChange={handleInputChanged}
+                      />
                     </CInputGroup>
                     <CInputGroup className="mb-4">
                       <CInputGroupText>
@@ -55,24 +91,37 @@ const Login = () => {
                         type="password"
                         placeholder="Password"
                         autoComplete="current-password"
+                        name="password"
+                        value={input.password}
+                        onChange={handleInputChanged}
                       />
                     </CInputGroup>
-                    <CRow>
-                      <CCol xs={6}>
-                        <CButton color="primary" className="px-4">
-                          Login
-                        </CButton>
-                      </CCol>
-                      <CCol xs={6} className="text-right">
-                        <CButton color="link" className="px-0">
-                          Forgot password?
-                        </CButton>
-                      </CCol>
-                    </CRow>
+                    <CInputGroup className="mb-4">
+                      <CInputGroupText>
+                        <CIcon icon={cilGroup} />
+                      </CInputGroupText>
+                      <CFormSelect
+                        options={[
+                          { label: "Select Role" },
+                          ...Object.entries(Roles)
+                            .map(([label, value]) => ({ label, value })),
+                        ]}
+                        name="role"
+                        value={input.role}
+                        onChange={handleInputChanged}
+                      />
+                    </CInputGroup>
+                    <CButton
+                      color="primary"
+                      className="w-100 px-4"
+                      onClick={handleSubmit}
+                    >
+                      Login
+                    </CButton>
                   </CForm>
                 </CCardBody>
               </CCard>
-              <CCard className="text-white bg-primary py-5" style={{ width: "44%" }}>
+              <CCard className="text-white bg-primary py-5" >
                 <CCardBody className="text-center">
                   <div>
                     <h2>Sign up</h2>
@@ -91,7 +140,7 @@ const Login = () => {
           </CCol>
         </CRow>
       </CContainer>
-    </div>
+    </div >
   )
 }
 
