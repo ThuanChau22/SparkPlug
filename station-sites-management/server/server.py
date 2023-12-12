@@ -98,6 +98,31 @@ def time_string_to_hours(time_str):
     except ValueError:
         return 0  # Return 0 if the time format is incorrect
 
+# Abstracted out
+def fetch_station_data(query_params):
+    query = "SELECT * FROM stations_joined"
+    conditions = ""
+
+    for param, value in query_params.items():
+        if value:
+            if conditions: 
+                conditions += " AND"
+            if param == 'state' or param == 'status':
+                conditions += f" {param}='{value}'"
+            elif param == 'city' or param == 'name':
+                conditions += f" {param} LIKE '%{value}%'"
+            else:
+                conditions += f" {param}={value}"
+
+    if conditions:
+        conditions = " WHERE" + conditions
+
+    sql_connection = get_mysql_connection()
+    with sql_connection.cursor() as cursor:
+        cursor.execute(query + conditions)
+        data = cursor.fetchall()
+
+    return data
 
 # Chart data prep
 def generate_charts(raw_docs):
@@ -204,44 +229,12 @@ def station_charts(station_id, start_date, end_date, charge_level):
     else:
         return jsonify([])
 
-def fetch_station_data(query_params, user_role, user_id=None):
-    query = "SELECT * FROM stations_joined"
-    conditions = ""
+def aggregate_charts(site_id, start_date, end_date, charge_level):
 
-    # Here, query_params is a dictionary containing all the query parameters
-    for param, value in query_params.items():
-        if value:
-            if conditions: conditions += " AND"
-            if param in ['state', 'status']:
-                conditions += f" {param}='{value}'"
-            elif param in ['city', 'name']:
-                conditions += f" {param} LIKE '%{value}%'"
-            else:
-                conditions += f" {param}={value}"
-
-    if user_role == 'owner' and user_id:
-        if conditions: conditions += " AND"
-        conditions += f" owner_id={user_id}"
-
-    if conditions:
-        conditions = " WHERE" + conditions
-
-    sql_connection = get_mysql_connection()
-    with sql_connection.cursor() as cursor:
-        cursor.execute(query + conditions)
-        data = cursor.fetchall()
-
-    return data
-
-def aggregate_charts(site_id, start_date, end_date, charge_level, user_role, user_id=None):
     base_url = request.host_url.rstrip('/')
-    stations_url = urljoin(base_url, 'api/stations')
     transactions_url = urljoin(base_url, 'api/transactions')
 
     # Constructing query parameters
-    if site_id is not None:
-        stations_url += f'?site_id={site_id}'
-
     query_params = {}
     if start_date is not None:
         query_params['start_date'] = start_date
@@ -251,23 +244,58 @@ def aggregate_charts(site_id, start_date, end_date, charge_level, user_role, use
         query_params['charge_level'] = charge_level
 
     # Fetching station IDs
-    st_response = requests.get(stations_url)
-    if st_response.status_code == 200:
-        stations_data = fetch_station_data({'site_id': site_id}, user_role, user_id)
-        stations = [doc['id'] for doc in stations_data]
+    station_query_params = {}
+    if site_id is not None:
+        station_query_params['site_id'] = site_id
+    stations_data = fetch_station_data(station_query_params)
+    stations = [doc['id'] for doc in stations_data]
 
-        # Fetching transactions
-        tr_response = requests.get(transactions_url, params=query_params)
-        if tr_response.status_code == 200:
-            transactions_data = tr_response.json()
-            filtered_transactions = [tr for tr in transactions_data if tr['station_id'] in stations]
+    # Fetching transactions
+    tr_response = requests.get(transactions_url, params=query_params)
+    if tr_response.status_code == 200:
+        transactions_data = tr_response.json()
+        filtered_transactions = [tr for tr in transactions_data if tr['station_id'] in stations]
 
-            # Generate and return chart data
-            return jsonify(generate_charts(filtered_transactions))
-        else:
-            return jsonify({'error': 'Failed to fetch transactions'}), tr_response.status_code
+        # Generate and return chart data
+        return jsonify(generate_charts(filtered_transactions))
     else:
-        return jsonify({'error': 'Failed to fetch stations'}), st_response.status_code
+        return jsonify({'error': 'Failed to fetch transactions'}), tr_response.status_code
+
+# def aggregate_charts(site_id, start_date, end_date, charge_level):
+#     base_url = request.host_url.rstrip('/')
+#     stations_url = urljoin(base_url, 'api/stations')
+#     transactions_url = urljoin(base_url, 'api/transactions')
+
+#     # Constructing query parameters
+#     if site_id is not None:
+#         stations_url += f'?site_id={site_id}'
+
+#     query_params = {}
+#     if start_date is not None:
+#         query_params['start_date'] = start_date
+#     if end_date is not None:
+#         query_params['end_date'] = end_date
+#     if charge_level is not None:
+#         query_params['charge_level'] = charge_level
+
+#     # Fetching station IDs
+#     st_response = requests.get(stations_url)
+#     if st_response.status_code == 200:
+#         stations_data = st_response.json()  # Convert response to JSON
+#         stations = [doc['id'] for doc in stations_data]
+
+#         # Fetching transactions
+#         tr_response = requests.get(transactions_url, params=query_params)
+#         if tr_response.status_code == 200:
+#             transactions_data = tr_response.json()
+#             filtered_transactions = [tr for tr in transactions_data if tr['station_id'] in stations]
+
+#             # Generate and return chart data
+#             return jsonify(generate_charts(filtered_transactions))
+#         else:
+#             return jsonify({'error': 'Failed to fetch transactions'}), tr_response.status_code
+#     else:
+#         return jsonify({'error': 'Failed to fetch stations'}), st_response.status_code
 
 
 
@@ -509,8 +537,11 @@ def get_stations(user):
         'status': request.args.get('status'),
         'site_id': request.args.get('site_id')
     }
+    
+    if user['role'] == 'owner':
+        query_params['owner_id'] = user['user_id']
 
-    data = fetch_station_data(query_params, user['role'], user_id=user.get('user_id'))
+    data = fetch_station_data(query_params)
     return jsonify(data)
 
 # @app.route('/api/stations', methods=['GET'])
