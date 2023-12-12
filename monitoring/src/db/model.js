@@ -1,8 +1,6 @@
 import mongoose from "mongoose";
 import ms from "ms";
 
-import { handleMonitoring } from "../ws/message.js";
-
 const monitoringSchema = mongoose.Schema({
   stationId: {
     type: String,
@@ -16,16 +14,7 @@ const monitoringSchema = mongoose.Schema({
     index: true,
   },
   payload: {
-    type: mongoose.Schema({
-      eventType: {
-        type: String,
-      },
-      transactionInfo: {
-        transactionId: {
-          type: String,
-        },
-      },
-    }, { _id: false }),
+    type: Object,
     default: {},
     required: true,
   },
@@ -57,18 +46,45 @@ monitoringSchema.loadClass(class {
       console.log(error);
     }
   }
+  static async watchStatusEvent(data) {
+    try {
+      const { stationIdList } = data;
+      return await Monitoring.watch(
+        [
+          {
+            $match: {
+              "operationType": "insert",
+              "fullDocument.event": "StatusNotification",
+              $or: stationIdList.map((id) => ({ "fullDocument.stationId": id }))
+            }
+          },
+          { $project: { fullDocument: 1 } },
+        ],
+        { fullDocument: "updateLookup" },
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  static async watchAllEvent(data) {
+    try {
+      const { stationId } = data;
+      return await Monitoring.watch(
+        [
+          {
+            $match: {
+              "operationType": "insert",
+              "fullDocument.stationId": stationId,
+            }
+          },
+          { $project: { fullDocument: 1 } },
+        ],
+        { fullDocument: "updateLookup" },
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  }
 });
 
 export const Monitoring = mongoose.model("monitoring", monitoringSchema);
-
-const changeStream = Monitoring.watch(
-  [
-    { $match: { operationType: "insert" } },
-    { $project: { fullDocument: 1 } },
-  ],
-  { fullDocument: "updateLookup" },
-);
-changeStream.on("change", async ({ fullDocument }) => {
-  const { stationId, event, payload } = fullDocument;
-  handleMonitoring({ stationId, event, content: payload });
-});

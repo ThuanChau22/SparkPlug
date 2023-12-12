@@ -1,11 +1,11 @@
 import { Monitoring } from "../../db/model.js";
-import { idTokens } from "../server.js";
 import { getUserByRFID } from "../../db/repository.js";
+import { idTokenToTransactionId } from "../server.js";
 
 const authorizeWithRFID = async ({ idToken }) => {
   const response = { idTokenInfo: { status: "Unknown" } };
   if (await getUserByRFID(idToken)) {
-    idTokens.set(idToken, "");
+    idTokenToTransactionId.set(idToken, "");
     response.idTokenInfo.status = "Accepted";
   }
   return response;

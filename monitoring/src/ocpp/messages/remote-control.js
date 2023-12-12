@@ -1,13 +1,14 @@
-import { idTokens } from "../server.js";
 import { v4 as uuid } from "uuid";
 
-const transactions = new Map();
+import {
+  clientIdToIdToken,
+  idTokenToTransactionId,
+} from "../server.js";
 
 const remoteControl = {};
 
 remoteControl.requestStartTransactionRequest = async ({ client }) => {
   const idToken = uuid();
-  idTokens.set(idToken, "");
   const { status } = await client.call("RequestStartTransaction", {
     remoteStartId: 0,
     idToken: {
@@ -16,19 +17,16 @@ remoteControl.requestStartTransactionRequest = async ({ client }) => {
     },
   });
   if (status === "Accepted") {
-    transactions.set(client.identity, idToken);
+    idTokenToTransactionId.set(idToken, "");
   }
   return { status };
 };
 
 remoteControl.requestStopTransactionRequest = async ({ client }) => {
-  const idToken = remoteControl.transactions.get(client.identity);
+  const idToken = clientIdToIdToken.get(client.identity);
   const { status } = await client.call("RequestStopTransaction", {
-    transactionId: idTokens.get(idToken),
+    transactionId: idTokenToTransactionId.get(idToken),
   });
-  if (status === "Accepted") {
-    transactions.delete(client.identity);
-  }
   return { status };
 };
 

@@ -1,8 +1,10 @@
 import { Monitoring } from "../../db/model.js";
+import { updateStationStatus } from "../../db/repository.js";
 
 const availability = {};
 
 availability.statusNotificationResponse = async ({ client, method, params }) => {
+  await updateStationStatus(client.identity, params.connectorStatus);
   await Monitoring.add({
     stationId: client.identity,
     event: method,
