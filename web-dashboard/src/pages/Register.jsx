@@ -75,6 +75,7 @@ const Register = () => {
                       <CIcon icon={cilUser} />
                     </CInputGroupText>
                     <CFormInput
+                      className="shadow-none"
                       placeholder="Username"
                       autoComplete="username"
                       name="name"
@@ -85,6 +86,7 @@ const Register = () => {
                   <CInputGroup className="mb-3">
                     <CInputGroupText>@</CInputGroupText>
                     <CFormInput
+                      className="shadow-none"
                       placeholder="Email"
                       autoComplete="email"
                       name="email"
@@ -97,6 +99,7 @@ const Register = () => {
                       <CIcon icon={cilLockLocked} />
                     </CInputGroupText>
                     <CFormInput
+                      className="shadow-none"
                       type="password"
                       placeholder="Password"
                       autoComplete="new-password"
@@ -110,6 +113,7 @@ const Register = () => {
                       <CIcon icon={cilGroup} />
                     </CInputGroupText>
                     <CFormSelect
+                      className="shadow-none"
                       options={[
                         { label: "Select Role" },
                         ...Object.entries(Roles)

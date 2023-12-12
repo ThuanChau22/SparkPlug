@@ -1,20 +1,32 @@
-import React from 'react';
-import '../scss/Modal.scss';
+import { useSelector } from "react-redux";
+import {
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+} from "@coreui/react";
 
-const SiteDetailsModal = ({ isOpen, onClose, siteData }) => {
-    if (!isOpen || !siteData) return null;
+import { selectSiteById } from "redux/site/siteSlide";
 
-    return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <h3>Site Details</h3>
-                <p>Site ID: {siteData.id}</p>
-                <p>Address: {siteData.street_address}, {siteData.city}, {siteData.state} {siteData.zip_code}</p>
-                
-                <button className="close-button" onClick={onClose}>Close</button>
-            </div>
-        </div>
-    );
+const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
+  const site = useSelector((state) => selectSiteById(state, siteId));
+  return (
+    <CModal
+      alignment="center"
+      visible={isOpen}
+      onClose={onClose}
+    >
+      <CModalHeader className="mb-2">
+        <CModalTitle>{site.name}</CModalTitle>
+      </CModalHeader>
+      <p className="ps-3" >Site ID: {site.id}</p>
+      <CModalBody>
+        <p>Owner ID: {site.owner_id}</p>
+        <p>Address: {site.street_address}, {site.city}, {site.state} {site.zip_code}</p>
+        <p>Coordinate: {site.latitude},{site.longitude}</p>
+      </CModalBody>
+    </CModal>
+  );
 };
 
 export default SiteDetailsModal;
