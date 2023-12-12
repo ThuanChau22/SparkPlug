@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { CChart } from '@coreui/react-chartjs';
 import { apiInstance } from 'redux/api';
-import '../scss/StationAnalyticsModal.scss';
+import '../scss/SiteAnalyticsModal.scss';
 
-const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => {
+const SiteAnalyticsModal = ({ isOpen, onClose, siteId }) => {
     const [analyticsData, setAnalyticsData] = useState(null);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [chargeLevel, setChargeLevel] = useState('all');
 
-    const stationAnalyticsAPI = process.env.REACT_APP_STATION_ANALYTICS_API_ENDPOINT;
+    const siteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
+    const siteAnalyticsAPI = process.env.REACT_APP_SITE_ANALYTICS_API_ENDPOINT
 
     useEffect(() => {
         fetchData();
-    }, [stationId]);
+    }, [siteId]);
 
     const formatDate = (dateStr) => {
         if (!dateStr) return '';
@@ -29,8 +30,8 @@ const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => {
     };
 
     const fetchData = () => {
-        if (stationId) {
-            let query = `${stationAnalyticsAPI}/${stationId}`;
+        if (siteId) {
+            let query = `${siteAnalyticsAPI}/${siteId}`;
             let queryParams = [];
             if (startDate) queryParams.push(`start_date=${formatDate(startDate)}`);
             if (endDate) queryParams.push(`end_date=${formatDate(endDate)}`);
@@ -75,4 +76,4 @@ const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => {
     );
 };
 
-export default StationAnalyticsModal;
+export default SiteAnalyticsModal;

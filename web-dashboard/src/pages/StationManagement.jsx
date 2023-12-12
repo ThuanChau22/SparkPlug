@@ -4,10 +4,12 @@ import '../scss/StationManagement.scss';
 import Modal from '../components/Modal';
 import StationDetailsModal from '../components/StationDetailsModal';
 import StationEditModal from '../components/StationEditModal';
+import StationAddModal from '../components/StationAddModal';
 
 const StationManagement = () => {
     const [stations, setStations] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedStation, setSelectedStation] = useState(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [editingStation, setEditingStation] = useState(null);
@@ -27,12 +29,14 @@ const StationManagement = () => {
     const [zipCodes, setZipCodes] = useState([]);
     const [message, setMessage] = useState('');
 
+    const stationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
+
     useEffect(() => {
         fetchStations();
     }, []);
 
     const fetchStations = (queryParams = '') => {
-        const url = `http://127.0.0.1:5000/api/stations${queryParams}`;
+        const url = `${stationAPI}${queryParams}`;
         console.log("HTTP Request URL:", url); // Log the URL to the console
 
         apiInstance.get(url)
@@ -67,7 +71,7 @@ const StationManagement = () => {
 
     const handleDeleteStation = (evt, stationId) => {
         evt.stopPropagation();
-        apiInstance.delete(`http://127.0.0.1:5000/api/stations/${stationId}`)
+        apiInstance.delete(`${stationAPI}/${stationId}`)
             .then(() => {
                 setStations(stations.filter(station => station.id !== stationId));
             })
@@ -89,19 +93,19 @@ const StationManagement = () => {
             site_id: formData.siteId
         };
 
-        apiInstance.post('http://127.0.0.1:5000/api/stations', data)
+        apiInstance.post(stationAPI, data)
             .then(response => {
                 setMessage(response.data.message);
-                setIsModalOpen(false);
+                setIsAddModalOpen(false);
             })
             .catch(error => {
                 setMessage('Error adding station');
-                setIsModalOpen(false);
+                setIsAddModalOpen(false);
             });
     };
 
     const saveEditedStation = (id, name, price) => {
-        apiInstance.patch(`http://127.0.0.1:5000/api/stations/${id}`, {
+        apiInstance.patch(`${stationAPI}/${id}`, {
             name: name,
             price: parseFloat(price)
         }).then(() => {
@@ -152,6 +156,10 @@ const StationManagement = () => {
         }
     };
 
+    const refreshPage = () => {
+        window.location.reload();
+    };
+
     return (
         <div>
             <div className="filter-container">
@@ -178,7 +186,7 @@ const StationManagement = () => {
 
                 <button onClick={applyFilters}>Apply Filters</button>
             </div>
-            <button onClick={() => setIsModalOpen(true)}>Add Station</button>
+            <button onClick={() => setIsAddModalOpen(true)}>Add Station</button>
 
             <h2>Stations List</h2>
             <ul className="station-list">
@@ -210,11 +218,12 @@ const StationManagement = () => {
                 stationData={selectedStation}
             />
 
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                <form>
-                    {/* Form elements */}
-                </form>
-            </Modal>
+            <StationAddModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onAddStation={handleAddStation}
+                onRefresh={refreshPage}
+            />
         </div>
     );
 };

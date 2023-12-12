@@ -1,32 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { apiInstance } from 'redux/api';
 import '../scss/SiteManagement.scss';
-import Modal from '../components/Modal';
 import SiteDetailsModal from '../components/SiteDetailsModal';
+import SiteAddModal from '../components/SiteAddModal';
+import SiteEditModal from '../components/SiteEditModal';
 
 const SiteManagement = () => {
     const [sites, setSites] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedSite, setSelectedSite] = useState(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-    const [newSiteData, setNewSiteData] = useState({
-        name: '',
-        owner_id: '',
-        street_address: '',
-        zip_code: '',
-        latitude: '',
-        longitude: '',
-    });
-    const [message, setMessage] = useState('');
-    const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [selectedSite, setSelectedSite] = useState(null);
+    const [editingSite, setEditingSite] = useState(null);
+
+    const siteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
 
     useEffect(() => {
-        apiInstance.get('http://127.0.0.1:5000/api/sites')
+        fetchSites();
+    }, []);
+
+    const fetchSites = () => {
+        apiInstance.get(siteAPI)
             .then(response => {
                 setSites(response.data);
             })
             .catch(error => console.error('Error:', error));
-    }, []);
+    };
 
     const handleSiteClick = (siteId) => {
         const site = sites.find(s => s.id === siteId);
@@ -34,77 +32,78 @@ const SiteManagement = () => {
         setIsDetailsModalOpen(true);
     };
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setNewSiteData(prev => ({ ...prev, [name]: value }));
+    const handleAddSite = (siteData) => {
+        apiInstance.post(siteAPI, siteData)
+            .then(() => {
+                fetchSites();
+            })
+            .catch(error => console.error('Error:', error));
+        fetchSites();
     };
 
-    const handleAddSite = () => {
-        apiInstance.post('http://127.0.0.1:5000/api/sites', newSiteData, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }).then(response => {
-            setMessage('Site added successfully');
-            setIsModalOpen(false);
-            setIsMessageModalOpen(true);
-            setNewSiteData({
-                name: '',
-                owner_id: '',
-                street_address: '',
-                zip_code: '',
-                latitude: '',
-                longitude: '',
-            });
-        }).catch(error => {
-            console.error('Error:', error);
-            setMessage('Error adding site');
-            setIsModalOpen(false);
-            setIsMessageModalOpen(true);
-        });
+    const handleEditSite = (evt, site) => {
+        evt.stopPropagation();
+        setEditingSite(site);
+        setIsDetailsModalOpen(false);
+        fetchSites();
     };
 
-    const handleCloseMessageModal = () => {
-        setIsMessageModalOpen(false);
-        window.location.reload(); // Reload the page to reflect new changes
+    const saveEditedSite = (id, name) => {
+        apiInstance.patch(`${siteAPI}/${id}`, {
+            name: name,
+        }).then(() => {
+            window.location.reload();;
+        }).catch(error => console.error('Error:', error));
+    };
+
+    const handleDeleteSite = (evt, siteId) => {
+        evt.stopPropagation();
+        apiInstance.delete(`${siteAPI}/${siteId}`)
+            .then(() => {
+                fetchSites();
+            })
+            .catch(error => console.error('Error:', error));
     };
 
     return (
         <div>
-            <button onClick={() => setIsModalOpen(true)}>Add Site</button>
+            <button onClick={() => setIsAddModalOpen(true)}>Add Site</button>
 
-            {/* Sites List */}
             <h2>Sites List</h2>
             <ul className="site-list">
                 {sites.map(site => (
                     <li key={site.id} className="site-list-item" onClick={() => handleSiteClick(site.id)}>
-                        ID: {site.id}, Name: {site.name}
+                        <span className="site-info">
+                            ID: {site.id}, Name: {site.name}
+                        </span>
+                        <div className="site-actions">
+                            <button onClick={(evt) => handleEditSite(evt, site)}>Edit</button>
+                            <button onClick={(evt) => handleDeleteSite(evt, site.id)}>Delete</button>
+                        </div>
                     </li>
                 ))}
             </ul>
 
-            {/* Add Site Modal */}
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                {/* Form for adding a site */}
-                {/* ... */}
-            </Modal>
-
-            {/* Site Details Modal */}
             <SiteDetailsModal
                 isOpen={isDetailsModalOpen}
                 onClose={() => setIsDetailsModalOpen(false)}
                 siteData={selectedSite}
-                // Add onDelete or other functions if needed
             />
 
-            {/* Message Modal */}
-            <Modal 
-                isOpen={isMessageModalOpen} 
-                onClose={handleCloseMessageModal}
-                className="message-modal-content"
-            >
-                <p>{message}</p>
-            </Modal>
+            <SiteAddModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onAddSite={handleAddSite}
+            />
+
+            {editingSite && (
+                <SiteEditModal
+                    isOpen={Boolean(editingSite)}
+                    onClose={() => setEditingSite(null)}
+                    siteData={editingSite}
+                    onSave={saveEditedSite}
+                />
+            )}
         </div>
     );
 };

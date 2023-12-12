@@ -1,64 +1,60 @@
-.site-management {
-    button {
-        margin: 10px;
-        padding: 10px 20px;
-        background-color: #28a745; // Green shade for differentiation
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-        transition: background-color 0.3s, transform 0.2s;
+.site-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
 
-        &:hover {
-            background-color: #218838;
-            transform: translateY(-2px);
-        }
+.site-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    &:hover {
+        background-color: #e9ecef;
     }
 
-    .site-list {
-        list-style-type: none;
-        margin: 0;
-        padding-left: 0;
-
-        .site-list-item {
-            padding: 15px;
-            margin-bottom: 10px;
-            background-color: #f8f9fa;
-            border: 1px solid #ced4da;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: box-shadow 0.3s ease, background-color 0.3s ease;
-
-            &:hover {
-                background-color: #e9ecef;
-                box-shadow: 0 5px 8px rgba(0, 0, 0, 0.15);
-            }
-
-            span {
-                font-size: 1.1em;
-                font-weight: bold;
-            }
-        }
+    &:last-child {
+        border-bottom: none;
     }
 
-    .modal-overlay {
-        // Define styles for modal overlay
+    /* Style to visually indicate it's an ordered list */
+    &::before {
+        content: counters(item, ".") " ";
+        counter-increment: item;
+        margin-right: 10px;
     }
 
-    .modal-content {
-        // Define styles for modal content
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+    // Styling for the site information
+    .site-info {
+        // Add any additional styling you want for the text
+    }
 
-        .edit-button, .delete-button, .close-button {
-            margin-top: 15px;
-            border-radius: 6px;
-            padding: 8px 15px;
-            font-size: 0.9em;
-            // Define distinct styles for these buttons
+    // Styling for the buttons
+    .site-actions {
+        button {
+            margin-left: 10px; // Space between buttons
         }
+    }
+}
+
+.filter-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+
+    select, button {
+        padding: 5px;
+        min-width: 100px;
+    }
+
+    label {
+        margin-right: 5px;
     }
 }
