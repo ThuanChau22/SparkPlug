@@ -1,13 +1,15 @@
 import { RPCServer, createRPCError } from "ocpp-rpc";
 import { v4 as uuid } from 'uuid';
 
+import { updateStationStatus } from "../db/repository.js";
 import authorization from "./messages/authorization.js";
 import availability from "./messages/availability.js";
 import provisioning from "./messages/provisioning.js";
 import transactions from "./messages/transactions.js";
 
-export const clients = new Map();
-export const idTokens = new Map();
+export const clientIdToClient = new Map();
+export const clientIdToIdToken = new Map();
+export const idTokenToTransactionId = new Map();
 
 const server = new RPCServer({
   protocols: ["ocpp2.0.1"],
@@ -15,7 +17,7 @@ const server = new RPCServer({
 });
 
 server.auth((accept, reject, handshake) => {
-  console.log(`ConnectionRequest from ${handshake.identity}`);
+  console.log(`Connection request from station: ${handshake.identity}`);
   if (handshake.identity) {
     accept({ sessionId: uuid() });
   } else {
@@ -25,7 +27,9 @@ server.auth((accept, reject, handshake) => {
 
 server.on("client", async (client) => {
 
-  clients.set(client.identity, client);
+  console.log(`Connected with station: ${client.identity}`);
+
+  clientIdToClient.set(client.identity, client);
 
   client.handle("BootNotification", (params) => {
     return provisioning.bootNotificationResponse({ ...params, client });
@@ -47,8 +51,10 @@ server.on("client", async (client) => {
     return transactions.transactionEventResponse({ ...params, client });
   });
 
-  client.on("close", () => {
-    clients.delete(client.identity);
+  client.on("close", async () => {
+    clientIdToClient.delete(client.identity);
+    await updateStationStatus(client.identity, "Offline");
+    console.log(`Disconnected with station: ${client.identity}`);
   });
 
   // create a wildcard handler to handle any RPC method

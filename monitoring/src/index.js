@@ -7,21 +7,25 @@ import {
   setGracefulShutdown,
 } from "./config.js";
 
-const server = app.listen(PORT, async () => {
+const main = async () => {
   try {
     await connectMongoDB();
-    console.log(`Monitoring server running on port: ${PORT}`);
+    const server = app.listen(PORT, () => {
+      console.log(`Monitoring server running on port: ${PORT}`);
+    }).on("upgrade", (request, socket, head) => {
+      const { pathname } = new URL(request.url, "http://localhost");
+      const [_, path] = pathname.split("/");
+      if (path === "monitoring") {
+        wsServer.handleUpgrade(request, socket, head);
+      } else if (path === "ocpp") {
+        ocppServer.handleUpgrade(request, socket, head);
+      } else {
+        socket.destroy();
+      }
+    });
+    setGracefulShutdown({ server, ocppServer, wsServer });
   } catch (error) {
     console.log(error);
   }
-}).on("upgrade", (request, socket, head) => {
-  const [_, path] = request.url.split("/");
-  if (path && path === "monitoring") {
-    wsServer.handleUpgrade(request, socket, head);
-  } else if (path && path === "ocpp") {
-    ocppServer.handleUpgrade(request, socket, head);
-  } else {
-    socket.destroy();
-  }
-});
-setGracefulShutdown({ server, ocppServer, wsServer });
+};
+main();

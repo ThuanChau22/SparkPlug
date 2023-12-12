@@ -8,6 +8,8 @@ dotenvExpand.expand(dotenv.config());
 export const {
   PORT,
   WEB_DOMAIN,
+  AUTH_API_ENDPOINT,
+  STATION_API_ENDPOINT,
   MYSQL_HOST,
   MYSQL_PORT,
   MYSQL_USER,
@@ -25,7 +27,6 @@ export const mysql = mysql2.createPool({
 });
 
 export const connectMongoDB = async () => {
-  mongoose.set("strictQuery", true);
   await mongoose.connect(MONGODB_URL);
 };
 
