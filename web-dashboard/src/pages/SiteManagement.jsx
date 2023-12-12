@@ -12,6 +12,8 @@ import SiteMarker from '../components/SiteMarker';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+import LocationFilter from '../components/LocationFilter';
+
 const SiteManagement = () => {
     const [sites, setSites] = useState([]);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -26,6 +28,8 @@ const SiteManagement = () => {
     const [cities, setCities] = useState([]);
     const [zipCodes, setZipCodes] = useState([]);
 
+    const [filteredCities, setFilteredCities] = useState([]);
+
 
     const siteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
 
@@ -33,15 +37,32 @@ const SiteManagement = () => {
         fetchSites();
     }, []);
 
+    useEffect(() => {
+        if (filterState !== 'all') {
+            const citiesInState = Array.from(new Set(sites
+                .filter(site => site.state === filterState)
+                .map(site => site.city)))
+                .sort((a, b) => a.localeCompare(b));
+            setFilteredCities(['all', ...citiesInState]);
+        } else {
+            setFilteredCities(['all', ...Array.from(new Set(sites.map(site => site.city))).sort((a, b) => a.localeCompare(b))]);
+        }
+    }, [filterState, sites]);
+
+    useEffect(() => {
+        applyFilters(filterState, filterCity, filterZip);
+    }, [filterState, filterCity, filterZip]);
+
+
     const fetchSites = () => {
         apiInstance.get(siteAPI)
             .then(response => {
                 const fetchedSites = response.data;
                 setSites(fetchedSites);
 
-                const uniqueStates = [...new Set(fetchedSites.map(site => site.state))];
-                const uniqueCities = [...new Set(fetchedSites.map(site => site.city))];
-                const uniqueZips = [...new Set(fetchedSites.map(site => site.zip_code))];
+                const uniqueStates = Array.from(new Set(fetchedSites.map(site => site.state))).sort((a, b) => a.localeCompare(b));
+                const uniqueCities = Array.from(new Set(fetchedSites.map(site => site.city))).sort((a, b) => a.localeCompare(b));
+                const uniqueZips = Array.from(new Set(fetchedSites.map(site => site.zip_code))).sort((a, b) => a.localeCompare(b));
 
                 setStates(['all', ...uniqueStates]);
                 setCities(['all', ...uniqueCities]);
@@ -49,6 +70,8 @@ const SiteManagement = () => {
             })
             .catch(error => console.error('Error:', error));
     };
+
+
 
 
     const handleSiteClick = (siteId) => {
@@ -90,12 +113,33 @@ const SiteManagement = () => {
             .catch(error => console.error('Error:', error));
     };
 
-    const applyFilters = () => {
+    const handleStateChange = (e) => {
+        const newState = e.target.value;
+        setFilterState(newState);
+        setFilterCity('all');
+        setFilterZip('all');
+    };
+
+    const handleCityChange = (e) => {
+        const newCity = e.target.value;
+        setFilterCity(newCity);
+        setFilterZip('all');
+    };
+
+    const handleZipChange = (e) => {
+        const newZip = e.target.value;
+        setFilterZip(newZip);
+        setFilterState('all');
+        setFilterCity('all');
+    };
+
+
+    const applyFilters = (state, city, zip) => {
         let query = siteAPI;
         let queryParams = [];
-        if (filterState !== 'all') queryParams.push(`state=${filterState}`);
-        if (filterCity !== 'all') queryParams.push(`city=${filterCity}`);
-        if (filterZip !== 'all') queryParams.push(`zip=${filterZip}`);
+        if (state !== 'all') queryParams.push(`state=${state}`);
+        if (city !== 'all') queryParams.push(`city=${city}`);
+        if (zip !== 'all') queryParams.push(`zip=${zip}`);
         if (queryParams.length > 0) {
             query += '?' + queryParams.join('&');
         }
@@ -106,6 +150,7 @@ const SiteManagement = () => {
             })
             .catch(error => console.error('Error:', error));
     };
+
 
 
     const renderSiteMarker = site => (
@@ -119,24 +164,17 @@ const SiteManagement = () => {
 
     return (
         <div>
-            <div className="filter-container">
-                <select value={filterState} onChange={(e) => setFilterState(e.target.value)}>
-                    {states.map(state => (
-                        <option key={state} value={state}>{state}</option>
-                    ))}
-                </select>
-                <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)}>
-                    {cities.map(city => (
-                        <option key={city} value={city}>{city}</option>
-                    ))}
-                </select>
-                <select value={filterZip} onChange={(e) => setFilterZip(e.target.value)}>
-                    {zipCodes.map(zip => (
-                        <option key={zip} value={zip}>{zip}</option>
-                    ))}
-                </select>
-                <button onClick={applyFilters}>Apply Filters</button>
-            </div>
+            <LocationFilter
+                states={states}
+                filteredCities={filteredCities}
+                zipCodes={zipCodes}
+                filterState={filterState}
+                filterCity={filterCity}
+                filterZip={filterZip}
+                onStateChange={handleStateChange}
+                onCityChange={handleCityChange}
+                onZipChange={handleZipChange}
+            />
             <button onClick={() => setIsAddModalOpen(true)}>Add Site</button>
 
             <MapContainer
