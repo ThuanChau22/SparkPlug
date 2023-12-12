@@ -9,6 +9,7 @@ import { MapContainer as LeafletMap, TileLayer, Marker, Popup, useMap } from 're
 import MapContainer from '../components/MapContainer';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import StationMarker from '../components/StationMarker';
 
 const StationAnalytics = () => {
     const [stations, setStations] = useState([]);
@@ -110,6 +111,15 @@ const StationAnalytics = () => {
             .catch(error => console.error('Error:', error));
     };
 
+    const renderStationMarker = station => (
+        <StationMarker
+          key={station.id}
+          station={station}
+          icon={stationIcon}
+          onMarkerClick={() => handleStationClick(station.id)}
+        />
+    );
+
     return (
         <div>
             {/* Filter container for aggregate data */}
@@ -132,7 +142,7 @@ const StationAnalytics = () => {
                 <button onClick={applyFilters}>Apply Filters</button>
             </div>
 
-            <MapContainer locations={stations} icon={stationIcon} />
+            <MapContainer locations={stations} renderMarker={renderStationMarker} />
 
             {/* Stations List */}
             <h2>Stations List</h2>

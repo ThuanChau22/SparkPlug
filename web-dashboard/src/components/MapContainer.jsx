@@ -1,9 +1,7 @@
 import React, { useEffect } from 'react';
-import { MapContainer as LeafletMap, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer as LeafletMap, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import StationMarker from './StationMarker';
-
 
 const MapBoundsSetter = ({ locations }) => {
     const map = useMap();
@@ -18,7 +16,7 @@ const MapBoundsSetter = ({ locations }) => {
     return null;
 };
 
-const MapContainer = ({ locations, icon, onMarkerClick }) => {
+const MapContainer = ({ locations, renderMarker }) => {
     // Default position can be set to a fallback location
     const defaultPosition = [37.3352, 121.8811];
     const zoomLevel = 13;
@@ -29,13 +27,7 @@ const MapContainer = ({ locations, icon, onMarkerClick }) => {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
             />
-            {locations.map((loc, index) => (
-                <Marker key={index} position={[loc.latitude, loc.longitude]} icon={icon}>
-                    <Popup>
-                        {loc.name} <br/> {loc.city}, {loc.state}
-                    </Popup>
-                </Marker>
-            ))}
+            {locations.map(location => renderMarker(location))}
             <MapBoundsSetter locations={locations} />
         </LeafletMap>
     );

@@ -11,6 +11,7 @@ import { MapContainer as LeafletMap, TileLayer, Marker, Popup, useMap } from 're
 import MapContainer from '../components/MapContainer';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import StationMarker from '../components/StationMarker';
 
 const StationManagement = () => {
     const [stations, setStations] = useState([]);
@@ -166,6 +167,15 @@ const StationManagement = () => {
         window.location.reload();
     };
 
+    const renderStationMarker = station => (
+        <StationMarker
+          key={station.id}
+          station={station}
+          icon={stationIcon}
+          onMarkerClick={() => handleStationClick(station.id)}
+        />
+    );
+
     return (
         <div>
             <div className="filter-container">
@@ -194,7 +204,7 @@ const StationManagement = () => {
             </div>
             <button onClick={() => setIsAddModalOpen(true)}>Add Station</button>
 
-            <MapContainer locations={stations} icon={stationIcon} />
+            <MapContainer locations={stations} renderMarker={renderStationMarker} />
 
             <h2>Stations List</h2>
             <ul className="station-list">

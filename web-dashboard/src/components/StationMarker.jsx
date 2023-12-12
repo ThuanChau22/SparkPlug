@@ -13,7 +13,7 @@ const StationMarker = ({ station, icon, onMarkerClick }) => {
     >
       <Tooltip direction="top" offset={[0, -20]} opacity={1} permanent={false}>
         <span>{`Station: ${station.name}`}</span><br />
-        <span>{`Site ID: ${station.siteId}`}</span><br />
+        <span>{`Site ID: ${station.site_id}`}</span><br />
         <span>{`Price: ${station.price}`}</span>
       </Tooltip>
     </Marker>
