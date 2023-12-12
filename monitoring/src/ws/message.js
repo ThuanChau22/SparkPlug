@@ -42,10 +42,10 @@ export const handleWatchAllEvent = async ({ ws, payload }) => {
     socketToChangeStream.get(ws)?.close();
     const changeStream = await Monitoring.watchAllEvent({ stationId });
     changeStream.on("change", ({ fullDocument }) => {
-      const { stationId, event, payload } = fullDocument;
+      const { stationId, event, payload, createdAt } = fullDocument;
       sendJsonMessage(ws, {
         action: Action.WATCH_ALL_EVENT,
-        payload: { stationId, event, payload },
+        payload: { stationId, event, payload, createdAt },
       });
     });
     socketToChangeStream.set(ws, changeStream);
@@ -86,10 +86,10 @@ export const handleWatchStatusEvent = async ({ ws, payload }) => {
     socketToChangeStream.get(ws)?.close();
     const changeStream = await Monitoring.watchStatusEvent({ stationIdList });
     changeStream.on("change", ({ fullDocument }) => {
-      const { stationId, event, payload } = fullDocument;
+      const { stationId, event, payload, createdAt } = fullDocument;
       sendJsonMessage(ws, {
-        action: Action.WATCH_ALL_EVENT,
-        payload: { stationId, event, payload },
+        action: Action.WATCH_STATUS_EVENT,
+        payload: { stationId, event, payload, createdAt },
       });
     });
     socketToChangeStream.set(ws, changeStream);

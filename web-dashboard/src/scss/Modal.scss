@@ -10,18 +10,18 @@
     z-index: 2000; /* Ensure it's above other content */
 }
 
-.modal-content {
-    background: #ffffff; 
-    background-color: #ffffff !important;
-    width: 50%; /* Adjust width as needed */
-    max-width: 600px; /* Maximum width */
-    padding: 20px;
-    border-radius: 8px; /* Rounded corners */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Soft shadow */
-    display: flex;
-    flex-direction: column;
-    z-index:1200
-}
+// .modal-content {
+//     background: #ffffff; 
+//     background-color: #ffffff !important;
+//     width: 50%; /* Adjust width as needed */
+//     max-width: 600px; /* Maximum width */
+//     padding: 20px;
+//     border-radius: 8px; /* Rounded corners */
+//     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Soft shadow */
+//     display: flex;
+//     flex-direction: column;
+//     z-index:1200
+// }
 
 .modal-header {
     margin-bottom: 20px;
