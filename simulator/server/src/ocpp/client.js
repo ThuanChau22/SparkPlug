@@ -210,8 +210,7 @@ export const handleStopTransaction = async ({ triggerReason, stoppedReason }) =>
 };
 
 ocppClient.handle("RequestStartTransaction", ({ params }) => {
-  const [evse] = station.EVSEs;
-  if (evse.AvailabilityState !== "Available") {
+  if (station.Auth.Authenticated || station.Transaction.OnGoing) {
     return { status: "Rejected" };
   }
   const { idToken, remoteStartId } = params;
