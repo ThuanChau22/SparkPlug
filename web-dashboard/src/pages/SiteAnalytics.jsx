@@ -7,6 +7,7 @@ import SiteAnalyticsModal from '../components/SiteAnalyticsModal';
 import { siteIcon } from '../components/mapIcons';
 import { MapContainer as LeafletMap, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import MapContainer from '../components/MapContainer';
+import SiteMarker from '../components/SiteMarker';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -70,6 +71,15 @@ const SiteAnalytics = () => {
             .catch(error => console.error('Error:', error));
     };
 
+    const renderSiteMarker = site => (
+        <SiteMarker
+          key={site.id}
+          site={site}
+          icon={siteIcon}
+          onSiteClick={handleSiteClick}
+        />
+    );
+
     return (
         <div>
             {/* Filter container for aggregate data */}
@@ -92,7 +102,10 @@ const SiteAnalytics = () => {
                 <button onClick={applyFilters}>Apply Filters</button>
             </div>
 
-            <MapContainer locations={sites} icon={siteIcon} />
+            <MapContainer
+                locations={sites}
+                renderMarker={renderSiteMarker}
+            />
 
             {/* Sites List */}
             <h2>Sites List</h2>
