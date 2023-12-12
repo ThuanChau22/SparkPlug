@@ -11,6 +11,11 @@ services:
       - ./web-dashboard/.env
     environment:
       - PORT=${WEB_DASHBOARD_PORT}
+      - REACT_APP_AUTH_API_ENDPOINT=${AUTH_API_ENDPOINT}
+      - REACT_APP_USER_API_ENDPOINT=${USER_API_ENDPOINT}
+      - REACT_APP_SITE_API_ENDPOINT=${SITE_API_ENDPOINT}
+      - REACT_APP_STATION_API_ENDPOINT=${STATION_API_ENDPOINT}
+      - REACT_APP_MONITORING_WS_ENDPOINT=${MONITORING_WS_ENDPOINT}
     ports:
       - ${WEB_DASHBOARD_PORT}:${WEB_DASHBOARD_PORT}
     develop:
@@ -22,10 +27,38 @@ services:
             - node_modules/
         - action: rebuild
           path: ./web-dashboard/package.json
+        - action: rebuild
+          path: ./web-dashboard/.env
 
-  station-site-management:
-    image: sparkplug-station-site-management
-    container_name: sparkplug-station-site-management
+  user:
+    image: sparkplug-user
+    container_name: sparkplug-user
+    build:
+      context: ./user
+      target: development
+    env_file:
+      - ./.env
+      - ./user/.env
+    environment:
+      - PORT=${USER_PORT}
+      - WEB_DOMAIN=${WEB_DASHBOARD_DOMAIN}
+    ports:
+      - ${USER_PORT}:${USER_PORT}
+    develop:
+      watch:
+        - action: sync
+          path: ./user
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./user/package.json
+        - action: rebuild
+          path: ./user/.env
+
+  site-station-analytics:
+    image: sparkplug-site-station-analytics
+    container_name: sparkplug-site-station-analytics
     build:
       context: ./station-sites-management/server
     env_file:
@@ -34,10 +67,12 @@ services:
     environment:
       - FLASK_ENV=production
       - ENV=prod
-      - SERVER_HOST=${STATION_SITE_HOST}
-      - SERVER_PORT=${STATION_SITE_PORT}
+      - SERVER_HOST=${SITE_STATION_ANALYTICS_HOST}
+      - SERVER_PORT=${SITE_STATION_ANALYTICS_PORT}
+      - WEB_DOMAIN=${WEB_DASHBOARD_DOMAIN}
+      - AUTH_API_ENDPOINT=${INTERNAL_AUTH_API_ENDPOINT}
     ports:
-      - ${STATION_SITE_PORT}:${STATION_SITE_PORT}
+      - ${SITE_STATION_ANALYTICS_PORT}:${SITE_STATION_ANALYTICS_PORT}
     develop:
       watch:
         - action: sync
@@ -45,3 +80,84 @@ services:
           target: /app
         - action: rebuild
           path: ./station-sites-management/server/requirements.txt
+
+  monitoring:
+    image: sparkplug-monitoring
+    container_name: sparkplug-monitoring
+    build:
+      context: ./monitoring
+      target: development
+    env_file:
+      - ./.env
+      - ./monitoring/.env
+    environment:
+      - PORT=${MONITORING_PORT}
+      - WEB_DOMAIN=${WEB_DASHBOARD_DOMAIN}
+      - AUTH_API_ENDPOINT=${INTERNAL_AUTH_API_ENDPOINT}
+      - STATION_API_ENDPOINT=${INTERNAL_STATION_API_ENDPOINT}
+    ports:
+      - ${MONITORING_PORT}:${MONITORING_PORT}
+    develop:
+      watch:
+        - action: sync
+          path: ./monitoring
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./monitoring/package.json
+        - action: rebuild
+          path: ./monitoring/.env
+
+  simulator-client:
+    image: sparkplug-simulator-client
+    container_name: sparkplug-simulator-client
+    build:
+      context: ./simulator/client
+      target: development
+    env_file:
+      - ./.env
+      - ./simulator/client/.env
+    environment:
+      - PORT=${SIMULATOR_CLIENT_PORT}
+      - REACT_APP_WS_ENDPOINT=${SIMULATOR_WS_ENDPOINT}
+    ports:
+      - ${SIMULATOR_CLIENT_PORT}:${SIMULATOR_CLIENT_PORT}
+    develop:
+      watch:
+        - action: sync
+          path: ./simulator/client
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./simulator/client/package.json
+        - action: rebuild
+          path: ./simulator/client/.env
+  
+  simulator-server:
+    image: sparkplug-simulator-server
+    container_name: sparkplug-simulator-server
+    build:
+      context: ./simulator/server
+      target: development
+    env_file:
+      - ./.env
+      - ./simulator/server/.env
+    environment:
+      - PORT=${SIMULATOR_SERVER_PORT}
+      - WEB_DOMAIN=${SIMULATOR_CLIENT_DOMAIN}
+      - STATION_MANAGEMENT_WS_ENDPOINT=${STATION_MANAGEMENT_WS_ENDPOINT}
+    ports:
+      - ${SIMULATOR_SERVER_PORT}:${SIMULATOR_SERVER_PORT}
+    develop:
+      watch:
+        - action: sync
+          path: ./simulator/server
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./simulator/server/package.json
+        - action: rebuild
+          path: ./simulator/server/.env

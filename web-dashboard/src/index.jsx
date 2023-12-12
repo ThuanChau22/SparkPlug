@@ -13,12 +13,6 @@ import {
   RouterProvider,
 } from "react-router-dom";
 
-import {
-  loader as userManagementLoader,
-} from "pages/UserManagement";
-import {
-  loader as userAnalyticsLoader,
-} from "pages/UserAnalytics";
 import { store } from "redux/store";
 import routes from "routes";
 import "scss/style.scss";
@@ -84,12 +78,10 @@ const router = createBrowserRouter([
                 {
                   path: routes.Resources.Users.Components.Management.path,
                   element: routes.Resources.Users.Components.Management.element,
-                  loader: userManagementLoader,
                 },
                 {
                   path: routes.Resources.Users.Components.Analytics.path,
                   element: routes.Resources.Users.Components.Analytics.element,
-                  loader: userAnalyticsLoader,
                 },
               ]
             },

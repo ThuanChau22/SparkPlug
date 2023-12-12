@@ -1,0 +1,12 @@
+services:
+
+  monitoring:
+    image: sparkplug-monitoring
+    container_name: sparkplug-monitoring
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+    ports:
+      - ${PORT}:${PORT}
