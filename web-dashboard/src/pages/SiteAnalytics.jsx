@@ -4,6 +4,12 @@ import { CChart } from '@coreui/react-chartjs';
 import '../scss/SiteManagement.scss';
 import SiteAnalyticsModal from '../components/SiteAnalyticsModal';
 
+import { siteIcon } from '../components/mapIcons';
+import { MapContainer as LeafletMap, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import MapContainer from '../components/MapContainer';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
 const SiteAnalytics = () => {
     const [sites, setSites] = useState([]);
     const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
@@ -85,6 +91,8 @@ const SiteAnalytics = () => {
                 </select>
                 <button onClick={applyFilters}>Apply Filters</button>
             </div>
+
+            <MapContainer locations={sites} icon={siteIcon} />
 
             {/* Sites List */}
             <h2>Sites List</h2>

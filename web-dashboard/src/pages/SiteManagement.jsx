@@ -5,6 +5,12 @@ import SiteDetailsModal from '../components/SiteDetailsModal';
 import SiteAddModal from '../components/SiteAddModal';
 import SiteEditModal from '../components/SiteEditModal';
 
+import { siteIcon } from '../components/mapIcons';
+import { MapContainer as LeafletMap, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import MapContainer from '../components/MapContainer';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
 const SiteManagement = () => {
     const [sites, setSites] = useState([]);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -68,6 +74,8 @@ const SiteManagement = () => {
     return (
         <div>
             <button onClick={() => setIsAddModalOpen(true)}>Add Site</button>
+
+            <MapContainer locations={sites} icon={siteIcon} />
 
             <h2>Sites List</h2>
             <ul className="site-list">

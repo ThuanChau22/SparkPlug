@@ -26,7 +26,7 @@ CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
 
 # Set up dummy user to simulate login
 DUMMY_USER = {
-    "user_id": "9",
+    "user_id": "11",
     "role": "owner", 
 }
 

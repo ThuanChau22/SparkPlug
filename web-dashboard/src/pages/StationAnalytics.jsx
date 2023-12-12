@@ -4,6 +4,12 @@ import { CChart } from '@coreui/react-chartjs';
 import '../scss/StationAnalytics.scss';
 import StationAnalyticsModal from '../components/StationAnalyticsModal';
 
+import { stationIcon } from '../components/mapIcons';
+import { MapContainer as LeafletMap, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import MapContainer from '../components/MapContainer';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
 const StationAnalytics = () => {
     const [stations, setStations] = useState([]);
     const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
@@ -125,6 +131,8 @@ const StationAnalytics = () => {
                 </select>
                 <button onClick={applyFilters}>Apply Filters</button>
             </div>
+
+            <MapContainer locations={stations} icon={stationIcon} />
 
             {/* Stations List */}
             <h2>Stations List</h2>

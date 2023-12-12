@@ -6,6 +6,12 @@ import StationDetailsModal from '../components/StationDetailsModal';
 import StationEditModal from '../components/StationEditModal';
 import StationAddModal from '../components/StationAddModal';
 
+import { stationIcon } from '../components/mapIcons';
+import { MapContainer as LeafletMap, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import MapContainer from '../components/MapContainer';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
 const StationManagement = () => {
     const [stations, setStations] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -187,6 +193,8 @@ const StationManagement = () => {
                 <button onClick={applyFilters}>Apply Filters</button>
             </div>
             <button onClick={() => setIsAddModalOpen(true)}>Add Station</button>
+
+            <MapContainer locations={stations} icon={stationIcon} />
 
             <h2>Stations List</h2>
             <ul className="station-list">
