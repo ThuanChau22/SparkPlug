@@ -113,27 +113,6 @@ const SiteManagement = () => {
             .catch(error => console.error('Error:', error));
     };
 
-    const handleStateChange = (e) => {
-        const newState = e.target.value;
-        setFilterState(newState);
-        setFilterCity('all');
-        setFilterZip('all');
-    };
-
-    const handleCityChange = (e) => {
-        const newCity = e.target.value;
-        setFilterCity(newCity);
-        setFilterZip('all');
-    };
-
-    const handleZipChange = (e) => {
-        const newZip = e.target.value;
-        setFilterZip(newZip);
-        setFilterState('all');
-        setFilterCity('all');
-    };
-
-
     const applyFilters = (state, city, zip) => {
         let query = siteAPI;
         let queryParams = [];
@@ -151,7 +130,12 @@ const SiteManagement = () => {
             .catch(error => console.error('Error:', error));
     };
 
-
+    const onFiltersChange = (newState, newCity, newZip) => {
+        setFilterState(newState);
+        setFilterCity(newCity);
+        setFilterZip(newZip);
+        applyFilters(newState, newCity, newZip);
+    };
 
     const renderSiteMarker = site => (
         <SiteMarker
@@ -168,12 +152,7 @@ const SiteManagement = () => {
                 states={states}
                 filteredCities={filteredCities}
                 zipCodes={zipCodes}
-                filterState={filterState}
-                filterCity={filterCity}
-                filterZip={filterZip}
-                onStateChange={handleStateChange}
-                onCityChange={handleCityChange}
-                onZipChange={handleZipChange}
+                onFiltersChange={onFiltersChange}
             />
             <button onClick={() => setIsAddModalOpen(true)}>Add Site</button>
 

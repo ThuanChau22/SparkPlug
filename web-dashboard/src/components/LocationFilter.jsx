@@ -1,35 +1,47 @@
 // LocationFilter.jsx
-import React from 'react';
+import React, { useState } from 'react';
 
-const LocationFilter = ({ states, filteredCities, zipCodes, filterState, filterCity, filterZip, onStateChange, onCityChange, onZipChange }) => {
-    const handleZipChange = (e) => {
-        if (e.target.value !== 'all') {
-            onStateChange({ target: { value: 'all' } });
-            onCityChange({ target: { value: 'all' } });
-        }
-        onZipChange(e);
+const LocationFilter = ({ states, filteredCities, zipCodes, onFiltersChange }) => {
+    const [localFilterState, setLocalFilterState] = useState('all');
+    const [localFilterCity, setLocalFilterCity] = useState('all');
+    const [localFilterZip, setLocalFilterZip] = useState('all');
+
+    const handleStateChange = (e) => {
+        const newState = e.target.value;
+        setLocalFilterState(newState);
+        setLocalFilterCity('all');
+        setLocalFilterZip('all');
+        onFiltersChange(newState, 'all', 'all');
     };
 
-    const handleStateOrCityChange = (e, changeHandler) => {
-        if (filterZip !== 'all') {
-            onZipChange({ target: { value: 'all' } });
-        }
-        changeHandler(e);
+    const handleCityChange = (e) => {
+        const newCity = e.target.value;
+        setLocalFilterCity(newCity);
+        setLocalFilterZip('all');
+        onFiltersChange(localFilterState, newCity, 'all');
+    };
+
+    const handleZipChange = (e) => {
+        const newZip = e.target.value;
+        setLocalFilterZip(newZip);
+        setLocalFilterState('all');
+        setLocalFilterCity('all');
+        onFiltersChange('all', 'all', newZip);
     };
 
     return (
         <div className="filter-container">
-            <select value={filterState} onChange={(e) => { onStateChange(e); }}>
+            <select value={localFilterState} onChange={handleStateChange}>
                 {states?.map(state => (
                     <option key={state} value={state}>{state}</option>
                 ))}
             </select>
-            <select value={filterCity} onChange={(e) => { onCityChange(e); }}>
+            <select value={localFilterCity} onChange={handleCityChange}>
                 {filteredCities?.map(city => (
                     <option key={city} value={city}>{city}</option>
                 ))}
             </select>
-            <select value={filterZip} onChange={(e) => { onZipChange(e); }}>
+            <select value={localFilterZip} onChange={handleZipChange}>
                 {zipCodes?.map(zip => (
                     <option key={zip} value={zip}>{zip}</option>
                 ))}
