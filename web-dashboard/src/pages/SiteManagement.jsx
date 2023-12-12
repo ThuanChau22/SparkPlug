@@ -18,6 +18,13 @@ import {
   selectSiteList,
 } from "redux/site/siteSlide";
 
+import { siteIcon } from '../components/mapIcons';
+import MapContainer from '../components/MapContainer';
+import SiteMarker from '../components/SiteMarker';
+import 'leaflet/dist/leaflet.css';
+
+import LocationFilter from '../components/LocationFilter';
+
 const SiteManagement = () => {
   const siteList = useSelector(selectSiteList);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -25,11 +32,52 @@ const SiteManagement = () => {
   const [isEditModelOpen, setIsEditModalOpen] = useState(false);
   const [selectedSiteId, setSelectedSiteId] = useState(null);
   const [editingSiteId, setEditingSiteId] = useState(null);
+  const [filterState, setFilterState] = useState('All');
+  const [filterCity, setFilterCity] = useState('All');
+  const [filterZip, setFilterZip] = useState('All');
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [zipCodes, setZipCodes] = useState([]);
+  const [filteredCities, setFilteredCities] = useState([]);
   const dispatch = useDispatch();
 
   useEffect(() => {
     dispatch(siteGetAll());
   }, [dispatch]);
+
+  useEffect(() => {
+    const uniqueStates = Array
+      .from(new Set(siteList.map(site => site.state)))
+      .sort((a, b) => a.localeCompare(b));
+    const uniqueCities = Array
+      .from(new Set(siteList.map(site => site.city)))
+      .sort((a, b) => a.localeCompare(b));
+    const uniqueZips = Array
+      .from(new Set(siteList.map(site => site.zip_code)))
+      .sort((a, b) => a.localeCompare(b));
+    setStates(['All', ...uniqueStates]);
+    setCities(['All', ...uniqueCities]);
+    setZipCodes(['All', ...uniqueZips]);
+  }, [siteList]);
+
+  useEffect(() => {
+    if (filterState !== 'All') {
+      const citiesInState = Array
+        .from(new Set(siteList
+          .filter(site => site.state === filterState)
+          .map(site => site.city)))
+        .sort((a, b) => a.localeCompare(b));
+      setFilteredCities(['All', ...citiesInState]);
+    } else {
+      setFilteredCities(['All', ...Array
+        .from(new Set(siteList.map(site => site.city)))
+        .sort((a, b) => a.localeCompare(b))]);
+    }
+  }, [filterState, siteList]);
+
+  useEffect(() => {
+    applyFilters(filterState, filterCity, filterZip);
+  }, [filterState, filterCity, filterZip]);
 
   const handleSiteClick = (siteId) => {
     setSelectedSiteId(siteId);
@@ -47,8 +95,48 @@ const SiteManagement = () => {
     e.stopPropagation();
   };
 
+  const applyFilters = (state, city, zip) => {
+    let query = "";
+    const queryParams = [];
+    if (state !== 'All') queryParams.push(`state=${state}`);
+    if (city !== 'All') queryParams.push(`city=${city}`);
+    if (zip !== 'All') queryParams.push(`zip=${zip}`);
+    if (queryParams.length > 0) {
+      query += queryParams.join('&');
+    }
+    dispatch(siteGetAll(query));
+  };
+
+  const onFiltersChange = (newState, newCity, newZip) => {
+    setFilterState(newState);
+    setFilterCity(newCity);
+    setFilterZip(newZip);
+    applyFilters(newState, newCity, newZip);
+  };
+
+  const renderSiteMarker = site => (
+    <SiteMarker
+      key={site.id}
+      site={site}
+      icon={siteIcon}
+      onSiteClick={handleSiteClick}
+    />
+  );
+
   return (
     <CCard>
+      <LocationFilter
+        states={states}
+        filteredCities={filteredCities}
+        zipCodes={zipCodes}
+        onFiltersChange={onFiltersChange}
+      />
+      <button onClick={() => setIsAddModalOpen(true)}>Add Site</button>
+
+      <MapContainer
+        locations={siteList}
+        renderMarker={renderSiteMarker}
+      />
       <CCardBody>
         <CCardTitle className="mb-3">
           Sites
@@ -94,7 +182,6 @@ const SiteManagement = () => {
           ))}
         </CListGroup>
       </CCardBody>
-
       {isAddModalOpen &&
         <SiteAddModal
           isOpen={isAddModalOpen}
@@ -108,14 +195,14 @@ const SiteManagement = () => {
           siteId={selectedSiteId}
         />
       }
-      {isEditModelOpen && (
+      {isEditModelOpen &&
         <SiteEditModal
           isOpen={isEditModelOpen}
           onClose={() => setIsEditModalOpen(false)}
           siteId={editingSiteId}
         />
-      )}
-    </CCard>
+      }
+    </CCard >
   );
 };
 

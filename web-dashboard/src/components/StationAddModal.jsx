@@ -52,7 +52,7 @@ const StationAddModal = ({ isOpen, onClose, onAddStation, onRefresh }) => {
         .then(data => {
             console.log("Response Data:", data); // Debugging line
             onClose(); // Close the modal after submission
-            onRefresh();
+            // onRefresh();
         })
         .catch(error => console.error('Error:', error));
     };

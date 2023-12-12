@@ -3,6 +3,8 @@ import { CChart } from '@coreui/react-chartjs';
 import { apiInstance } from 'redux/api';
 import '../scss/StationAnalyticsModal.scss';
 
+import stationIconUrl from '../assets/station_pointer.png';
+
 const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => {
     const [analyticsData, setAnalyticsData] = useState(null);
     const [startDate, setStartDate] = useState('');
