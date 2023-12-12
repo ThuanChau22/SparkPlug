@@ -204,8 +204,36 @@ def station_charts(station_id, start_date, end_date, charge_level):
     else:
         return jsonify([])
 
+def fetch_station_data(query_params, user_role, user_id=None):
+    query = "SELECT * FROM stations_joined"
+    conditions = ""
 
-def aggregate_charts(site_id, start_date, end_date, charge_level):
+    # Here, query_params is a dictionary containing all the query parameters
+    for param, value in query_params.items():
+        if value:
+            if conditions: conditions += " AND"
+            if param in ['state', 'status']:
+                conditions += f" {param}='{value}'"
+            elif param in ['city', 'name']:
+                conditions += f" {param} LIKE '%{value}%'"
+            else:
+                conditions += f" {param}={value}"
+
+    if user_role == 'owner' and user_id:
+        if conditions: conditions += " AND"
+        conditions += f" owner_id={user_id}"
+
+    if conditions:
+        conditions = " WHERE" + conditions
+
+    sql_connection = get_mysql_connection()
+    with sql_connection.cursor() as cursor:
+        cursor.execute(query + conditions)
+        data = cursor.fetchall()
+
+    return data
+
+def aggregate_charts(site_id, start_date, end_date, charge_level, user_role, user_id=None):
     base_url = request.host_url.rstrip('/')
     stations_url = urljoin(base_url, 'api/stations')
     transactions_url = urljoin(base_url, 'api/transactions')
@@ -225,7 +253,7 @@ def aggregate_charts(site_id, start_date, end_date, charge_level):
     # Fetching station IDs
     st_response = requests.get(stations_url)
     if st_response.status_code == 200:
-        stations_data = st_response.json()  # Convert response to JSON
+        stations_data = fetch_station_data({'site_id': site_id}, user_role, user_id)
         stations = [doc['id'] for doc in stations_data]
 
         # Fetching transactions
@@ -471,56 +499,73 @@ def update_site(user, site_id):
 @app.route('/api/stations', methods=['GET'])
 @require_permission('owner', 'staff')
 def get_stations(user):
-    query = "SELECT * FROM stations_joined"
-    conditions = ""
+    query_params = {
+        'state': request.args.get('state'),
+        'city': request.args.get('city'),
+        'zip': request.args.get('zip'),
+        'owner_id': request.args.get('owner_id'),
+        'name': request.args.get('name'),
+        'id': request.args.get('id'),
+        'status': request.args.get('status'),
+        'site_id': request.args.get('site_id')
+    }
 
-    q_state = request.args.get('state')
-    q_city = request.args.get('city')
-    q_zip = request.args.get('zip')
-    q_owner_id = request.args.get('owner_id')
-    q_name = request.args.get('name')
-    q_id = request.args.get('id')
-    q_status = request.args.get('status')
-    q_site_id = request.args.get('site_id')
-
-    if q_state:
-        if conditions: conditions += " AND"
-        conditions += f" state='{q_state}'"
-    if q_city:
-        if conditions: conditions += " AND"
-        conditions += f" city LIKE '%{q_city}%'"
-    if q_zip:
-        if conditions: conditions += " AND"
-        conditions += f" zip_code={q_zip}"
-    if q_owner_id:
-        if conditions: conditions += " AND"
-        conditions += f" owner_id={q_owner_id}"
-    if q_name:
-        if conditions: conditions += " AND"
-        conditions += f" name LIKE '%{q_name}%'"
-    if q_id:
-        if conditions: conditions += " AND"
-        conditions = f" id={q_id}"
-    if q_status:
-        if conditions: conditions += " AND"
-        conditions += f" status='{q_status}'"
-    if q_site_id:
-        if conditions: conditions += " AND"
-        conditions += f" site_id={q_site_id}"
-
-    if user['role'] == 'owner':
-        if conditions: conditions += " AND"
-        conditions += f" owner_id={user['user_id']}"
-
-    if conditions:
-        conditions = " WHERE" + conditions
-
-    sql_connection = get_mysql_connection()
-    with sql_connection.cursor() as cursor:
-        cursor.execute(query+conditions)
-        data = cursor.fetchall()
-    #return(query+conditions)
+    data = fetch_station_data(query_params, user['role'], user_id=user.get('user_id'))
     return jsonify(data)
+
+# @app.route('/api/stations', methods=['GET'])
+# @require_permission('owner', 'staff')
+# def get_stations(user):
+#     query = "SELECT * FROM stations_joined"
+#     conditions = ""
+
+#     q_state = request.args.get('state')
+#     q_city = request.args.get('city')
+#     q_zip = request.args.get('zip')
+#     q_owner_id = request.args.get('owner_id')
+#     q_name = request.args.get('name')
+#     q_id = request.args.get('id')
+#     q_status = request.args.get('status')
+#     q_site_id = request.args.get('site_id')
+
+#     if q_state:
+#         if conditions: conditions += " AND"
+#         conditions += f" state='{q_state}'"
+#     if q_city:
+#         if conditions: conditions += " AND"
+#         conditions += f" city LIKE '%{q_city}%'"
+#     if q_zip:
+#         if conditions: conditions += " AND"
+#         conditions += f" zip_code={q_zip}"
+#     if q_owner_id:
+#         if conditions: conditions += " AND"
+#         conditions += f" owner_id={q_owner_id}"
+#     if q_name:
+#         if conditions: conditions += " AND"
+#         conditions += f" name LIKE '%{q_name}%'"
+#     if q_id:
+#         if conditions: conditions += " AND"
+#         conditions = f" id={q_id}"
+#     if q_status:
+#         if conditions: conditions += " AND"
+#         conditions += f" status='{q_status}'"
+#     if q_site_id:
+#         if conditions: conditions += " AND"
+#         conditions += f" site_id={q_site_id}"
+
+#     if user['role'] == 'owner':
+#         if conditions: conditions += " AND"
+#         conditions += f" owner_id={user['user_id']}"
+
+#     if conditions:
+#         conditions = " WHERE" + conditions
+
+#     sql_connection = get_mysql_connection()
+#     with sql_connection.cursor() as cursor:
+#         cursor.execute(query+conditions)
+#         data = cursor.fetchall()
+#     #return(query+conditions)
+#     return jsonify(data)
 
 @app.route('/api/stations/<station_id>', methods=['GET'])
 @require_permission('owner', 'staff')
@@ -661,7 +706,7 @@ def all_stations_analytics(user):
     if not end_date: end_date = datetime.datetime.now().strftime('%m/%d/%Y')
     if not charge_level: charge_level = None
 
-    return aggregate_charts(None, start_date, end_date, charge_level)
+    return aggregate_charts(None, start_date, end_date, charge_level, user['role'], user['user_id'])
 
 @app.route('/api/sites/analytics/<site_id>', methods=['GET'])
 @require_permission('owner', 'staff')
