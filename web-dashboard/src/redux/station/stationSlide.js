@@ -48,10 +48,10 @@ export const {
 
 export const stationGetAll = createAsyncThunk(
   `${stationSlice.name}/getAll`,
-  async (_, { dispatch, getState }) => {
+  async (query = "", { dispatch, getState }) => {
     try {
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.get(`${StationAPI}`, config);
+      const { data } = await apiInstance.get(`${StationAPI}${query}`, config);
       dispatch(stationStateSetAll(data));
     } catch (error) {
       handleError({ error, dispatch });
@@ -78,7 +78,7 @@ export const stationAdd = createAsyncThunk(
     try {
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.post(`${StationAPI}`, stationData, config);
-      dispatch(stationStateSetById(data));
+      dispatch(stationGetById(data.inserted_id));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -91,8 +91,8 @@ export const stationUpdateById = createAsyncThunk(
     try {
       const { id, ...remain } = stationData;
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.patch(`${StationAPI}/${id}`, remain, config);
-      dispatch(stationStateUpdateById(data));
+      await apiInstance.patch(`${StationAPI}/${id}`, remain, config);
+      dispatch(stationGetById(id));
     } catch (error) {
       handleError({ error, dispatch });
     }

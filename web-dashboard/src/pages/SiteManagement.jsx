@@ -18,7 +18,7 @@ import {
   selectSiteList,
 } from "redux/site/siteSlide";
 
-import { siteIcon } from '../components/mapIcons';
+import { siteIcon } from '../assets/mapIcons';
 import MapContainer from '../components/MapContainer';
 import SiteMarker from '../components/SiteMarker';
 import 'leaflet/dist/leaflet.css';
@@ -46,18 +46,20 @@ const SiteManagement = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    const uniqueStates = Array
-      .from(new Set(siteList.map(site => site.state)))
-      .sort((a, b) => a.localeCompare(b));
-    const uniqueCities = Array
-      .from(new Set(siteList.map(site => site.city)))
-      .sort((a, b) => a.localeCompare(b));
-    const uniqueZips = Array
-      .from(new Set(siteList.map(site => site.zip_code)))
-      .sort((a, b) => a.localeCompare(b));
-    setStates(['All', ...uniqueStates]);
-    setCities(['All', ...uniqueCities]);
-    setZipCodes(['All', ...uniqueZips]);
+    if (siteList) {
+      const uniqueStates = Array
+        .from(new Set(siteList.map(site => site.state)))
+        .sort((a, b) => a.localeCompare(b));
+      const uniqueCities = Array
+        .from(new Set(siteList.map(site => site.city)))
+        .sort((a, b) => a.localeCompare(b));
+      const uniqueZips = Array
+        .from(new Set(siteList.map(site => site.zip_code)))
+        .sort((a, b) => a.localeCompare(b));
+      setStates(['All', ...uniqueStates]);
+      setCities(['All', ...uniqueCities]);
+      setZipCodes(['All', ...uniqueZips]);
+    }
   }, [siteList]);
 
   useEffect(() => {
@@ -102,7 +104,7 @@ const SiteManagement = () => {
     if (city !== 'All') queryParams.push(`city=${city}`);
     if (zip !== 'All') queryParams.push(`zip=${zip}`);
     if (queryParams.length > 0) {
-      query += queryParams.join('&');
+      query += `?${queryParams.join('&')}`;
     }
     dispatch(siteGetAll(query));
   };
@@ -131,15 +133,13 @@ const SiteManagement = () => {
         zipCodes={zipCodes}
         onFiltersChange={onFiltersChange}
       />
-      <button onClick={() => setIsAddModalOpen(true)}>Add Site</button>
-
       <MapContainer
         locations={siteList}
         renderMarker={renderSiteMarker}
       />
       <CCardBody>
         <CCardTitle className="mb-3">
-          Sites
+          Sites List
           <CButton
             className="float-end mx-5"
             variant="outline"
@@ -156,10 +156,8 @@ const SiteManagement = () => {
               className="d-flex justify-content-between align-items-center py-3"
               onClick={() => handleSiteClick(id)}
             >
-              <div>
-                <span>ID: {id}</span>
-              </div>
-              <span>{name}</span>
+              <div>ID: {id}</div>
+              <div>{name}</div>
               <div>
                 <CButton
                   className="mx-1"

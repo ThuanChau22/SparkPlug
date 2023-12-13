@@ -48,10 +48,10 @@ export const {
 
 export const siteGetAll = createAsyncThunk(
   `${siteSlice.name}/getAll`,
-  async (_, { dispatch, getState }) => {
+  async (query = "", { dispatch, getState }) => {
     try {
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.get(`${SiteAPI}`, config);
+      const { data } = await apiInstance.get(`${SiteAPI}${query}`, config);
       dispatch(siteStateSetAll(data));
     } catch (error) {
       handleError({ error, dispatch });
