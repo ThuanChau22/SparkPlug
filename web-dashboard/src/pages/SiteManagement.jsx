@@ -42,8 +42,10 @@ const SiteManagement = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(siteGetAll());
-  }, [dispatch]);
+    if (siteList.length === 0) {
+      dispatch(siteGetAll());
+    }
+  }, [siteList, dispatch]);
 
   useEffect(() => {
     if (siteList) {
@@ -86,10 +88,10 @@ const SiteManagement = () => {
     setIsDetailsModalOpen(true);
   };
 
-  const handleEditSite = (event, siteId) => {
+  const handleEditSite = (e, siteId) => {
     setEditingSiteId(siteId);
     setIsEditModalOpen(true);
-    event.stopPropagation();
+    e.stopPropagation();
   };
 
   const handleDeleteSite = (e, siteId) => {

@@ -23,7 +23,7 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
       <CModalBody>
         <p>Owner ID: {site.owner_id}</p>
         <p>Address: {site.street_address}, {site.city}, {site.state} {site.zip_code}</p>
-        <p>Coordinate: {site.latitude},{site.longitude}</p>
+        <p>Coordinate: {site.latitude}, {site.longitude}</p>
       </CModalBody>
     </CModal>
   );

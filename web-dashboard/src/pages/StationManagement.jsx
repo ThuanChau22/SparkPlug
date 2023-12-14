@@ -19,7 +19,6 @@ import MapContainer from "../components/MapContainer";
 import StationMarker from "../components/StationMarker";
 import {
   stationGetAll,
-  stationUpdateById,
   stationDeleteById,
   selectStationList,
 } from "redux/station/stationSlide";
@@ -28,8 +27,9 @@ import "../scss/StationManagement.scss";
 const StationManagement = () => {
   const stationList = useSelector(selectStationList);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedStation, setSelectedStation] = useState(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedStationId, setSelectedStationId] = useState(null);
   const [editingStationId, setEditingStationId] = useState(null);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
@@ -38,8 +38,10 @@ const StationManagement = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(stationGetAll());
-  }, [dispatch]);
+    if (stationList.length === 0) {
+      dispatch(stationGetAll());
+    }
+  }, [stationList, dispatch]);
 
   useEffect(() => {
     if (stationList) {
@@ -74,28 +76,19 @@ const StationManagement = () => {
   };
 
   const handleStationClick = (stationId) => {
-    const station = stationList.find(s => s.id === stationId);
-    setSelectedStation(station);
+    setSelectedStationId(stationId);
     setIsDetailsModalOpen(true);
   };
 
   const handleEditStation = (e, stationId) => {
     setEditingStationId(stationId);
-    setIsDetailsModalOpen(false);
+    setIsEditModalOpen(true);
     e.stopPropagation();
   };
 
   const handleDeleteStation = (e, stationId) => {
     dispatch(stationDeleteById(stationId));
     e.stopPropagation();
-  };
-
-  const saveEditedStation = (id, name, price) => {
-    const stationData = {
-      id, name,
-      price: parseFloat(price)
-    };
-    dispatch(stationUpdateById(stationData));
   };
 
   const renderStationMarker = station => (
@@ -117,7 +110,7 @@ const StationManagement = () => {
       />
       <MapContainer locations={stationList} renderMarker={renderStationMarker} />
       <CCardBody>
-        <CCardTitle Listle className="mb-3">
+        <CCardTitle className="mb-3">
           Stations List
           <CButton
             className="float-end mx-4"
@@ -142,7 +135,7 @@ const StationManagement = () => {
                   className="mx-1"
                   variant="outline"
                   color="warning"
-                  onClick={(evt) => handleEditStation(evt, id)}
+                  onClick={(e) => handleEditStation(e, id)}
                 >
                   Edit
                 </CButton>
@@ -150,7 +143,7 @@ const StationManagement = () => {
                   className="mx-1"
                   variant="outline"
                   color="danger"
-                  onClick={(evt) => handleDeleteStation(evt, id)}
+                  onClick={(e) => handleDeleteStation(e, id)}
                 >
                   Delete
                 </CButton>
@@ -159,23 +152,24 @@ const StationManagement = () => {
           ))}
         </CListGroup>
       </CCardBody>
-      <StationAddModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-      />
-      {editingStationId && (
-        <StationEditModal
-          isOpen={Boolean(editingStationId)}
-          onClose={() => setEditingStationId(null)}
-          stationId={editingStationId}
-          onSave={saveEditedStation}
+      {isAddModalOpen && (
+        <StationAddModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
         />
       )}
       {isDetailsModalOpen && (
         <StationDetailsModal
           isOpen={isDetailsModalOpen}
           onClose={() => setIsDetailsModalOpen(false)}
-          stationData={selectedStation}
+          stationId={selectedStationId}
+        />
+      )}
+      {isEditModalOpen && (
+        <StationEditModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          stationId={editingStationId}
         />
       )}
     </CCard>

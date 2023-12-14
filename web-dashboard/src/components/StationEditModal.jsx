@@ -1,18 +1,24 @@
 import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
   CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CFormInput,
 } from "@coreui/react";
 
-import { selectStationById } from "redux/station/stationSlide";
+import {
+  stationUpdateById,
+  selectStationById,
+} from "redux/station/stationSlide";
 
-import "../scss/Modal.scss";
-import { useSelector } from "react-redux";
-
-const StationEditModal = ({ isOpen, onClose, stationId, onSave }) => {
+const StationEditModal = ({ isOpen, onClose, stationId }) => {
   const station = useSelector((state) => selectStationById(state, stationId))
   const [editedName, setEditedName] = useState("");
   const [editedPrice, setEditedPrice] = useState("");
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (station) {
@@ -22,7 +28,15 @@ const StationEditModal = ({ isOpen, onClose, stationId, onSave }) => {
   }, [station]);
 
   const handleSave = () => {
-    onSave(station.id, editedName, parseFloat(editedPrice));
+    if (!editedName || !editedPrice) {
+      return;
+    }
+    const stationData = {
+      id: station.id,
+      name: editedName,
+      price: parseFloat(editedPrice)
+    };
+    dispatch(stationUpdateById(stationData));
     onClose();
   };
 
@@ -32,23 +46,27 @@ const StationEditModal = ({ isOpen, onClose, stationId, onSave }) => {
       visible={isOpen}
       onClose={onClose}
     >
-      <div className="modal-content">
+      <CModalHeader>
+        <CModalTitle>Edit Station</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
         <label htmlFor="stationName">Station Name</label>
-        <input
+        <CFormInput
+          className="mb-3 shadow-none"
           id="stationName"
           type="text"
           value={editedName}
           onChange={(e) => setEditedName(e.target.value)}
         />
         <label htmlFor="stationPrice">Station Price</label>
-        <input
+        <CFormInput
+          className="mb-3 shadow-none"
           id="stationPrice"
           type="number"
           value={editedPrice}
           onChange={(e) => setEditedPrice(e.target.value)}
         />
         <CButton
-          className="w-100"
           variant="outline"
           color="warning"
           onClick={handleSave}
@@ -56,14 +74,14 @@ const StationEditModal = ({ isOpen, onClose, stationId, onSave }) => {
           Save
         </CButton>
         <CButton
-          className="w-100"
+          className="mx-2"
           variant="outline"
           color="warning"
           onClick={onClose}
         >
           Cancel
         </CButton>
-      </div>
+      </CModalBody>
     </CModal>
   );
 };
