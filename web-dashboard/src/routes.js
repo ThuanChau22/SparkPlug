@@ -4,14 +4,14 @@ import AccountSettings from "pages/AccountSetting";
 import Login from "pages/Login";
 import Register from "pages/Register";
 import SiteManagement from "pages/SiteManagement";
-import SiteMonitor from "pages/SiteMonitor";
+// import SiteMonitor from "pages/SiteMonitor";
 import SiteAnalytics from "pages/SiteAnalytics";
 import StationManagement from "pages/StationManagement";
 import StationMonitor from "pages/StationMonitor";
 import StationAnalytics from "pages/StationAnalytics";
 import UserManagement from "pages/UserManagement";
-import UserAnalytics from "pages/UserAnalytics";
-import TransactionAnalytics from "pages/Transactions";
+// import UserAnalytics from "pages/UserAnalytics";
+// import TransactionAnalytics from "pages/Transactions";
 import Unauthorized from "pages/Unauthorized";
 import NotFound from "pages/NotFound";
 
@@ -21,11 +21,11 @@ const Sites = {
     path: "/sites/management",
     element: <SiteManagement />,
   },
-  Monitor: {
-    name: "Monitor",
-    path: "/sites/monitor",
-    element: <SiteMonitor />,
-  },
+  // Monitor: {
+  //   name: "Monitor",
+  //   path: "/sites/monitor",
+  //   element: <SiteMonitor />,
+  // },
   Analytics: {
     name: "Analytics",
     path: "/sites/analytics",
@@ -57,20 +57,20 @@ const Users = {
     path: "/users/management",
     element: <UserManagement />,
   },
-  Analytics: {
-    name: "Analytics",
-    path: "/users/analytics",
-    element: <UserAnalytics />,
-  },
+  // Analytics: {
+  //   name: "Analytics",
+  //   path: "/users/analytics",
+  //   element: <UserAnalytics />,
+  // },
 };
 
-const Transactions = {
-  Analytics: {
-    name: "Analytics",
-    path: "/transactions/analytics",
-    element: <TransactionAnalytics />,
-  }
-};
+// const Transactions = {
+//   Analytics: {
+//     name: "Analytics",
+//     path: "/transactions/analytics",
+//     element: <TransactionAnalytics />,
+//   }
+// };
 
 const routes = {
   Root: {
@@ -98,12 +98,12 @@ const routes = {
       defaultPath: Users.Management.path,
       Components: Users,
     },
-    Transactions: {
-      name: "Transactions",
-      path: "/transactions",
-      defaultPath: Transactions.Analytics.path,
-      Components: Transactions,
-    },
+    // Transactions: {
+    //   name: "Transactions",
+    //   path: "/transactions",
+    //   defaultPath: Transactions.Analytics.path,
+    //   Components: Transactions,
+    // },
   },
   Login: {
     name: "Login",

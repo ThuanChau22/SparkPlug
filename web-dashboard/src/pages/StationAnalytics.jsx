@@ -5,7 +5,7 @@ import '../scss/StationAnalytics.scss';
 import StationAnalyticsModal from '../components/StationAnalyticsModal';
 import LocationFilter from '../components/LocationFilter';
 
-import { stationIcon } from '../components/mapIcons';
+import { stationIcon } from '../assets/mapIcons';
 import { MapContainer as LeafletMap, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import MapContainer from '../components/MapContainer';
 import StationMarker from '../components/StationMarker';

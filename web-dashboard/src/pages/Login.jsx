@@ -43,7 +43,7 @@ const Login = () => {
     if (token) {
       dispatch(authStateSet({ token }));
     }
-  }, [token]);
+  }, [dispatch, token]);
   useEffect(() => {
     if (authenticated) {
       navigate("/", { replace: true });
@@ -76,6 +76,7 @@ const Login = () => {
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
                       <CFormInput
+                        className="shadow-none"
                         placeholder="Username"
                         autoComplete="username"
                         name="email"
@@ -88,6 +89,7 @@ const Login = () => {
                         <CIcon icon={cilLockLocked} />
                       </CInputGroupText>
                       <CFormInput
+                        className="shadow-none"
                         type="password"
                         placeholder="Password"
                         autoComplete="current-password"
@@ -101,6 +103,7 @@ const Login = () => {
                         <CIcon icon={cilGroup} />
                       </CInputGroupText>
                       <CFormSelect
+                        className="shadow-none"
                         options={[
                           { label: "Select Role" },
                           ...Object.entries(Roles)

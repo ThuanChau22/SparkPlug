@@ -1,47 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import '../scss/Modal.scss';
+import { useState, useEffect } from "react";
+import {
+  CButton,
+  CModal,
+} from "@coreui/react";
 
-const StationEditModal = ({ isOpen, onClose, stationData, onSave }) => {
-    const [editedName, setEditedName] = useState('');
-    const [editedPrice, setEditedPrice] = useState('');
+import { selectStationById } from "redux/station/stationSlide";
 
-    useEffect(() => {
-        if (stationData) {
-            setEditedName(stationData.name || '');
-            setEditedPrice(stationData.price || '');
-        }
-    }, [stationData]);
+import "../scss/Modal.scss";
+import { useSelector } from "react-redux";
 
-    if (!isOpen) return null;
+const StationEditModal = ({ isOpen, onClose, stationId, onSave }) => {
+  const station = useSelector((state) => selectStationById(state, stationId))
+  const [editedName, setEditedName] = useState("");
+  const [editedPrice, setEditedPrice] = useState("");
 
-    const handleSave = () => {
-        // Add validation if needed
-        onSave(stationData.id, editedName, parseFloat(editedPrice));
-        onClose();
-    };
+  useEffect(() => {
+    if (station) {
+      setEditedName(station.name || "");
+      setEditedPrice(station.price || "");
+    }
+  }, [station]);
 
-    return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <label htmlFor="stationName">Station Name</label>
-                <input 
-                    id="stationName"
-                    type="text" 
-                    value={editedName} 
-                    onChange={(e) => setEditedName(e.target.value)}
-                />
-                <label htmlFor="stationPrice">Station Price</label>
-                <input 
-                    id="stationPrice"
-                    type="number"
-                    value={editedPrice} 
-                    onChange={(e) => setEditedPrice(e.target.value)}
-                />
-                <button onClick={handleSave}>Save</button>
-                <button onClick={onClose}>Cancel</button>
-            </div>
-        </div>
-    );
+  const handleSave = () => {
+    onSave(station.id, editedName, parseFloat(editedPrice));
+    onClose();
+  };
+
+  return (
+    <CModal
+      alignment="center"
+      visible={isOpen}
+      onClose={onClose}
+    >
+      <div className="modal-content">
+        <label htmlFor="stationName">Station Name</label>
+        <input
+          id="stationName"
+          type="text"
+          value={editedName}
+          onChange={(e) => setEditedName(e.target.value)}
+        />
+        <label htmlFor="stationPrice">Station Price</label>
+        <input
+          id="stationPrice"
+          type="number"
+          value={editedPrice}
+          onChange={(e) => setEditedPrice(e.target.value)}
+        />
+        <CButton
+          className="w-100"
+          variant="outline"
+          color="warning"
+          onClick={handleSave}
+        >
+          Save
+        </CButton>
+        <CButton
+          className="w-100"
+          variant="outline"
+          color="warning"
+          onClick={onClose}
+        >
+          Cancel
+        </CButton>
+      </div>
+    </CModal>
+  );
 };
 
 export default StationEditModal;

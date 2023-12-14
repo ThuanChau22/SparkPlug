@@ -1,91 +1,136 @@
-import React, { useState, useEffect } from 'react';
-import '../scss/Modal.scss'; // Adjust the path if necessary
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  CButton,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CForm,
+  CFormInput,
+  CFormSelect,
+} from "@coreui/react";
 
-const StationAddModal = ({ isOpen, onClose, onAddStation, onRefresh }) => {
-    const [formData, setFormData] = useState({
-        name: '',
-        chargeLevel: '',
-        connectorType: '',
-        latitude: '',
-        longitude: '',
-        siteId: ''
-    });
-    const [siteOptions, setSiteOptions] = useState([]);
+import { selectSiteList } from "redux/site/siteSlide";
+import { stationAdd } from "redux/station/stationSlide";
+import "../scss/Modal.scss";
 
-    const siteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
-    const stationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
+const StationAddModal = ({ isOpen, onClose }) => {
+  const siteList = useSelector(selectSiteList);
+  const [formData, setFormData] = useState({
+    name: "",
+    chargeLevel: "",
+    connectorType: "",
+    latitude: "",
+    longitude: "",
+    siteId: ""
+  });
+  const [siteOptions, setSiteOptions] = useState([]);
+  const dispatch = useDispatch();
 
-    useEffect(() => {
-        fetch(siteAPI)
-            .then(response => response.json())
-            .then(data => {
-                const siteIds = data.map(site => site.id);
-                setSiteOptions(siteIds);
-            })
-            .catch(error => console.error('Error:', error));
-    }, []);
+  useEffect(() => {
+    if (siteList) {
+      setSiteOptions(siteList.map(site => site.id));
+    }
+  }, [siteList]);
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = () => {
+    const stationData = {
+      name: formData.name,
+      charge_level: Number(formData.chargeLevel),
+      connector_type: formData.connectorType,
+      latitude: Number(formData.latitude),
+      longitude: Number(formData.longitude),
+      site_id: formData.siteId ? Number(formData.siteId) : null
     };
+    dispatch(stationAdd(stationData));
+    onClose();
+  };
 
-    const handleSubmit = (event) => {
-        event.preventDefault(); // Prevent default form submission behavior
-
-        const apiUrl = stationAPI;
-        fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                name: formData.name,
-                charge_level: Number(formData.chargeLevel),
-                connector_type: formData.connectorType,
-                latitude: Number(formData.latitude),
-                longitude: Number(formData.longitude),
-                site_id: formData.siteId ? Number(formData.siteId) : null
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log("Response Data:", data); // Debugging line
-            onClose(); // Close the modal after submission
-            // onRefresh();
-        })
-        .catch(error => console.error('Error:', error));
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <form onSubmit={handleSubmit}>
-                    {/* Form fields for station data */}
-                    <input type="text" name="name" placeholder="Name" onChange={handleInputChange} value={formData.name} />
-                    <select name="chargeLevel" onChange={handleInputChange} value={formData.chargeLevel}>
-                        <option value="">Select Charge Level</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                    </select>
-                    <input type="text" name="connectorType" placeholder="Connector Type" onChange={handleInputChange} value={formData.connectorType} />
-                    <input type="text" name="latitude" placeholder="Latitude" onChange={handleInputChange} value={formData.latitude} />
-                    <input type="text" name="longitude" placeholder="Longitude" onChange={handleInputChange} value={formData.longitude} />
-                    <select name="siteId" onChange={handleInputChange} value={formData.siteId}>
-                        <option value="">Select Site ID</option>
-                        {siteOptions.map((id) => (
-                            <option key={id} value={id}>{id}</option>
-                        ))}
-                    </select>
-                    <button type="submit">Add Station</button>
-                </form>
-                <button onClick={onClose}>Close</button>
-            </div>
-        </div>
-    );
+  return (
+    <CModal
+      backdrop="static"
+      alignment="center"
+      visible={isOpen}
+      onClose={onClose}
+    >
+      <CModalHeader className="mb-2">
+        <CModalTitle>Add New Station</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
+        <CForm>
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="name"
+            placeholder="Name"
+            onChange={handleInputChange}
+            value={formData.name}
+          />
+          <CFormSelect
+            className="mb-3 shadow-none"
+            name="chargeLevel"
+            value={formData.chargeLevel}
+            onChange={handleInputChange}
+            options={[
+              { label: "chargeLevel", value: "" },
+              { label: "1", value: "" },
+              { label: "2", value: "2" },
+              { label: "3", value: "3" },
+            ]}
+          />
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="connectorType"
+            placeholder="Connector Type"
+            onChange={handleInputChange}
+            value={formData.connectorType}
+          />
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="latitude"
+            placeholder="Latitude"
+            onChange={handleInputChange}
+            value={formData.latitude}
+          />
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="longitude"
+            placeholder="Longitude"
+            onChange={handleInputChange}
+            value={formData.longitude}
+          />
+          <CFormSelect
+            name="siteId"
+            onChange={handleInputChange}
+            value={formData.siteId}
+            options={[
+              { label: "Select Site ID" },
+              ...siteOptions.map((id) => (
+                { label: id, value: id }
+              )),
+            ]}
+          />
+          <CButton
+            className="w-100"
+            variant="outline"
+            color="info"
+            onClick={handleSubmit}
+          >
+            Add Station
+          </CButton>
+        </CForm>
+      </CModalBody>
+    </CModal>
+  );
 };
 
 export default StationAddModal;

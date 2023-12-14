@@ -73,12 +73,12 @@ const Sidebar = () => {
         icon: <GroupsOutlined className="nav-icon" />,
       });
     }
-    newNavigation.push({
-      component: CNavItem,
-      name: Transactions.name,
-      to: Transactions.Components[headerActive]?.path || Transactions.defaultPath,
-      icon: <ReceiptLongOutlined className="nav-icon" />,
-    });
+    // newNavigation.push({
+    //   component: CNavItem,
+    //   name: Transactions.name,
+    //   to: Transactions.Components[headerActive]?.path || Transactions.defaultPath,
+    //   icon: <ReceiptLongOutlined className="nav-icon" />,
+    // });
     setNavigation(newNavigation);
   }, [authIsAdmin, headerActive]);
   const SidebarNav = ({ items }) => (
