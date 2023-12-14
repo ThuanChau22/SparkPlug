@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import ms from "ms";
 import {
@@ -54,8 +54,8 @@ const App = () => {
     RESET: "Reset",
   }), []);
 
+  const meterTimeoutRef = useRef(0);
   const [meterValue, setMeterValue] = useState(0);
-  const [meterTimeout, setMeterTimeout] = useState(0);
   const [rfid, setRFID] = useState("");
   const [isRFIDScanned, setIsRFIDScanned] = useState(false);
   const [isCablePluggedIn, setIsCablePluggedIn] = useState(false);
@@ -82,16 +82,13 @@ const App = () => {
   }, [readyState]);
 
   useEffect(() => {
-    clearTimeout(meterTimeout);
-    setMeterTimeout(setTimeout(() => {
-      setMeterValue(0);
-    }, ms("5s")));
-  }, [meterValue]);
-
-  useEffect(() => {
     const { action, payload } = lastJsonMessage || {};
     if (action === WebSocketAction.METER_VALUE) {
       setMeterValue(payload.value);
+      clearTimeout(meterTimeoutRef.current);
+      meterTimeoutRef.current = setTimeout(() => {
+        setMeterValue(0);
+      }, ms("5s"));
     }
     if (action === WebSocketAction.SCAN_RFID) {
       if (payload.status === "Accepted") {
@@ -146,14 +143,14 @@ const App = () => {
     }
   };
 
-  const handleReset = () => {
-    if (readyState === ReadyState.OPEN) {
-      sendJsonMessage({
-        action: WebSocketAction.RESET,
-        payload: {},
-      });
-    }
-  };
+  // const handleReset = () => {
+  //   if (readyState === ReadyState.OPEN) {
+  //     sendJsonMessage({
+  //       action: WebSocketAction.RESET,
+  //       payload: {},
+  //     });
+  //   }
+  // };
 
   return (
     <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
