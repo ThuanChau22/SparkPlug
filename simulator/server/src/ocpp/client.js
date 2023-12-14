@@ -136,34 +136,58 @@ export const handleUpdateTransaction = async () => {
   transactionUpdateTimeoutId = setTimeout(async () => {
     const meterValue = generateMeterValue();
     const { TxUpdatedMeasurands } = station.SampledDataCtrlr;
-    const [txStartedMeasurands] = TxUpdatedMeasurands;
-    await ocppClientCall("TransactionEvent", {
-      eventType: "Updated",
-      timestamp: new Date().toISOString(),
-      triggerReason: "MeterValuePeriodic",
-      seqNo: station.Transaction.SeqNo++,
-      transactionInfo: {
-        transactionId: station.Transaction.Id,
-      },
-      meterValue: [
-        {
-          timestamp: new Date().toISOString(),
-          sampledValue: [
-            {
-              value: meterValue,
-              measurand: txStartedMeasurands,
-            }
-          ]
-        }
-      ],
-    });
-    sendJsonMessage({
-      action: Action.METER_VALUE,
-      payload: {
-        value: meterValue,
-      },
-    });
-    await handleUpdateTransaction();
+    const [txUpdatedMeasurands] = TxUpdatedMeasurands;
+    if (station.Transaction.isRemoteStopped) {
+      await ocppClientCall("TransactionEvent", {
+        eventType: "Updated",
+        timestamp: new Date().toISOString(),
+        triggerReason: "RemoteStop",
+        seqNo: station.Transaction.SeqNo++,
+        transactionInfo: {
+          transactionId: station.Transaction.Id,
+          chargingState: "EVConnected",
+        },
+        meterValue: [
+          {
+            timestamp: new Date().toISOString(),
+            sampledValue: [
+              {
+                value: meterValue,
+                measurand: txUpdatedMeasurands,
+              }
+            ]
+          }
+        ],
+      });
+    } else {
+      await ocppClientCall("TransactionEvent", {
+        eventType: "Updated",
+        timestamp: new Date().toISOString(),
+        triggerReason: "MeterValuePeriodic",
+        seqNo: station.Transaction.SeqNo++,
+        transactionInfo: {
+          transactionId: station.Transaction.Id,
+        },
+        meterValue: [
+          {
+            timestamp: new Date().toISOString(),
+            sampledValue: [
+              {
+                value: meterValue,
+                measurand: txUpdatedMeasurands,
+              }
+            ]
+          }
+        ],
+      });
+      sendJsonMessage({
+        action: Action.METER_VALUE,
+        payload: {
+          value: meterValue,
+        },
+      });
+      await handleUpdateTransaction();
+    }
   }, ms(`${station.SampledDataCtrlr.TxUpdatedInterval}s`));
 };
 
@@ -228,30 +252,6 @@ ocppClient.handle("RequestStopTransaction", ({ params }) => {
   if (station.Transaction.Id !== transactionId) {
     return { status: "Rejected" };
   }
-  clearTimeout(transactionUpdateTimeoutId);
-  const meterValue = generateMeterValue();
-  const { TxUpdatedMeasurands } = station.SampledDataCtrlr;
-  const [txStartedMeasurands] = TxUpdatedMeasurands;
-  ocppClientCall("TransactionEvent", {
-    eventType: "Updated",
-    timestamp: new Date().toISOString(),
-    triggerReason: "RemoteStop",
-    seqNo: station.Transaction.SeqNo++,
-    transactionInfo: {
-      transactionId: transactionId,
-      chargingState: "EVConnected",
-    },
-    meterValue: [
-      {
-        timestamp: new Date().toISOString(),
-        sampledValue: [
-          {
-            value: meterValue,
-            measurand: txStartedMeasurands,
-          }
-        ]
-      }
-    ],
-  });
+  station.Transaction.isRemoteStopped = true;
   return { status: "Accepted" };
 });
