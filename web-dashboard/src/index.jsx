@@ -13,12 +13,6 @@ import {
   RouterProvider,
 } from "react-router-dom";
 
-import {
-  loader as userManagementLoader,
-} from "pages/UserManagement";
-import {
-  loader as userAnalyticsLoader,
-} from "pages/UserAnalytics";
 import { store } from "redux/store";
 import routes from "routes";
 import "scss/style.scss";
@@ -49,10 +43,10 @@ const router = createBrowserRouter([
                   path: routes.Resources.Sites.Components.Management.path,
                   element: routes.Resources.Sites.Components.Management.element,
                 },
-                {
-                  path: routes.Resources.Sites.Components.Monitor.path,
-                  element: routes.Resources.Sites.Components.Monitor.element,
-                },
+                // {
+                //   path: routes.Resources.Sites.Components.Monitor.path,
+                //   element: routes.Resources.Sites.Components.Monitor.element,
+                // },
                 {
                   path: routes.Resources.Sites.Components.Analytics.path,
                   element: routes.Resources.Sites.Components.Analytics.element,
@@ -84,25 +78,23 @@ const router = createBrowserRouter([
                 {
                   path: routes.Resources.Users.Components.Management.path,
                   element: routes.Resources.Users.Components.Management.element,
-                  loader: userManagementLoader,
                 },
-                {
-                  path: routes.Resources.Users.Components.Analytics.path,
-                  element: routes.Resources.Users.Components.Analytics.element,
-                  loader: userAnalyticsLoader,
-                },
+                // {
+                //   path: routes.Resources.Users.Components.Analytics.path,
+                //   element: routes.Resources.Users.Components.Analytics.element,
+                // },
               ]
             },
-            {
-              path: routes.Resources.Transactions.path,
-              element: <Outlet />,
-              children: [
-                {
-                  path: routes.Resources.Transactions.Components.Analytics.path,
-                  element: routes.Resources.Transactions.Components.Analytics.element,
-                },
-              ],
-            },
+            // {
+            //   path: routes.Resources.Transactions.path,
+            //   element: <Outlet />,
+            //   children: [
+            //     {
+            //       path: routes.Resources.Transactions.Components.Analytics.path,
+            //       element: routes.Resources.Transactions.Components.Analytics.element,
+            //     },
+            //   ],
+            // },
             {
               path: routes.Profile.path,
               element: routes.Profile.element,

@@ -2,12 +2,20 @@
 
 An Electric Vehicle Hub Infrastructure Platform
 
-## **Run Project**
+## **Developing**
 
-1. Prerequisites: Docker should already be installed.
+### I. Prerequisites
 
-2. Create .env file based on .env.example file for each main module.
+- Docker
+- Node.js (Individual module only)
+- Python (Individual module only)
 
-3. Run project: `docker compose up -d --build`
+### II. Run Project
 
-4. Clean up: `docker compose down -v --rmi all`
+1. Create .env file based on .env.example file for each main module.
+
+2. Run/build: `docker compose up [-d] [--build] [service-name]`
+
+3. Watch: `docker compose watch [--no-up] [service-name]`
+
+4. Clean up: `docker compose down [-v] [--rmi all] [service-name]`

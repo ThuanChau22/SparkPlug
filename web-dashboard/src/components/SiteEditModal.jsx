@@ -1,39 +1,75 @@
-import React, { useState, useEffect } from 'react';
-import '../scss/Modal.scss';
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  CButton,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CFormInput,
+} from "@coreui/react";
 
-const SiteEditModal = ({ isOpen, onClose, siteData, onSave }) => {
-    const [editedName, setEditedName] = useState('');
-    const [editedPrice, setEditedPrice] = useState('');
+import {
+  siteUpdateById,
+  selectSiteById,
+} from "redux/site/siteSlide";
 
-    useEffect(() => {
-        if (siteData) {
-            setEditedName(siteData.name || '');
-        }
-    }, [siteData]);
-
-    if (!isOpen) return null;
-
-    const handleSave = () => {
-        // Add validation if needed
-        onSave(siteData.id, editedName);
-        onClose();
+const SiteEditModal = ({ isOpen, onClose, siteId }) => {
+  const site = useSelector((state) => selectSiteById(state, siteId));
+  const [editedName, setEditedName] = useState("");
+  const dispatch = useDispatch();
+  useEffect(() => {
+    if (site) {
+      setEditedName(site.name || "");
+    }
+  }, [site]);
+  const handleSave = () => {
+    if (!editedName) {
+      return;
+    }
+    const siteData = {
+      id: site.id,
+      name: editedName,
     };
-
-    return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <label htmlFor="siteName">Site Name</label>
-                <input 
-                    id="siteName"
-                    type="text" 
-                    value={editedName} 
-                    onChange={(e) => setEditedName(e.target.value)}
-                />
-                <button onClick={handleSave}>Save</button>
-                <button onClick={onClose}>Cancel</button>
-            </div>
-        </div>
-    );
+    dispatch(siteUpdateById(siteData));
+    onClose();
+  };
+  return (
+    <CModal
+      alignment="center"
+      visible={isOpen}
+      onClose={onClose}
+    >
+      <CModalHeader>
+        <CModalTitle>Edit Site</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
+        <label htmlFor="siteName">Site Name</label>
+        <CFormInput
+          className="mb-3 shadow-none"
+          id="siteName"
+          type="text"
+          value={editedName}
+          onChange={(e) => setEditedName(e.target.value)}
+        />
+        <CButton
+          variant="outline"
+          color="warning"
+          onClick={handleSave}
+        >
+          Save
+        </CButton>
+        <CButton
+          className="mx-2"
+          variant="outline"
+          color="warning"
+          onClick={onClose}
+        >
+          Cancel
+        </CButton>
+      </CModalBody>
+    </CModal>
+  );
 };
 
 export default SiteEditModal;

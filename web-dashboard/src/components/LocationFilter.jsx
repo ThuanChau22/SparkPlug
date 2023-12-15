@@ -1,4 +1,3 @@
-// LocationFilter.jsx
 import React, { useState, useEffect } from 'react';
 
 const LocationFilter = ({ states, filteredCities, zipCodes, onFiltersChange, filterState, filterCity, filterZip }) => {
@@ -57,4 +56,3 @@ const LocationFilter = ({ states, filteredCities, zipCodes, onFiltersChange, fil
 };
 
 export default LocationFilter;
-

@@ -1,80 +1,123 @@
-import React, { useState, useEffect } from 'react';
-import '../scss/Modal.scss'; // Adjust the path if necessary
+import { useState } from "react";
+import { useDispatch } from "react-redux";
+import {
+  CButton,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CForm,
+  CFormInput,
+} from "@coreui/react";
 
-const SiteAddModal = ({ isOpen, onClose, onAddsite, fetchSites }) => {
-    const [formData, setFormData] = useState({
-        name: '',
-        ownerId: '',
-        streetAddress: '',
-        latitude: '',
-        longitude: '',
-        zipCode: ''
-    });
-    const [siteOptions, setSiteOptions] = useState([]);
+import { siteAdd } from "redux/site/siteSlide";
 
-    const siteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
-
-    useEffect(() => {
-        fetch(siteAPI)
-            .then(response => response.json())
-            .then(data => {
-                const siteIds = data.map(site => site.id);
-                setSiteOptions(siteIds);
-            })
-            .catch(error => console.error('Error:', error));
-    }, []);
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+const SiteAddModal = ({ isOpen, onClose }) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    ownerId: "",
+    streetAddress: "",
+    latitude: "",
+    longitude: "",
+    zipCode: ""
+  });
+  const dispatch = useDispatch();
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+  const handleSubmit = () => {
+    if (!formData.name
+      || !formData.ownerId
+      || !formData.streetAddress
+      || !formData.latitude
+      || !formData.longitude
+      || !formData.zipCode) {
+      return;
+    }
+    const siteData = {
+      name: formData.name,
+      owner_id: Number(formData.ownerId),
+      street_address: formData.streetAddress,
+      latitude: Number(formData.latitude),
+      longitude: Number(formData.longitude),
+      zip_code: formData.zipCode,
     };
-
-    const handleSubmit = (event) => {
-        event.preventDefault(); // Prevent default form submission behavior
-
-        const apiUrl = siteAPI;
-        fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                name: formData.name,
-                owner_id: Number(formData.ownerId),
-                street_address: formData.streetAddress,
-                latitude: Number(formData.latitude),
-                longitude: Number(formData.longitude),
-                zip_code: formData.zipCode
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log("Response Data:", data); // Debugging line
-            onClose(); // Close the modal after submission
-            window.location.reload();
-        })
-        .catch(error => console.error('Error:', error));
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <form onSubmit={handleSubmit}>
-                    {/* Form fields for site data */}
-                    <input type="text" name="name" placeholder="Name" onChange={handleInputChange} value={formData.name} />
-                    <input type="text" name="ownerId" placeholder="Owner ID" onChange={handleInputChange} value={formData.owner_id} />
-                    <input type="text" name="streetAddress" placeholder="Street Address" onChange={handleInputChange} value={formData.streetAddress} />
-                    <input type="text" name="latitude" placeholder="Latitude" onChange={handleInputChange} value={formData.latitude} />
-                    <input type="text" name="longitude" placeholder="Longitude" onChange={handleInputChange} value={formData.longitude} />
-                    <input type="text" name="zipCode" placeholder="Zip Code" onChange={handleInputChange} value={formData.zipCode} />
-                    <button type="submit">Add Site</button>
-                </form>
-                <button onClick={onClose}>Close</button>
-            </div>
-        </div>
-    );
+    dispatch(siteAdd(siteData));
+    onClose();
+  };
+  return (
+    <CModal
+      backdrop="static"
+      alignment="center"
+      visible={isOpen}
+      onClose={onClose}
+    >
+      <CModalHeader className="mb-2">
+        <CModalTitle>Add New Site</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
+        <CForm>
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="name"
+            placeholder="Name"
+            onChange={handleInputChange}
+            value={formData.name}
+          />
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="ownerId"
+            placeholder="Owner ID"
+            onChange={handleInputChange}
+            value={formData.ownerId}
+          />
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="streetAddress"
+            placeholder="Street Address"
+            onChange={handleInputChange}
+            value={formData.streetAddress}
+          />
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="latitude"
+            placeholder="Latitude"
+            onChange={handleInputChange}
+            value={formData.latitude}
+          />
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="longitude" placeholder="Longitude"
+            onChange={handleInputChange}
+            value={formData.longitude} />
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="zipCode"
+            placeholder="Zip Code"
+            onChange={handleInputChange}
+            value={formData.zipCode}
+          />
+          <div className="text-center">
+            <CButton
+              className="w-100"
+              variant="outline"
+              color="info"
+              onClick={handleSubmit}
+            >
+              Add
+            </CButton>
+          </div>
+        </CForm>
+      </CModalBody>
+    </CModal>
+  );
 };
 
 export default SiteAddModal;

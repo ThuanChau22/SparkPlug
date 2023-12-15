@@ -23,7 +23,7 @@ import {
 } from '@mui/icons-material';
 
 import {
-  selectAuthRoleIsAdmin,
+  selectAuthRoleIsStaff,
 } from "redux/auth/authSlice";
 import {
   selectHeaderActive,
@@ -40,7 +40,7 @@ import routes from "routes";
 
 const Sidebar = () => {
   const dispatch = useDispatch();
-  const authIsAdmin = useSelector(selectAuthRoleIsAdmin);
+  const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const headerActive = useSelector(selectHeaderActive);
   const unfoldable = useSelector(selectSidebarFold);
   const sidebarShow = useSelector(selectSidebarShow);
@@ -73,12 +73,12 @@ const Sidebar = () => {
         icon: <GroupsOutlined className="nav-icon" />,
       });
     }
-    newNavigation.push({
-      component: CNavItem,
-      name: Transactions.name,
-      to: Transactions.Components[headerActive]?.path || Transactions.defaultPath,
-      icon: <ReceiptLongOutlined className="nav-icon" />,
-    });
+    // newNavigation.push({
+    //   component: CNavItem,
+    //   name: Transactions.name,
+    //   to: Transactions.Components[headerActive]?.path || Transactions.defaultPath,
+    //   icon: <ReceiptLongOutlined className="nav-icon" />,
+    // });
     setNavigation(newNavigation);
   }, [authIsAdmin, headerActive]);
   const SidebarNav = ({ items }) => (
