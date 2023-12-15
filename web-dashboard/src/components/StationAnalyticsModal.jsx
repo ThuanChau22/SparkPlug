@@ -20,7 +20,7 @@ import { selectAuthAccessToken } from "redux/auth/authSlice";
 import { selectStationById } from "redux/station/stationSlide";
 
 const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => {
-  const { REACT_APP_STATION_ANALYTICS_API_ENDPOINT: StationAnalyticsAPI } = process.env;
+  const StationAnalyticsAPI = process.env.REACT_APP_STATION_ANALYTICS_API_ENDPOINT;
   const station = useSelector((state) => selectStationById(state, stationId));
   const token = useSelector(selectAuthAccessToken);
   const [analyticsData, setAnalyticsData] = useState(null);
@@ -56,10 +56,8 @@ const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => {
   }, [StationAnalyticsAPI, stationId, token, startDate, endDate, chargeLevel]);
 
   useEffect(() => {
-    if (!analyticsData) {
-      fetchData();
-    }
-  }, [analyticsData, fetchData]);
+    fetchData();
+  }, [fetchData]);
 
   return (
     <CModal

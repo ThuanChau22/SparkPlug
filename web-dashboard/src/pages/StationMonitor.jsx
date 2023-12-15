@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import {
@@ -10,22 +10,42 @@ import {
 } from "@coreui/react";
 import ms from "ms";
 
+import LocationFilter from "components/LocationFilter";
 import StationMonitorModal from "components/StationMonitorModal";
+import MapContainer from "components/MapContainer";
+import DriverStationMarker from "components/DriverStationMarker";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   stationStateUpdateById,
+  stationSetStateSelected,
+  stationSetCitySelected,
+  stationSetZipCodeSelected,
   stationGetAll,
+  selectIsSizeChanged,
   selectStationList,
+  selectSelectedState,
+  selectStateOptions,
+  selectSelectedCity,
+  selectCityOptions,
+  selectSelectedZipCode,
+  selectZipCodeOptions,
 } from "redux/station/stationSlide";
 
 const StationMonitor = () => {
-  const { REACT_APP_MONITORING_WS_ENDPOINT: WS_ENDPOINT } = process.env;
-  const accessToken = useSelector(selectAuthAccessToken);
+  const MonitoringWS = process.env.REACT_APP_MONITORING_WS_ENDPOINT;
+  const token = useSelector(selectAuthAccessToken);
   const stationList = useSelector(selectStationList);
+  const isSizeChanged = useSelector(selectIsSizeChanged);
+  const stationSelectedState = useSelector(selectSelectedState);
+  const stationStateOptions = useSelector(selectStateOptions);
+  const stationSelectedCity = useSelector(selectSelectedCity);
+  const stationCityOptions = useSelector(selectCityOptions);
+  const stationSelectedZipCode = useSelector(selectSelectedZipCode);
+  const stationZipCodeOptions = useSelector(selectZipCodeOptions);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStationId, setSelectedStationId] = useState(null);
-  const socket = useWebSocket(`${WS_ENDPOINT}`, {
-    queryParams: { token: accessToken },
+  const socket = useWebSocket(`${MonitoringWS}`, {
+    queryParams: { token },
     heartbeat: {
       message: "ping",
       returnMessage: "pong",
@@ -72,13 +92,52 @@ const StationMonitor = () => {
     }
   }, [lastJsonMessage, dispatch]);
 
-  const handleOnClick = (stationId) => {
+  const handleFilter = (state, city, zipCode) => {
+    const params = [];
+    if (state !== "All") params.push(`state=${state}`);
+    if (city !== "All") params.push(`city=${city}`);
+    if (zipCode !== "All") params.push(`zip=${zipCode}`);
+    const query = params.length > 0 ? `?${params.join("&")}` : "";
+    dispatch(stationGetAll(query));
+    dispatch(stationSetStateSelected(state));
+    dispatch(stationSetCitySelected(city));
+    dispatch(stationSetZipCodeSelected(zipCode));
+  };
+
+  const handleViewStation = (stationId) => {
     setSelectedStationId(stationId);
     setIsModalOpen(true);
   };
 
+  const displayMap = useMemo(() => {
+    const renderStationMarker = (station) => (
+      <DriverStationMarker
+        key={station.id}
+        station={station}
+        onMarkerClick={() => handleViewStation(station.id)}
+      />
+    );
+    return (
+      <MapContainer
+        locations={stationList}
+        renderMarker={renderStationMarker}
+        setBound={isSizeChanged}
+      />
+    );
+  }, [stationList, isSizeChanged]);
+
   return (
     <CCard>
+      <LocationFilter
+        selectedState={stationSelectedState}
+        states={stationStateOptions}
+        selectedCity={stationSelectedCity}
+        cities={stationCityOptions}
+        selectedZipCode={stationSelectedZipCode}
+        zipCodes={stationZipCodeOptions}
+        onChange={handleFilter}
+      />
+      {displayMap}
       <CCardBody>
         <CCardTitle className="mb-3">
           Stations Monitor
@@ -88,22 +147,21 @@ const StationMonitor = () => {
             <CListGroupItem
               key={id}
               className="d-flex justify-content-between align-items-center py-3"
-              onClick={() => handleOnClick(id)}
+              onClick={() => handleViewStation(id)}
             >
-              <span>ID: {id}</span>
-              <span>{name}</span>
-              <span
-                className={
-                  status === "Available"
-                    ? "text-success"
-                    : status === "Occupied"
-                      ? "text-warning"
-                      : status === "Offline"
-                        ? "text-secondary"
-                        : "text-danger"
-                }>
+              <div>ID: {id}</div>
+              <div>{name}</div>
+              <div className={
+                status === "Available"
+                  ? "text-success"
+                  : status === "Occupied"
+                    ? "text-warning"
+                    : status === "Offline"
+                      ? "text-secondary"
+                      : "text-danger"
+              }>
                 {status}
-              </span>
+              </div>
             </CListGroupItem>
           ))}
         </CListGroup>

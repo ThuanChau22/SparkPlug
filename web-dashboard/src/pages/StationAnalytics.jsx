@@ -71,9 +71,12 @@ const StationAnalytics = () => {
         onMarkerClick={() => handleViewStation(station.id)}
       />
     );
-    return <MapContainer
-      locations={stationList}
-      renderMarker={renderStationMarker} />
+    return (
+      <MapContainer
+        locations={stationList}
+        renderMarker={renderStationMarker}
+      />
+    );
   }, [stationList]);
 
   return (

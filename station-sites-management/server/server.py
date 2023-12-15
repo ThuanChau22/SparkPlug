@@ -305,13 +305,14 @@ def station_charts(station_id, start_date, end_date, charge_level):
 
 def station_peak(station_id, start_date, end_date, charge_level):
     transactions_data = fetch_transactions_data(station_id, charge_level, start_date, end_date)
-
-    if transactions_data:
-        data_pack = generate_peak(transactions_data)
-        return jsonify(data_pack)
-    else:
-        print("No transaction data found")
-        return jsonify([])
+    data_pack = generate_peak(transactions_data)
+    return jsonify(data_pack)
+    # if transactions_data:
+    #     data_pack = generate_peak(transactions_data)
+    #     return jsonify(data_pack)
+    # else:
+    #     print("No transaction data found")
+    #     return jsonify([])
 
 def aggregate_charts(site_id, start_date, end_date, charge_level):
 

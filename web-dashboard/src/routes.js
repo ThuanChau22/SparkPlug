@@ -12,6 +12,7 @@ import StationAnalytics from "pages/StationAnalytics";
 import UserManagement from "pages/UserManagement";
 // import UserAnalytics from "pages/UserAnalytics";
 // import TransactionAnalytics from "pages/Transactions";
+import DriverStations from "pages/DriverStation";
 import Unauthorized from "pages/Unauthorized";
 import NotFound from "pages/NotFound";
 
@@ -124,6 +125,11 @@ const routes = {
     name: "Settings",
     path: "/settings",
     element: <AccountSettings />,
+  },
+  Drivers: {
+    name: "Stations",
+    path:"/maps",
+    element: <DriverStations />
   },
   Unauthorized: {
     name: "Unauthorized",

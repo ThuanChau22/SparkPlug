@@ -21,13 +21,13 @@ import { selectAuthAccessToken } from "redux/auth/authSlice";
 import { selectStationById } from "redux/station/stationSlide";
 
 const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
-  const { REACT_APP_MONITORING_WS_ENDPOINT: WS_ENDPOINT } = process.env;
+  const MonitoringWS = process.env.REACT_APP_MONITORING_WS_ENDPOINT;
   const accessToken = useSelector(selectAuthAccessToken);
   const station = useSelector((state) => selectStationById(state, stationId));
   const meterTimeoutRef = useRef(0);
   const [meterValue, setMeterValue] = useState(0);
   const [eventMessages, setEventMessages] = useState([]);
-  const socket = useWebSocket(`${WS_ENDPOINT}`, {
+  const socket = useWebSocket(`${MonitoringWS}`, {
     queryParams: { token: accessToken },
     heartbeat: {
       message: "ping",
@@ -101,7 +101,19 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
       scrollable
     >
       <CModalHeader className="mb-2">
-        <CModalTitle>{station.name}</CModalTitle>
+        <CModalTitle>
+          {station.name} - <span className={
+            station.status === "Available"
+              ? "text-success"
+              : station.status === "Occupied"
+                ? "text-warning"
+                : station.status === "Offline"
+                  ? "text-secondary"
+                  : "text-danger"
+          }>
+            {station.status}
+          </span>
+        </CModalTitle>
       </CModalHeader>
       <p className="ps-3" >
         <span className="text-secondary" >Station ID: {station.id}</span>

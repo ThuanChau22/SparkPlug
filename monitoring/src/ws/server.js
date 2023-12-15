@@ -60,9 +60,6 @@ server.on("connection", async (ws, req) => {
     const token = searchParams.get("token");
     await axios.post(`${AUTH_API_ENDPOINT}/verify`, { token });
     const { id, role, ...remain } = jwtDecode(token);
-    if (role !== "staff" && role !== "owner") {
-      throw { code: 403, message: "Access denied" };
-    }
 
     console.log(`Connected with user: ${id}`);
 
@@ -82,13 +79,26 @@ server.on("connection", async (ws, req) => {
           return await handleRemoteStop({ ws, payload });
         }
         if (action === Action.WATCH_ALL_EVENT) {
+          if (role !== "staff" && role !== "owner") {
+            throw { code: 403, message: "Access denied" };
+          }
           return await handleWatchAllEvent({ ws, payload });
         }
         if (action === Action.WATCH_STATUS_EVENT) {
           return await handleWatchStatusEvent({ ws, payload });
         }
       } catch (error) {
-        console.log({ error });
+        if (error.code === 403) {
+          const { code, message } = error;
+          return sendJsonMessage(ws, {
+            action: JSON.parse(data).action,
+            payload: {
+              status: "Rejected",
+              statusInfo: { code, message }
+            },
+          });
+        }
+        console.log(error);
       }
     });
 
