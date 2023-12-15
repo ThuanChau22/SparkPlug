@@ -1,19 +1,27 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { GooeyCircleLoader } from "react-loaders-kit";
 import { CChart } from "@coreui/react-chartjs";
 import {
-  CButton,
+  CContainer,
+  CForm,
+  CFormInput,
   CFormSelect,
+  CInputGroup,
+  CInputGroupText,
   CModal,
+  CModalHeader,
+  CModalTitle,
   CModalBody,
 } from "@coreui/react";
 
 import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
-import "../scss/SiteAnalyticsModal.scss";
+import { selectSiteById } from "redux/site/siteSlide";
 
 const SiteAnalyticsModal = ({ isOpen, onClose, siteId }) => {
-  const SITE_ANALYTICS_API_ENDPOINT = process.env.REACT_APP_SITE_ANALYTICS_API_ENDPOINT
+  const { REACT_APP_SITE_ANALYTICS_API_ENDPOINT: SiteAnalyticsAPI } = process.env;
+  const site = useSelector((state) => selectSiteById(state, siteId));
   const token = useSelector(selectAuthAccessToken);
   const [analyticsData, setAnalyticsData] = useState(null);
   const [startDate, setStartDate] = useState("");
@@ -31,40 +39,69 @@ const SiteAnalyticsModal = ({ isOpen, onClose, siteId }) => {
     return [month, day, year].join("/");
   };
 
-  const fetchData = async () => {
-    if (siteId) {
-      try {
-        let query = `${SITE_ANALYTICS_API_ENDPOINT}/${siteId}`;
-        let queryParams = [];
-        if (startDate) queryParams.push(`start_date=${formatDate(startDate)}`);
-        if (endDate) queryParams.push(`end_date=${formatDate(endDate)}`);
-        if (chargeLevel !== "All") queryParams.push(`charge_level=${chargeLevel}`);
-        if (queryParams.length > 0) query += "?" + queryParams.join("&");
-        const headers = { Authorization: `Bearer ${token}` };
-        const { data } = await apiInstance.get(query, { headers });
-        setAnalyticsData(data);
-      } catch (error) {
-        console.log(error);
-      }
+  const fetchData = useCallback(async () => {
+    try {
+      const base = `${SiteAnalyticsAPI}/${siteId}`;
+      const params = [];
+      if (startDate) params.push(`start_date=${formatDate(startDate)}`);
+      if (endDate) params.push(`end_date=${formatDate(endDate)}`);
+      if (chargeLevel !== "All") params.push(`charge_level=${chargeLevel}`);
+      const query = params.length > 0 ? `?${params.join("&")}` : "";
+      const headers = { Authorization: `Bearer ${token}` };
+      const { data } = await apiInstance.get(`${base}${query}`, { headers });
+      setAnalyticsData(data);
+    } catch (error) {
+      console.log(error);
     }
-  };
+  }, [SiteAnalyticsAPI, siteId, token, startDate, endDate, chargeLevel]);
 
   useEffect(() => {
-    fetchData();
-  }, [siteId]);
+    if (!analyticsData) {
+      fetchData();
+    }
+  }, [analyticsData, fetchData]);
 
   return (
     <CModal
+      size="xl"
       alignment="center"
       visible={isOpen}
       onClose={onClose}
+      scrollable
     >
-      <CModalBody>
-        <div className="analytics-filters">
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+      <CModalHeader className="mb-2">
+        <CModalTitle>{site.name}</CModalTitle>
+      </CModalHeader>
+      <p className="ps-3" >Site ID: {site.id}</p>
+      <CForm className="d-flex align-item-center">
+        <CInputGroup>
+          <CInputGroupText className="bg-secondary text-white rounded-0">
+            From
+          </CInputGroupText>
+          <CFormInput
+            className="rounded-0 shadow-none"
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+        </CInputGroup>
+        <CInputGroup>
+          <CInputGroupText className="bg-secondary text-white rounded-0">
+            To
+          </CInputGroupText>
+          <CFormInput
+            className="rounded-0 shadow-none"
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </CInputGroup>
+        <CInputGroup>
+          <CInputGroupText className="bg-secondary text-white rounded-0">
+            Charge Level
+          </CInputGroupText>
           <CFormSelect
-            className="shadow-none"
+            className="rounded-0 shadow-none"
             options={[
               { label: "All Levels", value: "All" },
               { label: "Level 1", value: "1" },
@@ -74,17 +111,27 @@ const SiteAnalyticsModal = ({ isOpen, onClose, siteId }) => {
             value={chargeLevel}
             onChange={(e) => setChargeLevel(e.target.value)}
           />
-          <CButton onClick={fetchData}>Update</CButton>
-        </div>
-        {analyticsData && (
-          <>
-            <CChart type="line" data={analyticsData.revenue} options={{}} />
-            <CChart type="bar" data={analyticsData.peak_time} options={{}} />
-            <CChart type="line" data={analyticsData.utilization_rate} options={{}} />
-            <CChart type="bar" data={analyticsData.sessions_count} options={{}} />
-          </>
-        )}
-
+        </CInputGroup>
+      </CForm>
+      <CModalBody>
+        {analyticsData
+          ? (
+            <>
+              <CChart type="line" data={analyticsData.revenue} />
+              <CChart type="bar" data={analyticsData.peak_time} />
+              <CChart type="line" data={analyticsData.utilization_rate} />
+              <CChart type="bar" data={analyticsData.sessions_count} />
+            </>
+          )
+          : (
+            <CContainer className="d-flex flex-row justify-content-center">
+              <GooeyCircleLoader
+                className="mx-auto"
+                color={["#f6b93b", "#5e22f0", "#ef5777"]}
+                loading={true}
+              />
+            </CContainer>
+          )}
       </CModalBody>
     </CModal>
   );

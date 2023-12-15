@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CCard,
@@ -7,85 +7,91 @@ import {
   CListGroup,
   CListGroupItem,
 } from "@coreui/react";
-
-import { siteIcon } from "../assets/mapIcons";
-import SiteAnalyticsModal from "../components/SiteAnalyticsModal";
-import LocationFilter from "../components/LocationFilter";
-import MapContainer from "../components/MapContainer";
-import SiteMarker from "../components/SiteMarker";
 import "leaflet/dist/leaflet.css";
+
+import { siteIcon } from "assets/mapIcons";
+import LocationFilter from "components/LocationFilter";
+import SiteAnalyticsModal from "components/SiteAnalyticsModal";
+import MapContainer from "components/MapContainer";
+import SiteMarker from "components/SiteMarker";
 import {
   siteGetAll,
+  siteSetStateSelected,
+  siteSetCitySelected,
+  siteSetZipCodeSelected,
   selectSiteList,
+  selectSelectedState,
+  selectStateOptions,
+  selectSelectedCity,
+  selectCityOptions,
+  selectSelectedZipCode,
+  selectZipCodeOptions,
 } from "redux/site/siteSlide";
 
 const SiteAnalytics = () => {
   const siteList = useSelector(selectSiteList);
+  const siteSelectedState = useSelector(selectSelectedState);
+  const siteStateOptions = useSelector(selectStateOptions);
+  const siteSelectedCity = useSelector(selectSelectedCity);
+  const siteCityOptions = useSelector(selectCityOptions);
+  const siteSelectedZipCode = useSelector(selectSelectedZipCode);
+  const siteZipCodeOptions = useSelector(selectZipCodeOptions);
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
-  const [selectedSite, setSelectedSite] = useState(null);
-  const [states, setStates] = useState([]);
-  const [cities, setCities] = useState([]);
-  const [zipCodes, setZipCodes] = useState([]);
-  const [filteredCities, setFilteredCities] = useState([]);
+  const [selectedSiteId, setSelectedSiteId] = useState(null);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(siteGetAll());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (siteList) {
-      const uniqueStates = Array.from(new Set(siteList.map(site => site.state))).sort((a, b) => a.localeCompare(b));
-      const uniqueCities = Array.from(new Set(siteList.map(site => site.city))).sort((a, b) => a.localeCompare(b));
-      const uniqueZips = Array.from(new Set(siteList.map(site => site.zip_code))).sort((a, b) => a.localeCompare(b));
-      setStates(["All", ...uniqueStates]);
-      setCities(["All", ...uniqueCities]);
-      setZipCodes(["All", ...uniqueZips]);
-      setFilteredCities(["All", ...uniqueCities]);
+    if (siteList.length === 0) {
+      dispatch(siteGetAll());
     }
-  }, [siteList]);
+  }, [siteList, dispatch]);
 
-  const applyFilters = (state, city, zip) => {
-    let query = "";
-    const queryParams = [];
-    if (state !== 'All') queryParams.push(`state=${state}`);
-    if (city !== 'All') queryParams.push(`city=${city}`);
-    if (zip !== 'All') queryParams.push(`zip=${zip}`);
-    if (queryParams.length > 0) {
-      query += `?${queryParams.join('&')}`;
-    }
+  const handleFilter = (state, city, zipCode) => {
+    const params = [];
+    if (state !== "All") params.push(`state=${state}`);
+    if (city !== "All") params.push(`city=${city}`);
+    if (zipCode !== "All") params.push(`zip=${zipCode}`);
+    const query = params.length > 0 ? `?${params.join("&")}` : "";
     dispatch(siteGetAll(query));
+    dispatch(siteSetStateSelected(state));
+    dispatch(siteSetCitySelected(city));
+    dispatch(siteSetZipCodeSelected(zipCode));
   };
 
-  const onFiltersChange = (newState, newCity, newZip) => {
-    applyFilters(newState, newCity, newZip);
-  };
-
-  const handleSiteClick = (siteId) => {
-    setSelectedSite(siteId);
+  const handleViewSite = (siteId) => {
+    setSelectedSiteId(siteId);
     setIsAnalyticsModalOpen(true);
   };
 
-  const renderSiteMarker = site => (
-    <SiteMarker
-      key={site.id}
-      site={site}
-      icon={siteIcon}
-      onSiteClick={handleSiteClick}
-    />
-  );
-  return (
-    <CCard>
-      <LocationFilter
-        states={states}
-        filteredCities={filteredCities}
-        zipCodes={zipCodes}
-        onFiltersChange={onFiltersChange}
+  const displayMap = useMemo(() => {
+    const renderSiteMarker = (site) => (
+      <SiteMarker
+        key={site.id}
+        site={site}
+        icon={siteIcon}
+        onSiteClick={handleViewSite}
       />
+    );
+    return (
       <MapContainer
         locations={siteList}
         renderMarker={renderSiteMarker}
       />
+    );
+  }, [siteList]);
+
+  return (
+    <CCard>
+      <LocationFilter
+        selectedState={siteSelectedState}
+        states={siteStateOptions}
+        selectedCity={siteSelectedCity}
+        cities={siteCityOptions}
+        selectedZipCode={siteSelectedZipCode}
+        zipCodes={siteZipCodeOptions}
+        onChange={handleFilter}
+      />
+      {displayMap}
       <CCardBody>
         <CCardTitle>
           Sites List
@@ -94,8 +100,8 @@ const SiteAnalytics = () => {
           {siteList.map(({ id, name }) => (
             <CListGroupItem
               key={id}
-              className="d-flex justify-content-between align-items-center py-3"
-              onClick={() => handleSiteClick(id)}
+              className="list-item d-flex justify-content-between align-items-center py-3"
+              onClick={() => handleViewSite(id)}
             >
               <div>ID: {id}</div>
               <div>{name}</div>
@@ -108,7 +114,7 @@ const SiteAnalytics = () => {
         <SiteAnalyticsModal
           isOpen={isAnalyticsModalOpen}
           onClose={() => setIsAnalyticsModalOpen(false)}
-          siteId={selectedSite}
+          siteId={selectedSiteId}
         />
       )}
     </CCard>
