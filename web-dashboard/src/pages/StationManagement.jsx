@@ -89,9 +89,12 @@ const StationManagement = () => {
         onMarkerClick={() => handleViewStation(station.id)}
       />
     );
-    return <MapContainer
-      locations={stationList}
-      renderMarker={renderStationMarker} />
+    return (
+      <MapContainer
+        locations={stationList}
+        renderMarker={renderStationMarker}
+      />
+    );
   }, [stationList]);
 
   return (
@@ -127,7 +130,7 @@ const StationManagement = () => {
             >
               <div>ID: {id}</div>
               <div>{name}</div>
-              <div className="station-actions">
+              <div>
                 <CButton
                   className="mx-1"
                   variant="outline"

@@ -17,6 +17,7 @@ const stationEntityAdapter = createEntityAdapter();
 const locationFilterAdapter = createLocationFilterAdapter();
 
 const initialState = {
+  isSizeChanged: false,
   ...stationEntityAdapter.getInitialState(),
   ...locationFilterAdapter.getInitialState(),
 };
@@ -26,17 +27,25 @@ export const stationSlice = createSlice({
   initialState,
   reducers: {
     stationStateSetAll(state, { payload }) {
+      const size = state.ids.length;
       stationEntityAdapter.setAll(state, payload);
+      const newSize = state.ids.length;
+      state.isSizeChanged = size !== newSize;
     },
     stationStateSetById(state, { payload }) {
+      const size = state.ids.length;
       stationEntityAdapter.setOne(state, payload);
+      const newSize = state.ids.length;
+      state.isSizeChanged = size !== newSize;
     },
     stationStateUpdateById(state, { payload }) {
       const { id, ...changes } = payload;
       stationEntityAdapter.updateOne(state, { id, changes });
+      state.isSizeChanged = false;
     },
     stationStateDeleteById(state, { payload }) {
       stationEntityAdapter.removeOne(state, payload);
+      state.isSizeChanged = true;
     },
     stationSetStateSelected(state, { payload }) {
       locationFilterAdapter.setStateSelected(state, payload);
@@ -139,6 +148,7 @@ export const stationDeleteById = createAsyncThunk(
 );
 
 export const selectStation = (state) => state[stationSlice.name];
+export const selectIsSizeChanged = (state) => selectStation(state).isSizeChanged;
 
 const stationSelectors = stationEntityAdapter.getSelectors(selectStation);
 export const selectStationList = stationSelectors.selectAll;

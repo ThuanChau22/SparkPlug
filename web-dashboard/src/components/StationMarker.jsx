@@ -1,20 +1,16 @@
-// StationMarker.jsx
-import React from 'react';
-import { Marker, Tooltip } from 'react-leaflet';
+import { Marker, Tooltip } from "react-leaflet";
 
 const StationMarker = ({ station, icon, onMarkerClick }) => {
   return (
     <Marker
-      position={[station.latitude, station.longitude]}
       icon={icon}
-      eventHandlers={{
-        click: () => onMarkerClick(station),
-      }}
+      position={[station.latitude, station.longitude]}
+      eventHandlers={{ click: () => onMarkerClick(station) }}
     >
       <Tooltip direction="top" offset={[0, -20]} opacity={1} permanent={false}>
-        <span>{`Station: ${station.name}`}</span><br />
-        <span>{`Site ID: ${station.site_id}`}</span><br />
-        <span>{`Price: ${station.price}`}</span>
+        <div>{`Station: ${station.name}`}</div>
+        <div>{`Site ID: ${station.site_id}`}</div>
+        <div>{`Price: ${station.price}`}</div>
       </Tooltip>
     </Marker>
   );

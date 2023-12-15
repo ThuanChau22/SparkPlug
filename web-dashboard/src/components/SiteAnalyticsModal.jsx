@@ -20,7 +20,7 @@ import { selectAuthAccessToken } from "redux/auth/authSlice";
 import { selectSiteById } from "redux/site/siteSlide";
 
 const SiteAnalyticsModal = ({ isOpen, onClose, siteId }) => {
-  const { REACT_APP_SITE_ANALYTICS_API_ENDPOINT: SiteAnalyticsAPI } = process.env;
+  const SiteAnalyticsAPI = process.env.REACT_APP_SITE_ANALYTICS_API_ENDPOINT;
   const site = useSelector((state) => selectSiteById(state, siteId));
   const token = useSelector(selectAuthAccessToken);
   const [analyticsData, setAnalyticsData] = useState(null);
@@ -56,10 +56,8 @@ const SiteAnalyticsModal = ({ isOpen, onClose, siteId }) => {
   }, [SiteAnalyticsAPI, siteId, token, startDate, endDate, chargeLevel]);
 
   useEffect(() => {
-    if (!analyticsData) {
-      fetchData();
-    }
-  }, [analyticsData, fetchData]);
+    fetchData();
+  }, [fetchData]);
 
   return (
     <CModal

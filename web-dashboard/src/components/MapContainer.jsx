@@ -7,7 +7,7 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-const MapContainer = ({ locations, renderMarker }) => {
+const MapContainer = ({ locations, renderMarker, setBound = true }) => {
   const MapBoundsSetter = ({ locations }) => {
     const map = useMap();
     useEffect(() => {
@@ -22,7 +22,7 @@ const MapContainer = ({ locations, renderMarker }) => {
     <LeafletMap
       center={[40, -100]}
       zoom={5}
-      style={{ height: '600px', width: '100%' }}
+      style={{ height: "600px", width: "100%" }}
       placeholder={<noscript>You need to enable JavaScript to see this map.</noscript>}
     >
       <TileLayer
@@ -30,7 +30,7 @@ const MapContainer = ({ locations, renderMarker }) => {
         attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
       />
       {locations.map(location => renderMarker(location))}
-      <MapBoundsSetter locations={locations} />
+      {setBound && <MapBoundsSetter locations={locations} />}
     </LeafletMap>
   );
 };

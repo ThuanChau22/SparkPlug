@@ -1,44 +1,42 @@
-// mapIcons.js
-
-import L from 'leaflet';
-import siteIconUrl from '../assets/site_pointer.png';  
-import stationIconUrl from '../assets/station_pointer.png';
-import greenStationIconUrl from '../assets/station_pointer_green.png'
-import grayStationIconUrl from '../assets/station_pointer_gray.png'
-import yellowStationIconUrl from '../assets/station_pointer_yellow.png'
-import redStationIconUrl from '../assets/station_pointer_red.png'
+import L from "leaflet";
+import siteIconUrl from "assets/site_pointer.png";
+import stationIconUrl from "assets/station_pointer.png";
+import greenStationIconUrl from "assets/station_pointer_green.png"
+import grayStationIconUrl from "assets/station_pointer_gray.png"
+import yellowStationIconUrl from "assets/station_pointer_yellow.png"
+import redStationIconUrl from "assets/station_pointer_red.png"
 
 export const stationIcon = L.icon({
   iconUrl: stationIconUrl,
-  iconSize: [80, 80], 
-  iconAnchor: [40, 80], 
-  popupAnchor: [0, -80], 
+  iconSize: [80, 80],
+  iconAnchor: [40, 80],
+  popupAnchor: [0, -80],
 });
 
 export const siteIcon = L.icon({
   iconUrl: siteIconUrl,
-  iconSize: [80, 80], 
-  iconAnchor: [40, 80], 
-  popupAnchor: [0, -80], 
+  iconSize: [80, 80],
+  iconAnchor: [40, 80],
+  popupAnchor: [0, -80],
 });
 
 // Dynamically create station icons based on status
 export const createStationIcon = (status) => {
   let iconUrl;
   switch (status) {
-    case 'Available':
+    case "Available":
       iconUrl = greenStationIconUrl;
       break;
-    case 'Occupied':
+    case "Occupied":
       iconUrl = yellowStationIconUrl;
       break;
-    case 'Unavailable':
+    case "Unavailable":
       iconUrl = grayStationIconUrl;
       break;
-    case 'Faulted':
+    case "Faulted":
       iconUrl = redStationIconUrl;
       break;
-    case 'Offline':
+    case "Offline":
       iconUrl = grayStationIconUrl;
       break;
     default:
