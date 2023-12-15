@@ -4,8 +4,18 @@
 
 @import "layout";
 
-// html, body, #root {
-//   height: 100%;
-//   display: flex;
-//   flex-direction: column;
-// }
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--cui-gray-200);
+  outline: none;
+  box-shadow: none;
+}
+
+.list-item {
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #e9ecef;
+  }
+}

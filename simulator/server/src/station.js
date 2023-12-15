@@ -60,6 +60,7 @@ const station = {
     Id: "",
     OnGoing: false,
     SeqNo: 0,
+    isRemoteStopped: false,
   }
 };
 
@@ -70,6 +71,7 @@ station.initialize = () => {
   station.Transaction.Id = "";
   station.Transaction.OnGoing = false;
   station.Transaction.SeqNo = 0;
+  station.Transaction.isRemoteStopped = false;
 };
 
 try {

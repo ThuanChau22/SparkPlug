@@ -1,58 +1,89 @@
-import React, { useState, useEffect } from 'react';
+import {
+  CButton,
+  CFormSelect,
+  CInputGroup,
+  CInputGroupText,
+} from "@coreui/react";
 
-const LocationFilter = ({ states, filteredCities, zipCodes, onFiltersChange, filterState, filterCity, filterZip }) => {
-    const [localFilterState, setLocalFilterState] = useState(filterState);
-    const [localFilterCity, setLocalFilterCity] = useState(filterCity);
-    const [localFilterZip, setLocalFilterZip] = useState(filterZip);
+const LocationFilter = ({
+  selectedState = "All",
+  states = [],
+  selectedCity = "All",
+  cities = [],
+  selectedZipCode = "All",
+  zipCodes = [],
+  onChange
+}) => {
+  const handleStateChange = (e) => {
+    const newState = e.target.value;
+    onChange(newState, "All", "All");
+  };
 
-    useEffect(() => {
-        setLocalFilterState(filterState);
-        setLocalFilterCity(filterCity);
-        setLocalFilterZip(filterZip);
-    }, [filterState, filterCity, filterZip]);
+  const handleCityChange = (e) => {
+    const newCity = e.target.value;
+    onChange(selectedState, newCity, "All");
+  };
 
-    const handleStateChange = (e) => {
-        const newState = e.target.value;
-        setLocalFilterState(newState);
-        setLocalFilterCity('All');
-        setLocalFilterZip('All');
-        onFiltersChange(newState, 'All', 'All');
-    };
+  const handleZipCodeChange = (e) => {
+    const newZipCode = e.target.value;
+    onChange(selectedState, selectedCity, newZipCode);
+  };
 
-    const handleCityChange = (e) => {
-        const newCity = e.target.value;
-        setLocalFilterCity(newCity);
-        setLocalFilterZip('All');
-        onFiltersChange(localFilterState, newCity, 'All');
-    };
+  const handleClearChange = () => {
+    onChange("All", "All", "All");
+  };
 
-    const handleZipChange = (e) => {
-        const newZip = e.target.value;
-        setLocalFilterZip(newZip);
-        setLocalFilterState('All');
-        setLocalFilterCity('All');
-        onFiltersChange('All', 'All', newZip);
-    };
-
-    return (
-        <div className="filter-container">
-            <select value={localFilterState} onChange={handleStateChange}>
-                {states?.map(state => (
-                    <option key={state} value={state}>{state}</option>
-                ))}
-            </select>
-            <select value={localFilterCity} onChange={handleCityChange}>
-                {filteredCities?.map(city => (
-                    <option key={city} value={city}>{city}</option>
-                ))}
-            </select>
-            <select value={localFilterZip} onChange={handleZipChange}>
-                {zipCodes?.map(zip => (
-                    <option key={zip} value={zip}>{zip}</option>
-                ))}
-            </select>
-        </div>
-    );
+  return (
+    <div className="d-flex justify-content-end align-items-center">
+      <CInputGroup>
+        <CInputGroupText className="bg-secondary text-white rounded-0">
+          State
+        </CInputGroupText>
+        <CFormSelect
+          className="rounded-0 shadow-none"
+          id="state"
+          options={states.map(state => (
+            { label: state, value: state }
+          ))}
+          value={selectedState}
+          onChange={handleStateChange}
+        />
+      </CInputGroup>
+      <CInputGroup>
+        <CInputGroupText className="bg-secondary text-white rounded-0">
+          City
+        </CInputGroupText>
+        <CFormSelect
+          className="rounded-0 shadow-none"
+          options={cities.map(city => (
+            { label: city, value: city }
+          ))}
+          value={selectedCity}
+          onChange={handleCityChange}
+        />
+      </CInputGroup>
+      <CInputGroup>
+        <CInputGroupText className="bg-secondary text-white rounded-0">
+          Zip Code
+        </CInputGroupText>
+        <CFormSelect
+          className="rounded-0 shadow-none"
+          options={zipCodes.map(zipCode => (
+            { label: zipCode, value: zipCode }
+          ))}
+          value={selectedZipCode}
+          onChange={handleZipCodeChange}
+        />
+      </CInputGroup>
+      <CButton
+        className="rounded-0 text-white"
+        color="secondary"
+        onClick={handleClearChange}
+      >
+        Clear
+      </CButton>
+    </div>
+  );
 };
 
 export default LocationFilter;

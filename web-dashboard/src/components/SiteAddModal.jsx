@@ -13,19 +13,22 @@ import {
 import { siteAdd } from "redux/site/siteSlide";
 
 const SiteAddModal = ({ isOpen, onClose }) => {
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     name: "",
     ownerId: "",
     streetAddress: "",
     latitude: "",
     longitude: "",
     zipCode: ""
-  });
+  };
+  const [formData, setFormData] = useState(initialFormData);
   const dispatch = useDispatch();
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+
   const handleSubmit = () => {
     if (!formData.name
       || !formData.ownerId
@@ -44,14 +47,20 @@ const SiteAddModal = ({ isOpen, onClose }) => {
       zip_code: formData.zipCode,
     };
     dispatch(siteAdd(siteData));
+    handleClose();
+  };
+
+  const handleClose = () => {
+    setFormData(initialFormData);
     onClose();
   };
+
   return (
     <CModal
       backdrop="static"
       alignment="center"
       visible={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
     >
       <CModalHeader className="mb-2">
         <CModalTitle>Add New Site</CModalTitle>

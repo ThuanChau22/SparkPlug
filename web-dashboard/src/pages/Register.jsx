@@ -43,7 +43,7 @@ const Register = () => {
     if (token) {
       dispatch(authStateSet({ token }));
     }
-  }, [token]);
+  }, [token, dispatch]);
   useEffect(() => {
     if (authenticated) {
       navigate("/", { replace: true });

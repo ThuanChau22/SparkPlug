@@ -9,12 +9,17 @@ import {
   tokenConfig,
   handleError,
 } from "redux/api";
+import { createLocationFilterAdapter } from "redux/locationFilterAdapter";
 
 const StationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
 
 const stationEntityAdapter = createEntityAdapter();
+const locationFilterAdapter = createLocationFilterAdapter();
 
-const initialState = stationEntityAdapter.getInitialState();
+const initialState = {
+  ...stationEntityAdapter.getInitialState(),
+  ...locationFilterAdapter.getInitialState(),
+};
 
 export const stationSlice = createSlice({
   name: "station",
@@ -33,9 +38,26 @@ export const stationSlice = createSlice({
     stationStateDeleteById(state, { payload }) {
       stationEntityAdapter.removeOne(state, payload);
     },
+    stationSetStateSelected(state, { payload }) {
+      locationFilterAdapter.setStateSelected(state, payload);
+    },
+    stationSetCitySelected(state, { payload }) {
+      locationFilterAdapter.setCitySelected(state, payload);
+    },
+    stationSetZipCodeSelected(state, { payload }) {
+      locationFilterAdapter.setZipCodeSelected(state, payload);
+    },
     stationStateClear(_) {
       return initialState;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addDefaultCase((state) => {
+      const data = Object.values(state.entities);
+      locationFilterAdapter.setStateOptions(state, data);
+      locationFilterAdapter.setCityOptions(state, data);
+      locationFilterAdapter.setZipCodeOptions(state, data);
+    });
   },
 });
 
@@ -44,6 +66,10 @@ export const {
   stationStateSetById,
   stationStateUpdateById,
   stationStateDeleteById,
+  stationSetStateSelected,
+  stationSetCitySelected,
+  stationSetZipCodeSelected,
+  stationStateClear,
 } = stationSlice.actions;
 
 export const stationGetAll = createAsyncThunk(
@@ -117,5 +143,13 @@ export const selectStation = (state) => state[stationSlice.name];
 const stationSelectors = stationEntityAdapter.getSelectors(selectStation);
 export const selectStationList = stationSelectors.selectAll;
 export const selectStationById = stationSelectors.selectById;
+
+const filterSelectors = locationFilterAdapter.getSelectors(selectStation);
+export const selectSelectedState = filterSelectors.selectSelectedState;
+export const selectStateOptions = filterSelectors.selectStateOptions;
+export const selectSelectedCity = filterSelectors.selectSelectedCity;
+export const selectCityOptions = filterSelectors.selectCityOptions;
+export const selectSelectedZipCode = filterSelectors.selectSelectedZipCode;
+export const selectZipCodeOptions = filterSelectors.selectZipCodeOptions;
 
 export default stationSlice.reducer;

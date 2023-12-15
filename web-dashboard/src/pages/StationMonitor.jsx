@@ -44,8 +44,10 @@ const StationMonitor = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(stationGetAll());
-  }, [dispatch]);
+    if (stationList.length === 0) {
+      dispatch(stationGetAll());
+    }
+  }, [stationList, dispatch]);
 
   useEffect(() => {
     const isStationLoaded = stationList.length > 0;
@@ -79,7 +81,7 @@ const StationMonitor = () => {
     <CCard>
       <CCardBody>
         <CCardTitle className="mb-3">
-          Stations
+          Stations Monitor
         </CCardTitle>
         <CListGroup>
           {stationList.map(({ id, name, status }) => (

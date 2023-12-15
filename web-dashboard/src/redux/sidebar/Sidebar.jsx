@@ -19,7 +19,7 @@ import {
   AccountTreeOutlined,
   EvStationOutlined,
   GroupsOutlined,
-  ReceiptLongOutlined,
+  // ReceiptLongOutlined,
 } from '@mui/icons-material';
 
 import {
@@ -52,7 +52,12 @@ const Sidebar = () => {
         name: "Resources",
       },
     ];
-    const { Sites, Stations, Users, Transactions } = routes.Resources;
+    const {
+      Sites,
+      Stations,
+      Users,
+      // Transactions,
+    } = routes.Resources;
     newNavigation.push({
       component: CNavItem,
       name: Sites.name,

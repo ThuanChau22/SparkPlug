@@ -7,6 +7,9 @@ import {
   clearHeader,
   handleError,
 } from "redux/api";
+import { siteStateClear } from "redux/site/siteSlide";
+import { stationStateClear } from "redux/station/stationSlide";
+import { userStateClear } from "redux/user/userSlide";
 
 const AuthAPI = process.env.REACT_APP_AUTH_API_ENDPOINT;
 
@@ -79,6 +82,9 @@ export const authLogout = createAsyncThunk(
   async (_, { dispatch }) => {
     try {
       dispatch(authStateClear());
+      dispatch(siteStateClear());
+      dispatch(stationStateClear());
+      dispatch(userStateClear());
       clearHeader();
     } catch (error) {
       handleError({ error, dispatch });

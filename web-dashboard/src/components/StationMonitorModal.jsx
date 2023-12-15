@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import ms from "ms";
@@ -24,8 +24,8 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
   const { REACT_APP_MONITORING_WS_ENDPOINT: WS_ENDPOINT } = process.env;
   const accessToken = useSelector(selectAuthAccessToken);
   const station = useSelector((state) => selectStationById(state, stationId));
+  const meterTimeoutRef = useRef(0);
   const [meterValue, setMeterValue] = useState(0);
-  const [meterTimeout, setMeterTimeout] = useState(0);
   const [eventMessages, setEventMessages] = useState([]);
   const socket = useWebSocket(`${WS_ENDPOINT}`, {
     queryParams: { token: accessToken },
@@ -64,15 +64,15 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
           const [meter] = payload.payload.meterValue;
           const [sample] = meter.sampledValue;
           setMeterValue(sample.value);
-          clearTimeout(meterTimeout);
-          setMeterTimeout(setTimeout(() => {
+          clearTimeout(meterTimeoutRef.current);
+          meterTimeoutRef.current = setTimeout(() => {
             setMeterValue(0);
-          }, ms("5s")));
+          }, ms("5s"));
         }
         setEventMessages((state) => ([...state, payload]));
       }
     }
-  }, [lastJsonMessage, meterTimeout, dispatch]);
+  }, [lastJsonMessage, dispatch]);
 
   const handleRemoteStart = () => {
     if (readyState === ReadyState.OPEN) {
@@ -115,7 +115,6 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
           </div>
           <div>
             <CButton
-              disabled={station.status === "Occupied"}
               className="me-1"
               variant="outline"
               color="success"
@@ -124,7 +123,6 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
               Remote Start
             </CButton>
             <CButton
-              disabled={station.status !== "Occupied"}
               variant="outline"
               color="info"
               onClick={handleRemoteStop}

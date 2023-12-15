@@ -1,5 +1,6 @@
 import { v4 as uuid } from "uuid";
 
+import { Monitoring } from "../../db/model.js";
 import {
   clientIdToIdToken,
   idTokenToTransactionId,
@@ -9,13 +10,20 @@ const remoteControl = {};
 
 remoteControl.requestStartTransactionRequest = async ({ client }) => {
   const idToken = uuid();
-  const { status } = await client.call("RequestStartTransaction", {
-    remoteStartId: 0,
+  const method = "RequestStartTransaction";
+  const responsePayload = await client.call(method, {
+    remoteStartId: Math.floor(1000 + Math.random() * 9000),
     idToken: {
       idToken: idToken,
       type: "Central",
     },
   });
+  await Monitoring.add({
+    stationId: client.identity,
+    event: method,
+    payload: responsePayload,
+  });
+  const { status } = responsePayload;
   if (status === "Accepted") {
     idTokenToTransactionId.set(idToken, "");
   }
@@ -24,9 +32,16 @@ remoteControl.requestStartTransactionRequest = async ({ client }) => {
 
 remoteControl.requestStopTransactionRequest = async ({ client }) => {
   const idToken = clientIdToIdToken.get(client.identity);
-  const { status } = await client.call("RequestStopTransaction", {
+  const method = "RequestStopTransaction";
+  const responsePayload = await client.call(method, {
     transactionId: idTokenToTransactionId.get(idToken),
   });
+  await Monitoring.add({
+    stationId: client.identity,
+    event: method,
+    payload: responsePayload,
+  });
+  const { status } = responsePayload;
   return { status };
 };
 
