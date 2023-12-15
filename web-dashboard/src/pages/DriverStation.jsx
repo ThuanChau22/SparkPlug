@@ -64,19 +64,11 @@ const DriverStation = () => {
   } = socket;
   const dispatch = useDispatch();
 
-  // useEffect(() => {
-  //   if (stationList.length === 0) {
-  //     dispatch(stationGetAll());
-  //   }
-  // }, [stationList, dispatch]);
-
   useEffect(() => {
-    // handleFilter("All", "All", "94301");
-    const defaultZipCode = "94301";
-    const query = `?zip=${defaultZipCode}`;
-    dispatch(stationGetAll(query));
-    dispatch(stationSetZipCodeSelected(defaultZipCode));
-  }, [dispatch]);
+    if (stationList.length === 0) {
+      dispatch(stationGetAll());
+    }
+  }, [stationList, dispatch]);
 
   useEffect(() => {
     const isStationLoaded = stationList.length > 0;
