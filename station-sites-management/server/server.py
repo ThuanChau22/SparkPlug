@@ -247,8 +247,52 @@ def generate_charts(raw_docs):
 
     return data_pack
 
+def generate_peak(raw_docs):
+    revenue_by_date = defaultdict(float)
+    sessions_by_date = defaultdict(int)
+    utilization_by_date = defaultdict(float)
+    hour_counts = [0] * 24
+
+    #return jsonify(raw_docs[0])
+
+    for doc in raw_docs:
+        mongo_timestamp = doc['transaction_date']
+        timestamp_seconds = mongo_timestamp / 1000.0
+        date = datetime.datetime.utcfromtimestamp(timestamp_seconds)
+
+        # Revenue
+        f_date = date.strftime('%Y-%m-%d')
+        revenue_by_date[f_date] += doc['fee']
+        sessions_by_date[f_date] += 1
+
+        # Utilization Rate
+        charging_time_hours = time_string_to_hours(doc['charging_time'])
+        utilization_by_date[f_date] += charging_time_hours
+
+        # Peak Time
+        hour = date.hour
+        hour_counts[hour] += 1
+
+
+    # Calculate utilization rate as a percentage
+    for date in utilization_by_date:
+        utilization_by_date[date] = (utilization_by_date[date] / 24) * 100  # Convert to percentage
+
+    peak_chart_data = {
+        'labels': [f"{i}:00 - {i+1}:00" for i in range(24)],
+        'datasets': [{
+            'label': 'Number of Transactions',
+            'data': hour_counts
+        }]
+    }
+
+    data_pack = {
+        'peak_time': peak_chart_data
+    }
+
+    return data_pack
+
 def station_charts(station_id, start_date, end_date, charge_level):
-    # Call the refactored fetch_transactions_data function
     transactions_data = fetch_transactions_data(station_id, charge_level, start_date, end_date)
     data_pack = generate_charts(transactions_data)
     return jsonify(data_pack)
@@ -259,29 +303,15 @@ def station_charts(station_id, start_date, end_date, charge_level):
     #     print("No transaction data found")
     #     return jsonify([])
 
-# def station_charts(station_id, start_date, end_date, charge_level):
-#     base_url = request.host_url  # Get the base URL of the current Flask app
-#     transactions_url = urljoin(base_url, f'api/transactions?station_id={station_id}')
+def station_peak(station_id, start_date, end_date, charge_level):
+    transactions_data = fetch_transactions_data(station_id, charge_level, start_date, end_date)
 
-#     if start_date != None:
-#         transactions_url += f'&start_date={start_date}'
-#     if end_date != None:
-#         transactions_url += f'&end_date={end_date}'
-#     if charge_level != None:
-#         transactions_url += f'&charge_level={charge_level}'
-
-
-#     # Additional query parameters can be added as needed
-#     # Make the GET request
-#     response = requests.get(transactions_url)
-
-#     if response.status_code == 200:
-#         raw_docs = response.json()
-#         data_pack = generate_charts(raw_docs)
-        
-#         return jsonify(data_pack)
-#     else:
-#         return jsonify([])
+    if transactions_data:
+        data_pack = generate_peak(transactions_data)
+        return jsonify(data_pack)
+    else:
+        print("No transaction data found")
+        return jsonify([])
 
 def aggregate_charts(site_id, start_date, end_date, charge_level):
 
@@ -578,7 +608,7 @@ def update_site(user, site_id):
 
 # Station management
 @app.route('/api/stations', methods=['GET'])
-@require_permission('owner', 'staff')
+@require_permission('owner', 'staff', 'driver')
 def get_stations(user):
     query_params = {
         'state': request.args.get('state'),
@@ -597,59 +627,6 @@ def get_stations(user):
     data = fetch_station_data(query_params)
     return jsonify(data)
 
-# @app.route('/api/stations', methods=['GET'])
-# @require_permission('owner', 'staff')
-# def get_stations(user):
-#     query = "SELECT * FROM stations_joined"
-#     conditions = ""
-
-#     q_state = request.args.get('state')
-#     q_city = request.args.get('city')
-#     q_zip = request.args.get('zip')
-#     q_owner_id = request.args.get('owner_id')
-#     q_name = request.args.get('name')
-#     q_id = request.args.get('id')
-#     q_status = request.args.get('status')
-#     q_site_id = request.args.get('site_id')
-
-#     if q_state:
-#         if conditions: conditions += " AND"
-#         conditions += f" state='{q_state}'"
-#     if q_city:
-#         if conditions: conditions += " AND"
-#         conditions += f" city LIKE '%{q_city}%'"
-#     if q_zip:
-#         if conditions: conditions += " AND"
-#         conditions += f" zip_code={q_zip}"
-#     if q_owner_id:
-#         if conditions: conditions += " AND"
-#         conditions += f" owner_id={q_owner_id}"
-#     if q_name:
-#         if conditions: conditions += " AND"
-#         conditions += f" name LIKE '%{q_name}%'"
-#     if q_id:
-#         if conditions: conditions += " AND"
-#         conditions = f" id={q_id}"
-#     if q_status:
-#         if conditions: conditions += " AND"
-#         conditions += f" status='{q_status}'"
-#     if q_site_id:
-#         if conditions: conditions += " AND"
-#         conditions += f" site_id={q_site_id}"
-
-#     if user['role'] == 'owner':
-#         if conditions: conditions += " AND"
-#         conditions += f" owner_id={user['user_id']}"
-
-#     if conditions:
-#         conditions = " WHERE" + conditions
-
-#     sql_connection = get_mysql_connection()
-#     with sql_connection.cursor() as cursor:
-#         cursor.execute(query+conditions)
-#         data = cursor.fetchall()
-#     #return(query+conditions)
-#     return jsonify(data)
 
 @app.route('/api/stations/<station_id>', methods=['GET'])
 @require_permission('owner', 'staff')
@@ -765,7 +742,7 @@ def delete_station(user, station_id):
 
 # Analytics
 @app.route('/api/stations/analytics/<station_id>', methods=['GET'])
-@require_permission('owner', 'staff')
+@require_permission('owner', 'staff', 'driver')
 def station_analytics(user, station_id):
     # Extract query parameters for date range (optional)
     start_date = request.args.get('start_date')
@@ -776,6 +753,8 @@ def station_analytics(user, station_id):
     if not end_date: end_date = datetime.datetime.now().strftime('%m/%d/%Y')
     if not charge_level: charge_level = None
 
+    if user['role'] == 'driver':
+        return station_peak(station_id, start_date, end_date, charge_level)
     return station_charts(station_id, start_date, end_date, charge_level)
 
 @app.route('/api/stations/analytics', methods=['GET'])
