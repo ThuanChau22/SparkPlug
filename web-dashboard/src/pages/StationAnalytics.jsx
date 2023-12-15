@@ -1,167 +1,121 @@
-import React, { useState, useEffect } from 'react';
-import { apiInstance } from 'redux/api';
-import { CChart } from '@coreui/react-chartjs';
-import '../scss/StationAnalytics.scss';
-import StationAnalyticsModal from '../components/StationAnalyticsModal';
-import LocationFilter from '../components/LocationFilter';
+import { useState, useEffect, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  CCard,
+  CCardTitle,
+  CCardBody,
+  CListGroup,
+  CListGroupItem,
+} from "@coreui/react";
+import "leaflet/dist/leaflet.css";
 
-import { stationIcon } from '../assets/mapIcons';
-import { MapContainer as LeafletMap, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import MapContainer from '../components/MapContainer';
-import StationMarker from '../components/StationMarker';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { stationIcon } from "assets/mapIcons";
+import LocationFilter from "components/LocationFilter";
+import StationAnalyticsModal from "components/StationAnalyticsModal";
+import MapContainer from "components/MapContainer";
+import StationMarker from "components/StationMarker";
+import {
+  stationGetAll,
+  stationSetStateSelected,
+  stationSetCitySelected,
+  stationSetZipCodeSelected,
+  selectStationList,
+  selectSelectedState,
+  selectStateOptions,
+  selectSelectedCity,
+  selectCityOptions,
+  selectSelectedZipCode,
+  selectZipCodeOptions,
+} from "redux/station/stationSlide";
 
 const StationAnalytics = () => {
-    const [stations, setStations] = useState([]);
-    const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
-    const [selectedStation, setSelectedStation] = useState(null);
-    const [aggregateData, setAggregateData] = useState(null);
+  const stationList = useSelector(selectStationList);
+  const stationSelectedState = useSelector(selectSelectedState);
+  const stationStateOptions = useSelector(selectStateOptions);
+  const stationSelectedCity = useSelector(selectSelectedCity);
+  const stationCityOptions = useSelector(selectCityOptions);
+  const stationSelectedZipCode = useSelector(selectSelectedZipCode);
+  const stationZipCodeOptions = useSelector(selectZipCodeOptions);
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
+  const [selectedStationId, setSelectedStation] = useState(null);
+  const dispatch = useDispatch();
 
-    const [filterState, setFilterState] = useState('All');
-    const [filterCity, setFilterCity] = useState('All');
-    const [filterZip, setFilterZip] = useState('All');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [chargeLevel, setChargeLevel] = useState('All');
+  useEffect(() => {
+    if (stationList.length === 0) {
+      dispatch(stationGetAll());
+    }
+  }, [stationList, dispatch]);
 
-    const [states, setStates] = useState([]);
-    const [cities, setCities] = useState([]);
-    const [zipCodes, setZipCodes] = useState([]);
-    const [filteredCities, setFilteredCities] = useState([]);
+  const handleFilter = (state, city, zipCode) => {
+    const params = [];
+    if (state !== "All") params.push(`state=${state}`);
+    if (city !== "All") params.push(`city=${city}`);
+    if (zipCode !== "All") params.push(`zip=${zipCode}`);
+    const query = params.length > 0 ? `?${params.join("&")}` : "";
+    dispatch(stationGetAll(query));
+    dispatch(stationSetStateSelected(state));
+    dispatch(stationSetCitySelected(city));
+    dispatch(stationSetZipCodeSelected(zipCode));
+  };
 
-    const stationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
-    const stationAnalyticsAPI = process.env.REACT_APP_STATION_ANALYTICS_API_ENDPOINT;
+  const handleViewStation = (stationId) => {
+    setSelectedStation(stationId);
+    setIsAnalyticsModalOpen(true);
+  };
 
-    useEffect(() => {
-        apiInstance.get(stationAPI)
-            .then(response => {
-                const fetchedStations = response.data;
-                setStations(fetchedStations);
-
-                const uniqueStates = Array.from(new Set(fetchedStations.map(station => station.state))).sort((a, b) => a.localeCompare(b));
-                const uniqueCities = Array.from(new Set(fetchedStations.map(station => station.city))).sort((a, b) => a.localeCompare(b));
-                const uniqueZips = Array.from(new Set(fetchedStations.map(station => station.zip_code))).sort((a, b) => a.localeCompare(b));
-
-                setStates(['All', ...uniqueStates]);
-                setCities(['All', ...uniqueCities]);
-                setZipCodes(['All', ...uniqueZips]);
-                setFilteredCities(['All', ...uniqueCities]);
-            })
-            .catch(error => console.error('Error:', error));
-
-        fetchAggregateData();
-    }, []);
-
-    const applyFilters = (state, city, zip) => {
-        let queryParams = [];
-        if (zip !== 'All') {
-            queryParams.push(`zip=${encodeURIComponent(zip)}`);
-        } else {
-            if (state !== 'All') {
-                queryParams.push(`state=${encodeURIComponent(state)}`);
-            }
-            if (city !== 'All') {
-                queryParams.push(`city=${encodeURIComponent(city)}`);
-            }
-        }
-
-        const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-        apiInstance.get(`${stationAPI}${queryString}`)
-            .then(response => {
-                setStations(response.data);
-            })
-            .catch(error => console.error('Error:', error));
-    };
-
-    const onFiltersChange = (newState, newCity, newZip) => {
-        setFilterState(newState);
-        setFilterCity(newCity);
-        setFilterZip(newZip);
-        applyFilters(newState, newCity, newZip);
-    };
-
-    const handleStationClick = (stationId) => {
-        setSelectedStation(stationId);
-        setIsAnalyticsModalOpen(true);
-    };
-
+  const displayMap = useMemo(() => {
     const renderStationMarker = station => (
-        <StationMarker
-          key={station.id}
-          station={station}
-          icon={stationIcon}
-          onMarkerClick={() => handleStationClick(station.id)}
+      <StationMarker
+        key={station.id}
+        station={station}
+        icon={stationIcon}
+        onMarkerClick={() => handleViewStation(station.id)}
+      />
+    );
+    return <MapContainer
+      locations={stationList}
+      renderMarker={renderStationMarker} />
+  }, [stationList]);
+
+  return (
+    <CCard>
+      <LocationFilter
+        selectedState={stationSelectedState}
+        states={stationStateOptions}
+        selectedCity={stationSelectedCity}
+        cities={stationCityOptions}
+        selectedZipCode={stationSelectedZipCode}
+        zipCodes={stationZipCodeOptions}
+        onChange={handleFilter}
+      />
+      {displayMap}
+      <CCardBody>
+        <CCardTitle>
+          Stations List
+        </CCardTitle>
+        <CListGroup>
+          {stationList.map(({ id, name }) => (
+            <CListGroupItem
+              key={id}
+              className="list-item d-flex justify-content-between align-items-center py-3"
+              onClick={() => handleViewStation(id)}
+            >
+              <div>ID: {id}</div>
+              <div>{name}</div>
+              <div></div>
+            </CListGroupItem>
+          ))}
+        </CListGroup>
+      </CCardBody>
+      {isAnalyticsModalOpen && (
+        <StationAnalyticsModal
+          isOpen={isAnalyticsModalOpen}
+          onClose={() => setIsAnalyticsModalOpen(false)}
+          stationId={selectedStationId}
         />
-    );
-
-    const fetchAggregateData = () => {
-        let queryParams = [];
-        if (startDate) queryParams.push(`start_date=${startDate}`);
-        if (endDate) queryParams.push(`end_date=${endDate}`);
-        if (chargeLevel !== 'All') queryParams.push(`charge_level=${chargeLevel}`);
-
-        let query = `${stationAnalyticsAPI}?${queryParams.join('&')}`;
-        apiInstance.get(query)
-            .then(response => {
-                setAggregateData(response.data);
-            })
-            .catch(error => console.error('Error:', error));
-    };
-
-    return (
-        <div>
-            <LocationFilter
-                states={states}
-                filteredCities={filteredCities}
-                zipCodes={zipCodes}
-                onFiltersChange={onFiltersChange}
-            />
-
-            <MapContainer locations={stations} renderMarker={renderStationMarker} />
-
-            <h2>Stations List</h2>
-            <ul className="station-list">
-                {stations.map(station => (
-                    <li key={station.id} className="station-list-item" onClick={() => handleStationClick(station.id)}>
-                        ID: {station.id}, Name: {station.name}
-                    </li>
-                ))}
-            </ul>
-
-            {isAnalyticsModalOpen && (
-                <StationAnalyticsModal
-                    isOpen={isAnalyticsModalOpen}
-                    onClose={() => setIsAnalyticsModalOpen(false)}
-                    stationId={selectedStation}
-                />
-            )}
-
-            {/*<div className="station-analytics-container">
-                <div className="analytics-filters">
-                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                    <select value={chargeLevel} onChange={(e) => setChargeLevel(e.target.value)}>
-                        <option value="all">All Levels</option>
-                        <option value="1">Level 1</option>
-                        <option value="2">Level 2</option>
-                        <option value="3">Level 3</option>
-                    </select>
-                    <button onClick={fetchAggregateData}>Update</button>
-                </div>
-                <div className="charts-container">
-                    {aggregateData && (
-                        <>
-                            <CChart type="line" data={aggregateData.revenue} options={{  }} />
-                            <CChart type="bar" data={aggregateData.peak_time} options={{ }} />
-                            <CChart type="line" data={aggregateData.utilization_rate} options={{ }} />
-                            <CChart type="bar" data={aggregateData.sessions_count} options={{  }} />
-                        </>
-                    )}
-                </div>
-            </div>*/}
-        </div>
-    );
+      )}
+    </CCard>
+  );
 };
 
 export default StationAnalytics;
