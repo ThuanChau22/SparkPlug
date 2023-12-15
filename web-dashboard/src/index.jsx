@@ -103,6 +103,10 @@ const router = createBrowserRouter([
               path: routes.Settings.path,
               element: routes.Settings.element,
             },
+            {
+              path: routes.Drivers.path,
+              element: routes.Drivers.element,
+            },
           ],
       },
     ],
@@ -114,6 +118,10 @@ const router = createBrowserRouter([
   {
     path: routes.Register.path,
     element: routes.Register.element,
+  },
+  {
+    path: routes.Unauthorized.path,
+    element: routes.Unauthorized.element,
   },
 ]);
 

@@ -24,6 +24,8 @@ import {
 
 import {
   selectAuthRoleIsStaff,
+  selectAuthRoleIsOwner,
+  selectAuthRoleIsDriver,
 } from "redux/auth/authSlice";
 import {
   selectHeaderActive,
@@ -41,6 +43,8 @@ import routes from "routes";
 const Sidebar = () => {
   const dispatch = useDispatch();
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
+  const authIsOwner = useSelector(selectAuthRoleIsOwner);
+  const authIsDriver = useSelector(selectAuthRoleIsDriver);
   const headerActive = useSelector(selectHeaderActive);
   const unfoldable = useSelector(selectSidebarFold);
   const sidebarShow = useSelector(selectSidebarShow);
@@ -58,24 +62,34 @@ const Sidebar = () => {
       Users,
       // Transactions,
     } = routes.Resources;
-    newNavigation.push({
-      component: CNavItem,
-      name: Sites.name,
-      to: Sites.Components[headerActive]?.path || Sites.defaultPath,
-      icon: <AccountTreeOutlined className="nav-icon" />,
-    });
-    newNavigation.push({
-      component: CNavItem,
-      name: Stations.name,
-      to: Stations.Components[headerActive]?.path || Stations.defaultPath,
-      icon: <EvStationOutlined className="nav-icon" />,
-    });
-    if (authIsAdmin) {
+    if (authIsAdmin || authIsOwner) {
       newNavigation.push({
         component: CNavItem,
-        name: Users.name,
-        to: Users.Components[headerActive]?.path || Users.defaultPath,
-        icon: <GroupsOutlined className="nav-icon" />,
+        name: Sites.name,
+        to: Sites.Components[headerActive]?.path || Sites.defaultPath,
+        icon: <AccountTreeOutlined className="nav-icon" />,
+      });
+      newNavigation.push({
+        component: CNavItem,
+        name: Stations.name,
+        to: Stations.Components[headerActive]?.path || Stations.defaultPath,
+        icon: <EvStationOutlined className="nav-icon" />,
+      });
+      if (authIsAdmin) {
+        newNavigation.push({
+          component: CNavItem,
+          name: Users.name,
+          to: Users.Components[headerActive]?.path || Users.defaultPath,
+          icon: <GroupsOutlined className="nav-icon" />,
+        });
+      }
+    }
+    if (authIsDriver) {
+      newNavigation.push({
+        component: CNavItem,
+        name: routes.Drivers.name,
+        to: routes.Drivers.path,
+        icon: <EvStationOutlined className="nav-icon" />,
       });
     }
     // newNavigation.push({
@@ -85,7 +99,7 @@ const Sidebar = () => {
     //   icon: <ReceiptLongOutlined className="nav-icon" />,
     // });
     setNavigation(newNavigation);
-  }, [authIsAdmin, headerActive]);
+  }, [authIsAdmin, authIsOwner, authIsDriver, headerActive]);
   const SidebarNav = ({ items }) => (
     items && items.map((item, index) => {
       const { component, name, icon, ...rest } = item

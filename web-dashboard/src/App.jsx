@@ -17,6 +17,9 @@ import {
   authStateSet,
   authStateClear,
   selectAuthAuthenticated,
+  selectAuthRoleIsStaff,
+  selectAuthRoleIsOwner,
+  selectAuthRoleIsDriver,
   selectAuthExpiredTime,
   selectAuthSecureStorage,
 } from "redux/auth/authSlice";
@@ -24,33 +27,45 @@ import routes from "routes";
 
 const App = () => {
   const authenticated = useSelector(selectAuthAuthenticated);
+  const authIsAdmin = useSelector(selectAuthRoleIsStaff);
+  const authIsOwner = useSelector(selectAuthRoleIsOwner);
+  const authIsDriver = useSelector(selectAuthRoleIsDriver);
   const expiredTime = useSelector(selectAuthExpiredTime);
   const token = useSelector(selectAuthSecureStorage);
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
   useEffect(() => {
     if (token) {
       dispatch(authStateSet({ token }));
     }
   }, [token, dispatch]);
+
   useEffect(() => {
     if (authenticated && expiredTime <= Date.now()) {
       dispatch(authStateClear());
     }
   }, [authenticated, expiredTime, dispatch]);
+
   useEffect(() => {
     const options = { replace: true };
     if (!authenticated && !token) {
       navigate(routes.Login.path, options);
       return;
     }
-    const paths = location.pathname.split("/");
-    if (paths.length >= 2) {
-      const [, resource, component] = paths;
+    const path = location.pathname.split("/");
+    if (path.length >= 2) {
+      const [, resource, component] = path;
       if (!resource) {
-        navigate(routes.Root.defaultPath, options);
-        return;
+        if (authIsAdmin || authIsOwner) {
+          navigate(routes.Root.defaultPath, options);
+          return;
+        }
+        if (authIsDriver) {
+          navigate(routes.Drivers.path, options);
+          return;
+        }
       }
       if (!component) {
         for (const { path, defaultPath } of Object.values(routes.Resources)) {
@@ -60,8 +75,37 @@ const App = () => {
           }
         }
       }
+
     }
-  }, [authenticated, token, location, navigate]);
+  }, [authenticated, authIsAdmin, authIsOwner, authIsDriver, token, location, navigate]);
+
+  useEffect(() => {
+    const restricted = new Set();
+    if (authIsOwner) {
+      restricted.add(routes.Resources.Users.Components.Management.path);
+      // restricted.add(routes.Resources.Users.Components.Analytics.path);
+    }
+    if (authIsDriver) {
+      restricted.add(routes.Resources.Sites.Components.Management.path);
+      // restricted.add(routes.Resources.Sites.Components.Monitor.path);
+      restricted.add(routes.Resources.Sites.Components.Analytics.path);
+      restricted.add(routes.Resources.Stations.Components.Management.path);
+      restricted.add(routes.Resources.Stations.Components.Monitor.path);
+      restricted.add(routes.Resources.Stations.Components.Analytics.path);
+      restricted.add(routes.Resources.Users.Components.Management.path);
+      // restricted.add(routes.Resources.Users.Components.Analytics.path);
+      // restricted.add(routes.Resources.Transactions.path);
+    }
+    let path = location.pathname;
+    if (path.charAt(path.length - 1) === "/") {
+      path = path.substring(0, path.length - 1);
+    }
+    if (restricted.has(path)) {
+      navigate(routes.Unauthorized.path, { replace: true });
+      return;
+    }
+  }, [authIsOwner, authIsDriver, location, navigate]);
+
   return (authenticated
     ? (
       <>

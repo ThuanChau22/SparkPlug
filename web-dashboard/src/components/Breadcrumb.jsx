@@ -21,6 +21,10 @@ const Breadcrumb = () => {
     name: routes.Settings.name,
     path: routes.Settings.path,
   });
+  routeList.push({
+    name: routes.Drivers.name,
+    path: routes.Drivers.path,
+  });
 
   const getRouteName = (pathname, routes) => {
     const currentRoute = routes.find((route) => route.path === pathname)
