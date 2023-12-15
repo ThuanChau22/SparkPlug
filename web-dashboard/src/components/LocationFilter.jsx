@@ -1,10 +1,16 @@
 // LocationFilter.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const LocationFilter = ({ states, filteredCities, zipCodes, onFiltersChange }) => {
-    const [localFilterState, setLocalFilterState] = useState('All');
-    const [localFilterCity, setLocalFilterCity] = useState('All');
-    const [localFilterZip, setLocalFilterZip] = useState('All');
+const LocationFilter = ({ states, filteredCities, zipCodes, onFiltersChange, filterState, filterCity, filterZip }) => {
+    const [localFilterState, setLocalFilterState] = useState(filterState);
+    const [localFilterCity, setLocalFilterCity] = useState(filterCity);
+    const [localFilterZip, setLocalFilterZip] = useState(filterZip);
+
+    useEffect(() => {
+        setLocalFilterState(filterState);
+        setLocalFilterCity(filterCity);
+        setLocalFilterZip(filterZip);
+    }, [filterState, filterCity, filterZip]);
 
     const handleStateChange = (e) => {
         const newState = e.target.value;
