@@ -68,7 +68,7 @@ const App = () => {
         <Sidebar />
         <div className="wrapper d-flex flex-column min-vh-100 bg-light">
           <Header />
-          <div className="body flex-grow-1 px-3">
+          <div className="body flex-grow-1 px-3 pb-5">
             <Outlet />
           </div>
           <Footer />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -8,37 +8,43 @@ import {
   CListGroup,
   CListGroupItem,
 } from "@coreui/react";
+import "leaflet/dist/leaflet.css";
 
-import SiteDetailsModal from "../components/SiteDetailsModal";
-import SiteAddModal from "../components/SiteAddModal";
-import SiteEditModal from "../components/SiteEditModal";
+import { siteIcon } from "assets/mapIcons";
+import SiteAddModal from "components/SiteAddModal";
+import SiteDetailsModal from "components/SiteDetailsModal";
+import SiteEditModal from "components/SiteEditModal";
+import LocationFilter from "components/LocationFilter";
+import MapContainer from "components/MapContainer";
+import SiteMarker from "components/SiteMarker";
 import {
   siteGetAll,
   siteDeleteById,
+  siteSetStateSelected,
+  siteSetCitySelected,
+  siteSetZipCodeSelected,
   selectSiteList,
+  selectSelectedState,
+  selectStateOptions,
+  selectSelectedCity,
+  selectCityOptions,
+  selectSelectedZipCode,
+  selectZipCodeOptions,
 } from "redux/site/siteSlide";
-
-import { siteIcon } from '../assets/mapIcons';
-import MapContainer from '../components/MapContainer';
-import SiteMarker from '../components/SiteMarker';
-import 'leaflet/dist/leaflet.css';
-
-import LocationFilter from '../components/LocationFilter';
 
 const SiteManagement = () => {
   const siteList = useSelector(selectSiteList);
+  const siteSelectedState = useSelector(selectSelectedState);
+  const siteStateOptions = useSelector(selectStateOptions);
+  const siteSelectedCity = useSelector(selectSelectedCity);
+  const siteCityOptions = useSelector(selectCityOptions);
+  const siteSelectedZipCode = useSelector(selectSelectedZipCode);
+  const siteZipCodeOptions = useSelector(selectZipCodeOptions);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModelOpen, setIsEditModalOpen] = useState(false);
   const [selectedSiteId, setSelectedSiteId] = useState(null);
   const [editingSiteId, setEditingSiteId] = useState(null);
-  const [filterState, setFilterState] = useState('All');
-  const [filterCity, setFilterCity] = useState('All');
-  const [filterZip, setFilterZip] = useState('All');
-  const [states, setStates] = useState([]);
-  const [cities, setCities] = useState([]);
-  const [zipCodes, setZipCodes] = useState([]);
-  const [filteredCities, setFilteredCities] = useState([]);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -47,43 +53,19 @@ const SiteManagement = () => {
     }
   }, [siteList, dispatch]);
 
-  useEffect(() => {
-    if (siteList) {
-      const uniqueStates = Array
-        .from(new Set(siteList.map(site => site.state)))
-        .sort((a, b) => a.localeCompare(b));
-      const uniqueCities = Array
-        .from(new Set(siteList.map(site => site.city)))
-        .sort((a, b) => a.localeCompare(b));
-      const uniqueZips = Array
-        .from(new Set(siteList.map(site => site.zip_code)))
-        .sort((a, b) => a.localeCompare(b));
-      setStates(['All', ...uniqueStates]);
-      setCities(['All', ...uniqueCities]);
-      setZipCodes(['All', ...uniqueZips]);
-    }
-  }, [siteList]);
+  const handleFilter = (state, city, zipCode) => {
+    const params = [];
+    if (state !== "All") params.push(`state=${state}`);
+    if (city !== "All") params.push(`city=${city}`);
+    if (zipCode !== "All") params.push(`zip=${zipCode}`);
+    const query = params.length > 0 ? `?${params.join("&")}` : "";
+    dispatch(siteGetAll(query));
+    dispatch(siteSetStateSelected(state));
+    dispatch(siteSetCitySelected(city));
+    dispatch(siteSetZipCodeSelected(zipCode));
+  };
 
-  useEffect(() => {
-    if (filterState !== 'All') {
-      const citiesInState = Array
-        .from(new Set(siteList
-          .filter(site => site.state === filterState)
-          .map(site => site.city)))
-        .sort((a, b) => a.localeCompare(b));
-      setFilteredCities(['All', ...citiesInState]);
-    } else {
-      setFilteredCities(['All', ...Array
-        .from(new Set(siteList.map(site => site.city)))
-        .sort((a, b) => a.localeCompare(b))]);
-    }
-  }, [filterState, siteList]);
-
-  useEffect(() => {
-    applyFilters(filterState, filterCity, filterZip);
-  }, [filterState, filterCity, filterZip]);
-
-  const handleSiteClick = (siteId) => {
+  const handleViewSite = (siteId) => {
     setSelectedSiteId(siteId);
     setIsDetailsModalOpen(true);
   };
@@ -99,51 +81,40 @@ const SiteManagement = () => {
     e.stopPropagation();
   };
 
-  const applyFilters = (state, city, zip) => {
-    let query = "";
-    const queryParams = [];
-    if (state !== 'All') queryParams.push(`state=${state}`);
-    if (city !== 'All') queryParams.push(`city=${city}`);
-    if (zip !== 'All') queryParams.push(`zip=${zip}`);
-    if (queryParams.length > 0) {
-      query += `?${queryParams.join('&')}`;
-    }
-    dispatch(siteGetAll(query));
-  };
-
-  const onFiltersChange = (newState, newCity, newZip) => {
-    setFilterState(newState);
-    setFilterCity(newCity);
-    setFilterZip(newZip);
-    applyFilters(newState, newCity, newZip);
-  };
-
-  const renderSiteMarker = site => (
-    <SiteMarker
-      key={site.id}
-      site={site}
-      icon={siteIcon}
-      onSiteClick={handleSiteClick}
-    />
-  );
-
-  return (
-    <CCard>
-      <LocationFilter
-        states={states}
-        filteredCities={filteredCities}
-        zipCodes={zipCodes}
-        onFiltersChange={onFiltersChange}
+  const displayMap = useMemo(() => {
+    const renderSiteMarker = (site) => (
+      <SiteMarker
+        key={site.id}
+        site={site}
+        icon={siteIcon}
+        onSiteClick={handleViewSite}
       />
+    );
+    return (
       <MapContainer
         locations={siteList}
         renderMarker={renderSiteMarker}
       />
+    );
+  }, [siteList]);
+
+  return (
+    <CCard>
+      <LocationFilter
+        selectedState={siteSelectedState}
+        states={siteStateOptions}
+        selectedCity={siteSelectedCity}
+        cities={siteCityOptions}
+        selectedZipCode={siteSelectedZipCode}
+        zipCodes={siteZipCodeOptions}
+        onChange={handleFilter}
+      />
+      {displayMap}
       <CCardBody>
-        <CCardTitle className="mb-3">
+        <CCardTitle className="d-flex flex-row justify-content-between align-items-center mb-3">
           Sites List
           <CButton
-            className="float-end mx-5"
+            className="mx-5"
             variant="outline"
             color="info"
             onClick={() => setIsAddModalOpen(true)}
@@ -155,8 +126,8 @@ const SiteManagement = () => {
           {siteList.map(({ id, name }) => (
             <CListGroupItem
               key={id}
-              className="d-flex justify-content-between align-items-center py-3"
-              onClick={() => handleSiteClick(id)}
+              className="list-item d-flex justify-content-between align-items-center py-3"
+              onClick={() => handleViewSite(id)}
             >
               <div>ID: {id}</div>
               <div>{name}</div>
