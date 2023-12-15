@@ -7,7 +7,6 @@ import {
   CListGroup,
   CListGroupItem,
 } from "@coreui/react";
-import "leaflet/dist/leaflet.css";
 
 import { siteIcon } from "assets/mapIcons";
 import LocationFilter from "components/LocationFilter";
@@ -94,7 +93,7 @@ const SiteAnalytics = () => {
       {displayMap}
       <CCardBody>
         <CCardTitle>
-          Sites List
+          Sites Analytics
         </CCardTitle>
         <CListGroup>
           {siteList.map(({ id, name }) => (

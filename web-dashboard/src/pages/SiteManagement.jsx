@@ -8,7 +8,6 @@ import {
   CListGroup,
   CListGroupItem,
 } from "@coreui/react";
-import "leaflet/dist/leaflet.css";
 
 import { siteIcon } from "assets/mapIcons";
 import SiteAddModal from "components/SiteAddModal";
@@ -112,7 +111,7 @@ const SiteManagement = () => {
       {displayMap}
       <CCardBody>
         <CCardTitle className="d-flex flex-row justify-content-between align-items-center mb-3">
-          Sites List
+          Sites Management
           <CButton
             className="mx-5"
             variant="outline"

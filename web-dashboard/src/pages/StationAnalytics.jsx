@@ -7,7 +7,6 @@ import {
   CListGroup,
   CListGroupItem,
 } from "@coreui/react";
-import "leaflet/dist/leaflet.css";
 
 import { stationIcon } from "assets/mapIcons";
 import LocationFilter from "components/LocationFilter";
@@ -91,7 +90,7 @@ const StationAnalytics = () => {
       {displayMap}
       <CCardBody>
         <CCardTitle>
-          Stations List
+          Stations Analytics
         </CCardTitle>
         <CListGroup>
           {stationList.map(({ id, name }) => (

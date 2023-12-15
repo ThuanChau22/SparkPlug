@@ -1,44 +1,93 @@
-import React, { useState, useEffect } from "react";
-import "../scss/Modal.scss"; // Importing a general modal style
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  CButton,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CFormInput,
+  CFormSelect,
+} from "@coreui/react";
 
-const UserEditModal = ({ isOpen, onClose, userData, onSave }) => {
+import {
+  userUpdateById,
+  selectUserById
+} from "redux/user/userSlide";
+
+const UserEditModal = ({ isOpen, onClose, userId }) => {
+  const user = useSelector((state) => selectUserById(state, userId));
   const [editedName, setEditedName] = useState("");
-  const [editedEmail, setEditedEmail] = useState("");
+  const [editedStatus, setEditedStatus] = useState("");
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    if (userData) {
-      setEditedName(userData.name || "");
-      setEditedEmail(userData.email || "");
+    if (user) {
+      setEditedName(user.name || "");
+      setEditedStatus(user.status || "");
     }
-  }, [userData]);
-
-  if (!isOpen) return null;
+  }, [user]);
 
   const handleSave = () => {
-    onSave({ ...userData, name: editedName, email: editedEmail });
+    if (!editedName || !editedStatus) {
+      return;
+    }
+    const userData = {
+      id: user.id,
+      name: editedName,
+      status: editedStatus,
+    };
+    dispatch(userUpdateById(userData))
+    onClose();
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <label htmlFor="userName">User Name</label>
-        <input
+    <CModal
+      alignment="center"
+      visible={isOpen}
+      onClose={onClose}
+    >
+      <CModalHeader>
+        <CModalTitle>Edit User</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
+        <label htmlFor="userName">Name</label>
+        <CFormInput
+          className="mb-3 shadow-none"
           id="userName"
           type="text"
           value={editedName}
           onChange={(e) => setEditedName(e.target.value)}
         />
-        <label htmlFor="userEmail">User Email</label>
-        <input
-          id="userEmail"
-          type="email"
-          value={editedEmail}
-          onChange={(e) => setEditedEmail(e.target.value)}
+        <label htmlFor="userStatus">Status</label>
+        <CFormSelect
+          className="mb-3 shadow-none"
+          id="userStatus"
+          options={[
+            { label: "Active", value: "Active" },
+            { label: "Blocked", value: "Blocked" },
+            { label: "Terminated", value: "Terminated" },
+          ]}
+          value={editedStatus}
+          onChange={(e) => setEditedStatus(e.target.value)}
         />
-        <button onClick={handleSave}>Save</button>
-        <button onClick={onClose}>Cancel</button>
-      </div>
-    </div>
+        <CButton
+          variant="outline"
+          color="warning"
+          onClick={handleSave}
+        >
+          Save
+        </CButton>
+        <CButton
+          className="mx-2"
+          variant="outline"
+          color="warning"
+          onClick={onClose}
+        >
+          Cancel
+        </CButton>
+      </CModalBody>
+    </CModal>
   );
 };
 

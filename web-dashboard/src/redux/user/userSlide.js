@@ -44,6 +44,7 @@ export const {
   userStateGetById,
   userStateUpdateById,
   userStateDeleteById,
+  userStateClear,
 } = userSlice.actions;
 
 export const userGetAll = createAsyncThunk(
