@@ -787,4 +787,4 @@ def site_analytics(user, site_id):
 
 
 if __name__ == '__main__':
-    app.run(host=SERVER_HOST, port=SERVER_PORT, debug=True)
+    app.run(host=SERVER_HOST, port=SERVER_PORT, debug=False)

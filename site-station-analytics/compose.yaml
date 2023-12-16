@@ -1,8 +1,8 @@
 services:
 
-  station-site-management:
-    image: sparkplug-station-site-management
-    container_name: sparkplug-station-site-management
+  site-station-analytics:
+    image: sparkplug-site-station-analytics
+    container_name: sparkplug-site-station-analytics
     build:
       context: .
       dockerfile: Dockerfile
