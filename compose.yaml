@@ -15,6 +15,8 @@ services:
       - REACT_APP_USER_API_ENDPOINT=${USER_API_ENDPOINT}
       - REACT_APP_SITE_API_ENDPOINT=${SITE_API_ENDPOINT}
       - REACT_APP_STATION_API_ENDPOINT=${STATION_API_ENDPOINT}
+      - REACT_APP_SITE_ANALYTICS_API_ENDPOINT=${SITE_ANALYTICS_API_ENDPOINT}
+      - REACT_APP_STATION_ANALYTICS_API_ENDPOINT=${STATION_ANALYTICS_API_ENDPOINT}
       - REACT_APP_MONITORING_WS_ENDPOINT=${MONITORING_WS_ENDPOINT}
     ports:
       - ${WEB_DASHBOARD_PORT}:${WEB_DASHBOARD_PORT}
@@ -60,10 +62,10 @@ services:
     image: sparkplug-site-station-analytics
     container_name: sparkplug-site-station-analytics
     build:
-      context: ./station-sites-management/server
+      context: ./site-station-analytics
     env_file:
       - ./.env
-      - ./station-sites-management/server/.env
+      - ./site-station-analytics/.env
     environment:
       - FLASK_ENV=production
       - ENV=prod
@@ -76,10 +78,10 @@ services:
     develop:
       watch:
         - action: sync
-          path: ./station-sites-management/server
+          path: ./site-station-analytics
           target: /app
         - action: rebuild
-          path: ./station-sites-management/server/requirements.txt
+          path: ./site-station-analytics/requirements.txt
 
   monitoring:
     image: sparkplug-monitoring

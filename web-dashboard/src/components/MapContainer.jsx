@@ -4,42 +4,54 @@ import {
   TileLayer,
   Marker,
   Popup,
-  useMap,
   useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { driverIcon } from "assets/mapIcons";
+import { userIcon } from "assets/mapIcons";
 
-const MapContainer = ({ locations, renderMarker, setBound = true }) => {
+const MapContainer = ({
+  locations,
+  renderMarker,
+  setBound = true,
+  locate = false,
+  center = false
+}) => {
 
-  const MapBoundsSetter = ({ locations }) => {
-    const map = useMap();
-    useEffect(() => {
-      if (locations && locations.length > 0) {
-        const coordinatePairs = locations.map((loc) => [loc.latitude, loc.longitude]);
-        map.fitBounds(new L.LatLngBounds(coordinatePairs));
-      }
-    }, [map, locations]);
-    return null;
-  };
-
-  const LocationMarker = () => {
+  const MapContent = () => {
     const [position, setPosition] = useState(null);
     const map = useMapEvents({
       locationfound({ latlng }) {
         setPosition(latlng);
-        map.flyTo(latlng, 15);
+        if (center) {
+          map.flyTo(latlng, 14);
+        }
       },
     });
+
     useEffect(() => {
-      map.locate();
+      if (locate) {
+        map.locate();
+      }
     }, [map]);
-    return position === null ? null : (
-      <Marker position={position} icon={driverIcon} >
-        <Popup>You are here</Popup>
-      </Marker>
+
+    useEffect(() => {
+      if (setBound && locations && locations.length > 0) {
+        const coordinatePairs = locations.map((loc) => [loc.latitude, loc.longitude]);
+        map.fitBounds(new L.LatLngBounds(coordinatePairs));
+      }
+    }, [map]);
+
+    return (
+      <>
+        {locations.map((location) => renderMarker(location))}
+        {position && (
+          <Marker position={position} icon={userIcon} >
+            <Popup>You are here</Popup>
+          </Marker>
+        )}
+      </>
     );
   };
 
@@ -54,9 +66,7 @@ const MapContainer = ({ locations, renderMarker, setBound = true }) => {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
       />
-      <LocationMarker />
-      {locations.map(location => renderMarker(location))}
-      {setBound && <MapBoundsSetter locations={locations} />}
+      <MapContent />
     </LeafletMap>
   );
 };

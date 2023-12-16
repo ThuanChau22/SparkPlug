@@ -14,7 +14,7 @@ import { stationIcon } from "assets/mapIcons";
 import LocationFilter from "components/LocationFilter";
 import DriverStationModal from "components/DriverStationModal";
 import MapContainer from "components/MapContainer";
-import DriverStationMarker from "components/DriverStationMarker";
+import StationStatusMarker from "components/StationStatusMarker";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   stationStateUpdateById,
@@ -43,6 +43,7 @@ const DriverStation = () => {
   const stationCityOptions = useSelector(selectCityOptions);
   const stationSelectedZipCode = useSelector(selectSelectedZipCode);
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
+  const [getCurrentLocation, setGetCurrentLocation] = useState(true);
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [selectedStationId, setSelectedStationId] = useState(null);
   const socket = useWebSocket(`${MonitoringWS}`, {
@@ -103,6 +104,7 @@ const DriverStation = () => {
     dispatch(stationSetStateSelected(state));
     dispatch(stationSetCitySelected(city));
     dispatch(stationSetZipCodeSelected(zipCode));
+    setGetCurrentLocation(false);
   };
 
   const handleViewStation = (stationId) => {
@@ -112,7 +114,7 @@ const DriverStation = () => {
 
   const displayMap = useMemo(() => {
     const renderStationMarker = (station) => (
-      <DriverStationMarker
+      <StationStatusMarker
         key={station.id}
         station={station}
         icon={stationIcon}
@@ -124,9 +126,11 @@ const DriverStation = () => {
         locations={stationList}
         renderMarker={renderStationMarker}
         setBound={isSizeChanged}
+        locate={true}
+        center={getCurrentLocation}
       />
     );
-  }, [stationList, isSizeChanged]);
+  }, [stationList, isSizeChanged, getCurrentLocation]);
 
   return (
     <CCard>
