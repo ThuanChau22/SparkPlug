@@ -10,6 +10,7 @@ const remoteControl = {};
 
 remoteControl.requestStartTransactionRequest = async ({ client }) => {
   const idToken = uuid();
+  idTokenToTransactionId.set(idToken, "");
   const method = "RequestStartTransaction";
   const responsePayload = await client.call(method, {
     remoteStartId: Math.floor(1000 + Math.random() * 9000),
@@ -24,8 +25,8 @@ remoteControl.requestStartTransactionRequest = async ({ client }) => {
     payload: responsePayload,
   });
   const { status } = responsePayload;
-  if (status === "Accepted") {
-    idTokenToTransactionId.set(idToken, "");
+  if (status !== "Accepted") {
+    idTokenToTransactionId.delete(idToken);
   }
   return { status };
 };
