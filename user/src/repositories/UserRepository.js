@@ -54,7 +54,7 @@ repository.getUserByEmailAndRole = async (email, role) => {
 };
 
 repository.createUser = async (userData) => {
-  const { email, hashedPassword, name, status = "normal" } = userData;
+  const { email, hashedPassword, name, status = "Active" } = userData;
   const [result] = await db.query(
     "INSERT INTO User (email, password, name, status) VALUES (?, ?, ?, ?)",
     [email, hashedPassword, name, status],
