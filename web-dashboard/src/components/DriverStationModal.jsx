@@ -49,7 +49,6 @@ const DriverStationModal = ({ isOpen, onClose, stationId }) => {
       const query = params.length > 0 ? `?${params.join("&")}` : "";
       const headers = { Authorization: `Bearer ${token}` };
       const { data } = await apiInstance.get(`${base}${query}`, { headers });
-      console.log(data);
       setAnalyticsData(data);
     } catch (error) {
       console.log(error);

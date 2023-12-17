@@ -13,7 +13,7 @@ import ms from "ms";
 import LocationFilter from "components/LocationFilter";
 import StationMonitorModal from "components/StationMonitorModal";
 import MapContainer from "components/MapContainer";
-import DriverStationMarker from "components/DriverStationMarker";
+import StationStatusMarker from "components/StationStatusMarker";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   stationStateUpdateById,
@@ -111,7 +111,7 @@ const StationMonitor = () => {
 
   const displayMap = useMemo(() => {
     const renderStationMarker = (station) => (
-      <DriverStationMarker
+      <StationStatusMarker
         key={station.id}
         station={station}
         onMarkerClick={() => handleViewStation(station.id)}

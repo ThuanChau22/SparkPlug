@@ -30,6 +30,7 @@ server.on("client", async (client) => {
   console.log(`Connected with station: ${client.identity}`);
 
   clientIdToClient.set(client.identity, client);
+  await updateStationStatus(client.identity, "Available");
 
   client.handle("BootNotification", (params) => {
     return provisioning.bootNotificationResponse({ ...params, client });
