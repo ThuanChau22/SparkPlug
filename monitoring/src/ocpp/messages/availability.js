@@ -14,11 +14,11 @@ availability.statusNotificationResponse = async ({ client, method, params }) => 
 };
 
 availability.heartbeatResponse = async ({ client, method, params }) => {
-  await Monitoring.add({
-    stationId: client.identity,
-    event: method,
-    payload: params,
-  });
+  // await Monitoring.add({
+  //   stationId: client.identity,
+  //   event: method,
+  //   payload: params,
+  // });
   return { currentTime: new Date().toISOString() };
 };
 

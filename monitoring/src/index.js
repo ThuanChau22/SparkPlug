@@ -13,7 +13,8 @@ const main = async () => {
     const server = app.listen(PORT, () => {
       console.log(`Monitoring server running on port: ${PORT}`);
     }).on("upgrade", (request, socket, head) => {
-      const { pathname } = new URL(request.url, "http://localhost");
+      const { url, headers: { host } } = request;
+      const { pathname } = new URL(url, `ws://${host}`);
       const [_, path] = pathname.split("/");
       if (path === "monitoring") {
         wsServer.handleUpgrade(request, socket, head);

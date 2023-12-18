@@ -18,19 +18,23 @@ export const Action = {
 };
 
 export const handleRemoteStart = async ({ ws, payload }) => {
-  const client = clientIdToClient.get(payload.stationId);
-  sendJsonMessage(ws, {
-    action: Action.REMOTE_START,
-    payload: await remoteControl.requestStartTransactionRequest({ client }),
-  });
+  if (clientIdToClient.has(payload.stationId)) {
+    const client = clientIdToClient.get(payload.stationId);
+    sendJsonMessage(ws, {
+      action: Action.REMOTE_START,
+      payload: await remoteControl.requestStartTransactionRequest({ client }),
+    });
+  }
 };
 
 export const handleRemoteStop = async ({ ws, payload }) => {
-  const client = clientIdToClient.get(payload.stationId);
-  sendJsonMessage(ws, {
-    action: Action.REMOTE_STOP,
-    payload: await remoteControl.requestStopTransactionRequest({ client }),
-  });
+  if (clientIdToClient.has(payload.stationId)) {
+    const client = clientIdToClient.get(payload.stationId);
+    sendJsonMessage(ws, {
+      action: Action.REMOTE_STOP,
+      payload: await remoteControl.requestStopTransactionRequest({ client }),
+    });
+  }
 };
 
 export const handleWatchAllEvent = async ({ ws, payload }) => {

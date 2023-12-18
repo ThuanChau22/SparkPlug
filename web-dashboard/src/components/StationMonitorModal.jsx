@@ -58,18 +58,16 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
   useEffect(() => {
     const { action, payload } = lastJsonMessage || {};
     if (action === "WatchAllEvent" && payload.stationId) {
-      const { event } = payload;
-      if (event !== "Heartbeat") {
-        if (event === "TransactionEvent") {
-          const [meter] = payload.payload.meterValue;
-          const [sample] = meter.sampledValue;
-          setMeterValue(sample.value);
-          clearTimeout(meterTimeoutRef.current);
-          meterTimeoutRef.current = setTimeout(() => {
-            setMeterValue(0);
-          }, ms("5s"));
-        }
-        setEventMessages((state) => ([...state, payload]));
+      setEventMessages((state) => ([...state, payload]));
+      const { event, payload: { meterValue } } = payload;
+      if (event === "TransactionEvent" && meterValue) {
+        const [meter] = meterValue;
+        const [sample] = meter.sampledValue;
+        setMeterValue(sample.value);
+        clearTimeout(meterTimeoutRef.current);
+        meterTimeoutRef.current = setTimeout(() => {
+          setMeterValue(0);
+        }, ms("5s"));
       }
     }
   }, [lastJsonMessage, dispatch]);
@@ -131,6 +129,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
               variant="outline"
               color="success"
               onClick={handleRemoteStart}
+              disabled={station.status === "Offline"}
             >
               Remote Start
             </CButton>
@@ -138,6 +137,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
               variant="outline"
               color="info"
               onClick={handleRemoteStop}
+              disabled={station.status === "Offline"}
             >
               Remote Stop
             </CButton>

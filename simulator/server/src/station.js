@@ -51,6 +51,9 @@ const station = {
     TxStartPoint: [""],
     TxStopPoint: [""],
   },
+  Availability: {
+    HeartbeatTimeoutId: 0,
+  },
   Auth: {
     Authenticated: false,
     IdToken: {},
@@ -60,18 +63,20 @@ const station = {
     Id: "",
     OnGoing: false,
     SeqNo: 0,
-    isRemoteStopped: false,
+    UpdateTimeoutId: 0,
+    IsRemoteStopped: false,
   }
 };
 
 station.initialize = () => {
   station.Auth.Authenticated = false;
   station.Auth.IdToken = {};
-  station.RemoteStartId = undefined;
+  station.Auth.RemoteStartId = undefined;
   station.Transaction.Id = "";
   station.Transaction.OnGoing = false;
   station.Transaction.SeqNo = 0;
-  station.Transaction.isRemoteStopped = false;
+  station.Transaction.UpdateTimeoutId = 0;
+  station.Transaction.IsRemoteStopped = false;
 };
 
 try {
