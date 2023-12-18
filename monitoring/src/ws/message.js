@@ -42,7 +42,10 @@ export const handleWatchAllEvent = async ({ ws, payload }) => {
     const { stationId } = payload;
     const { token } = socketToUser.get(ws);
     const headers = { Authorization: `Bearer ${token}` };
-    await axios.get(`${STATION_API_ENDPOINT}/${stationId}`, { headers });
+    const { data } = await axios.get(`${STATION_API_ENDPOINT}/${stationId}`, { headers });
+    if (!data) {
+      throw { code: 403, message: `Access denied` };
+    }
     socketToChangeStream.get(ws)?.close();
     const changeStream = await Monitoring.watchAllEvent({ stationId });
     changeStream.on("change", ({ fullDocument }) => {
@@ -64,6 +67,16 @@ export const handleWatchAllEvent = async ({ ws, payload }) => {
       console.log(error.response);
       return sendJsonMessage(ws, {
         action: Action.WATCH_ALL_EVENT,
+        payload: {
+          status: "Rejected",
+          statusInfo: { code, message }
+        },
+      });
+    }
+    if (error.code === 403) {
+      const { code, message } = error;
+      return sendJsonMessage(ws, {
+        action: Action.WATCH_STATUS_EVENT,
         payload: {
           status: "Rejected",
           statusInfo: { code, message }

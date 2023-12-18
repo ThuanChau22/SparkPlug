@@ -9,7 +9,7 @@ import redStationIconUrl from "assets/station_pointer_red.png"
 
 export const userIcon = L.icon({
   iconUrl: userIconUrl,
-  iconSize: [80, 80],
+  iconSize: [60, 60],
   iconAnchor: [40, 80],
   popupAnchor: [0, -80],
 });

@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import useWebSocket, { ReadyState } from "react-use-websocket";
+import { GooeyCircleLoader } from "react-loaders-kit";
 import ms from "ms";
 import {
   CButton,
+  CContainer,
   CModal,
   CModalHeader,
   CModalTitle,
@@ -17,18 +19,20 @@ import {
   EvStation,
 } from '@mui/icons-material';
 
+import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import { selectStationById } from "redux/station/stationSlide";
 
 const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
+  const MonitoringAPI = process.env.REACT_APP_MONITORING_API_ENDPOINT;
   const MonitoringWS = process.env.REACT_APP_MONITORING_WS_ENDPOINT;
-  const accessToken = useSelector(selectAuthAccessToken);
+  const token = useSelector(selectAuthAccessToken);
   const station = useSelector((state) => selectStationById(state, stationId));
   const meterTimeoutRef = useRef(0);
   const [meterValue, setMeterValue] = useState(0);
-  const [eventMessages, setEventMessages] = useState([]);
+  const [eventMessages, setEventMessages] = useState(null);
   const socket = useWebSocket(`${MonitoringWS}`, {
-    queryParams: { token: accessToken },
+    queryParams: { token },
     heartbeat: {
       message: "ping",
       returnMessage: "pong",
@@ -45,6 +49,20 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     sendJsonMessage,
   } = socket;
   const dispatch = useDispatch();
+
+  const fetchData = useCallback(async () => {
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      const { data } = await apiInstance.get(`${MonitoringAPI}/${stationId}`, { headers });
+      setEventMessages(data);
+    } catch (error) {
+      console.log(error);
+    }
+  }, [MonitoringAPI, stationId, token]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   useEffect(() => {
     if (station && readyState === ReadyState.OPEN) {
@@ -147,18 +165,34 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
           alwaysOpen
           className="d-flex flex-column-reverse pt-4 pb-3"
         >
-          {eventMessages.map(({ event, payload, createdAt }) => (
-            <CAccordionItem
-              key={createdAt}
-            >
-              <CAccordionHeader>
-                {createdAt} - {event}
-              </CAccordionHeader>
-              <CAccordionBody>
-                <pre>{JSON.stringify(payload, null, 2)}</pre>
-              </CAccordionBody>
-            </CAccordionItem>
-          ))}
+          {eventMessages
+            ? eventMessages.length > 0
+              ? eventMessages.map(({ event, payload, createdAt }) => (
+                <CAccordionItem
+                  key={createdAt}
+                >
+                  <CAccordionHeader>
+                    {createdAt} - {event}
+                  </CAccordionHeader>
+                  <CAccordionBody>
+                    <pre>{JSON.stringify(payload, null, 2)}</pre>
+                  </CAccordionBody>
+                </CAccordionItem>
+              ))
+              : (
+                <div className="text-secondary text-center" >
+                  Station event not available
+                </div>
+              )
+            : (
+              <CContainer className="d-flex flex-row justify-content-center">
+                <GooeyCircleLoader
+                  className="mx-auto"
+                  color={["#f6b93b", "#5e22f0", "#ef5777"]}
+                  loading={true}
+                />
+              </CContainer>
+            )}
         </CAccordion>
       </CModalBody>
     </CModal>

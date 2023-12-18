@@ -37,6 +37,13 @@ monitoringSchema.index({
 }, { sparse: true });
 
 monitoringSchema.loadClass(class {
+  static async getEventByStationId(stationId) {
+    try {
+      return await this.find({ stationId }).sort({ createdAt: 1 }).lean();
+    } catch (error) {
+      console.log(error);
+    }
+  }
   static async add(data) {
     try {
       const { stationId, event, payload } = data;

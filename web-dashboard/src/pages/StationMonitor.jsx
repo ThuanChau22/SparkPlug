@@ -21,7 +21,6 @@ import {
   stationSetCitySelected,
   stationSetZipCodeSelected,
   stationGetAll,
-  selectIsSizeChanged,
   selectStationList,
   selectSelectedState,
   selectStateOptions,
@@ -35,13 +34,14 @@ const StationMonitor = () => {
   const MonitoringWS = process.env.REACT_APP_MONITORING_WS_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
   const stationList = useSelector(selectStationList);
-  const isSizeChanged = useSelector(selectIsSizeChanged);
   const stationSelectedState = useSelector(selectSelectedState);
   const stationStateOptions = useSelector(selectStateOptions);
   const stationSelectedCity = useSelector(selectSelectedCity);
   const stationCityOptions = useSelector(selectCityOptions);
   const stationSelectedZipCode = useSelector(selectSelectedZipCode);
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
+  const [isMount, setIsMount] = useState(true);
+  const [numberOfStations, setNumberOfStations] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStationId, setSelectedStationId] = useState(null);
   const socket = useWebSocket(`${MonitoringWS}`, {
@@ -64,6 +64,8 @@ const StationMonitor = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    setIsMount(false);
+    setNumberOfStations(stationList.length);
     if (stationList.length === 0) {
       dispatch(stationGetAll());
     }
@@ -121,10 +123,10 @@ const StationMonitor = () => {
       <MapContainer
         locations={stationList}
         renderMarker={renderStationMarker}
-        setBound={isSizeChanged}
+        setBound={isMount || numberOfStations !== stationList.length}
       />
     );
-  }, [stationList, isSizeChanged]);
+  }, [stationList, isMount, numberOfStations]);
 
   return (
     <CCard>
