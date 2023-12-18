@@ -15,6 +15,12 @@ const ocppClient = new RPCClient({
   strictMode: true,
 });
 
+ocppClient.on("open", async () => {
+  if (station.Availability.IsBooted) {
+    await handleStatusNotification();
+  }
+});
+
 ocppClient.handle("RequestStartTransaction", ({ params }) => {
   if (station.Auth.Authenticated || station.Transaction.OnGoing) {
     return { status: "Rejected" };
@@ -48,6 +54,19 @@ const generateMeterValue = () => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
+const handleStatusNotification = async () => {
+  for (const evse of station.EVSEs) {
+    for (const connector of evse.Connectors) {
+      await ocppClientCall("StatusNotification", {
+        evseId: evse.Id,
+        connectorId: connector.Id,
+        connectorStatus: connector.AvailabilityState,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+};
+
 const handleHeartbeat = () => {
   clearTimeout(station.Availability.HeartbeatTimeoutId);
   station.Availability.HeartbeatTimeoutId = setTimeout(async () => {
@@ -66,6 +85,7 @@ export const connectCSMS = async () => {
   try {
     // connect to the OCPP server
     await ocppClient.connect();
+    station.Availability.IsBooted = true;
 
     // send a BootNotification request and await the response
     const bootResponse = await ocppClient.call("BootNotification", {
@@ -78,18 +98,9 @@ export const connectCSMS = async () => {
 
     // check that the server accepted the client
     if (bootResponse.status === "Accepted") {
+      await handleStatusNotification();
       console.log("Server time:", bootResponse.currentTime);
       station.OCPPCommCtrlr.HeartbeatInterval = bootResponse.interval;
-      for (const evse of station.EVSEs) {
-        for (const connector of evse.Connectors) {
-          await ocppClientCall("StatusNotification", {
-            evseId: evse.Id,
-            connectorId: connector.Id,
-            connectorStatus: connector.AvailabilityState,
-            timestamp: new Date().toISOString(),
-          });
-        }
-      }
     }
   } catch (error) {
     setTimeout(async () => {

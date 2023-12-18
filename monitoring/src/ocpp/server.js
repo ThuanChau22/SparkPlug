@@ -1,5 +1,5 @@
 import { RPCServer, createRPCError } from "ocpp-rpc";
-import { v4 as uuid } from 'uuid';
+import { v4 as uuid } from "uuid";
 
 import authorization from "./messages/authorization.js";
 import availability from "./messages/availability.js";
@@ -50,17 +50,15 @@ server.on("client", async (client) => {
     return transactions.transactionEventResponse({ ...params, client });
   });
 
-  client.on("close", async ({ code }) => {
-    if (code !== 1006) {
-      await availability.statusNotificationResponse({
-        client,
-        method: "StatusNotification",
-        params: {
-          connectorStatus: "Offline",
-          timestamp: new Date().toISOString(),
-        }
-      });
-    }
+  client.on("close", async () => {
+    await availability.statusNotificationResponse({
+      client,
+      method: "StatusNotification",
+      params: {
+        connectorStatus: "Offline",
+        timestamp: new Date().toISOString(),
+      }
+    });
     clientIdToClient.delete(client.identity);
     console.log(`Disconnected with station: ${client.identity}`);
   });

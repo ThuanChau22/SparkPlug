@@ -52,6 +52,7 @@ const station = {
     TxStopPoint: [""],
   },
   Availability: {
+    IsBooted: false,
     HeartbeatTimeoutId: 0,
   },
   Auth: {
