@@ -3,6 +3,7 @@ import express from "express";
 import helmet from "helmet";
 
 import { WEB_DOMAIN } from "./config.js";
+import monitoringRoutes from "./route.js";
 
 // Initiate express app
 const app = express();
@@ -17,12 +18,7 @@ app.use(helmet());
 
 // Setup api routes
 const appRoutes = express.Router();
-
-// Greeting message
-appRoutes.get("/monitoring", (_, res) => {
-  const message = "SparkPlug Monitoring API!";
-  res.status(200).json({ message });
-});
+appRoutes.use("/monitoring", monitoringRoutes);
 
 // API endpoints
 app.use("/api", appRoutes);
