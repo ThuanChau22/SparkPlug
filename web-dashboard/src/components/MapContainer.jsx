@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  MapContainer as LeafletMap,
+  MapContainer as Map,
   TileLayer,
   Marker,
   Popup,
@@ -56,10 +56,10 @@ const MapContainer = ({
   };
 
   return (
-    <LeafletMap
+    <Map
       center={[40, -100]}
       zoom={5}
-      style={{ height: "600px", width: "100%" }}
+      style={{ height: "500px", width: "100%" }}
       placeholder={<noscript>You need to enable JavaScript to see this map.</noscript>}
     >
       <TileLayer
@@ -67,7 +67,7 @@ const MapContainer = ({
         attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
       />
       <MapContent />
-    </LeafletMap>
+    </Map>
   );
 };
 

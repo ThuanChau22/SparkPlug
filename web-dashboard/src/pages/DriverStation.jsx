@@ -22,7 +22,6 @@ import {
   stationSetCitySelected,
   stationSetZipCodeSelected,
   stationGetAll,
-  selectIsSizeChanged,
   selectStationList,
   selectSelectedState,
   selectStateOptions,
@@ -36,14 +35,15 @@ const DriverStation = () => {
   const MonitoringWS = process.env.REACT_APP_MONITORING_WS_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
   const stationList = useSelector(selectStationList);
-  const isSizeChanged = useSelector(selectIsSizeChanged);
   const stationSelectedState = useSelector(selectSelectedState);
   const stationStateOptions = useSelector(selectStateOptions);
   const stationSelectedCity = useSelector(selectSelectedCity);
   const stationCityOptions = useSelector(selectCityOptions);
   const stationSelectedZipCode = useSelector(selectSelectedZipCode);
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
-  const [getCurrentLocation, setGetCurrentLocation] = useState(true);
+  const [isMount, setIsMount] = useState(true);
+  const [numberOfStations, setNumberOfStations] = useState(0);
+  const [isCenter, setIsCenter] = useState(true);
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [selectedStationId, setSelectedStationId] = useState(null);
   const socket = useWebSocket(`${MonitoringWS}`, {
@@ -66,6 +66,8 @@ const DriverStation = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    setIsMount(false);
+    setNumberOfStations(stationList.length);
     if (stationList.length === 0) {
       dispatch(stationGetAll());
     }
@@ -104,7 +106,7 @@ const DriverStation = () => {
     dispatch(stationSetStateSelected(state));
     dispatch(stationSetCitySelected(city));
     dispatch(stationSetZipCodeSelected(zipCode));
-    setGetCurrentLocation(false);
+    setIsCenter(false);
   };
 
   const handleViewStation = (stationId) => {
@@ -125,12 +127,12 @@ const DriverStation = () => {
       <MapContainer
         locations={stationList}
         renderMarker={renderStationMarker}
-        setBound={isSizeChanged}
+        setBound={isMount || numberOfStations !== stationList.length}
         locate={true}
-        center={getCurrentLocation}
+        center={isCenter}
       />
     );
-  }, [stationList, isSizeChanged, getCurrentLocation]);
+  }, [stationList, isMount, numberOfStations, isCenter]);
 
   return (
     <CCard>
