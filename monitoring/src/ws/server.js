@@ -56,7 +56,8 @@ export const socketToChangeStream = new Map();
 const server = initWebSocketServer();
 server.on("connection", async (ws, req) => {
   try {
-    const { searchParams } = new URL(req.url, "http://localhost");
+    const { url, headers: { host } } = req;
+    const { searchParams } = new URL(url, `ws://${host}`);
     const token = searchParams.get("token");
     await axios.post(`${AUTH_API_ENDPOINT}/verify`, { token });
     const { id, role, ...remain } = jwtDecode(token);

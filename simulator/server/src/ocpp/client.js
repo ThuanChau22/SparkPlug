@@ -15,15 +15,32 @@ const ocppClient = new RPCClient({
   strictMode: true,
 });
 
-let heartbeatTimeoutId = 0;
-const setHeartbeatTimeout = () => {
-  clearTimeout(heartbeatTimeoutId);
-  heartbeatTimeoutId = setTimeout(async () => {
-    const heartbeatResponse = await ocppClient.call("Heartbeat", {});
-    console.log("Server time:", heartbeatResponse.currentTime);
-    setHeartbeatTimeout();
-  }, ms(`${station.OCPPCommCtrlr.HeartbeatInterval}s`));
-};
+ocppClient.handle("RequestStartTransaction", ({ params }) => {
+  if (station.Auth.Authenticated || station.Transaction.OnGoing) {
+    return { status: "Rejected" };
+  }
+  const { idToken, remoteStartId } = params;
+  station.Auth.Authenticated = true;
+  station.Auth.IdToken = idToken;
+  station.Auth.RemoteStartId = remoteStartId;
+  handleStartTransaction({
+    triggerReason: "RemoteStart",
+  });
+  return { status: "Accepted" };
+});
+
+ocppClient.handle("RequestStopTransaction", ({ params }) => {
+  if (station.Auth.Authenticated && !station.Transaction.OnGoing) {
+    station.initialize();
+    return { status: "Accepted" };
+  }
+  const { transactionId } = params;
+  if (transactionId !== "" && transactionId === station.Transaction.Id) {
+    station.Transaction.IsRemoteStopped = true;
+    return { status: "Accepted" };
+  }
+  return { status: "Rejected" };
+});
 
 const generateMeterValue = () => {
   const min = 3200;
@@ -31,8 +48,17 @@ const generateMeterValue = () => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
+const handleHeartbeat = () => {
+  clearTimeout(station.Availability.HeartbeatTimeoutId);
+  station.Availability.HeartbeatTimeoutId = setTimeout(async () => {
+    const heartbeatResponse = await ocppClient.call("Heartbeat", {});
+    console.log("Server time:", heartbeatResponse.currentTime);
+    handleHeartbeat();
+  }, ms(`${station.OCPPCommCtrlr.HeartbeatInterval}s`));
+};
+
 export const ocppClientCall = async (action, payload) => {
-  setHeartbeatTimeout();
+  handleHeartbeat();
   return await ocppClient.call(action, payload);
 };
 
@@ -52,19 +78,14 @@ export const connectCSMS = async () => {
 
     // check that the server accepted the client
     if (bootResponse.status === "Accepted") {
-      // read the current server time
       console.log("Server time:", bootResponse.currentTime);
-
-      // set heartbeat interval
       station.OCPPCommCtrlr.HeartbeatInterval = bootResponse.interval;
-
-      // send a StatusNotification request for the controller
       for (const evse of station.EVSEs) {
         for (const connector of evse.Connectors) {
           await ocppClientCall("StatusNotification", {
             evseId: evse.Id,
             connectorId: connector.Id,
-            connectorStatus: "Available",
+            connectorStatus: connector.AvailabilityState,
             timestamp: new Date().toISOString(),
           });
         }
@@ -130,14 +151,13 @@ export const handleStartTransaction = async ({ triggerReason }) => {
   }
 };
 
-let transactionUpdateTimeoutId = 0;
 export const handleUpdateTransaction = async () => {
-  clearTimeout(transactionUpdateTimeoutId);
-  transactionUpdateTimeoutId = setTimeout(async () => {
+  clearTimeout(station.Transaction.UpdateTimeoutId);
+  station.Transaction.UpdateTimeoutId = setTimeout(async () => {
     const meterValue = generateMeterValue();
     const { TxUpdatedMeasurands } = station.SampledDataCtrlr;
     const [txUpdatedMeasurands] = TxUpdatedMeasurands;
-    if (station.Transaction.isRemoteStopped) {
+    if (station.Transaction.IsRemoteStopped) {
       await ocppClientCall("TransactionEvent", {
         eventType: "Updated",
         timestamp: new Date().toISOString(),
@@ -198,9 +218,7 @@ export const handleStopTransaction = async ({ triggerReason, stoppedReason }) =>
   const isStoppedByIdToken = triggerReason === "StopAuthorized";
   const isUnplugged = triggerReason === "EVCommunicationLost" && StopTxOnEVSideDisconnect;
   if (isPowerPathClosed && OnGoing && (isStoppedByIdToken || isUnplugged)) {
-    clearTimeout(transactionUpdateTimeoutId);
-    const meterValue = generateMeterValue();
-    const [txEndedMeasurands] = station.SampledDataCtrlr.TxEndedMeasurands;
+    clearTimeout(station.Transaction.UpdateTimeoutId);
     const { idTokenInfo: { status } } = await ocppClientCall("TransactionEvent", {
       eventType: "Ended",
       timestamp: new Date().toISOString(),
@@ -211,17 +229,6 @@ export const handleStopTransaction = async ({ triggerReason, stoppedReason }) =>
         stoppedReason: stoppedReason,
       },
       idToken: station.Auth.IdToken,
-      meterValue: [
-        {
-          timestamp: new Date().toISOString(),
-          sampledValue: [
-            {
-              value: meterValue,
-              measurand: txEndedMeasurands,
-            }
-          ]
-        }
-      ],
     });
     if (status === "Accepted") {
       station.initialize();
@@ -232,26 +239,3 @@ export const handleStopTransaction = async ({ triggerReason, stoppedReason }) =>
     }
   }
 };
-
-ocppClient.handle("RequestStartTransaction", ({ params }) => {
-  if (station.Auth.Authenticated || station.Transaction.OnGoing) {
-    return { status: "Rejected" };
-  }
-  const { idToken, remoteStartId } = params;
-  station.Auth.Authenticated = true;
-  station.Auth.IdToken = idToken;
-  station.Auth.RemoteStartId = remoteStartId
-  handleStartTransaction({
-    triggerReason: "RemoteStart",
-  });
-  return { status: "Accepted" };
-});
-
-ocppClient.handle("RequestStopTransaction", ({ params }) => {
-  const { transactionId } = params;
-  if (station.Transaction.Id !== transactionId) {
-    return { status: "Rejected" };
-  }
-  station.Transaction.isRemoteStopped = true;
-  return { status: "Accepted" };
-});

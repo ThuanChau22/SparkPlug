@@ -35,7 +35,7 @@ remoteControl.requestStopTransactionRequest = async ({ client }) => {
   const idToken = clientIdToIdToken.get(client.identity);
   const method = "RequestStopTransaction";
   const responsePayload = await client.call(method, {
-    transactionId: idTokenToTransactionId.get(idToken),
+    transactionId: idTokenToTransactionId.get(idToken) || "",
   });
   await Monitoring.add({
     stationId: client.identity,
