@@ -1,24 +1,15 @@
 import os
-from dotenv import load_dotenv
-
-from flask import Flask, json, jsonify, request, Response
-from flask_cors import CORS
-from bson import json_util, ObjectId
-
-import pymongo
-import pymysql
-
 import datetime
-
 import requests
-
 import jwt
-
-from urllib.parse import urljoin
+import pymysql
+import pymongo
 from collections import defaultdict
-
-# For authentication
+from dotenv import load_dotenv
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 from functools import wraps
+from urllib.parse import urljoin
 
 # Load environment variables
 env = os.environ.get('ENV', 'prod')
@@ -27,17 +18,30 @@ if env == 'dev':
 else:
     dotenv_path = '.env'
 load_dotenv(dotenv_path=dotenv_path)
-SERVER_HOST=os.environ['SERVER_HOST']
-SERVER_PORT=os.environ['SERVER_PORT']
-MONGO_URI = os.environ['MONGO_URI']
-MONGO_DB = os.environ['MONGO_DB']
-SQL_HOST = os.environ['SQL_HOST']
-SQL_PORT = os.environ['SQL_PORT']
-SQL_USER = os.environ['SQL_USER']
-SQL_PW = os.environ['SQL_PW']
-SQL_DB = os.environ['SQL_DB']
+PORT=os.environ['PORT']
 WEB_DOMAIN=os.environ['WEB_DOMAIN']
+MYSQL_HOST = os.environ['MYSQL_HOST']
+MYSQL_PORT = os.environ['MYSQL_PORT']
+MYSQL_USER = os.environ['MYSQL_USER']
+MYSQL_PASS = os.environ['MYSQL_PASS']
+MYSQL_DATABASE = os.environ['MYSQL_DATABASE']
+MONGODB_URL = os.environ['MONGODB_URL']
+MONGODB_DATABASE = os.environ['MONGODB_DATABASE']
 AUTH_API_ENDPOINT = os.environ['AUTH_API_ENDPOINT']
+
+# MySQL Configuration
+def get_mysql_connection():
+    connection = pymysql.connect(
+        host=MYSQL_HOST,
+        port=int(MYSQL_PORT),
+        user=MYSQL_USER,
+        password=MYSQL_PASS,
+        database=MYSQL_DATABASE,
+        cursorclass=pymysql.cursors.DictCursor)
+    return connection
+
+# MongoDB Configuration
+db = pymongo.MongoClient(MONGODB_URL)[MONGODB_DATABASE]
 
 app = Flask(__name__)
 
@@ -380,27 +384,6 @@ def aggregate_charts(site_id, start_date, end_date, charge_level):
 #             return jsonify({'error': 'Failed to fetch transactions'}), tr_response.status_code
 #     else:
 #         return jsonify({'error': 'Failed to fetch stations'}), st_response.status_code
-
-
-
-
-# MongoDB Configuration
-mongo_client = pymongo.MongoClient(MONGO_URI)
-db = mongo_client[MONGO_DB]
-
-
-
-# MySQL Configuration
-def get_mysql_connection():
-    connection = pymysql.connect(
-        host=SQL_HOST,
-        port=int(SQL_PORT),
-        user=SQL_USER,
-        password=SQL_PW,
-        database=SQL_DB,
-        cursorclass=pymysql.cursors.DictCursor)
-    return connection
-
 
 # Endpoint functions
 @app.route('/api/transactions', methods=['GET'])
@@ -787,4 +770,4 @@ def site_analytics(user, site_id):
 
 
 if __name__ == '__main__':
-    app.run(host=SERVER_HOST, port=SERVER_PORT, debug=False)
+    app.run(host='0.0.0.0', port=PORT, debug=True)
