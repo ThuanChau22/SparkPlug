@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { ReadyState } from "react-use-websocket";
+import useWebSocket, { ReadyState } from "react-use-websocket";
 import { GooeyCircleLoader } from "react-loaders-kit";
 import ms from "ms";
 import {
@@ -23,13 +23,27 @@ import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import { selectStationById } from "redux/station/stationSlide";
 
-const StationMonitorModal = ({ isOpen, onClose, stationId, socket }) => {
+const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
   const MonitoringAPI = process.env.REACT_APP_MONITORING_API_ENDPOINT;
+  const MonitoringWS = process.env.REACT_APP_MONITORING_WS_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
   const station = useSelector((state) => selectStationById(state, stationId));
   const meterTimeoutRef = useRef(0);
+  const [loading, setLoading] = useState(false);
   const [meterValue, setMeterValue] = useState(0);
-  const [eventMessages, setEventMessages] = useState(null);
+  const [eventMessages, setEventMessages] = useState([]);
+  const socket = useWebSocket(`${MonitoringWS}`, {
+    queryParams: { token },
+    heartbeat: {
+      message: "ping",
+      returnMessage: "pong",
+      timeout: ms("60s"),
+      interval: ms("30s"),
+    },
+    shouldReconnect: ({ code }) => {
+      return code === 1006;
+    },
+  });
   const {
     readyState,
     lastJsonMessage,
@@ -38,6 +52,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId, socket }) => {
   const dispatch = useDispatch();
 
   const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const { data } = await apiInstance.get(`${MonitoringAPI}/${stationId}`, { headers });
@@ -45,6 +60,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId, socket }) => {
     } catch (error) {
       console.log(error);
     }
+    setLoading(false);
   }, [MonitoringAPI, stationId, token]);
 
   useEffect(() => {
@@ -152,8 +168,17 @@ const StationMonitorModal = ({ isOpen, onClose, stationId, socket }) => {
           alwaysOpen
           className="d-flex flex-column-reverse pt-4 pb-3"
         >
-          {eventMessages
-            ? eventMessages.length > 0
+          {loading
+            ? (
+              <CContainer className="d-flex flex-row justify-content-center">
+                <GooeyCircleLoader
+                  className="mx-auto"
+                  color={["#f6b93b", "#5e22f0", "#ef5777"]}
+                  loading={true}
+                />
+              </CContainer>
+            )
+            : eventMessages.length > 0
               ? eventMessages.map(({ event, payload, createdAt }) => (
                 <CAccordionItem
                   key={createdAt}
@@ -170,16 +195,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId, socket }) => {
                 <div className="text-secondary text-center" >
                   Station event not available
                 </div>
-              )
-            : (
-              <CContainer className="d-flex flex-row justify-content-center">
-                <GooeyCircleLoader
-                  className="mx-auto"
-                  color={["#f6b93b", "#5e22f0", "#ef5777"]}
-                  loading={true}
-                />
-              </CContainer>
-            )}
+              )}
         </CAccordion>
       </CModalBody>
     </CModal>
@@ -187,4 +203,3 @@ const StationMonitorModal = ({ isOpen, onClose, stationId, socket }) => {
 };
 
 export default StationMonitorModal;
-

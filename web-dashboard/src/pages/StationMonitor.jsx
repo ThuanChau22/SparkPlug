@@ -237,7 +237,6 @@ const StationMonitor = () => {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           stationId={selectedStationId}
-          socket={socket}
         />
       }
     </CCard>
