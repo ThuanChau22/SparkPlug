@@ -29,8 +29,9 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
   const token = useSelector(selectAuthAccessToken);
   const station = useSelector((state) => selectStationById(state, stationId));
   const meterTimeoutRef = useRef(0);
+  const [loading, setLoading] = useState(false);
   const [meterValue, setMeterValue] = useState(0);
-  const [eventMessages, setEventMessages] = useState(null);
+  const [eventMessages, setEventMessages] = useState([]);
   const socket = useWebSocket(`${MonitoringWS}`, {
     queryParams: { token },
     heartbeat: {
@@ -51,6 +52,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
   const dispatch = useDispatch();
 
   const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const { data } = await apiInstance.get(`${MonitoringAPI}/${stationId}`, { headers });
@@ -58,6 +60,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     } catch (error) {
       console.log(error);
     }
+    setLoading(false);
   }, [MonitoringAPI, stationId, token]);
 
   useEffect(() => {
@@ -165,8 +168,17 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
           alwaysOpen
           className="d-flex flex-column-reverse pt-4 pb-3"
         >
-          {eventMessages
-            ? eventMessages.length > 0
+          {loading
+            ? (
+              <CContainer className="d-flex flex-row justify-content-center">
+                <GooeyCircleLoader
+                  className="mx-auto"
+                  color={["#f6b93b", "#5e22f0", "#ef5777"]}
+                  loading={true}
+                />
+              </CContainer>
+            )
+            : eventMessages.length > 0
               ? eventMessages.map(({ event, payload, createdAt }) => (
                 <CAccordionItem
                   key={createdAt}
@@ -183,16 +195,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
                 <div className="text-secondary text-center" >
                   Station event not available
                 </div>
-              )
-            : (
-              <CContainer className="d-flex flex-row justify-content-center">
-                <GooeyCircleLoader
-                  className="mx-auto"
-                  color={["#f6b93b", "#5e22f0", "#ef5777"]}
-                  loading={true}
-                />
-              </CContainer>
-            )}
+              )}
         </CAccordion>
       </CModalBody>
     </CModal>
@@ -200,4 +203,3 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
 };
 
 export default StationMonitorModal;
-

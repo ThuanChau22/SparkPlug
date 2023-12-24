@@ -1,6 +1,8 @@
 import {
   useEffect,
   useState,
+  useRef,
+  useCallback,
 } from "react";
 import {
   useDispatch,
@@ -20,16 +22,15 @@ import {
   CNavLink,
   CNavItem,
 } from "@coreui/react";
-import {
-  // cilBell,
-  cilMenu,
-} from "@coreui/icons";
+import { cilMenu } from "@coreui/icons";
 import CIcon from "@coreui/icons-react";
 
+import logoBrand from "assets/logo-brand";
 import Breadcrumb from "components/Breadcrumb";
 import HeaderDropdown from "components/HeaderDropdown";
 import {
   headerSetActive,
+  headerSetHeight,
 } from "./headerSlice";
 import {
   selectSidebarShow,
@@ -38,10 +39,26 @@ import {
 import routes from "routes";
 
 const Header = () => {
-  const dispatch = useDispatch();
-  const location = useLocation();
   const sidebarShow = useSelector(selectSidebarShow);
   const [components, setComponents] = useState([]);
+  const ref = useRef(0);
+  const location = useLocation();
+  const dispatch = useDispatch();
+
+  const handleResize = useCallback(() => {
+    dispatch(headerSetHeight(ref.current.offsetHeight));
+  }, [dispatch]);
+
+  useEffect(() => {
+    handleResize();
+    window.addEventListener("load", handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("load", handleResize);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [handleResize]);
+
   useEffect(() => {
     const paths = location.pathname.split("/");
     if (paths.length >= 3) {
@@ -59,7 +76,7 @@ const Header = () => {
     }
   }, [location, dispatch]);
   return (
-    <CHeader position="sticky" className="mb-4">
+    <CHeader position="sticky" ref={ref}>
       <CContainer fluid>
         <CHeaderToggler
           className="ps-1"
@@ -67,8 +84,8 @@ const Header = () => {
         >
           <CIcon icon={cilMenu} size="lg" />
         </CHeaderToggler>
-        <CHeaderBrand className="mx-auto d-md-none" to="/">
-          <CIcon icon="logo" height={48} alt="Logo" />
+        <CHeaderBrand className="d-md-none mx-auto">
+          <CIcon icon={logoBrand} height={20} alt="Logo" />
         </CHeaderBrand>
         <CHeaderNav className="d-none d-md-flex me-auto">
           {components && components.map(({ name, path }, index) => (
@@ -79,7 +96,7 @@ const Header = () => {
             </CNavItem>
           ))}
         </CHeaderNav>
-        <CHeaderNav className="ms-3">
+        <CHeaderNav>
           <HeaderDropdown />
         </CHeaderNav>
       </CContainer>
@@ -89,6 +106,6 @@ const Header = () => {
       </CContainer>
     </CHeader>
   )
-}
+};
 
 export default Header

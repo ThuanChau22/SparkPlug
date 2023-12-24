@@ -10,12 +10,3 @@
   outline: none;
   box-shadow: none;
 }
-
-.list-item {
-  cursor: pointer;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background-color: #e9ecef;
-  }
-}

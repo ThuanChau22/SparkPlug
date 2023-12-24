@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect, createRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { GooeyCircleLoader } from "react-loaders-kit";
 import {
-  CButton,
+  CContainer,
   CCard,
   CCardTitle,
   CCardBody,
@@ -9,97 +10,114 @@ import {
   CListGroupItem,
 } from "@coreui/react";
 
+import StickyContainer from "components/StickyContainer";
+import { selectHeaderHeight } from "redux/header/headerSlice";
 import UserDetailsModal from "components/UserDetailsModal";
-import UserEditModal from "components/UserEditModal";
 import {
   userGetAll,
   selectUserList,
-  userDeleteById,
 } from "redux/user/userSlide";
 
 const UserManagement = () => {
+  const titleRef = createRef();
+  const headerHeight = useSelector(selectHeaderHeight);
   const userList = useSelector(selectUserList);
+  const [listHeight, setListHeight] = useState(window.innerHeight);
+  const [loading, setLoading] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
-  const [editingUserId, setEditingUserId] = useState(null);
   const dispatch = useDispatch();
 
   useEffect(() => {
+    const titleHeight = titleRef.current.offsetHeight;
+    setListHeight(window.innerHeight - (headerHeight + titleHeight));
+  }, [headerHeight, titleRef]);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
     if (userList.length === 0) {
-      dispatch(userGetAll());
+      await dispatch(userGetAll()).unwrap();
     }
+    setLoading(false);
   }, [userList, dispatch]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleViewUser = (userId) => {
     setSelectedUserId(userId);
     setIsDetailsModalOpen(true);
   };
 
-  const handleEditUser = (e, userId) => {
-    setEditingUserId(userId);
-    setIsEditModalOpen(true);
-    e.stopPropagation();
-  };
-
-  const handleDeleteUser = (e, userId) => {
-    dispatch(userDeleteById(userId));
-    e.stopPropagation();
-  };
-
   return (
-    <CCard>
-      <CCardBody>
-        <CCardTitle className="d-flex flex-row justify-content-between align-items-center mb-3">
-          Users Management
-        </CCardTitle>
-        <CListGroup>
-          {userList.map(({ id, name, email }) => (
-            <CListGroupItem
-              key={id}
-              className="list-item d-flex justify-content-between align-items-center py-3"
-              onClick={() => handleViewUser(id)}
+    <CCard className="border border-top-0 rounded-0">
+      <CCardBody className="pt-0">
+        <StickyContainer
+          ref={titleRef}
+          className="bg-white py-3"
+          top={`${headerHeight}px`}
+        >
+          <CCardTitle>
+            Users Management
+          </CCardTitle>
+        </StickyContainer>
+        {loading
+          ? (
+            <div
+              className="d-flex align-items-center"
+              style={{ height: `${listHeight}px` }}
             >
-              <div>ID: {id}</div>
-              <div>Name: {name}</div>
-              <div>Email: {email}</div>
-              <div>
-                <CButton
-                  className="mx-1"
-                  variant="outline"
-                  color="warning"
-                  onClick={(e) => handleEditUser(e, id)}
+              <CContainer className="d-flex flex-row justify-content-center">
+                <GooeyCircleLoader
+                  color={["#f6b93b", "#5e22f0", "#ef5777"]}
+                  loading={true}
+                />
+              </CContainer>
+            </div>
+          )
+          : (
+            <CListGroup>
+              {userList.map(({ id, name, email, status }) => (
+                <CListGroupItem
+                  key={id}
+                  className="align-items-center py-3"
+                  component="button"
+                  onClick={() => handleViewUser(id)}
                 >
-                  Edit
-                </CButton>
-                <CButton
-                  className="mx-1"
-                  variant="outline"
-                  color="danger"
-                  onClick={(e) => handleDeleteUser(e, id)}
-                >
-                  Delete
-                </CButton>
-              </div>
-            </CListGroupItem>
-          ))}
-        </CListGroup>
+                  <p className="d-flex justify-content-between mb-0">
+                    <small className="w-100 text-secondary">ID: {id}</small>
+                    <span>Status</span>
+                  </p>
+                  <p className="d-flex justify-content-between mb-0">
+                    <span>Name: {name}</span>
+                    <span>Email: {email}</span>
+                    <span
+                      className={
+                        status === "Active"
+                          ? "text-success"
+                          : status === "Blocked"
+                            ? "text-warning"
+                            : "text-danger"
+                      }>
+                      {status}
+                    </span>
+                  </p>
+                </CListGroupItem>
+              ))}
+            </CListGroup>
+          )}
       </CCardBody>
-      {isDetailsModalOpen && (
-        <UserDetailsModal
-          isOpen={isDetailsModalOpen}
-          onClose={() => setIsDetailsModalOpen(false)}
-          userId={selectedUserId}
-        />
-      )}
-      {isEditModalOpen && (
-        <UserEditModal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          userId={editingUserId}
-        />
-      )}
-    </CCard>
+      {
+        isDetailsModalOpen && (
+          <UserDetailsModal
+            isOpen={isDetailsModalOpen}
+            onClose={() => setIsDetailsModalOpen(false)}
+            userId={selectedUserId}
+          />
+        )
+      }
+    </CCard >
   );
 };
 

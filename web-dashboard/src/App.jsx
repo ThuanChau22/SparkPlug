@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { GooeyCircleLoader } from "react-loaders-kit";
 import {
   useNavigate,
   useLocation,
@@ -8,7 +9,6 @@ import {
 import {
   CContainer,
 } from "@coreui/react";
-import { GooeyCircleLoader } from "react-loaders-kit";
 
 import Footer from "components/Footer";
 import Header from "redux/header/Header";
@@ -75,7 +75,6 @@ const App = () => {
           }
         }
       }
-
     }
   }, [authenticated, authIsAdmin, authIsOwner, authIsDriver, token, location, navigate]);
 
@@ -110,14 +109,15 @@ const App = () => {
     ? (
       <>
         <Sidebar />
-        <div className="wrapper d-flex flex-column min-vh-100 bg-light">
+        <div className="bg-light min-vh-100 d-flex flex-column wrapper">
           <Header />
-          <div className="body flex-grow-1 px-3 pb-5">
+          <div className="body flex-grow-1">
             <Outlet />
           </div>
           <Footer />
         </div>
-      </>)
+      </>
+    )
     : (
       <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
         <CContainer className="d-flex flex-row justify-content-center">

@@ -110,11 +110,8 @@ export const selectAuthSecureStorage = (_) => secureStorage.getItem(authSlice.na
 
 export const selectAuthExpiredTime = (state) => {
   const token = selectAuthAccessToken(state);
-  if (token) {
-    const { exp } = jwtDecode(token);
-    return exp * 1000;
-  }
-  return Date.now();
+  if (!token) return null;
+  return jwtDecode(token).exp * 1000;
 };
 
 export default authSlice.reducer;

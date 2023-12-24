@@ -9,7 +9,6 @@ services:
     env_file:
       - ./.env
     environment:
-      - FLASK_ENV=production
       - ENV=prod
     ports:
-      - ${SERVER_PORT}:${SERVER_PORT}
+      - ${PORT}:${PORT}
