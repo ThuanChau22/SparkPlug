@@ -6,4 +6,4 @@ COPY . .
 CMD ["python", "src/server.py"]
 
 FROM development as production
-CMD ["gunicorn", "-w", "4", "--chdir", "src", "server:app"]
+CMD ["gunicorn", "-w", "2", "--chdir", "src", "server:app"]
