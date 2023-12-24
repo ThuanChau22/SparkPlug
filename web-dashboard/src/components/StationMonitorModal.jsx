@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import useWebSocket, { ReadyState } from "react-use-websocket";
+import { ReadyState } from "react-use-websocket";
 import { GooeyCircleLoader } from "react-loaders-kit";
 import ms from "ms";
 import {
@@ -23,26 +23,13 @@ import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import { selectStationById } from "redux/station/stationSlide";
 
-const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
+const StationMonitorModal = ({ isOpen, onClose, stationId, socket }) => {
   const MonitoringAPI = process.env.REACT_APP_MONITORING_API_ENDPOINT;
-  const MonitoringWS = process.env.REACT_APP_MONITORING_WS_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
   const station = useSelector((state) => selectStationById(state, stationId));
   const meterTimeoutRef = useRef(0);
   const [meterValue, setMeterValue] = useState(0);
   const [eventMessages, setEventMessages] = useState(null);
-  const socket = useWebSocket(`${MonitoringWS}`, {
-    queryParams: { token },
-    heartbeat: {
-      message: "ping",
-      returnMessage: "pong",
-      timeout: ms("60s"),
-      interval: ms("30s"),
-    },
-    shouldReconnect: ({ code }) => {
-      return code === 1006;
-    },
-  });
   const {
     readyState,
     lastJsonMessage,

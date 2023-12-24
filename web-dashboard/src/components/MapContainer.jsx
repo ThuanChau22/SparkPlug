@@ -59,7 +59,7 @@ const MapContainer = ({
     <Map
       center={[40, -100]}
       zoom={5}
-      style={{ height: "500px", width: "100%" }}
+      style={{ height: "100%", width: "100%" }}
       placeholder={<noscript>You need to enable JavaScript to see this map.</noscript>}
     >
       <TileLayer

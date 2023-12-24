@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import {
   CButton,
   CFormSelect,
@@ -5,7 +6,7 @@ import {
   CInputGroupText,
 } from "@coreui/react";
 
-const LocationFilter = ({
+const LocationFilter = forwardRef(({
   selectedState = "All",
   states = [],
   selectedCity = "All",
@@ -13,7 +14,7 @@ const LocationFilter = ({
   selectedZipCode = "All",
   zipCodes = [],
   onChange
-}) => {
+}, ref) => {
   const handleStateChange = (e) => {
     const newState = e.target.value;
     onChange(newState, "All", "All");
@@ -34,9 +35,9 @@ const LocationFilter = ({
   };
 
   return (
-    <div className="d-flex justify-content-end align-items-center">
-      <CInputGroup>
-        <CInputGroupText className="bg-secondary text-white rounded-0">
+    <div className="d-none d-lg-flex justify-content-end align-items-center" ref={ref}>
+      <CInputGroup size="sm">
+        <CInputGroupText className="bg-dark text-white rounded-0">
           State
         </CInputGroupText>
         <CFormSelect
@@ -49,8 +50,8 @@ const LocationFilter = ({
           onChange={handleStateChange}
         />
       </CInputGroup>
-      <CInputGroup>
-        <CInputGroupText className="bg-secondary text-white rounded-0">
+      <CInputGroup size="sm">
+        <CInputGroupText className="bg-dark text-white rounded-0">
           City
         </CInputGroupText>
         <CFormSelect
@@ -62,8 +63,8 @@ const LocationFilter = ({
           onChange={handleCityChange}
         />
       </CInputGroup>
-      <CInputGroup>
-        <CInputGroupText className="bg-secondary text-white rounded-0">
+      <CInputGroup size="sm">
+        <CInputGroupText className="bg-dark text-white rounded-0">
           Zip Code
         </CInputGroupText>
         <CFormSelect
@@ -76,14 +77,15 @@ const LocationFilter = ({
         />
       </CInputGroup>
       <CButton
+        size="sm"
         className="rounded-0 text-white"
-        color="secondary"
+        color="dark"
         onClick={handleClearChange}
       >
         Clear
       </CButton>
     </div>
   );
-};
+});
 
 export default LocationFilter;
