@@ -5,10 +5,10 @@ import { v4 as uuid } from "uuid";
 import station from "../station.js";
 import { Action } from "../ws/message.js";
 import { sendJsonMessage } from "../ws/server.js";
-import { STATION_MANAGEMENT_WS_ENDPOINT } from "../config.js";
+import { CSMS_WS_ENDPOINT } from "../config.js";
 
 const ocppClient = new RPCClient({
-  endpoint: STATION_MANAGEMENT_WS_ENDPOINT,
+  endpoint: CSMS_WS_ENDPOINT,
   identity: station.SecurityCtrlr.Identity,
   password: station.SecurityCtrlr.BasicAuthPassword,
   protocols: ["ocpp2.0.1"],
@@ -32,12 +32,20 @@ ocppClient.handle("RequestStartTransaction", ({ params }) => {
   handleStartTransaction({
     triggerReason: "RemoteStart",
   });
+  sendJsonMessage({
+    action: Action.SCAN_RFID,
+    payload: { status: "Accepted" },
+  });
   return { status: "Accepted" };
 });
 
 ocppClient.handle("RequestStopTransaction", ({ params }) => {
   if (station.Auth.Authenticated && !station.Transaction.OnGoing) {
     station.initialize();
+    sendJsonMessage({
+      action: Action.SCAN_RFID,
+      payload: { status: "Ended" },
+    });
     return { status: "Accepted" };
   }
   const { transactionId } = params;

@@ -5,7 +5,7 @@ dotenvExpand.expand(dotenv.config());
 export const {
   PORT,
   WEB_DOMAIN,
-  STATION_MANAGEMENT_WS_ENDPOINT,
+  CSMS_WS_ENDPOINT,
   STATION_IDENTITY,
   STATION_PASSWORD,
   STATION_CONFIGURATION,

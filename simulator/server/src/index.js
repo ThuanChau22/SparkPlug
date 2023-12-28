@@ -14,7 +14,7 @@ const main = async () => {
       console.log(`Simulator server running on port: ${PORT}`);
     }).on("upgrade", (request, socket, head) => {
       const { headers: { origin }, url } = request;
-      if (origin === WEB_DOMAIN && url === `/simulator/${STATION_IDENTITY}`) {
+      if (origin === WEB_DOMAIN && url === `/ws/simulator/${STATION_IDENTITY}`) {
         wss.handleUpgrade(request, socket, head);
       } else {
         socket.destroy();
