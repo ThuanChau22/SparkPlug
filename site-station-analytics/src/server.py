@@ -5,6 +5,7 @@ import jwt
 import pymysql
 import pymongo
 from collections import defaultdict
+from dbutils.pooled_db import PooledDB
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -26,22 +27,22 @@ MYSQL_USER = os.environ['MYSQL_USER']
 MYSQL_PASS = os.environ['MYSQL_PASS']
 MYSQL_DATABASE = os.environ['MYSQL_DATABASE']
 MONGODB_URL = os.environ['MONGODB_URL']
-MONGODB_DATABASE = os.environ['MONGODB_DATABASE']
 AUTH_API_ENDPOINT = os.environ['AUTH_API_ENDPOINT']
 
 # MySQL Configuration
-def get_mysql_connection():
-    connection = pymysql.connect(
-        host=MYSQL_HOST,
-        port=int(MYSQL_PORT),
-        user=MYSQL_USER,
-        password=MYSQL_PASS,
-        database=MYSQL_DATABASE,
-        cursorclass=pymysql.cursors.DictCursor)
-    return connection
+mysql_pool = PooledDB(
+    creator=pymysql,
+    host=MYSQL_HOST,
+    port=int(MYSQL_PORT),
+    user=MYSQL_USER,
+    password=MYSQL_PASS,
+    database=MYSQL_DATABASE,
+    cursorclass=pymysql.cursors.DictCursor,
+    maxconnections=10)
 
 # MongoDB Configuration
-db = pymongo.MongoClient(MONGODB_URL)[MONGODB_DATABASE]
+MONGODB_DATABASE = pymongo.uri_parser.parse_uri(MONGODB_URL)['database']
+mongo_connection = pymongo.MongoClient(MONGODB_URL)[MONGODB_DATABASE]
 
 app = Flask(__name__)
 
@@ -124,7 +125,7 @@ def fetch_station_data(query_params):
     if conditions:
         conditions = " WHERE" + conditions
 
-    sql_connection = get_mysql_connection()
+    sql_connection = mysql_pool.connection()
     with sql_connection.cursor() as cursor:
         cursor.execute(query + conditions)
         data = cursor.fetchall()
@@ -160,7 +161,7 @@ def fetch_transactions_data(station_id=None, charge_level=None, start_date='01/0
     print(f"MongoDB Query: {query}")
 
     # Query the MongoDB transactions collection
-    transactions = db.transactions.find(query)
+    transactions = mongo_connection.transactions.find(query)
 
    
     # Convert the results to a list and format
@@ -419,7 +420,7 @@ def get_transactions(user):
         query['transaction_date'] = {'$gte': start_ms, '$lte': end_ms}
 
         # Query the MongoDB transactions collection
-        transactions = db.transactions.find(query)
+        transactions = mongo_connection.transactions.find(query)
         
         # Convert the results to a list
         transactions_list = list(transactions)
@@ -475,7 +476,7 @@ def get_sites(user):
     if conditions:
         conditions = " WHERE" + conditions
 
-    sql_connection = get_mysql_connection()
+    sql_connection = mysql_pool.connection()
     with sql_connection.cursor() as cursor:
         cursor.execute(query+conditions)
         data = cursor.fetchall()
@@ -490,7 +491,7 @@ def get_one_site(user, site_id):
     if user['role'] == 'owner':
         query += f" AND owner_id={user['user_id']}"
 
-    sql_connection = get_mysql_connection()
+    sql_connection = mysql_pool.connection()
     with sql_connection.cursor() as cursor:
         cursor.execute(query)
         data = cursor.fetchone()
@@ -510,7 +511,7 @@ def add_site(user):
 
     if user['role'] == 'owner': owner_id = user['user_id']
 
-    sql_connection = get_mysql_connection()
+    sql_connection = mysql_pool.connection()
     try:
         with sql_connection.cursor() as cursor:
             query = f"INSERT INTO Site (owner_id, latitude, longitude, name, street_address, zip_code) VALUES ({owner_id}, '{latitude}', '{longitude}', '{name}', '{street_address}', '{zip_code}')"
@@ -527,7 +528,7 @@ def add_site(user):
 @app.route('/api/sites/<site_id>', methods=['DELETE'])
 @require_permission('owner', 'staff')
 def delete_site(user, site_id):
-    sql_connection = get_mysql_connection()
+    sql_connection = mysql_pool.connection()
     try:
         with sql_connection.cursor() as cursor:
             # Prepare the SQL query to delete the site with the given ID
@@ -562,7 +563,7 @@ def update_site(user, site_id):
         return jsonify({'message': 'No data provided for update'}), 400
 
     # Establish a connection to the MySQL database
-    sql_connection = get_mysql_connection()
+    sql_connection = mysql_pool.connection()
     try:
         with sql_connection.cursor() as cursor:
             # Construct the SQL query dynamically based on the provided data
@@ -620,7 +621,7 @@ def get_one_station(user, station_id):
     if user['role'] == 'owner':
         query += f" AND owner_id={user['user_id']}"
 
-    sql_connection = get_mysql_connection()
+    sql_connection = mysql_pool.connection()
     with sql_connection.cursor() as cursor:
         cursor.execute(query)
         data = cursor.fetchone()
@@ -641,7 +642,7 @@ def add_station(user):
 
     if user['role'] == 'owner': owner_id = user['user_id']
 
-    sql_connection = get_mysql_connection()
+    sql_connection = mysql_pool.connection()
     try:
         with sql_connection.cursor() as cursor:
             query = "INSERT INTO Station (name, charge_level, connector_type, latitude, longitude, site_id) VALUES (%s, %s, %s, %s, %s, %s)"
@@ -667,7 +668,7 @@ def update_station(user, station_id):
         return jsonify({'message': 'No data provided for update'}), 400
 
     # Establish a connection to the MySQL database
-    sql_connection = get_mysql_connection()
+    sql_connection = mysql_pool.connection()
     try:
         with sql_connection.cursor() as cursor:
             # Construct the SQL query dynamically based on the provided data
@@ -699,7 +700,7 @@ def update_station(user, station_id):
 @app.route('/api/stations/<station_id>', methods=['DELETE'])
 @require_permission('owner', 'staff')
 def delete_station(user, station_id):
-    sql_connection = get_mysql_connection()
+    sql_connection = mysql_pool.connection()
     try:
         with sql_connection.cursor() as cursor:
             # Prepare the SQL query to delete the station with the given ID

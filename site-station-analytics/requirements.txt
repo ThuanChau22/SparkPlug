@@ -2,6 +2,7 @@ blinker==1.7.0
 cffi==1.16.0
 click==8.1.7
 cryptography==41.0.7
+DBUtils==3.0.3
 dnspython==2.4.2
 Flask==3.0.0
 Flask-Cors==4.0.0
