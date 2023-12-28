@@ -30,21 +30,22 @@ export const connectMongoDB = async () => {
   await mongoose.connect(MONGODB_URL);
 };
 
-export const setGracefulShutdown = ({ server, ocppServer, wsServer }) => {
+export const setGracefulShutdown = (httpServer, wsServers = []) => {
   const connections = new Set();
-  server.on("connection", (connection) => {
+  httpServer.on("connection", (connection) => {
     connections.add(connection);
     connection.on("close", () => {
       connections.delete(connection);
-      connection.end
+      connection.end();
     });
   });
   const shutdown = () => {
     mysql.end();
     mongoose.connection.close();
-    ocppServer.close({ code: 1000 });
-    wsServer.close();
-    server.close(() => {
+    wsServers.forEach((wss) => {
+      wss.close({ code: 1000 });
+    });
+    httpServer.close(() => {
       process.exit(0);
     });
     setTimeout(() => {

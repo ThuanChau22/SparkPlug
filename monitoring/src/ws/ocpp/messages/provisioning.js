@@ -1,4 +1,4 @@
-import { Monitoring } from "../../db/model.js";
+import { Monitoring } from "../../../repository/monitoring.js";
 
 const provisioning = {};
 

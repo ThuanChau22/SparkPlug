@@ -4,7 +4,7 @@ import { jwtDecode } from "jwt-decode";
 import {
   AUTH_API_ENDPOINT,
   STATION_API_ENDPOINT,
-} from "./config.js";
+} from "../config.js";
 
 export const authenticate = async (req, res, next) => {
   try {

@@ -1,10 +1,10 @@
-import { Monitoring } from "../../db/model.js";
-import { updateStationStatus } from "../../db/repository.js";
+import { Monitoring } from "../../../repository/monitoring.js";
+import { Station } from "../../../repository/station.js";
 
 const availability = {};
 
 availability.statusNotificationResponse = async ({ client, method, params }) => {
-  await updateStationStatus(client.identity, params.connectorStatus);
+  await Station.updateStatus(client.identity, params.connectorStatus);
   await Monitoring.add({
     stationId: client.identity,
     event: method,

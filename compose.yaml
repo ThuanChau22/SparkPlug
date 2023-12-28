@@ -1,5 +1,4 @@
 services:
-
   web-dashboard:
     image: sparkplug-web-dashboard
     container_name: sparkplug-web-dashboard
@@ -31,7 +30,6 @@ services:
             - node_modules/
         - action: rebuild
           path: ./web-dashboard/package.json
-
   user:
     image: sparkplug-user
     container_name: sparkplug-user
@@ -60,7 +58,6 @@ services:
             - node_modules/
         - action: rebuild
           path: ./user/package.json
-
   site-station-analytics:
     image: sparkplug-site-station-analytics
     container_name: sparkplug-site-station-analytics
@@ -80,7 +77,6 @@ services:
       - MYSQL_PASS=${MYSQL_PASS}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MONGODB_URL=${MONGODB_URL}
-      - MONGODB_DATABASE=${MONGODB_DATABASE}
     ports:
       - ${SITE_STATION_ANALYTICS_PORT}:${SITE_STATION_ANALYTICS_PORT}
     develop:
@@ -90,7 +86,6 @@ services:
           target: /app
         - action: rebuild
           path: ./site-station-analytics/requirements.txt
-
   monitoring:
     image: sparkplug-monitoring
     container_name: sparkplug-monitoring
@@ -121,7 +116,6 @@ services:
             - node_modules/
         - action: rebuild
           path: ./monitoring/package.json
-
   simulator-client:
     image: sparkplug-simulator-client
     container_name: sparkplug-simulator-client
@@ -145,7 +139,6 @@ services:
             - node_modules/
         - action: rebuild
           path: ./simulator/client/package.json
-  
   simulator-server:
     image: sparkplug-simulator-server
     container_name: sparkplug-simulator-server
@@ -157,7 +150,7 @@ services:
     environment:
       - PORT=${SIMULATOR_SERVER_PORT}
       - WEB_DOMAIN=${SIMULATOR_CLIENT_DOMAIN}
-      - STATION_MANAGEMENT_WS_ENDPOINT=${SIMULATOR_STATION_MANAGEMENT_WS_ENDPOINT}
+      - CSMS_WS_ENDPOINT=${SIMULATOR_CSMS_WS_ENDPOINT}
       - STATION_IDENTITY=${SIMULATOR_STATION_IDENTITY}
       - STATION_PASSWORD=${SIMULATOR_STATION_PASSWORD}
       - STATION_CONFIGURATION=${SIMULATOR_STATION_CONFIGURATION}

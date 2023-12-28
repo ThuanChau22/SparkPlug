@@ -1,10 +1,10 @@
-import { Monitoring } from "../../db/model.js";
-import { getUserByRFID } from "../../db/repository.js";
+import { Monitoring } from "../../../repository/monitoring.js";
+import { User } from "../../../repository/user.js";
 import { idTokenToTransactionId } from "../server.js";
 
 const authorizeWithRFID = async ({ idToken }) => {
   const response = { idTokenInfo: { status: "Unknown" } };
-  if (await getUserByRFID(idToken)) {
+  if (await User.getByRFID(idToken)) {
     idTokenToTransactionId.set(idToken, "");
     response.idTokenInfo.status = "Accepted";
   }

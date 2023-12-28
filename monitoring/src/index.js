@@ -1,6 +1,5 @@
-import ocppServer from "./ocpp/server.js";
-import wsServer from "./ws/server.js";
-import app from "./app.js";
+import apiApp from "./api/app.js";
+import wsApp from "./ws/app.js";
 import {
   PORT,
   connectMongoDB,
@@ -10,21 +9,13 @@ import {
 const main = async () => {
   try {
     await connectMongoDB();
-    const server = app.listen(PORT, () => {
+    const httpServer = apiApp.listen(PORT, () => {
       console.log(`Monitoring server running on port: ${PORT}`);
     }).on("upgrade", (request, socket, head) => {
-      const { url, headers: { host } } = request;
-      const { pathname } = new URL(url, `ws://${host}`);
-      const [_, path] = pathname.split("/");
-      if (path === "monitoring") {
-        wsServer.handleUpgrade(request, socket, head);
-      } else if (path === "ocpp") {
-        ocppServer.handleUpgrade(request, socket, head);
-      } else {
-        socket.destroy();
-      }
+      wsApp.handleUpgrade(request, socket, head);
     });
-    setGracefulShutdown({ server, ocppServer, wsServer });
+    const wsServers = wsApp.routes.map(({ server }) => server);
+    setGracefulShutdown(httpServer, wsServers);
   } catch (error) {
     console.log(error);
   }

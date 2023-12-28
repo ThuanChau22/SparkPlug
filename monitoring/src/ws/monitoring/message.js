@@ -1,9 +1,9 @@
 import axios from "axios";
 
-import { Monitoring } from "../db/model.js";
+import { Monitoring } from "../../repository/monitoring.js";
+import { STATION_API_ENDPOINT } from "../../config.js";
 import remoteControl from "../ocpp/messages/remote-control.js";
 import { clientIdToClient } from "../ocpp/server.js";
-import { STATION_API_ENDPOINT } from "../config.js";
 import {
   socketToUser,
   socketToChangeStream,

@@ -1,6 +1,6 @@
 import { v4 as uuid } from "uuid";
 
-import { Monitoring } from "../../db/model.js";
+import { Monitoring } from "../../../repository/monitoring.js";
 import {
   clientIdToIdToken,
   idTokenToTransactionId,

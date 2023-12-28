@@ -3,7 +3,7 @@ import ms from "ms";
 import WebSocket, { WebSocketServer } from "ws";
 import { jwtDecode } from "jwt-decode";
 
-import { AUTH_API_ENDPOINT } from "../config.js";
+import { AUTH_API_ENDPOINT } from "../../config.js";
 import {
   Action,
   handleRemoteStart,
@@ -12,7 +12,7 @@ import {
   handleWatchStatusEvent,
 } from "./message.js";
 
-const initWebSocketServer = () => {
+const createWebSocketServer = () => {
   const wss = new WebSocketServer({ noServer: true });
   const pingInterval = setInterval(() => {
     for (const ws of wss.clients) {
@@ -37,10 +37,10 @@ const initWebSocketServer = () => {
   const on = (event, handler) => {
     wss.on(event, handler);
   };
-  const close = () => {
+  const close = ({ code }) => {
     wss.close();
     wss.clients.forEach((ws) => {
-      ws.close();
+      ws.close(code);
     });
     setTimeout(() => {
       wss.clients.forEach((ws) => {
@@ -53,7 +53,7 @@ const initWebSocketServer = () => {
 
 export const socketToUser = new Map();
 export const socketToChangeStream = new Map();
-const server = initWebSocketServer();
+const server = createWebSocketServer();
 server.on("connection", async (ws, req) => {
   try {
     const { url, headers: { host } } = req;

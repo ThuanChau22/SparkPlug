@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import ms from "ms";
 
-const monitoringSchema = mongoose.Schema({
+const schema = mongoose.Schema({
   stationId: {
     type: String,
     required: true,
@@ -25,18 +25,18 @@ const monitoringSchema = mongoose.Schema({
   },
 }, { timestamps: true });
 
-monitoringSchema.index({
+schema.index({
   stationId: 1,
   event: 1
 });
 
-monitoringSchema.index({
+schema.index({
   "event": 1,
   "payload.eventType": 1,
   "payload.transactionInfo.transactionId": 1,
 }, { sparse: true });
 
-monitoringSchema.loadClass(class {
+schema.loadClass(class {
   static async getEventByStationId(stationId) {
     try {
       return await this.find({ stationId }).sort({ createdAt: 1 }).lean();
@@ -94,4 +94,4 @@ monitoringSchema.loadClass(class {
   }
 });
 
-export const Monitoring = mongoose.model("monitoring", monitoringSchema);
+export const Monitoring = mongoose.model("monitoring", schema);
