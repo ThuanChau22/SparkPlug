@@ -1,6 +1,6 @@
 # **SparkPlug**
 
-An Electric Vehicle Hub Infrastructure Platform
+An Electric Vehicle Charging Station Hub Infrastructure Platform
 
 ## **Developing**
 
