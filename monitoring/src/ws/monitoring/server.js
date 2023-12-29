@@ -131,7 +131,7 @@ server.on("connection", async (ws, req) => {
       const { code, message } = error;
       return ws.close(1000, JSON.stringify({ code, message }));
     }
-    console.log({ error });
+    console.log(error);
   }
 });
 
