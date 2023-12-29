@@ -1,7 +1,6 @@
 import axios from "axios";
 import ms from "ms";
 import WebSocket, { WebSocketServer } from "ws";
-import { jwtDecode } from "jwt-decode";
 
 import { AUTH_API_ENDPOINT } from "../../config.js";
 import {
@@ -59,8 +58,8 @@ server.on("connection", async (ws, req) => {
     const { url, headers: { host } } = req;
     const { searchParams } = new URL(url, `ws://${host}`);
     const token = searchParams.get("token");
-    await axios.post(`${AUTH_API_ENDPOINT}/verify`, { token });
-    const { id, role, ...remain } = jwtDecode(token);
+    const { data } = await axios.post(`${AUTH_API_ENDPOINT}/verify`, { token });
+    const { id, role, ...remain } = data;
 
     console.log(`Connected with user: ${id}`);
 

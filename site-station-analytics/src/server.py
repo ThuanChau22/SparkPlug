@@ -1,7 +1,6 @@
 import os
 import datetime
 import requests
-import jwt
 import pymysql
 import pymongo
 from collections import defaultdict
@@ -57,15 +56,15 @@ def require_permission(*allowed_roles):
             if 'Authorization' not in request.headers:
                 return {"message": "Missing token"}, 401
             _, token = request.headers['Authorization'].split(" ")
-            r = requests.post(f"{AUTH_API_ENDPOINT}/verify", json={"token": token})
-            if not r.status_code == 200:
-              return r.json(), r.status_code
-            user = jwt.decode(token, options={"verify_signature": False})
-            if user['role'] not in allowed_roles:
+            res = requests.post(f"{AUTH_API_ENDPOINT}/verify", json={"token": token})
+            data = res.json()
+            if not res.status_code == 200:
+              return data, res.status_code
+            if data['role'] not in allowed_roles:
                 return {"message": "Permission denied"}, 403
             valid_user = {
-                "user_id": user['id'],
-                "role": user['role'],
+                "user_id": data['id'],
+                "role": data['role'],
             }
             return f(*args, **kwargs, user=valid_user)
         return decorated_function
