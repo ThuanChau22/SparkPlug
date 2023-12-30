@@ -21,6 +21,10 @@ services:
       - REACT_APP_SECURE_LOCAL_STORAGE_HASH_KEY=${WEB_DASHBOARD_SECURE_LOCAL_STORAGE_HASH_KEY}
     ports:
       - ${WEB_DASHBOARD_PORT}:${WEB_DASHBOARD_PORT}
+    depends_on:
+      - user
+      - site-station-analytics
+      - monitoring
     develop:
       watch:
         - action: sync
@@ -67,7 +71,6 @@ services:
     env_file:
       - ./.env
     environment:
-      - ENV=prod
       - PORT=${SITE_STATION_ANALYTICS_PORT}
       - WEB_DOMAIN=${WEB_DASHBOARD_DOMAIN}
       - AUTH_API_ENDPOINT=${INTERNAL_AUTH_API_ENDPOINT}
@@ -79,6 +82,8 @@ services:
       - MONGODB_URL=${MONGODB_URL}
     ports:
       - ${SITE_STATION_ANALYTICS_PORT}:${SITE_STATION_ANALYTICS_PORT}
+    depends_on:
+      - user
     develop:
       watch:
         - action: sync
@@ -107,6 +112,9 @@ services:
       - MONGODB_URL=${MONGODB_URL}
     ports:
       - ${MONITORING_PORT}:${MONITORING_PORT}
+    depends_on:
+      - user
+      - site-station-analytics
     develop:
       watch:
         - action: sync
@@ -130,6 +138,8 @@ services:
       - REACT_APP_STATION_IDENTITY=${SIMULATOR_STATION_IDENTITY}
     ports:
       - ${SIMULATOR_CLIENT_PORT}:${SIMULATOR_CLIENT_PORT}
+    depends_on:
+      - simulator-server
     develop:
       watch:
         - action: sync
@@ -156,6 +166,8 @@ services:
       - STATION_CONFIGURATION=${SIMULATOR_STATION_CONFIGURATION}
     ports:
       - ${SIMULATOR_SERVER_PORT}:${SIMULATOR_SERVER_PORT}
+    depends_on:
+      - monitoring
     develop:
       watch:
         - action: sync

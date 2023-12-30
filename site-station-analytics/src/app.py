@@ -1,74 +1,51 @@
-import os
-import datetime
 import requests
-import pymysql
-import pymongo
 from collections import defaultdict
-from dbutils.pooled_db import PooledDB
-from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+from datetime import datetime
+from flask import Flask, request, jsonify
 from flask_cors import CORS
+from pymysql import MySQLError
 from functools import wraps
 from urllib.parse import urljoin
 
-# Load environment variables
-env = os.environ.get('ENV', 'prod')
-if env == 'dev':
-    dotenv_path = '.env.dev'
-else:
-    dotenv_path = '.env'
-load_dotenv(dotenv_path=dotenv_path)
-PORT=os.environ['PORT']
-WEB_DOMAIN=os.environ['WEB_DOMAIN']
-MYSQL_HOST = os.environ['MYSQL_HOST']
-MYSQL_PORT = os.environ['MYSQL_PORT']
-MYSQL_USER = os.environ['MYSQL_USER']
-MYSQL_PASS = os.environ['MYSQL_PASS']
-MYSQL_DATABASE = os.environ['MYSQL_DATABASE']
-MONGODB_URL = os.environ['MONGODB_URL']
-AUTH_API_ENDPOINT = os.environ['AUTH_API_ENDPOINT']
+# Internal Modules
+from config import (
+    PORT,
+    WEB_DOMAIN,
+    AUTH_API_ENDPOINT,
+    mysql_pool,
+    mongo_connection,
+)
 
-# MySQL Configuration
-mysql_pool = PooledDB(
-    creator=pymysql,
-    host=MYSQL_HOST,
-    port=int(MYSQL_PORT),
-    user=MYSQL_USER,
-    password=MYSQL_PASS,
-    database=MYSQL_DATABASE,
-    cursorclass=pymysql.cursors.DictCursor,
-    maxconnections=10)
 
-# MongoDB Configuration
-MONGODB_DATABASE = pymongo.uri_parser.parse_uri(MONGODB_URL)['database']
-mongo_connection = pymongo.MongoClient(MONGODB_URL)[MONGODB_DATABASE]
-
+# Flash App
 app = Flask(__name__)
-
-# CORS(app)
 CORS(app, resources={r"/api/*": {"origins": WEB_DOMAIN}})
+
 
 # Decorator for access control
 def require_permission(*allowed_roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            if 'Authorization' not in request.headers:
+            if "Authorization" not in request.headers:
                 return {"message": "Missing token"}, 401
-            _, token = request.headers['Authorization'].split(" ")
+            _, token = request.headers["Authorization"].split(" ")
             res = requests.post(f"{AUTH_API_ENDPOINT}/verify", json={"token": token})
             data = res.json()
             if not res.status_code == 200:
-              return data, res.status_code
-            if data['role'] not in allowed_roles:
+                return data, res.status_code
+            if data["role"] not in allowed_roles:
                 return {"message": "Permission denied"}, 403
             valid_user = {
-                "user_id": data['id'],
-                "role": data['role'],
+                "user_id": data["id"],
+                "role": data["role"],
             }
             return f(*args, **kwargs, user=valid_user)
+
         return decorated_function
+
     return decorator
+
 
 # Sanitize input
 def sanitize_input(input_string):
@@ -81,27 +58,30 @@ def sanitize_input(input_string):
     if not isinstance(input_string, str):
         return input_string
 
-    sanitized_string = input_string.replace('\n', '').replace('\r', '')
+    sanitized_string = input_string.replace("\n", "").replace("\r", "")
     sanitized_string = sanitized_string.replace("'", "\\'").replace('"', '\\"')
-    
+
     return sanitized_string
 
+
 # Process Mongo Date
-def date_to_milliseconds(date_str, date_format='%m/%d/%Y'):
+def date_to_milliseconds(date_str, date_format="%m/%d/%Y"):
     try:
-        dt = datetime.datetime.strptime(date_str, date_format)
-        epoch = datetime.datetime.utcfromtimestamp(0)  # Unix epoch start time
+        dt = datetime.strptime(date_str, date_format)
+        epoch = datetime.utcfromtimestamp(0)  # Unix epoch start time
         return int((dt - epoch).total_seconds() * 1000)
     except ValueError:
         # Handle the exception if the date_str format is incorrect
         return None
 
+
 def time_string_to_hours(time_str):
     try:
-        hours, minutes, seconds = map(int, time_str.split(':'))
+        hours, minutes, seconds = map(int, time_str.split(":"))
         return hours + minutes / 60 + seconds / 3600
     except ValueError:
         return 0  # Return 0 if the time format is incorrect
+
 
 # Abstracted out
 def fetch_station_data(query_params):
@@ -110,15 +90,15 @@ def fetch_station_data(query_params):
 
     for param, value in query_params.items():
         if value:
-            if conditions: 
+            if conditions:
                 conditions += " AND"
-            if param in ['state', 'status', 'owner_id', 'site_id']:
+            if param in ["state", "status", "owner_id", "site_id"]:
                 conditions += f" {param}='{value}'"
-            elif param in ['city', 'name']:
+            elif param in ["city", "name"]:
                 conditions += f" {param} LIKE '%{value}%'"
-            elif param == 'zip':
+            elif param == "zip":
                 conditions += f" zip_code={value}"
-            elif param == 'id':
+            elif param == "id":
                 conditions += f" id={value}"
 
     if conditions:
@@ -132,29 +112,37 @@ def fetch_station_data(query_params):
     return data
 
 
-def fetch_transactions_data(station_id=None, charge_level=None, start_date='01/01/2010', end_date=None):
+def fetch_transactions_data(
+    station_id=None, charge_level=None, start_date="01/01/2010", end_date=None
+):
     if end_date is None:
-        end_date = datetime.datetime.now().strftime('%m/%d/%Y')
+        end_date = datetime.now().strftime("%m/%d/%Y")
 
     # Build query dynamically
     query = {}
 
     if station_id is not None:
-        query['station_id'] = int(station_id)
+        query["station_id"] = int(station_id)
         print(f"Checking for station_id: {station_id}")
 
     if charge_level is not None:
-        charge_level_map = {'1': 'Level 1', '2': 'Level 2'}
-        charge_levels = [charge_level_map[level] for level in charge_level.split() if level in charge_level_map]
+        charge_level_map = {"1": "Level 1", "2": "Level 2"}
+        charge_levels = [
+            charge_level_map[level]
+            for level in charge_level.split()
+            if level in charge_level_map
+        ]
         if charge_levels:
-            query['charge_level'] = {'$in': charge_levels}
+            query["charge_level"] = {"$in": charge_levels}
 
     start_ms = date_to_milliseconds(start_date)
     end_ms = date_to_milliseconds(end_date)
-    query['transaction_date'] = {'$gte': start_ms, '$lte': end_ms}
+    query["transaction_date"] = {"$gte": start_ms, "$lte": end_ms}
 
     # Debugging: Print the query parameters
-    print(f"Query Params: Station ID: {station_id}, Charge Level: {charge_level}, Start Date: {start_date}, End Date: {end_date}")
+    print(
+        f"Query Params: Station ID: {station_id}, Charge Level: {charge_level}, Start Date: {start_date}, End Date: {end_date}"
+    )
 
     # Debugging: Print the MongoDB query
     print(f"MongoDB Query: {query}")
@@ -162,15 +150,15 @@ def fetch_transactions_data(station_id=None, charge_level=None, start_date='01/0
     # Query the MongoDB transactions collection
     transactions = mongo_connection.transactions.find(query)
 
-   
     # Convert the results to a list and format
     transactions_list = list(transactions)
     print(f"Number of transactions found: {len(transactions_list)}")
 
     for transaction in transactions_list:
-        transaction['_id'] = str(transaction['_id'])
+        transaction["_id"] = str(transaction["_id"])
 
     return transactions_list
+
 
 # Chart data prep
 def generate_charts(raw_docs):
@@ -179,77 +167,80 @@ def generate_charts(raw_docs):
     utilization_by_date = defaultdict(float)
     hour_counts = [0] * 24
 
-    #return jsonify(raw_docs[0])
+    # return jsonify(raw_docs[0])
 
     for doc in raw_docs:
-        mongo_timestamp = doc['transaction_date']
+        mongo_timestamp = doc["transaction_date"]
         timestamp_seconds = mongo_timestamp / 1000.0
-        date = datetime.datetime.utcfromtimestamp(timestamp_seconds)
+        date = datetime.utcfromtimestamp(timestamp_seconds)
 
         # Revenue
-        f_date = date.strftime('%Y-%m-%d')
-        revenue_by_date[f_date] += doc['fee']
+        f_date = date.strftime("%Y-%m-%d")
+        revenue_by_date[f_date] += doc["fee"]
         sessions_by_date[f_date] += 1
 
         # Utilization Rate
-        charging_time_hours = time_string_to_hours(doc['charging_time'])
+        charging_time_hours = time_string_to_hours(doc["charging_time"])
         utilization_by_date[f_date] += charging_time_hours
 
         # Peak Time
         hour = date.hour
         hour_counts[hour] += 1
 
-
     # Calculate utilization rate as a percentage
     for date in utilization_by_date:
-        utilization_by_date[date] = (utilization_by_date[date] / 24) * 100  # Convert to percentage
-
+        utilization_by_date[date] = (
+            utilization_by_date[date] / 24
+        ) * 100  # Convert to percentage
 
     sorted_dates = sorted(revenue_by_date.keys())
     rev_chart_data = {
-        'labels': sorted_dates,
-        'datasets': [{
-            'label': 'Daily Revenue',
-            'data': [revenue_by_date[date] for date in sorted_dates],
-            'backgroundColor': 'rgba(75, 192, 192, 0.6)'
-        }]
+        "labels": sorted_dates,
+        "datasets": [
+            {
+                "label": "Daily Revenue",
+                "data": [revenue_by_date[date] for date in sorted_dates],
+                "backgroundColor": "rgba(75, 192, 192, 0.6)",
+            }
+        ],
     }
 
     sessions_chart_data = {
-        'labels': sorted_dates,
-        'datasets': [{
-            'label': 'Number of Sessions',
-            'data': [sessions_by_date[date] for date in sorted_dates],
-            'backgroundColor': 'rgba(255, 99, 132, 0.6)'
-        }]
+        "labels": sorted_dates,
+        "datasets": [
+            {
+                "label": "Number of Sessions",
+                "data": [sessions_by_date[date] for date in sorted_dates],
+                "backgroundColor": "rgba(255, 99, 132, 0.6)",
+            }
+        ],
     }
 
     peak_chart_data = {
-        'labels': [f"{i}:00 - {i+1}:00" for i in range(24)],
-        'datasets': [{
-            'label': 'Number of Transactions',
-            'data': hour_counts
-        }]
+        "labels": [f"{i}:00 - {i+1}:00" for i in range(24)],
+        "datasets": [{"label": "Number of Transactions", "data": hour_counts}],
     }
 
     utilization_chart_data = {
-        'labels': sorted_dates,
-        'datasets': [{
-            'label': 'Utilization Rate (%)',
-            'data': [utilization_by_date[date] for date in sorted_dates],
-            'backgroundColor': 'rgba(153, 102, 255, 0.6)'
-        }]
+        "labels": sorted_dates,
+        "datasets": [
+            {
+                "label": "Utilization Rate (%)",
+                "data": [utilization_by_date[date] for date in sorted_dates],
+                "backgroundColor": "rgba(153, 102, 255, 0.6)",
+            }
+        ],
     }
 
-
     data_pack = {
-        'revenue': rev_chart_data,
-        'sessions_count': sessions_chart_data,
-        'utilization_rate': utilization_chart_data,
-        'peak_time': peak_chart_data
+        "revenue": rev_chart_data,
+        "sessions_count": sessions_chart_data,
+        "utilization_rate": utilization_chart_data,
+        "peak_time": peak_chart_data,
     }
 
     return data_pack
+
 
 def generate_peak(raw_docs):
     revenue_by_date = defaultdict(float)
@@ -257,47 +248,46 @@ def generate_peak(raw_docs):
     utilization_by_date = defaultdict(float)
     hour_counts = [0] * 24
 
-    #return jsonify(raw_docs[0])
+    # return jsonify(raw_docs[0])
 
     for doc in raw_docs:
-        mongo_timestamp = doc['transaction_date']
+        mongo_timestamp = doc["transaction_date"]
         timestamp_seconds = mongo_timestamp / 1000.0
-        date = datetime.datetime.utcfromtimestamp(timestamp_seconds)
+        date = datetime.utcfromtimestamp(timestamp_seconds)
 
         # Revenue
-        f_date = date.strftime('%Y-%m-%d')
-        revenue_by_date[f_date] += doc['fee']
+        f_date = date.strftime("%Y-%m-%d")
+        revenue_by_date[f_date] += doc["fee"]
         sessions_by_date[f_date] += 1
 
         # Utilization Rate
-        charging_time_hours = time_string_to_hours(doc['charging_time'])
+        charging_time_hours = time_string_to_hours(doc["charging_time"])
         utilization_by_date[f_date] += charging_time_hours
 
         # Peak Time
         hour = date.hour
         hour_counts[hour] += 1
 
-
     # Calculate utilization rate as a percentage
     for date in utilization_by_date:
-        utilization_by_date[date] = (utilization_by_date[date] / 24) * 100  # Convert to percentage
+        utilization_by_date[date] = (
+            utilization_by_date[date] / 24
+        ) * 100  # Convert to percentage
 
     peak_chart_data = {
-        'labels': [f"{i}:00 - {i+1}:00" for i in range(24)],
-        'datasets': [{
-            'label': 'Number of Transactions',
-            'data': hour_counts
-        }]
+        "labels": [f"{i}:00 - {i+1}:00" for i in range(24)],
+        "datasets": [{"label": "Number of Transactions", "data": hour_counts}],
     }
 
-    data_pack = {
-        'peak_time': peak_chart_data
-    }
+    data_pack = {"peak_time": peak_chart_data}
 
     return data_pack
 
+
 def station_charts(station_id, start_date, end_date, charge_level):
-    transactions_data = fetch_transactions_data(station_id, charge_level, start_date, end_date)
+    transactions_data = fetch_transactions_data(
+        station_id, charge_level, start_date, end_date
+    )
     data_pack = generate_charts(transactions_data)
     return jsonify(data_pack)
     # if transactions_data:
@@ -307,8 +297,11 @@ def station_charts(station_id, start_date, end_date, charge_level):
     #     print("No transaction data found")
     #     return jsonify([])
 
+
 def station_peak(station_id, start_date, end_date, charge_level):
-    transactions_data = fetch_transactions_data(station_id, charge_level, start_date, end_date)
+    transactions_data = fetch_transactions_data(
+        station_id, charge_level, start_date, end_date
+    )
     data_pack = generate_peak(transactions_data)
     return jsonify(data_pack)
     # if transactions_data:
@@ -318,36 +311,45 @@ def station_peak(station_id, start_date, end_date, charge_level):
     #     print("No transaction data found")
     #     return jsonify([])
 
-def aggregate_charts(site_id, start_date, end_date, charge_level):
 
+def aggregate_charts(site_id, start_date, end_date, charge_level):
     # base_url = request.host_url.rstrip('/')
     # transactions_url = urljoin(base_url, 'api/transactions')
 
     # Constructing query parameters
     query_params = {}
     if start_date is not None:
-        query_params['start_date'] = start_date
+        query_params["start_date"] = start_date
     if end_date is not None:
-        query_params['end_date'] = end_date
+        query_params["end_date"] = end_date
     if charge_level is not None:
-        query_params['charge_level'] = charge_level
+        query_params["charge_level"] = charge_level
 
     # Fetching station IDs
     station_query_params = {}
     if site_id is not None:
-        station_query_params['site_id'] = site_id
+        station_query_params["site_id"] = site_id
     stations_data = fetch_station_data(station_query_params)
-    stations = [doc['id'] for doc in stations_data]
+    stations = [doc["id"] for doc in stations_data]
 
     # Fetching transactions
-    transactions_data = fetch_transactions_data(None, charge_level, start_date, end_date)
+    transactions_data = fetch_transactions_data(
+        None, charge_level, start_date, end_date
+    )
     if transactions_data:
-        stations_data = fetch_station_data({'site_id': site_id})
-        stations = [doc['id'] for doc in stations_data]
-        filtered_transactions = [tr for tr in transactions_data if tr['station_id'] in stations]
+        stations_data = fetch_station_data({"site_id": site_id})
+        stations = [doc["id"] for doc in stations_data]
+        filtered_transactions = [
+            tr for tr in transactions_data if tr["station_id"] in stations
+        ]
         return jsonify(generate_charts(filtered_transactions))
     else:
-        return jsonify({'error': 'Failed to fetch transactions'}), 500, tr_response.status_code
+        return (
+            jsonify({"error": "Failed to fetch transactions"}),
+            500,
+            tr_response.status_code,
+        )
+
 
 # def aggregate_charts(site_id, start_date, end_date, charge_level):
 #     base_url = request.host_url.rstrip('/')
@@ -385,48 +387,55 @@ def aggregate_charts(site_id, start_date, end_date, charge_level):
 #     else:
 #         return jsonify({'error': 'Failed to fetch stations'}), st_response.status_code
 
+
 # Endpoint functions
-@app.route('/api/transactions', methods=['GET'])
-@require_permission('owner', 'staff')
+@app.route("/api/transactions", methods=["GET"])
+@require_permission("owner", "staff")
 def get_transactions(user):
     try:
         # Retrieve query parameters
-        q_station_id = request.args.get('station_id', default=None, type=int)
-        q_charge_level = request.args.get('charge_level', default=None)
-        q_start_date = request.args.get('start_date', default='01/01/2010')
-        q_end_date = request.args.get('end_date', default=datetime.datetime.now().strftime('%m/%d/%Y'))
+        q_station_id = request.args.get("station_id", default=None, type=int)
+        q_charge_level = request.args.get("charge_level", default=None)
+        q_start_date = request.args.get("start_date", default="01/01/2010")
+        q_end_date = request.args.get(
+            "end_date", default=datetime.now().strftime("%m/%d/%Y")
+        )
 
         # Build query dynamically
         query = {}
 
-        ## station id
+        # station id
         if q_station_id is not None:
-            query['station_id'] = q_station_id
+            query["station_id"] = q_station_id
 
-        ## charge level
+        # charge level
         if q_charge_level is not None:
             # Map input values "1" or "2" to "Level 1" or "Level 2"
-            charge_level_map = {'1': 'Level 1', '2': 'Level 2'}
-            charge_levels = [charge_level_map[level] for level in q_charge_level.split() if level in charge_level_map]
+            charge_level_map = {"1": "Level 1", "2": "Level 2"}
+            charge_levels = [
+                charge_level_map[level]
+                for level in q_charge_level.split()
+                if level in charge_level_map
+            ]
             if charge_levels:
-                query['charge_level'] = {'$in': charge_levels}
+                query["charge_level"] = {"$in": charge_levels}
 
-        ## date range
-        ### Convert dates to milliseconds since Unix epoch
+        # date range
+        # Convert dates to milliseconds since Unix epoch
         start_ms = date_to_milliseconds(q_start_date)
         end_ms = date_to_milliseconds(q_end_date)
-        ### Build date range query
-        query['transaction_date'] = {'$gte': start_ms, '$lte': end_ms}
+        # Build date range query
+        query["transaction_date"] = {"$gte": start_ms, "$lte": end_ms}
 
         # Query the MongoDB transactions collection
         transactions = mongo_connection.transactions.find(query)
-        
+
         # Convert the results to a list
         transactions_list = list(transactions)
 
         # Convert each MongoDB ObjectId to string
         for transaction in transactions_list:
-            transaction['_id'] = str(transaction['_id'])
+            transaction["_id"] = str(transaction["_id"])
 
         return jsonify(transactions_list)
 
@@ -436,40 +445,47 @@ def get_transactions(user):
 
 
 # Site management
-@app.route('/api/sites', methods=['GET'])
-@require_permission('owner', 'staff')
+@app.route("/api/sites", methods=["GET"])
+@require_permission("owner", "staff")
 def get_sites(user):
     query = "SELECT * FROM Site JOIN Zip_Code ON Site.zip_code = Zip_Code.zip"
     conditions = ""
 
-    q_state = request.args.get('state')
-    q_city = request.args.get('city')
-    q_zip = request.args.get('zip')
-    q_owner_id = request.args.get('owner_id')
-    q_name = request.args.get('name')
-    q_id = request.args.get('id')
+    q_state = request.args.get("state")
+    q_city = request.args.get("city")
+    q_zip = request.args.get("zip")
+    q_owner_id = request.args.get("owner_id")
+    q_name = request.args.get("name")
+    q_id = request.args.get("id")
 
     if q_state:
-        if conditions: conditions += " AND"
+        if conditions:
+            conditions += " AND"
         conditions += f" state='{q_state}'"
     if q_city:
-        if conditions: conditions += " AND"
+        if conditions:
+            conditions += " AND"
         conditions += f" city LIKE '%{q_city}%'"
     if q_zip:
-        if conditions: conditions += " AND"
+        if conditions:
+            conditions += " AND"
         conditions += f" zip={q_zip}"
     if q_owner_id:
-        if conditions: conditions += " AND"
+        if conditions:
+            conditions += " AND"
         conditions += f" owner_id={q_owner_id}"
     if q_name:
-        if conditions: conditions += " AND"
+        if conditions:
+            conditions += " AND"
         conditions += f" name LIKE '%{q_name}%'"
     if q_id:
-        if conditions: conditions += " AND"
+        if conditions:
+            conditions += " AND"
         conditions = f" id={q_id}"
 
-    if user['role'] == 'owner':
-        if conditions: conditions += " AND"
+    if user["role"] == "owner":
+        if conditions:
+            conditions += " AND"
         conditions += f" owner_id={user['user_id']}"
 
     if conditions:
@@ -477,17 +493,18 @@ def get_sites(user):
 
     sql_connection = mysql_pool.connection()
     with sql_connection.cursor() as cursor:
-        cursor.execute(query+conditions)
+        cursor.execute(query + conditions)
         data = cursor.fetchall()
-    #return(query+conditions)
+    # return(query+conditions)
     return jsonify(data)
 
-@app.route('/api/sites/<site_id>', methods=['GET'])
-@require_permission('owner', 'staff')
+
+@app.route("/api/sites/<site_id>", methods=["GET"])
+@require_permission("owner", "staff")
 def get_one_site(user, site_id):
     query = f"SELECT * FROM Site JOIN Zip_Code ON Site.zip_code = Zip_Code.zip WHERE id={site_id}"
 
-    if user['role'] == 'owner':
+    if user["role"] == "owner":
         query += f" AND owner_id={user['user_id']}"
 
     sql_connection = mysql_pool.connection()
@@ -496,19 +513,21 @@ def get_one_site(user, site_id):
         data = cursor.fetchone()
     return jsonify(data)
 
-@app.route('/api/sites', methods=['POST'])
-@require_permission('owner', 'staff')
+
+@app.route("/api/sites", methods=["POST"])
+@require_permission("owner", "staff")
 def add_site(user):
     params = request.json
 
-    owner_id = params.get('owner_id')
-    latitude = params.get('latitude')
-    longitude = params.get('longitude')
-    name = params.get('name')
-    street_address = params.get('street_address')
-    zip_code = params.get('zip_code')
+    owner_id = params.get("owner_id")
+    latitude = params.get("latitude")
+    longitude = params.get("longitude")
+    name = params.get("name")
+    street_address = params.get("street_address")
+    zip_code = params.get("zip_code")
 
-    if user['role'] == 'owner': owner_id = user['user_id']
+    if user["role"] == "owner":
+        owner_id = user["user_id"]
 
     sql_connection = mysql_pool.connection()
     try:
@@ -517,15 +536,16 @@ def add_site(user):
             cursor.execute(query)
             inserted_id = cursor.lastrowid
         sql_connection.commit()
-    except pymysql.MySQLError as e:
-        return jsonify({'error': str(e)}), 500
+    except MySQLError as e:
+        return jsonify({"error": str(e)}), 500
     finally:
         sql_connection.close()
 
-    return jsonify({'message': 'Site added successfully', 'inserted_id': inserted_id})
+    return jsonify({"message": "Site added successfully", "inserted_id": inserted_id})
 
-@app.route('/api/sites/<site_id>', methods=['DELETE'])
-@require_permission('owner', 'staff')
+
+@app.route("/api/sites/<site_id>", methods=["DELETE"])
+@require_permission("owner", "staff")
 def delete_site(user, site_id):
     sql_connection = mysql_pool.connection()
     try:
@@ -533,91 +553,108 @@ def delete_site(user, site_id):
             # Prepare the SQL query to delete the site with the given ID
             query = f"DELETE FROM Site WHERE id={site_id}"
             # If the user is an owner, add an additional condition to delete only their sites
-            if user['role'] == 'owner':
+            if user["role"] == "owner":
                 query += f" AND owner_id={user['user_id']}"
             cursor.execute(query)
             # Check if any row is affected (means deletion happened)
             if cursor.rowcount == 0:
-                return jsonify({'message': 'No site found with the given ID or you do not have permission to delete it'}), 404
+                return (
+                    jsonify(
+                        {
+                            "message": "No site found with the given ID or you do not have permission to delete it"
+                        }
+                    ),
+                    404,
+                )
         # Commit the changes to the database
         sql_connection.commit()
-    except pymysql.MySQLError as e:
+    except MySQLError as e:
         # Return an error message if something goes wrong
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
     finally:
         # Close the database connection
         sql_connection.close()
 
     # Return a success message
-    return jsonify({'message': 'Site deleted successfully'})
+    return jsonify({"message": "Site deleted successfully"})
 
-@app.route('/api/sites/<site_id>', methods=['PATCH'])
-@require_permission('owner', 'staff')
+
+@app.route("/api/sites/<site_id>", methods=["PATCH"])
+@require_permission("owner", "staff")
 def update_site(user, site_id):
     # Extract the data from the request body
     update_data = request.json
 
     # Check if there is data to update
     if not update_data:
-        return jsonify({'message': 'No data provided for update'}), 400
+        return jsonify({"message": "No data provided for update"}), 400
 
     # Establish a connection to the MySQL database
     sql_connection = mysql_pool.connection()
     try:
         with sql_connection.cursor() as cursor:
             # Construct the SQL query dynamically based on the provided data
-            update_query = ", ".join([f"{key}='{value}'" for key, value in update_data.items()])
+            update_query = ", ".join(
+                [f"{key}='{value}'" for key, value in update_data.items()]
+            )
             query = f"UPDATE Site SET {update_query} WHERE id={site_id}"
             # If the user is an owner, ensure they can only update their own sites
-            if user['role'] == 'owner':
+            if user["role"] == "owner":
                 query += f" AND owner_id={user['user_id']}"
 
             cursor.execute(query)
             # Check if any row is affected (means update happened)
             if cursor.rowcount == 0:
-                return jsonify({'message': 'No site found with the given ID or you do not have permission to update it'}), 404
+                return (
+                    jsonify(
+                        {
+                            "message": "No site found with the given ID or you do not have permission to update it"
+                        }
+                    ),
+                    404,
+                )
 
         # Commit the changes to the database
         sql_connection.commit()
-    except pymysql.MySQLError as e:
+    except MySQLError as e:
         # Return an error message if something goes wrong
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
     finally:
         # Close the database connection
         sql_connection.close()
 
     # Return a success message
-    return jsonify({'message': 'Site updated successfully'})
+    return jsonify({"message": "Site updated successfully"})
 
 
 # Station management
-@app.route('/api/stations', methods=['GET'])
-@require_permission('owner', 'staff', 'driver')
+@app.route("/api/stations", methods=["GET"])
+@require_permission("owner", "staff", "driver")
 def get_stations(user):
     query_params = {
-        'state': request.args.get('state'),
-        'city': request.args.get('city'),
-        'zip': request.args.get('zip'),
-        'owner_id': request.args.get('owner_id'),
-        'name': request.args.get('name'),
-        'id': request.args.get('id'),
-        'status': request.args.get('status'),
-        'site_id': request.args.get('site_id')
+        "state": request.args.get("state"),
+        "city": request.args.get("city"),
+        "zip": request.args.get("zip"),
+        "owner_id": request.args.get("owner_id"),
+        "name": request.args.get("name"),
+        "id": request.args.get("id"),
+        "status": request.args.get("status"),
+        "site_id": request.args.get("site_id"),
     }
-    
-    if user['role'] == 'owner':
-        query_params['owner_id'] = user['user_id']
+
+    if user["role"] == "owner":
+        query_params["owner_id"] = user["user_id"]
 
     data = fetch_station_data(query_params)
     return jsonify(data)
 
 
-@app.route('/api/stations/<station_id>', methods=['GET'])
-@require_permission('owner', 'staff')
+@app.route("/api/stations/<station_id>", methods=["GET"])
+@require_permission("owner", "staff")
 def get_one_station(user, station_id):
     query = f"SELECT * FROM stations_joined WHERE id={station_id}"
 
-    if user['role'] == 'owner':
+    if user["role"] == "owner":
         query += f" AND owner_id={user['user_id']}"
 
     sql_connection = mysql_pool.connection()
@@ -627,51 +664,60 @@ def get_one_station(user, station_id):
     return jsonify(data)
 
 
-@app.route('/api/stations', methods=['POST'])
-@require_permission('owner', 'staff')
+@app.route("/api/stations", methods=["POST"])
+@require_permission("owner", "staff")
 def add_station(user):
     params = request.json
 
-    name = sanitize_input(params.get('name'))
-    charge_level = sanitize_input(params.get('charge_level'))
-    connector_type = sanitize_input(params.get('connector_type'))
-    latitude = sanitize_input(params.get('latitude'))
-    longitude = sanitize_input(params.get('longitude'))
-    site_id = sanitize_input(params.get('site_id'))
+    name = sanitize_input(params.get("name"))
+    charge_level = sanitize_input(params.get("charge_level"))
+    connector_type = sanitize_input(params.get("connector_type"))
+    latitude = sanitize_input(params.get("latitude"))
+    longitude = sanitize_input(params.get("longitude"))
+    site_id = sanitize_input(params.get("site_id"))
 
-    if user['role'] == 'owner': owner_id = user['user_id']
+    if user["role"] == "owner":
+        owner_id = user["user_id"]
 
     sql_connection = mysql_pool.connection()
     try:
         with sql_connection.cursor() as cursor:
             query = "INSERT INTO Station (name, charge_level, connector_type, latitude, longitude, site_id) VALUES (%s, %s, %s, %s, %s, %s)"
-            cursor.execute(query, (name, charge_level, connector_type, latitude, longitude, site_id))
+            cursor.execute(
+                query,
+                (name, charge_level, connector_type, latitude, longitude, site_id),
+            )
             inserted_id = cursor.lastrowid
         sql_connection.commit()
-    except pymysql.MySQLError as e:
+    except MySQLError as e:
         print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
     finally:
         sql_connection.close()
 
-    return jsonify({'message': 'Station added successfully', 'inserted_id': inserted_id})
+    return jsonify(
+        {"message": "Station added successfully", "inserted_id": inserted_id}
+    )
 
-@app.route('/api/stations/<station_id>', methods=['PATCH'])
-@require_permission('owner', 'staff')
+
+@app.route("/api/stations/<station_id>", methods=["PATCH"])
+@require_permission("owner", "staff")
 def update_station(user, station_id):
     # Extract the data from the request body
     update_data = request.json
 
     # Check if there is data to update
     if not update_data:
-        return jsonify({'message': 'No data provided for update'}), 400
+        return jsonify({"message": "No data provided for update"}), 400
 
     # Establish a connection to the MySQL database
     sql_connection = mysql_pool.connection()
     try:
         with sql_connection.cursor() as cursor:
             # Construct the SQL query dynamically based on the provided data
-            update_query = ", ".join([f"{key}='{value}'" for key, value in update_data.items()])
+            update_query = ", ".join(
+                [f"{key}='{value}'" for key, value in update_data.items()]
+            )
             query = f"UPDATE Station SET {update_query} WHERE id={station_id}"
             # If the user is an owner, ensure they can only update their own stations
             """
@@ -682,22 +728,23 @@ def update_station(user, station_id):
             cursor.execute(query)
             # Check if any row is affected (means update happened)
             if cursor.rowcount == 0:
-                return jsonify({'message': 'No station found with the given ID'}), 404
+                return jsonify({"message": "No station found with the given ID"}), 404
 
         # Commit the changes to the database
         sql_connection.commit()
-    except pymysql.MySQLError as e:
+    except MySQLError as e:
         # Return an error message if something goes wrong
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
     finally:
         # Close the database connection
         sql_connection.close()
 
     # Return a success message
-    return jsonify({'message': 'Station updated successfully'})
+    return jsonify({"message": "Station updated successfully"})
 
-@app.route('/api/stations/<station_id>', methods=['DELETE'])
-@require_permission('owner', 'staff')
+
+@app.route("/api/stations/<station_id>", methods=["DELETE"])
+@require_permission("owner", "staff")
 def delete_station(user, station_id):
     sql_connection = mysql_pool.connection()
     try:
@@ -705,69 +752,83 @@ def delete_station(user, station_id):
             # Prepare the SQL query to delete the station with the given ID
             query = f"DELETE FROM Station WHERE id={station_id}"
             # If the user is an owner, add an additional condition to delete only their stations
-            if user['role'] == 'owner':
+            if user["role"] == "owner":
                 query = f"DELETE Station FROM Station JOIN Site ON Station.site_id - Site.id WHERE Station.id = {station_id} AND Site.owner_id = {user['user_id']}"
                 query += f" AND owner_id={user['user_id']}"
             cursor.execute(query)
             # Check if any row is affected (means deletion happened)
             if cursor.rowcount == 0:
-                return jsonify({'message': 'No station found with the given ID'}), 404
+                return jsonify({"message": "No station found with the given ID"}), 404
         # Commit the changes to the database
         sql_connection.commit()
-    except pymysql.MySQLError as e:
+    except MySQLError as e:
         # Return an error message if something goes wrong
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
     finally:
         # Close the database connection
         sql_connection.close()
 
     # Return a success message
-    return jsonify({'message': 'Station deleted successfully'})
+    return jsonify({"message": "Station deleted successfully"})
+
 
 # Analytics
-@app.route('/api/stations/analytics/<station_id>', methods=['GET'])
-@require_permission('owner', 'staff', 'driver')
+@app.route("/api/stations/analytics/<station_id>", methods=["GET"])
+@require_permission("owner", "staff", "driver")
 def station_analytics(user, station_id):
     # Extract query parameters for date range (optional)
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-    charge_level = request.args.get('charge_level')
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    charge_level = request.args.get("charge_level")
 
-    if not start_date: start_date = '01/01/2010'
-    if not end_date: end_date = datetime.datetime.now().strftime('%m/%d/%Y')
-    if not charge_level: charge_level = None
+    if not start_date:
+        start_date = "01/01/2010"
+    if not end_date:
+        end_date = datetime.now().strftime("%m/%d/%Y")
+    if not charge_level:
+        charge_level = None
 
-    if user['role'] == 'driver':
+    if user["role"] == "driver":
         return station_peak(station_id, start_date, end_date, charge_level)
     return station_charts(station_id, start_date, end_date, charge_level)
 
-@app.route('/api/stations/analytics', methods=['GET'])
-@require_permission('owner', 'staff')
+
+@app.route("/api/stations/analytics", methods=["GET"])
+@require_permission("owner", "staff")
 def all_stations_analytics(user):
     # Extract query parameters for date range (optional)
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-    charge_level = request.args.get('charge_level')
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    charge_level = request.args.get("charge_level")
 
-    if not start_date: start_date = '01/01/2010'
-    if not end_date: end_date = datetime.datetime.now().strftime('%m/%d/%Y')
-    if not charge_level: charge_level = None
+    if not start_date:
+        start_date = "01/01/2010"
+    if not end_date:
+        end_date = datetime.now().strftime("%m/%d/%Y")
+    if not charge_level:
+        charge_level = None
 
-    return aggregate_charts(None, start_date, end_date, charge_level, user['role'], user['user_id'])
+    return aggregate_charts(
+        None, start_date, end_date, charge_level, user["role"], user["user_id"]
+    )
 
-@app.route('/api/sites/analytics/<site_id>', methods=['GET'])
-@require_permission('owner', 'staff')
+
+@app.route("/api/sites/analytics/<site_id>", methods=["GET"])
+@require_permission("owner", "staff")
 def site_analytics(user, site_id):
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-    charge_level = request.args.get('charge_level')
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    charge_level = request.args.get("charge_level")
 
-    if not start_date: start_date = '01/01/2010'
-    if not end_date: end_date = datetime.datetime.now().strftime('%m/%d/%Y')
-    if not charge_level: charge_level = None
+    if not start_date:
+        start_date = "01/01/2010"
+    if not end_date:
+        end_date = datetime.now().strftime("%m/%d/%Y")
+    if not charge_level:
+        charge_level = None
 
     return aggregate_charts(site_id, start_date, end_date, charge_level)
 
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=PORT, debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=PORT, debug=True)
