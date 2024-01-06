@@ -1,4 +1,5 @@
 import axios from "axios";
+import WebSocket from "ws";
 
 import { Monitoring } from "../../repository/monitoring.js";
 import { STATION_API_ENDPOINT } from "../../config.js";
@@ -18,23 +19,27 @@ export const Action = {
 };
 
 export const handleRemoteStart = async ({ ws, payload }) => {
-  if (clientIdToClient.has(payload.stationId)) {
-    const client = clientIdToClient.get(payload.stationId);
-    sendJsonMessage(ws, {
-      action: Action.REMOTE_START,
-      payload: await remoteControl.requestStartTransactionRequest({ client }),
-    });
+  let response = { status: "Offline" };
+  const client = clientIdToClient.get(payload.stationId);
+  if (client && client.state === WebSocket.OPEN) {
+    response = await remoteControl.requestStartTransactionRequest({ client });
   }
+  sendJsonMessage(ws, {
+    action: Action.REMOTE_START,
+    payload: response,
+  });
 };
 
 export const handleRemoteStop = async ({ ws, payload }) => {
-  if (clientIdToClient.has(payload.stationId)) {
-    const client = clientIdToClient.get(payload.stationId);
-    sendJsonMessage(ws, {
-      action: Action.REMOTE_STOP,
-      payload: await remoteControl.requestStopTransactionRequest({ client }),
-    });
+  let response = { status: "Offline" };
+  const client = clientIdToClient.get(payload.stationId);
+  if (client && client.state === WebSocket.OPEN) {
+    response = await remoteControl.requestStopTransactionRequest({ client });
   }
+  sendJsonMessage(ws, {
+    action: Action.REMOTE_STOP,
+    payload: response,
+  });
 };
 
 export const handleWatchAllEvent = async ({ ws, payload }) => {

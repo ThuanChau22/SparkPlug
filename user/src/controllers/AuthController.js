@@ -64,8 +64,7 @@ export const verify = async (req, res) => {
     if (!token) {
       return res.status(401).json({ message: "Missing token" });
     }
-    jwt.verify(token, JWT_SECRET);
-    return res.status(200).json({ message: "Accepted" });
+    return res.status(200).json({ ...jwt.verify(token, JWT_SECRET) });
   } catch (error) {
     if (error.name === "JsonWebTokenError") {
       return res.status(401).json({ message: "Invalid token" });

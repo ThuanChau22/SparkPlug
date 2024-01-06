@@ -1,5 +1,4 @@
 import axios from "axios";
-import { jwtDecode } from "jwt-decode";
 
 import {
   AUTH_API_ENDPOINT,
@@ -13,8 +12,8 @@ export const authenticate = async (req, res, next) => {
       return res.status(401).json({ message: "Missing token" });
     }
     const [_, token] = authHeader.split(" ");
-    await axios.post(`${AUTH_API_ENDPOINT}/verify`, { token });
-    req.user = jwtDecode(token);
+    const { data } = await axios.post(`${AUTH_API_ENDPOINT}/verify`, { token });
+    req.user = data;
     req.token = token;
     next();
   } catch (error) {

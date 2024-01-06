@@ -76,7 +76,7 @@ server.on("connection", async (ws) => {
           return await handleReset(payload);
         }
       } catch (error) {
-        console.log({ error });
+        console.log(error);
       }
     });
 
@@ -94,7 +94,7 @@ server.on("connection", async (ws) => {
       }
     });
   } catch (error) {
-    console.log({ error });
+    console.log(error);
   }
 });
 
