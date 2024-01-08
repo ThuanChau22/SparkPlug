@@ -1,28 +1,13 @@
 services:
   web-dashboard:
-    image: sparkplug-web-dashboard
-    container_name: sparkplug-web-dashboard
+    extends:
+      file: compose.prod.yaml
+      service: web-dashboard
+    restart: "no"
     build:
-      context: ./web-dashboard
       target: development
-    env_file:
-      - ./.env
-    environment:
-      - PORT=${WEB_DASHBOARD_PORT}
-      - REACT_APP_AUTH_API_ENDPOINT=${AUTH_API_ENDPOINT}
-      - REACT_APP_USER_API_ENDPOINT=${USER_API_ENDPOINT}
-      - REACT_APP_SITE_API_ENDPOINT=${SITE_API_ENDPOINT}
-      - REACT_APP_STATION_API_ENDPOINT=${STATION_API_ENDPOINT}
-      - REACT_APP_SITE_ANALYTICS_API_ENDPOINT=${SITE_ANALYTICS_API_ENDPOINT}
-      - REACT_APP_STATION_ANALYTICS_API_ENDPOINT=${STATION_ANALYTICS_API_ENDPOINT}
-      - REACT_APP_MONITORING_API_ENDPOINT=${MONITORING_API_ENDPOINT}
-      - REACT_APP_MONITORING_WS_ENDPOINT=${MONITORING_WS_ENDPOINT}
-      - REACT_APP_SECURE_LOCAL_STORAGE_PREFIX=${WEB_DASHBOARD_SECURE_LOCAL_STORAGE_PREFIX}
-      - REACT_APP_SECURE_LOCAL_STORAGE_HASH_KEY=${WEB_DASHBOARD_SECURE_LOCAL_STORAGE_HASH_KEY}
-    ports:
-      - ${WEB_DASHBOARD_PORT}:${WEB_DASHBOARD_PORT}
     depends_on:
-      - user
+      - user-management
       - site-station-analytics
       - monitoring
     develop:
@@ -34,56 +19,33 @@ services:
             - node_modules/
         - action: rebuild
           path: ./web-dashboard/package.json
-  user:
-    image: sparkplug-user
-    container_name: sparkplug-user
+
+  user-management:
+    extends:
+      file: compose.prod.yaml
+      service: user-management
+    restart: "no"
     build:
-      context: ./user
       target: development
-    env_file:
-      - ./.env
-    environment:
-      - PORT=${USER_PORT}
-      - WEB_DOMAIN=${WEB_DASHBOARD_DOMAIN}
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_PORT=${MYSQL_PORT}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASS=${MYSQL_PASS}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - JWT_SECRET=${USER_JWT_SECRET}
-    ports:
-      - ${USER_PORT}:${USER_PORT}
     develop:
       watch:
         - action: sync
-          path: ./user
+          path: ./user-management
           target: /app
           ignore:
             - node_modules/
         - action: rebuild
-          path: ./user/package.json
+          path: ./user-management/package.json
+
   site-station-analytics:
-    image: sparkplug-site-station-analytics
-    container_name: sparkplug-site-station-analytics
+    extends:
+      file: compose.prod.yaml
+      service: site-station-analytics
+    restart: "no"
     build:
-      context: ./site-station-analytics
       target: development
-    env_file:
-      - ./.env
-    environment:
-      - PORT=${SITE_STATION_ANALYTICS_PORT}
-      - WEB_DOMAIN=${WEB_DASHBOARD_DOMAIN}
-      - AUTH_API_ENDPOINT=${INTERNAL_AUTH_API_ENDPOINT}
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_PORT=${MYSQL_PORT}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASS=${MYSQL_PASS}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MONGODB_URL=${MONGODB_URL}
-    ports:
-      - ${SITE_STATION_ANALYTICS_PORT}:${SITE_STATION_ANALYTICS_PORT}
     depends_on:
-      - user
+      - user-management
     develop:
       watch:
         - action: sync
@@ -91,29 +53,16 @@ services:
           target: /app
         - action: rebuild
           path: ./site-station-analytics/requirements.txt
+
   monitoring:
-    image: sparkplug-monitoring
-    container_name: sparkplug-monitoring
+    extends:
+      file: compose.prod.yaml
+      service: monitoring
+    restart: "no"
     build:
-      context: ./monitoring
       target: development
-    env_file:
-      - ./.env
-    environment:
-      - PORT=${MONITORING_PORT}
-      - WEB_DOMAIN=${WEB_DASHBOARD_DOMAIN}
-      - AUTH_API_ENDPOINT=${INTERNAL_AUTH_API_ENDPOINT}
-      - STATION_API_ENDPOINT=${INTERNAL_STATION_API_ENDPOINT}
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_PORT=${MYSQL_PORT}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASS=${MYSQL_PASS}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MONGODB_URL=${MONGODB_URL}
-    ports:
-      - ${MONITORING_PORT}:${MONITORING_PORT}
     depends_on:
-      - user
+      - user-management
       - site-station-analytics
     develop:
       watch:
@@ -124,20 +73,14 @@ services:
             - node_modules/
         - action: rebuild
           path: ./monitoring/package.json
+
   simulator-client:
-    image: sparkplug-simulator-client
-    container_name: sparkplug-simulator-client
+    extends:
+      file: compose.prod.yaml
+      service: simulator-client
+    restart: "no"
     build:
-      context: ./simulator/client
       target: development
-    env_file:
-      - ./.env
-    environment:
-      - PORT=${SIMULATOR_CLIENT_PORT}
-      - REACT_APP_WS_ENDPOINT=${SIMULATOR_WS_ENDPOINT}
-      - REACT_APP_STATION_IDENTITY=${SIMULATOR_STATION_IDENTITY}
-    ports:
-      - ${SIMULATOR_CLIENT_PORT}:${SIMULATOR_CLIENT_PORT}
     depends_on:
       - simulator-server
     develop:
@@ -149,23 +92,14 @@ services:
             - node_modules/
         - action: rebuild
           path: ./simulator/client/package.json
+
   simulator-server:
-    image: sparkplug-simulator-server
-    container_name: sparkplug-simulator-server
+    extends:
+      file: compose.prod.yaml
+      service: simulator-server
+    restart: "no"
     build:
-      context: ./simulator/server
       target: development
-    env_file:
-      - ./.env
-    environment:
-      - PORT=${SIMULATOR_SERVER_PORT}
-      - WEB_DOMAIN=${SIMULATOR_CLIENT_DOMAIN}
-      - CSMS_WS_ENDPOINT=${SIMULATOR_CSMS_WS_ENDPOINT}
-      - STATION_IDENTITY=${SIMULATOR_STATION_IDENTITY}
-      - STATION_PASSWORD=${SIMULATOR_STATION_PASSWORD}
-      - STATION_CONFIGURATION=${SIMULATOR_STATION_CONFIGURATION}
-    ports:
-      - ${SIMULATOR_SERVER_PORT}:${SIMULATOR_SERVER_PORT}
     depends_on:
       - monitoring
     develop:
