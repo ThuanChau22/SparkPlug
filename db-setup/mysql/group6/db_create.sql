@@ -1,6 +1,6 @@
-DROP SCHEMA IF EXISTS sparkplug;
-CREATE SCHEMA sparkplug;
-USE sparkplug;
+DROP SCHEMA IF EXISTS group6;
+CREATE SCHEMA group6;
+USE group6;
 
 CREATE TABLE User (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -51,9 +51,9 @@ CREATE TABLE Site (
     KEY idx_owner_id (owner_id),
     KEY idx_zip_code (zip_code),
     CONSTRAINT fk_Site_Station_Owner FOREIGN KEY (owner_id)
-    REFERENCES Station_Owner(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_Site_Zip_Code FOREIGN KEY (zip_code)
-    REFERENCES Zip_Code(zip) ON DELETE RESTRICT ON UPDATE CASCADE
+    REFERENCES Station_Owner(id) ON DELETE RESTRICT ON UPDATE CASCADE
+    -- CONSTRAINT fk_Site_Zip_Code FOREIGN KEY (zip_code)
+    -- REFERENCES Zip_Code(zip) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 CREATE TABLE Station (
@@ -92,4 +92,4 @@ SELECT Station.id, Station.name, status, price, charge_level, connector_type,
 Station.created_at, Station.updated_at, Station.latitude, Station.longitude,
 site_id, owner_id, Site.latitude as site_latitude, Site.longitude as site_longitude,
 Site.name as site_name, street_address, zip_code, city, state
-FROM Station JOIN Site ON Station.site_id = Site.id JOIN Zip_Code ON Site.zip_code = Zip_Code.zip;
+FROM Station JOIN Site ON Station.site_id = Site.id
