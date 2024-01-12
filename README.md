@@ -12,7 +12,7 @@ An Electric Vehicle Charging Station Hub Infrastructure Platform
 
 ### II. Run Project
 
-1. Create .env file based on .env.example file for each main module.
+1. Create .env file based on .env.example file.
 
 2. Run/build: `docker compose up [-d] [--build] [service-name]`
 
