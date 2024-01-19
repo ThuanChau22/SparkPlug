@@ -60,6 +60,7 @@ server.on("client", async (client) => {
       }
     });
     clientIdToClient.delete(client.identity);
+    clientIdToIdToken.delete(client.identity);
     console.log(`Disconnected with station: ${client.identity}`);
   });
 
