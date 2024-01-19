@@ -17,6 +17,7 @@ import ms from "ms";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
 import StationMonitorModal from "components/StationMonitorModal";
+import StationStatus from "components/StationStatus";
 import StationStatusMarker from "components/StationStatusMarker";
 import StickyContainer from "components/StickyContainer";
 import { selectHeaderHeight } from "redux/header/headerSlice";
@@ -199,17 +200,7 @@ const StationMonitor = () => {
                         <small className="w-100 text-secondary">ID: {id}</small>
                         <p className="mb-0">{name}</p>
                       </div>
-                      <div className={
-                        status === "Available"
-                          ? "text-success"
-                          : status === "Occupied"
-                            ? "text-warning"
-                            : status === "Offline"
-                              ? "text-secondary"
-                              : "text-danger"
-                      }>
-                        {status}
-                      </div>
+                      <StationStatus status={status}/>
                     </CListGroupItem>
                   ))}
                 </CListGroup>
