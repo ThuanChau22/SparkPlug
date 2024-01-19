@@ -2,9 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import ms from "ms";
 import {
+  CAlert,
+  CAccordion,
+  CAccordionItem,
+  CAccordionHeader,
+  CAccordionBody,
   CButton,
   CCard,
   CCardBody,
+  CCardTitle,
   CCardGroup,
   CCol,
   CContainer,
@@ -16,12 +22,13 @@ import {
 import {
   Contactless,
   ContactlessOutlined,
+  Cloud,
+  CloudOutlined,
   EvStation,
   Pin,
   PinOutlined,
   Power,
   PowerOutlined,
-  // RestartAlt,
 } from '@mui/icons-material';
 
 import EVChargingStationImage from "assets/ev-charging-station.png";
@@ -51,7 +58,8 @@ const App = () => {
     SCAN_RFID: "ScanRFID",
     PLUGIN_CABLE: "PluginCable",
     UNPLUG_CABLE: "UnplugCable",
-    RESET: "Reset",
+    CONNECT_CSMS: "ConnectCSMS",
+    DISCONNECT_CSMS: "DisconnectCSMS",
   }), []);
 
   const meterTimeoutRef = useRef(0);
@@ -59,27 +67,29 @@ const App = () => {
   const [rfid, setRFID] = useState("");
   const [isRFIDScanned, setIsRFIDScanned] = useState(false);
   const [isCablePluggedIn, setIsCablePluggedIn] = useState(false);
-  const [message, setMessage] = useState({ text: "", style: "" });
+  const [isCSMSConnected, setIsCSMSConnected] = useState(false);
+  const defaultAlertMessage = useMemo(() => ({ color: "", text: "" }), []);
+  const [alertMessage, setAlertMessage] = useState(defaultAlertMessage);
 
   useEffect(() => {
     if (readyState === ReadyState.OPEN) {
-      setMessage({ text: "", style: "" });
+      setAlertMessage(defaultAlertMessage);
     }
     if (readyState === ReadyState.CONNECTING) {
-      setMessage({
+      setAlertMessage({
+        color: "info",
         text: "Connecting",
-        style: "text-info",
       });
     }
     const isClosing = readyState === ReadyState.CLOSING;
     const isClosed = readyState === ReadyState.CLOSED;
     if (isClosed || isClosing) {
-      setMessage({
+      setAlertMessage({
+        color: "danger",
         text: "Connection Lost",
-        style: "text-danger",
       });
     }
-  }, [readyState]);
+  }, [readyState, defaultAlertMessage]);
 
   useEffect(() => {
     const { action, payload } = lastJsonMessage || {};
@@ -98,9 +108,9 @@ const App = () => {
         setIsRFIDScanned(false);
         setRFID("");
       } else {
-        setMessage({
-          text: "Invalid",
-          style: "text-danger",
+        setAlertMessage({
+          color: "danger",
+          text: "Invalid RFID",
         });
       }
     }
@@ -110,13 +120,16 @@ const App = () => {
     if (action === WebSocketAction.UNPLUG_CABLE) {
       setIsCablePluggedIn(false);
     }
-    if (action === WebSocketAction.RESET) {
-      console.log("Reset");
-    }
+    if (action === WebSocketAction.CONNECT_CSMS) {
+      setIsCSMSConnected(true);
+    };
+    if (action === WebSocketAction.DISCONNECT_CSMS) {
+      setIsCSMSConnected(false);
+    };
   }, [lastJsonMessage, WebSocketAction]);
 
   const handleScanRFID = () => {
-    setMessage({ text: "", style: "" });
+    setAlertMessage({ text: "", color: "" });
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: WebSocketAction.SCAN_RFID,
@@ -143,14 +156,23 @@ const App = () => {
     }
   };
 
-  // const handleReset = () => {
-  //   if (readyState === ReadyState.OPEN) {
-  //     sendJsonMessage({
-  //       action: WebSocketAction.RESET,
-  //       payload: {},
-  //     });
-  //   }
-  // };
+  const handleConnectCSMS = () => {
+    if (readyState === ReadyState.OPEN) {
+      sendJsonMessage({
+        action: WebSocketAction.CONNECT_CSMS,
+        payload: {},
+      });
+    }
+  };
+
+  const handleDisconnectCSMS = () => {
+    if (readyState === ReadyState.OPEN) {
+      sendJsonMessage({
+        action: WebSocketAction.DISCONNECT_CSMS,
+        payload: {},
+      });
+    }
+  };
 
   return (
     <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
@@ -158,14 +180,23 @@ const App = () => {
         <CRow className="justify-content-center">
           <CCol lg={7} md={11} xs={12}>
             <CCardGroup>
-              <CCard className="px-4 pb-3">
+              <CCard className="px-3 pb-3">
+                <CAlert
+                  className="position-absolute start-0 w-100 shadow-sm"
+                  color={alertMessage.color}
+                  visible={alertMessage.text !== ""}
+                  onClose={() => setAlertMessage(defaultAlertMessage)}
+                  dismissible
+                >
+                  {alertMessage.text}
+                </CAlert>
                 <CCardBody>
                   <h1>EV Station Simulator</h1>
-                  <h5 className="text-medium-emphasis py-2">
+                  <CCardTitle className="text-medium-emphasis py-2">
                     Station ID: {STATION_ID}
-                  </h5>
+                  </CCardTitle>
                   <CRow>
-                    <CCol xl={5} lg={6} xs={5} className="d-flex align-items-center">
+                    <CCol xl={4} lg={6} xs={5} className="d-flex align-items-center">
                       <div className="d-none d-sm-block">
                         <img
                           className="img-fluid"
@@ -174,13 +205,8 @@ const App = () => {
                         />
                       </div>
                     </CCol>
-                    <CCol xl={7} lg={6} sm={7} xs={12}>
+                    <CCol xl={8} lg={6} sm={7} xs={12} className="d-flex flex-row align-items-center">
                       <CRow xs={{ gutterY: 3 }} className="d-flex flex-row align-items-center">
-                        <CCol xs={12}>
-                          <p className={`text-center m-0 ${message.style}`}>
-                            {message.text}
-                          </p>
-                        </CCol>
                         <CCol xs={12}>
                           <CInputGroup>
                             <CInputGroupText className="border border-warning">
@@ -251,24 +277,44 @@ const App = () => {
                             </CButton>
                           </CInputGroup>
                         </CCol>
-                        {/* <CCol xs={12}>
-                          <CInputGroup>
-                            <CInputGroupText className="border border-primary">
-                              <RestartAlt />
-                            </CInputGroupText>
-                            <CButton
-                              color="primary"
-                              variant="outline"
-                              className="flex-grow-1"
-                              onClick={handleReset}
-                            >
-                              Reset
-                            </CButton>
-                          </CInputGroup>
-                        </CCol> */}
                       </CRow>
                     </CCol>
                   </CRow>
+                  <CAccordion className="pt-2">
+                    <CAccordionItem >
+                      <CAccordionHeader>
+                        <span className="fw-medium">Admin</span>
+                      </CAccordionHeader>
+                      <CAccordionBody>
+                        <CRow>
+                          <CCol xs={12} className="p-0">
+                            <CInputGroup>
+                              <CInputGroupText className="border border-primary">
+                                {isCSMSConnected
+                                  ? <Cloud color="primary" />
+                                  : <CloudOutlined />
+                                }
+                              </CInputGroupText>
+                              <CButton
+                                color="primary"
+                                variant="outline"
+                                className="flex-grow-1"
+                                onClick={isCSMSConnected
+                                  ? handleDisconnectCSMS
+                                  : handleConnectCSMS
+                                }
+                              >
+                                {isCSMSConnected
+                                  ? "Disconnect"
+                                  : "Connect"
+                                } CSMS
+                              </CButton>
+                            </CInputGroup>
+                          </CCol>
+                        </CRow>
+                      </CAccordionBody>
+                    </CAccordionItem>
+                  </CAccordion>
                 </CCardBody>
               </CCard>
             </CCardGroup>

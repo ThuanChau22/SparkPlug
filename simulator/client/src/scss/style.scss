@@ -1,0 +1,6 @@
+@import "@coreui/coreui/scss/coreui";
+
+.accordion-button:focus {
+  outline: none;
+  box-shadow: none;
+}
