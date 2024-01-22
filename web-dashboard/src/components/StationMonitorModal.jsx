@@ -19,6 +19,7 @@ import {
   EvStation,
 } from '@mui/icons-material';
 
+import StationStatus from "components/StationStatus";
 import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import { selectStationById } from "redux/station/stationSlide";
@@ -121,17 +122,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     >
       <CModalHeader className="mb-2">
         <CModalTitle>
-          {station.name} - <span className={
-            station.status === "Available"
-              ? "text-success"
-              : station.status === "Occupied"
-                ? "text-warning"
-                : station.status === "Offline"
-                  ? "text-secondary"
-                  : "text-danger"
-          }>
-            {station.status}
-          </span>
+          {station.name} - <StationStatus status={station.status} />
         </CModalTitle>
       </CModalHeader>
       <p className="ps-3" >

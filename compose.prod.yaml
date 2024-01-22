@@ -2,108 +2,61 @@ services:
   web-dashboard:
     image: ${CONTAINER_REGISTRY}/web-dashboard
     container_name: sparkplug-web-dashboard
-    restart: always
     build:
       context: ./web-dashboard
     ports:
       - ${WEB_DASHBOARD_PORT}:${WEB_DASHBOARD_PORT}
     environment:
-      - PORT=${WEB_DASHBOARD_PORT}
-      - NGINX_PORT=${WEB_DASHBOARD_PORT}
-      - REACT_APP_AUTH_API_ENDPOINT=${WEB_DASHBOARD_AUTH_API}
-      - REACT_APP_USER_API_ENDPOINT=${WEB_DASHBOARD_USER_API}
-      - REACT_APP_SITE_API_ENDPOINT=${WEB_DASHBOARD_SITE_API}
-      - REACT_APP_STATION_API_ENDPOINT=${WEB_DASHBOARD_STATION_API}
-      - REACT_APP_SITE_ANALYTICS_API_ENDPOINT=${WEB_DASHBOARD_ANALYTICS_SITE_API}
-      - REACT_APP_STATION_ANALYTICS_API_ENDPOINT=${WEB_DASHBOARD_ANALYTICS_STATION_API}
-      - REACT_APP_MONITORING_API_ENDPOINT=${WEB_DASHBOARD_MONITORING_API}
-      - REACT_APP_MONITORING_WS_ENDPOINT=${WEB_DASHBOARD_MONITORING_WS}
-      - REACT_APP_SECURE_LOCAL_STORAGE_PREFIX=${WEB_DASHBOARD_SECURE_LOCAL_STORAGE_PREFIX}
-      - REACT_APP_SECURE_LOCAL_STORAGE_HASH_KEY=${WEB_DASHBOARD_SECURE_LOCAL_STORAGE_HASH_KEY}
+      PORT: ${WEB_DASHBOARD_PORT}
+      NGINX_PORT: ${WEB_DASHBOARD_PORT}
 
   user-management:
     image: ${CONTAINER_REGISTRY}/user-management
-    container_name: sparkplug-sparkplug-user-management
-    restart: always
+    container_name: sparkplug-user-management
     build:
       context: ./user-management
     ports:
       - ${USER_PORT}:${USER_PORT}
     environment:
-      - PORT=${USER_PORT}
-      - WEB_DOMAIN=${WEB_DASHBOARD_DOMAIN}
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_PORT=${MYSQL_PORT}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASS=${MYSQL_PASS}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - JWT_SECRET=${USER_JWT_SECRET}
+      PORT: ${USER_PORT}
 
   site-station-analytics:
     image: ${CONTAINER_REGISTRY}/site-station-analytics
     container_name: sparkplug-site-station-analytics
-    restart: always
     build:
       context: ./site-station-analytics
     ports:
       - ${STATION_PORT}:${STATION_PORT}
     environment:
-      - PORT=${STATION_PORT}
-      - WEB_DOMAIN=${WEB_DASHBOARD_DOMAIN}
-      - AUTH_API_ENDPOINT=${STATION_AUTH_API_ENDPOINT}
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_PORT=${MYSQL_PORT}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASS=${MYSQL_PASS}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MONGODB_URL=${MONGODB_URL}
+      PORT: ${STATION_PORT}
 
   monitoring:
     image: ${CONTAINER_REGISTRY}/monitoring
     container_name: sparkplug-monitoring
-    restart: always
     build:
       context: ./monitoring
     ports:
       - ${MONITORING_PORT}:${MONITORING_PORT}
     environment:
-      - PORT=${MONITORING_PORT}
-      - WEB_DOMAIN=${WEB_DASHBOARD_DOMAIN}
-      - AUTH_API_ENDPOINT=${MONITORING_AUTH_API_ENDPOINT}
-      - STATION_API_ENDPOINT=${MONITORING_STATION_API_ENDPOINT}
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_PORT=${MYSQL_PORT}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASS=${MYSQL_PASS}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MONGODB_URL=${MONGODB_URL}
+      PORT: ${MONITORING_PORT}
 
   simulator-client:
     image: ${CONTAINER_REGISTRY}/simulator-client
     container_name: sparkplug-simulator-client
-    restart: always
     build:
       context: ./simulator/client
     ports:
       - ${SIMULATOR_CLIENT_PORT}:${SIMULATOR_CLIENT_PORT}
     environment:
-      - PORT=${SIMULATOR_CLIENT_PORT}
-      - NGINX_PORT=${SIMULATOR_CLIENT_PORT}
-      - REACT_APP_WS_ENDPOINT=${SIMULATOR_CLIENT_SERVER_WS}
-      - REACT_APP_STATION_IDENTITY=${SIMULATOR_STATION_IDENTITY}
+      PORT: ${SIMULATOR_CLIENT_PORT}
+      NGINX_PORT: ${SIMULATOR_CLIENT_PORT}
 
   simulator-server:
     image: ${CONTAINER_REGISTRY}/simulator-server
     container_name: sparkplug-simulator-server
-    restart: always
     build:
       context: ./simulator/server
     ports:
       - ${SIMULATOR_SERVER_PORT}:${SIMULATOR_SERVER_PORT}
     environment:
-      - PORT=${SIMULATOR_SERVER_PORT}
-      - WEB_DOMAIN=${SIMULATOR_CLIENT_DOMAIN}
-      - CSMS_WS_ENDPOINT=${SIMULATOR_CSMS_WS}
-      - STATION_IDENTITY=${SIMULATOR_STATION_IDENTITY}
-      - STATION_PASSWORD=${SIMULATOR_STATION_PASSWORD}
-      - STATION_CONFIGURATION=${SIMULATOR_STATION_CONFIGURATION}
+      PORT: ${SIMULATOR_SERVER_PORT}
