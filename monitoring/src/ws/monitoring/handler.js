@@ -1,14 +1,13 @@
 import axios from "axios";
 import WebSocket from "ws";
 
-import { Monitoring } from "../../repository/monitoring.js";
 import { STATION_API_ENDPOINT } from "../../config.js";
-import remoteControl from "../ocpp/messages/remote-control.js";
-import { clientIdToClient } from "../ocpp/server.js";
+import Monitoring from "../../repository/monitoring.js";
+import remoteControl from "../ocpp/handlers/remote-control.js";
+import { clients } from "../ocpp/server.js";
 import {
-  socketToUser,
   socketToChangeStream,
-  sendJsonMessage,
+  socketToUser,
 } from "./server.js";
 
 export const Action = {
@@ -19,24 +18,27 @@ export const Action = {
 };
 
 export const handleRemoteStart = async ({ ws, payload }) => {
-  let response = { status: "Offline" };
-  const client = clientIdToClient.get(payload.stationId);
-  if (client && client.state === WebSocket.OPEN) {
-    response = await remoteControl.requestStartTransactionRequest({ client });
+  let response = { status: "Unavailable" };
+  const { stationId, evseId } = payload;
+  if (clients.get(stationId)?.station?.state === WebSocket.OPEN) {
+    const { station: client } = clients.get(stationId);
+    response = await remoteControl.requestStartTransactionRequest(client, { evseId });
   }
-  sendJsonMessage(ws, {
+  ws.sendJson({
     action: Action.REMOTE_START,
     payload: response,
   });
 };
 
 export const handleRemoteStop = async ({ ws, payload }) => {
-  let response = { status: "Offline" };
-  const client = clientIdToClient.get(payload.stationId);
-  if (client && client.state === WebSocket.OPEN) {
-    response = await remoteControl.requestStopTransactionRequest({ client });
+  let response = { status: "Unavailable" };
+  const { stationId, evseId } = payload;
+  if (clients.get(stationId)?.station?.state === WebSocket.OPEN) {
+    const { station: client, evseIdToTransactionId } = clients.get(stationId);
+    const transactionId = evseIdToTransactionId.get(evseId);
+    response = await remoteControl.requestStopTransactionRequest(client, { transactionId });
   }
-  sendJsonMessage(ws, {
+  ws.sendJson({
     action: Action.REMOTE_STOP,
     payload: response,
   });
@@ -55,13 +57,13 @@ export const handleWatchAllEvent = async ({ ws, payload }) => {
     const changeStream = await Monitoring.watchAllEvent({ stationId });
     changeStream.on("change", ({ fullDocument }) => {
       const { stationId, event, payload, createdAt } = fullDocument;
-      sendJsonMessage(ws, {
+      ws.sendJson({
         action: Action.WATCH_ALL_EVENT,
         payload: { stationId, event, payload, createdAt },
       });
     });
     socketToChangeStream.set(ws, changeStream);
-    sendJsonMessage(ws, {
+    ws.sendJson({
       action: Action.WATCH_ALL_EVENT,
       payload: { status: "Accepted" },
     });
@@ -70,7 +72,7 @@ export const handleWatchAllEvent = async ({ ws, payload }) => {
       const { status: code } = error.response;
       const { message } = error.response.data;
       console.log(error.response);
-      return sendJsonMessage(ws, {
+      return ws.sendJson({
         action: Action.WATCH_ALL_EVENT,
         payload: {
           status: "Rejected",
@@ -80,7 +82,7 @@ export const handleWatchAllEvent = async ({ ws, payload }) => {
     }
     if (error.code === 403) {
       const { code, message } = error;
-      return sendJsonMessage(ws, {
+      return ws.sendJson({
         action: Action.WATCH_STATUS_EVENT,
         payload: {
           status: "Rejected",
@@ -109,13 +111,13 @@ export const handleWatchStatusEvent = async ({ ws, payload }) => {
     const changeStream = await Monitoring.watchStatusEvent({ stationIdList });
     changeStream.on("change", ({ fullDocument }) => {
       const { stationId, event, payload, createdAt } = fullDocument;
-      sendJsonMessage(ws, {
+      ws.sendJson({
         action: Action.WATCH_STATUS_EVENT,
         payload: { stationId, event, payload, createdAt },
       });
     });
     socketToChangeStream.set(ws, changeStream);
-    sendJsonMessage(ws, {
+    ws.sendJson({
       action: Action.WATCH_STATUS_EVENT,
       payload: { status: "Accepted" },
     });
@@ -123,7 +125,7 @@ export const handleWatchStatusEvent = async ({ ws, payload }) => {
     if (error.response) {
       const { status: code } = error.response;
       const { message } = error.response.data;
-      return sendJsonMessage(ws, {
+      return ws.sendJson({
         action: Action.WATCH_STATUS_EVENT,
         payload: {
           status: "Rejected",
@@ -133,7 +135,7 @@ export const handleWatchStatusEvent = async ({ ws, payload }) => {
     }
     if (error.code === 403) {
       const { code, message } = error;
-      return sendJsonMessage(ws, {
+      return ws.sendJson({
         action: Action.WATCH_STATUS_EVENT,
         payload: {
           status: "Rejected",

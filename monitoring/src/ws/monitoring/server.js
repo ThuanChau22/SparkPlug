@@ -9,9 +9,9 @@ import {
   handleRemoteStop,
   handleWatchAllEvent,
   handleWatchStatusEvent,
-} from "./message.js";
+} from "./handler.js";
 
-const createWebSocketServer = () => {
+const webSocketServer = () => {
   const wss = new WebSocketServer({ noServer: true });
   const pingInterval = setInterval(() => {
     for (const ws of wss.clients) {
@@ -28,9 +28,14 @@ const createWebSocketServer = () => {
   });
   const handleUpgrade = (request, socket, head) => {
     wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit("connection", ws, request);
+      ws.sendJson = (payload) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify(payload));
+        }
+      };
       ws.on("pong", () => ws.isAlive = true);
       ws.ping();
+      wss.emit("connection", ws, request);
     });
   };
   const on = (event, handler) => {
@@ -52,12 +57,11 @@ const createWebSocketServer = () => {
 
 export const socketToUser = new Map();
 export const socketToChangeStream = new Map();
-const server = createWebSocketServer();
+
+const server = webSocketServer();
 server.on("connection", async (ws, req) => {
   try {
-    const { url, headers: { host } } = req;
-    const { searchParams } = new URL(url, `ws://${host}`);
-    const token = searchParams.get("token");
+    const { query: { token } } = req;
     const { data } = await axios.post(`${AUTH_API_ENDPOINT}/verify`, { token });
     const { id, role, ...remain } = data;
 
@@ -90,7 +94,7 @@ server.on("connection", async (ws, req) => {
       } catch (error) {
         if (error.code === 403) {
           const { code, message } = error;
-          return sendJsonMessage(ws, {
+          return ws.sendJson({
             action: JSON.parse(data).action,
             payload: {
               status: "Rejected",
@@ -102,42 +106,22 @@ server.on("connection", async (ws, req) => {
       }
     });
 
-    // Handle socket on error
-    ws.on("error", () => {
+    // Handle socket on close
+    ws.on("close", () => {
       socketToChangeStream.get(ws)?.close();
       socketToChangeStream.delete(ws);
       socketToUser.delete(ws);
-    });
-
-    // Handle socket on close
-    ws.on("close", () => {
-      try {
-        socketToChangeStream.get(ws)?.close();
-        socketToChangeStream.delete(ws);
-        socketToUser.delete(ws);
-        console.log(`Disconnected with user: ${id}`);
-      } catch (error) {
-        console.log(error);
-      }
+      console.log(`Disconnected with user: ${id}`);
     });
   } catch (error) {
     if (error.response?.status === 401) {
-      const { status: code } = error.response;
-      const { message } = error.response.data;
-      return ws.close(1000, JSON.stringify({ code, message }));
+      error.message = error.response.data.message;
+    } else if (!error.code) {
+      console.log(error);
+      error.message = "An unknown error occurred";
     }
-    if (error.code === 403) {
-      const { code, message } = error;
-      return ws.close(1000, JSON.stringify({ code, message }));
-    }
-    console.log(error);
+    ws.close(1000, error.message);
   }
 });
-
-export const sendJsonMessage = (ws, payload) => {
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(payload));
-  }
-};
 
 export default server;

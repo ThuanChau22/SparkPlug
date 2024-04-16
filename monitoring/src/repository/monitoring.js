@@ -94,4 +94,6 @@ schema.loadClass(class {
   }
 });
 
-export const Monitoring = mongoose.model("monitoring", schema);
+const Monitoring = mongoose.model("monitoring", schema);
+
+export default Monitoring;
