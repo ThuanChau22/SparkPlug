@@ -98,7 +98,10 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: "RemoteStart",
-        payload: { stationId: station.id.toString() },
+        payload: {
+          stationId: station.id.toString(),
+          evseId: 1,
+        },
       });
     }
   };
@@ -107,7 +110,10 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: "RemoteStop",
-        payload: { stationId: station.id.toString() },
+        payload: {
+          stationId: station.id.toString(),
+          evseId: 1,
+        },
       });
     }
   };
@@ -141,7 +147,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
               variant="outline"
               color="success"
               onClick={handleRemoteStart}
-              disabled={station.status === "Offline"}
+              disabled={station.status === "Unavailable"}
             >
               Remote Start
             </CButton>
@@ -149,7 +155,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
               variant="outline"
               color="info"
               onClick={handleRemoteStop}
-              disabled={station.status === "Offline"}
+              disabled={station.status === "Unavailable"}
             >
               Remote Stop
             </CButton>
