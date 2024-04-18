@@ -5,7 +5,7 @@ const availability = {};
 
 availability.statusNotificationResponse = async (client, { method, params }) => {
   await Station.updateStatus(client.identity, params.connectorStatus);
-  await Monitoring.add({
+  await Monitoring.addEvent({
     stationId: client.identity,
     event: method,
     payload: params,
@@ -14,7 +14,7 @@ availability.statusNotificationResponse = async (client, { method, params }) => 
 };
 
 availability.heartbeatResponse = async (client, { method, params }) => {
-  await Monitoring.add({
+  await Monitoring.addEvent({
     stationId: client.identity,
     event: method,
     payload: params,

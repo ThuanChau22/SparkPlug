@@ -20,7 +20,7 @@ remoteControl.requestStartTransactionRequest = async (client, { evseId }) => {
     remoteStartId: Math.floor(1000 + Math.random() * 9000),
     idToken,
   });
-  await Monitoring.add({
+  await Monitoring.addEvent({
     stationId: client.identity,
     event: method,
     payload: responsePayload,
@@ -37,7 +37,7 @@ remoteControl.requestStopTransactionRequest = async (client, { transactionId }) 
   const responsePayload = await client.call(method, {
     transactionId: transactionId || "",
   });
-  await Monitoring.add({
+  await Monitoring.addEvent({
     stationId: client.identity,
     event: method,
     payload: responsePayload,

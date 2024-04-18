@@ -22,7 +22,7 @@ const authorizeWithRFID = async (client, idToken) => {
 const authorization = {};
 
 authorization.authorizeResponse = async (client, { method, params }) => {
-  await Monitoring.add({
+  await Monitoring.addEvent({
     stationId: client.identity,
     event: method,
     payload: params,

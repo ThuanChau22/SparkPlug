@@ -44,7 +44,7 @@ schema.loadClass(class {
       console.log(error);
     }
   }
-  static async add(data) {
+  static async addEvent(data) {
     try {
       const { stationId, event, payload } = data;
       const expireAt = new Date(Date.now() + ms("1h"));
