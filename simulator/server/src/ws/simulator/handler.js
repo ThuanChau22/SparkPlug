@@ -2,8 +2,11 @@ export const Action = {
   CONNECT_CSMS: "ConnectCSMS",
   DISCONNECT_CSMS: "DisconnectCSMS",
   SCAN_RFID: "ScanRFID",
+  AUTHORIZE: "Authorize",
   PLUGIN_CABLE: "PluginCable",
   UNPLUG_CABLE: "UnplugCable",
+  REMOTE_START: "RemoteStart",
+  REMOTE_STOP: "RemoteStop",
   METER_VALUE: "MeterValue",
 };
 
@@ -20,9 +23,10 @@ handler.stateSync = (station) => {
     for (const evse of station.evses.filter(authorizedFilter)) {
       const status = "Accepted";
       const evseId = evse.id;
+      const isAuthorized = evse.isAuthorized;
       messages.push({
-        action: Action.SCAN_RFID,
-        payload: { status, evseId },
+        action: Action.AUTHORIZE,
+        payload: { status, evseId, isAuthorized },
       });
     }
     const availabilityFilter = (obj) => obj.availabilityState === "Occupied";
@@ -123,6 +127,18 @@ handler.requestStopTransaction = async (station, payload) => {
     await station.remoteStopTransaction(evseId);
     const status = "Accepted";
     return { status, evseId };
+  } catch (error) {
+    const status = "Rejected";
+    const message = error.message;
+    return { status, message };
+  }
+};
+
+handler.authorize = (payload) => {
+  try {
+    const { evseId, isAuthorized } = payload;
+    const status = "Accepted";
+    return { status, evseId, isAuthorized };
   } catch (error) {
     const status = "Rejected";
     const message = error.message;

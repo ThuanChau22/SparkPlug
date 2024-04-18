@@ -64,6 +64,12 @@ class EVSE {
     return [...this._connectors];
   }
 
+  get occupiedConnector() {
+    const filter = (obj) => obj.availabilityState === "Occupied";
+    const [connector] = this._connectors.filter(filter);
+    return connector;
+  }
+
   get isAuthorized() {
     return this._isAuthorized;
   }
@@ -78,6 +84,14 @@ class EVSE {
 
   get hashedIdToken() {
     return cryptoJs.SHA256(JSON.stringify(this._idToken)).toString();
+  }
+
+  /**
+   * Subscribe to Authorize event
+   * @param {function} listener
+   */
+  onAuthorize(listener) {
+    this._eventEmitter.on("Authorize", listener);
   }
 
   /**
@@ -113,6 +127,7 @@ class EVSE {
   authorized(idToken) {
     this._isAuthorized = true;
     this._idToken = idToken;
+    this._eventEmitter.emit("Authorize", this, { isAuthorized: true });
   }
 
   /**
@@ -121,6 +136,7 @@ class EVSE {
   deauthorized() {
     this._isAuthorized = false;
     this._idToken = null;
+    this._eventEmitter.emit("Authorize", this, { isAuthorized: false });
   }
 
   /**
@@ -130,25 +146,26 @@ class EVSE {
    * @returns {Object}
    */
   startTransactionRequest({ triggerReason, remoteStartId, measurands }) {
-    const transactionId = uuid();
-    const filter = (obj) => obj.availabilityState === "Occupied";
-    const [connector] = this._connectors.filter(filter);
-    return {
-      triggerReason,
+    const request = {
       eventType: "Started",
       timestamp: new Date().toISOString(),
+      triggerReason,
       seqNo: this._transactionSeqNo++,
       transactionInfo: {
-        transactionId,
+        transactionId: uuid(),
         chargingState: "Charging",
-        remoteStartId: remoteStartId || 0,
       },
       idToken: this._idToken,
       evse: {
         id: this._id,
-        connectorId: connector.id,
+        connectorId: this.occupiedConnector.id,
       },
-      meterValue: [
+    };
+    if (remoteStartId) {
+      request.transactionInfo.remoteStartId = remoteStartId;
+    }
+    if (measurands) {
+      request.meterValue = [
         {
           timestamp: new Date().toISOString(),
           sampledValue: measurands.map((measurand) => ({
@@ -156,8 +173,9 @@ class EVSE {
             value: this.#simulateMeterValue(),
           })),
         }
-      ],
-    };
+      ];
+    }
+    return request;
   }
 
   /**
@@ -166,25 +184,24 @@ class EVSE {
    * @returns {Object}
    */
   updateTransactionRequest({ triggerReason, chargingState, measurands }) {
-    const filter = (obj) => obj.availabilityState === "Occupied";
-    const [connector] = this._connectors.filter(filter);
-    const transactionInfo = {
-      transactionId: this._transactionId,
-    }
-    if (chargingState) {
-      transactionInfo.chargingState = chargingState;
-    }
-    return {
-      triggerReason,
+    const request = {
       eventType: "Updated",
       timestamp: new Date().toISOString(),
+      triggerReason,
       seqNo: this._transactionSeqNo++,
-      transactionInfo,
+      transactionInfo: {
+        transactionId: this._transactionId,
+      },
       evse: {
         id: this._id,
-        connectorId: connector.id,
+        connectorId: this.occupiedConnector.id,
       },
-      meterValue: [
+    };
+    if (chargingState) {
+      request.transactionInfo.chargingState = chargingState;
+    }
+    if (measurands) {
+      request.meterValue = [
         {
           timestamp: new Date().toISOString(),
           sampledValue: measurands.map((measurand) => ({
@@ -192,29 +209,30 @@ class EVSE {
             value: this.#simulateMeterValue(),
           })),
         }
-      ],
-    };
+      ];
+    }
+    return request;
   }
 
   stopTransactionRequest({ triggerReason, stoppedReason, measurands }) {
-    const filter = (obj) => obj.availabilityState === "Occupied";
-    const [connector] = this._connectors.filter(filter);
-    return {
-      triggerReason,
+    const request = {
       eventType: "Ended",
       timestamp: new Date().toISOString(),
+      triggerReason,
       seqNo: this._transactionSeqNo++,
       transactionInfo: {
-        stoppedReason,
         transactionId: this._transactionId,
         chargingState: "Idle",
+        stoppedReason,
       },
       idToken: this._idToken,
       evse: {
         id: this._id,
-        connectorId: connector.id,
+        connectorId: this.occupiedConnector.id,
       },
-      // meterValue: [
+    };
+    if (measurands) {
+      // request.meterValue = [
       //   {
       //     timestamp: new Date().toISOString(),
       //     sampledValue: measurands.map((measurand) => ({
@@ -222,8 +240,9 @@ class EVSE {
       //       value: this.#simulateMeterValue(),
       //     })),
       //   }
-      // ],
-    };
+      // ];
+    }
+    return request;
   }
 
   /**
@@ -251,8 +270,7 @@ class EVSE {
    */
   transactionStopped() {
     clearTimeout(this._transactionUpdateTimeoutId);
-    this._isAuthorized = false;
-    this._idToken = null;
+    this.deauthorized()
     this._transactionId = "";
     this._isTransactionStarted = false;
     this._transactionSeqNo = 0;

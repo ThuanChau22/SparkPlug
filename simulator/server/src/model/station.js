@@ -38,7 +38,7 @@ class Station {
     localPreAuthorize: false,
   };
   _txCtrlr = {
-    evConnectionTimeOut: 0,
+    evConnectionTimeOut: 60,
     stopTxOnEVSideDisconnect: true,
     txStartPoint: ["PowerPathClosed"],
     txStopPoint: ["PowerPathClosed"],
@@ -56,7 +56,8 @@ class Station {
   _heartbeatTimeoutId;
   _idTokenToEVSE;
   _transactionIdToEVSE;
-  _evseIdToRemoteId;
+  _evseIdToRemoteInfo;
+  _evseIdToConnectionTimeOutId;
   _eventEmitter;
   _rpcClient;
 
@@ -87,7 +88,8 @@ class Station {
     this._heartbeatTimeoutId = 0;
     this._idTokenToEVSE = new Map();
     this._transactionIdToEVSE = new Map();
-    this._evseIdToRemoteId = new Map();
+    this._evseIdToRemoteInfo = new Map();
+    this._evseIdToConnectionTimeOutId = new Map();
     this._eventEmitter = new EventEmitter();
     this._rpcClient = new RPCClient({
       identity: this._securityCtrlr.identity,
@@ -109,10 +111,11 @@ class Station {
         if (evse.isAuthorized || evse.isTransactionStarted) {
           return { status: "Rejected" };
         }
-        this._evseIdToRemoteId.set(evseId, {
-          startId: remoteStartId,
+        this._evseIdToRemoteInfo.set(evseId, {
+          remoteStartId,
           isStopped: false,
         });
+        this.#setConnectionTimeOut(evse);
         this._eventEmitter.emit("RequestStartTransaction", this, { evseId, idToken });
         return { status: "Accepted" };
       } catch (error) {
@@ -249,6 +252,7 @@ class Station {
       if (status !== "Accepted") {
         throw new Error("Identifier is not accepted");
       }
+      this.#setConnectionTimeOut(evse);
     }
     if (isUpdateAuth) {
       authEvse.deauthorized();
@@ -258,15 +262,16 @@ class Station {
       evse.authorized(idToken);
       await this.#startTransaction(evse, { triggerReason: "Authorized" });
     }
-    if (isDeleteAuth && evse.isTransactionStarted) {
-      await this.#stopTransaction(evse, {
-        triggerReason: "StopAuthorized",
-        stoppedReason: "Local",
-      });
-    }
     if (isDeleteAuth) {
-      this._idTokenToEVSE.delete(hashedIdToken);
-      evse.deauthorized();
+      if (evse.isTransactionStarted) {
+        await this.#stopTransaction(evse, {
+          triggerReason: "StopAuthorized",
+          stoppedReason: "Local",
+        });
+      } else {
+        this._idTokenToEVSE.delete(hashedIdToken);
+        evse.deauthorized();
+      }
     }
   }
 
@@ -351,10 +356,10 @@ class Station {
       throw new Error("Station is not connected");
     }
     this.#validateEVSEId(evseId);
-    const remoteId = this._evseIdToRemoteId.get(evseId);
-    if (remoteId) {
-      this._evseIdToRemoteId.set(evseId, {
-        ...remoteId,
+    const remoteInfo = this._evseIdToRemoteInfo.get(evseId);
+    if (remoteInfo) {
+      this._evseIdToRemoteInfo.set(evseId, {
+        ...remoteInfo,
         isStopped: true,
       });
     }
@@ -407,18 +412,29 @@ class Station {
     }, ms(`${this._ocppCommCtrlr.heartbeatInterval}s`));
   };
 
+  #setConnectionTimeOut(evse) {
+    clearTimeout(this._evseIdToConnectionTimeOutId.get(evse.id) || 0);
+    this._evseIdToConnectionTimeOutId.set(evse.id, setTimeout(() => {
+      evse.deauthorized();
+    }, ms(`${this._txCtrlr.evConnectionTimeOut}s`)));
+  }
+
   async #startTransaction(evse, { triggerReason = "ChargingStateChanged" } = {}) {
     if (
       this._txCtrlr.txStartPoint.includes("PowerPathClosed")
       && (!this._authCtrlr.enabled || evse.isAuthorized)
       && evse.availabilityState === "Occupied"
     ) {
+      clearTimeout(this._evseIdToConnectionTimeOutId.get(evse.id) || 0);
       const { txStartedMeasurands } = this._sampledDataCtrlr;
-      const { startId } = this._evseIdToRemoteId.get(evse.id) || {};
-      triggerReason = startId ? "RemoteStart" : triggerReason;
+      const { remoteStartId } = this._evseIdToRemoteInfo.get(evse.id) || {};
+      if (!remoteStartId) {
+        this._evseIdToRemoteInfo.set(evse.id, { isStopped: false });
+      }
+      triggerReason = remoteStartId ? "RemoteStart" : triggerReason;
       const request = evse.startTransactionRequest({
         triggerReason,
-        remoteStartId: startId,
+        remoteStartId,
         measurands: txStartedMeasurands,
       });
       const response = await this.#rpcClientCall("TransactionEvent", request);
@@ -441,7 +457,7 @@ class Station {
     return setTimeout(async () => {
       try {
         if (this.isConnected) {
-          const { isStopped } = this._evseIdToRemoteId.get(evse.id) || {};
+          const { isStopped } = this._evseIdToRemoteInfo.get(evse.id) || {};
           triggerReason = isStopped ? "RemoteStop" : triggerReason;
           const { txUpdatedMeasurands } = this._sampledDataCtrlr;
           const request = evse.updateTransactionRequest({
@@ -468,7 +484,7 @@ class Station {
       && evse.isTransactionStarted
       && (isDeauthorized || isUnplugged)
     ) {
-      const { isStopped } = this._evseIdToRemoteId.get(evse.id) || {};
+      const { isStopped } = this._evseIdToRemoteInfo.get(evse.id) || {};
       const { txEndedMeasurands } = this._sampledDataCtrlr;
       const request = evse.stopTransactionRequest({
         triggerReason: isStopped ? "RemoteStop" : triggerReason,
@@ -482,7 +498,7 @@ class Station {
       }
       this._idTokenToEVSE.delete(evse.hashedIdToken);
       this._transactionIdToEVSE.delete(evse.transactionId);
-      this._evseIdToRemoteId.delete(evse.id);
+      this._evseIdToRemoteInfo.delete(evse.id);
       evse.transactionStopped();
     }
   }

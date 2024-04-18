@@ -89,35 +89,41 @@ server.on("connection", async (ws, req) => {
           return new Connector({ id: index + 1, connectorType: type });
         });
         const newEVSE = new EVSE({ id: index + 1, power: evse.power, connectors });
+        newEVSE.onAuthorize((evse, { isAuthorized }) => {
+          const response = handler.authorize({ evseId: evse.id, isAuthorized });
+          stations.get(id)?.sockets.forEach((socket) => {
+            socket.sendJson({
+              action: Action.AUTHORIZE,
+              payload: response,
+            });
+          });
+        });
         newEVSE.onMeterValueReport((evse, { meterValue }) => {
           const response = handler.meterValueReport({ evseId: evse.id, meterValue });
-          const { sockets } = stations.get(id);
-          sockets.forEach((socket) => {
+          stations.get(id)?.sockets.forEach((socket) => {
             socket.sendJson({
               action: Action.METER_VALUE,
               payload: response,
             });
           });
-        })
+        });
         return newEVSE;
       });
       const newStation = new Station({ id, evses });
       newStation.onRequestStartTransaction(async (station, payload) => {
         const response = await handler.requestStartTransaction(station, payload);
-        const { sockets } = stations.get(id);
-        sockets.forEach((socket) => {
+        stations.get(id)?.sockets.forEach((socket) => {
           socket.sendJson({
-            action: Action.SCAN_RFID,
+            action: Action.REMOTE_START,
             payload: response,
           });
         });
       });
       newStation.onRequestStopTransaction(async (station, { evseId }) => {
         const response = await handler.requestStopTransaction(station, { evseId });
-        const { sockets } = stations.get(id);
-        sockets.forEach((socket) => {
+        stations.get(id)?.sockets.forEach((socket) => {
           socket.sendJson({
-            action: Action.SCAN_RFID,
+            action: Action.REMOTE_STOP,
             payload: response,
           });
         });
