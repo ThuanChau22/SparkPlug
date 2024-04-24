@@ -1,6 +1,6 @@
 import express from "express";
 
-import { Monitoring } from "../repository/monitoring.js";
+import Monitoring from "../repository/monitoring.js";
 import {
   authenticate,
   authorizeRole,

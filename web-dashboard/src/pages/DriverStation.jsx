@@ -210,7 +210,7 @@ const DriverStation = () => {
                           ? "text-success"
                           : status === "Occupied"
                             ? "text-warning"
-                            : status === "Offline"
+                            : status === "Unavailable"
                               ? "text-secondary"
                               : "text-danger"
                       }>

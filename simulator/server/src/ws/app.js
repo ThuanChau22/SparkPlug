@@ -1,5 +1,4 @@
-import monitoringServer from "./monitoring/server.js";
-import ocppServer from "./ocpp/server.js";
+import simulatorServer from "./simulator/server.js";
 
 const webSocketApp = () => {
   const paramRegExp = /^:[\w\d]+$/;
@@ -43,7 +42,6 @@ const webSocketApp = () => {
 };
 
 const app = webSocketApp();
-app.use("/ws/monitoring", monitoringServer);
-app.use("/ws/ocpp/:id", ocppServer);
+app.use("/ws/simulator/:id", simulatorServer);
 
 export default app;
