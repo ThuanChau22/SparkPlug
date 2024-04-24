@@ -56,8 +56,11 @@ const App = () => {
   const WebSocketAction = useMemo(() => ({
     METER_VALUE: "MeterValue",
     SCAN_RFID: "ScanRFID",
+    AUTHORIZE: "Authorize",
     PLUGIN_CABLE: "PluginCable",
     UNPLUG_CABLE: "UnplugCable",
+    REMOTE_START: "RemoteStart",
+    REMOTE_STOP: "RemoteStop",
     CONNECT_CSMS: "ConnectCSMS",
     DISCONNECT_CSMS: "DisconnectCSMS",
   }), []);
@@ -94,7 +97,8 @@ const App = () => {
   useEffect(() => {
     const { action, payload } = lastJsonMessage || {};
     if (action === WebSocketAction.METER_VALUE) {
-      setMeterValue(payload.value);
+      const { meterValue: [{ sampledValue: [{ value }] }] } = payload;
+      setMeterValue(value);
       clearTimeout(meterTimeoutRef.current);
       meterTimeoutRef.current = setTimeout(() => {
         setMeterValue(0);
@@ -102,10 +106,6 @@ const App = () => {
     }
     if (action === WebSocketAction.SCAN_RFID) {
       if (payload.status === "Accepted") {
-        setIsRFIDScanned(true);
-        setRFID("");
-      } else if (payload.status === "Ended") {
-        setIsRFIDScanned(false);
         setRFID("");
       } else {
         setAlertMessage({
@@ -114,11 +114,22 @@ const App = () => {
         });
       }
     }
+    if (action === WebSocketAction.AUTHORIZE) {
+      if (payload.status === "Accepted") {
+        setIsRFIDScanned(payload.isAuthorized);
+      }
+    }
     if (action === WebSocketAction.PLUGIN_CABLE) {
       setIsCablePluggedIn(true);
     }
     if (action === WebSocketAction.UNPLUG_CABLE) {
       setIsCablePluggedIn(false);
+    }
+    if (action === WebSocketAction.REMOTE_START) {
+      console.log(action, payload);
+    }
+    if (action === WebSocketAction.REMOTE_STOP) {
+      console.log(action, payload);
     }
     if (action === WebSocketAction.CONNECT_CSMS) {
       setIsCSMSConnected(true);
@@ -133,7 +144,10 @@ const App = () => {
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: WebSocketAction.SCAN_RFID,
-        payload: { id: rfid },
+        payload: {
+          evseId: 1,
+          idToken: rfid,
+        },
       });
     }
   };
@@ -142,7 +156,10 @@ const App = () => {
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: WebSocketAction.PLUGIN_CABLE,
-        payload: {},
+        payload: {
+          evseId: 1,
+          connectorId: 1,
+        },
       });
     }
   };
@@ -151,7 +168,10 @@ const App = () => {
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: WebSocketAction.UNPLUG_CABLE,
-        payload: {},
+        payload: {
+          evseId: 1,
+          connectorId: 1,
+        },
       });
     }
   };
