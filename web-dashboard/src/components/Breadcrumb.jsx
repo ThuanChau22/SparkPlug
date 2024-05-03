@@ -7,24 +7,12 @@ const Breadcrumb = () => {
   const location = useLocation();
 
   const routeList = [];
-  for (const { name, path, Components } of Object.values(routes.Resources)) {
+  for (const { name, path, Components } of Object.values(routes)) {
     routeList.push({ name, path });
-    for (const { name, path } of Object.values(Components)) {
+    for (const { name, path } of Object.values(Components || {})) {
       routeList.push({ name, path });
     }
   }
-  routeList.push({
-    name: routes.Profile.name,
-    path: routes.Profile.path,
-  });
-  routeList.push({
-    name: routes.Settings.name,
-    path: routes.Settings.path,
-  });
-  routeList.push({
-    name: routes.Drivers.name,
-    path: routes.Drivers.path,
-  });
 
   const getRouteName = (pathname, routes) => {
     const currentRoute = routes.find((route) => route.path === pathname)
@@ -36,12 +24,11 @@ const Breadcrumb = () => {
     path.split("/").reduce((prev, curr, index, array) => {
       const currentPathname = `${prev}/${curr}`;
       const routeName = getRouteName(currentPathname, routeList);
-      routeName &&
-        breadcrumbs.push({
-          pathname: currentPathname,
-          name: routeName,
-          active: index + 1 === array.length ? true : false,
-        })
+      routeName && breadcrumbs.push({
+        pathname: currentPathname,
+        name: routeName,
+        active: index + 1 === array.length ? true : false,
+      })
       return currentPathname;
     })
     return breadcrumbs;

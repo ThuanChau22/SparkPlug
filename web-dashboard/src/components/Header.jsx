@@ -31,7 +31,7 @@ import HeaderDropdown from "components/HeaderDropdown";
 import {
   headerSetActive,
   headerSetHeight,
-} from "./headerSlice";
+} from "redux/header/headerSlice";
 import {
   selectSidebarShow,
   sidebarSetShow,
@@ -60,16 +60,17 @@ const Header = () => {
   }, [handleResize]);
 
   useEffect(() => {
+    setComponents([]);
     const paths = location.pathname.split("/");
     if (paths.length >= 3) {
       const [, resource, component] = paths;
-      for (const { path, Components } of Object.values(routes.Resources)) {
-        if (path === `/${resource}`) {
+      for (const { path, Components } of Object.values(routes)) {
+        if (path === `/${resource}` && Components) {
           setComponents(Object.values(Components));
-        }
-        for (const { name, path } of Object.values(Components)) {
-          if (path === `/${resource}/${component}`) {
-            dispatch(headerSetActive(name));
+          for (const { name, path } of Object.values(Components)) {
+            if (path === `/${resource}/${component}`) {
+              dispatch(headerSetActive(name));
+            }
           }
         }
       }

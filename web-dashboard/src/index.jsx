@@ -36,65 +36,49 @@ const router = createBrowserRouter([
         children:
           [
             {
-              path: routes.Resources.Sites.path,
+              path: routes.Dashboard.path,
+              element: routes.Dashboard.element,
+            },
+            {
+              path: routes.Stations.path,
               element: <Outlet />,
               children: [
                 {
-                  path: routes.Resources.Sites.Components.Management.path,
-                  element: routes.Resources.Sites.Components.Management.element,
+                  path: routes.Stations.Components.Management.path,
+                  element: routes.Stations.Components.Management.element,
                 },
-                // {
-                //   path: routes.Resources.Sites.Components.Monitor.path,
-                //   element: routes.Resources.Sites.Components.Monitor.element,
-                // },
                 {
-                  path: routes.Resources.Sites.Components.Analytics.path,
-                  element: routes.Resources.Sites.Components.Analytics.element,
+                  path: routes.Stations.Components.Monitor.path,
+                  element: routes.Stations.Components.Monitor.element,
+                },
+                {
+                  path: routes.Stations.Components.Analytics.path,
+                  element: routes.Stations.Components.Analytics.element,
                 },
               ]
             },
             {
-              path: routes.Resources.Stations.path,
-              element: <Outlet />,
-              children: [
-                {
-                  path: routes.Resources.Stations.Components.Management.path,
-                  element: routes.Resources.Stations.Components.Management.element,
-                },
-                {
-                  path: routes.Resources.Stations.Components.Monitor.path,
-                  element: routes.Resources.Stations.Components.Monitor.element,
-                },
-                {
-                  path: routes.Resources.Stations.Components.Analytics.path,
-                  element: routes.Resources.Stations.Components.Analytics.element,
-                },
-              ]
+              path: routes.Sites.path,
+              element: routes.Sites.element,
             },
             {
-              path: routes.Resources.Users.path,
+              path: routes.Users.path,
+              element: routes.Users.element,
+            },
+            {
+              path: routes.Driver.path,
               element: <Outlet />,
               children: [
                 {
-                  path: routes.Resources.Users.Components.Management.path,
-                  element: routes.Resources.Users.Components.Management.element,
+                  path: routes.Driver.Components.Dashboard.path,
+                  element: routes.Driver.Components.Dashboard.element,
                 },
-                // {
-                //   path: routes.Resources.Users.Components.Analytics.path,
-                //   element: routes.Resources.Users.Components.Analytics.element,
-                // },
+                {
+                  path: routes.Driver.Components.Stations.path,
+                  element: routes.Driver.Components.Stations.element,
+                },
               ]
             },
-            // {
-            //   path: routes.Resources.Transactions.path,
-            //   element: <Outlet />,
-            //   children: [
-            //     {
-            //       path: routes.Resources.Transactions.Components.Analytics.path,
-            //       element: routes.Resources.Transactions.Components.Analytics.element,
-            //     },
-            //   ],
-            // },
             {
               path: routes.Profile.path,
               element: routes.Profile.element,
@@ -102,10 +86,6 @@ const router = createBrowserRouter([
             {
               path: routes.Settings.path,
               element: routes.Settings.element,
-            },
-            {
-              path: routes.Drivers.path,
-              element: routes.Drivers.element,
             },
           ],
       },
