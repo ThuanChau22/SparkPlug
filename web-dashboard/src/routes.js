@@ -3,36 +3,16 @@ import AccountProfile from "pages/AccountProfile";
 import AccountSettings from "pages/AccountSetting";
 import Login from "pages/Login";
 import Register from "pages/Register";
+import Dashboard from "pages/Dashboard";
 import SiteManagement from "pages/SiteManagement";
-// import SiteMonitor from "pages/SiteMonitor";
-import SiteAnalytics from "pages/SiteAnalytics";
 import StationManagement from "pages/StationManagement";
 import StationMonitor from "pages/StationMonitor";
 import StationAnalytics from "pages/StationAnalytics";
 import UserManagement from "pages/UserManagement";
-// import UserAnalytics from "pages/UserAnalytics";
-// import TransactionAnalytics from "pages/Transactions";
+import DriverDashboard from "pages/DriverDashboard";
 import DriverStations from "pages/DriverStation";
 import Unauthorized from "pages/Unauthorized";
 import NotFound from "pages/NotFound";
-
-const Sites = {
-  Management: {
-    name: "Management",
-    path: "/sites/management",
-    element: <SiteManagement />,
-  },
-  // Monitor: {
-  //   name: "Monitor",
-  //   path: "/sites/monitor",
-  //   element: <SiteMonitor />,
-  // },
-  Analytics: {
-    name: "Analytics",
-    path: "/sites/analytics",
-    element: <SiteAnalytics />,
-  },
-};
 
 const Stations = {
   Management: {
@@ -52,59 +32,51 @@ const Stations = {
   },
 };
 
-const Users = {
-  Management: {
-    name: "Management",
-    path: "/users/management",
-    element: <UserManagement />,
+const Driver = {
+  Dashboard: {
+    name: "Dashboard",
+    path: "/driver/dashboard",
+    element: <DriverDashboard />
   },
-  // Analytics: {
-  //   name: "Analytics",
-  //   path: "/users/analytics",
-  //   element: <UserAnalytics />,
-  // },
+  Stations: {
+    name: "Stations",
+    path: "/driver/stations",
+    element: <DriverStations />
+  },
 };
-
-// const Transactions = {
-//   Analytics: {
-//     name: "Analytics",
-//     path: "/transactions/analytics",
-//     element: <TransactionAnalytics />,
-//   }
-// };
 
 const routes = {
   Root: {
     Name: "Home",
     path: "/",
     element: <App />,
-    defaultPath: Sites.Management.path,
   },
-  Resources: {
-    Sites: {
-      name: "Sites",
-      path: "/sites",
-      defaultPath: Sites.Management.path,
-      Components: Sites,
-    },
-    Stations: {
-      name: "Stations",
-      path: "/stations",
-      defaultPath: Stations.Management.path,
-      Components: Stations,
-    },
-    Users: {
-      name: "Users",
-      path: "/users",
-      defaultPath: Users.Management.path,
-      Components: Users,
-    },
-    // Transactions: {
-    //   name: "Transactions",
-    //   path: "/transactions",
-    //   defaultPath: Transactions.Analytics.path,
-    //   Components: Transactions,
-    // },
+  Dashboard: {
+    name: "Dashboard",
+    path: "/dashboard",
+    element: <Dashboard />,
+  },
+  Stations: {
+    name: "Stations",
+    path: "/stations",
+    defaultPath: Stations.Management.path,
+    Components: Stations,
+  },
+  Sites: {
+    name: "Sites",
+    path: "/sites",
+    element: <SiteManagement />,
+  },
+  Users: {
+    name: "Users",
+    path: "/users",
+    element: <UserManagement />,
+  },
+  Driver: {
+    name: "Driver",
+    path: "/driver",
+    defaultPath: Driver.Dashboard.path,
+    Components: Driver,
   },
   Login: {
     name: "Login",
@@ -125,11 +97,6 @@ const routes = {
     name: "Settings",
     path: "/settings",
     element: <AccountSettings />,
-  },
-  Drivers: {
-    name: "Stations",
-    path:"/maps",
-    element: <DriverStations />
   },
   Unauthorized: {
     name: "Unauthorized",

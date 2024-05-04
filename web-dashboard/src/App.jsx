@@ -10,9 +10,9 @@ import {
   CContainer,
 } from "@coreui/react";
 
+import Header from "components/Header";
+import Sidebar from "components/Sidebar";
 import Footer from "components/Footer";
-import Header from "redux/header/Header";
-import Sidebar from "redux/sidebar/Sidebar";
 import {
   authStateSet,
   authStateClear,
@@ -59,17 +59,17 @@ const App = () => {
       const [, resource, component] = path;
       if (!resource) {
         if (authIsAdmin || authIsOwner) {
-          navigate(routes.Root.defaultPath, options);
+          navigate(routes.Dashboard.path, options);
           return;
         }
         if (authIsDriver) {
-          navigate(routes.Drivers.path, options);
+          navigate(routes.Driver.defaultPath, options);
           return;
         }
       }
       if (!component) {
-        for (const { path, defaultPath } of Object.values(routes.Resources)) {
-          if (path === `/${resource}`) {
+        for (const { path, defaultPath } of Object.values(routes)) {
+          if (path === `/${resource}` && defaultPath) {
             navigate(defaultPath, options);
             return;
           }
@@ -80,20 +80,20 @@ const App = () => {
 
   useEffect(() => {
     const restricted = new Set();
-    if (authIsOwner) {
-      restricted.add(routes.Resources.Users.Components.Management.path);
-      // restricted.add(routes.Resources.Users.Components.Analytics.path);
+    if (authIsAdmin || authIsOwner) {
+      restricted.add(routes.Driver.Components.Dashboard.path);
+      restricted.add(routes.Driver.Components.Stations.path);
+      if (authIsOwner) {
+        restricted.add(routes.Users.path);
+      }
     }
     if (authIsDriver) {
-      restricted.add(routes.Resources.Sites.Components.Management.path);
-      // restricted.add(routes.Resources.Sites.Components.Monitor.path);
-      restricted.add(routes.Resources.Sites.Components.Analytics.path);
-      restricted.add(routes.Resources.Stations.Components.Management.path);
-      restricted.add(routes.Resources.Stations.Components.Monitor.path);
-      restricted.add(routes.Resources.Stations.Components.Analytics.path);
-      restricted.add(routes.Resources.Users.Components.Management.path);
-      // restricted.add(routes.Resources.Users.Components.Analytics.path);
-      // restricted.add(routes.Resources.Transactions.path);
+      restricted.add(routes.Dashboard.path);
+      restricted.add(routes.Stations.Components.Management.path);
+      restricted.add(routes.Stations.Components.Monitor.path);
+      restricted.add(routes.Stations.Components.Analytics.path);
+      restricted.add(routes.Sites.path);
+      restricted.add(routes.Users.path);
     }
     let path = location.pathname;
     if (path.charAt(path.length - 1) === "/") {
@@ -103,7 +103,7 @@ const App = () => {
       navigate(routes.Unauthorized.path, { replace: true });
       return;
     }
-  }, [authIsOwner, authIsDriver, location, navigate]);
+  }, [authIsAdmin, authIsOwner, authIsDriver, location, navigate]);
 
   return (authenticated
     ? (

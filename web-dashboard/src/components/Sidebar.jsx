@@ -1,4 +1,8 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import {
   useSelector,
   useDispatch,
@@ -9,7 +13,6 @@ import {
 } from "react-router-dom";
 import {
   CNavItem,
-  CNavTitle,
   CNavGroup,
   CSidebar,
   CSidebarBrand,
@@ -19,9 +22,9 @@ import {
 import CIcon from "@coreui/icons-react";
 import {
   AccountTreeOutlined,
+  BarChartOutlined,
   EvStationOutlined,
-  GroupsOutlined,
-  // ReceiptLongOutlined,
+  PeopleOutlined,
 } from '@mui/icons-material';
 
 import logo from "assets/logo";
@@ -40,6 +43,7 @@ import {
   selectSidebarFold,
   sidebarSetShow,
   sidebarSetFold,
+  sidebarSetMobile,
 } from "redux/sidebar/sidebarSlice";
 
 const Sidebar = () => {
@@ -47,22 +51,22 @@ const Sidebar = () => {
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
   const authIsDriver = useSelector(selectAuthRoleIsDriver);
   const headerActive = useSelector(selectHeaderActive);
-  const unfoldable = useSelector(selectSidebarFold);
+  const sidebarFold = useSelector(selectSidebarFold);
   const sidebarShow = useSelector(selectSidebarShow);
   const [navigation, setNavigation] = useState([]);
-  const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
   const dispatch = useDispatch();
 
+  const handleResize = useCallback(() => {
+    const medium = "only screen and (min-width: 768px)";
+    dispatch(sidebarSetMobile(!window.matchMedia(medium).matches));
+    const extraLarge = "only screen and (min-width: 1200px)";
+    if (!window.matchMedia(extraLarge).matches) {
+      dispatch(sidebarSetFold(true));
+    }
+  }, [dispatch]);
+
   useEffect(() => {
-    const handleResize = () => {
-      const medium = "only screen and (min-width: 768px)";
-      setIsMobile(!window.matchMedia(medium).matches);
-      const extraLarge = "only screen and (min-width: 1200px)";
-      if (!window.matchMedia(extraLarge).matches) {
-        dispatch(sidebarSetFold(true));
-      }
-    };
     handleResize();
     window.addEventListener("load", handleResize);
     window.addEventListener("resize", handleResize);
@@ -70,105 +74,71 @@ const Sidebar = () => {
       window.removeEventListener("load", handleResize);
       window.removeEventListener("resize", handleResize);
     };
-  }, [dispatch]);
+  }, [handleResize]);
 
   useEffect(() => {
-    const newNavigation = [
-      {
-        component: CNavTitle,
-        name: "Resources",
-      },
-    ];
-    const {
-      Sites,
-      Stations,
-      Users,
-      // Transactions,
-    } = routes.Resources;
+    const newNavigation = [];
     if (authIsAdmin || authIsOwner) {
       newNavigation.push({
-        component: isMobile ? CNavGroup : CNavItem,
-        name: Sites.name,
-        to: Sites.Components[headerActive]?.path || Sites.defaultPath,
-        icon: <AccountTreeOutlined className="nav-icon" />,
-        items: !isMobile ? undefined : [
+        component: CNavItem,
+        name: routes.Dashboard.name,
+        to: routes.Dashboard.path,
+        icon: <BarChartOutlined className="nav-icon" />,
+      });
+      newNavigation.push({
+        component: CNavGroup,
+        name: routes.Stations.name,
+        to: routes.Stations.Components[headerActive]?.path || routes.Stations.defaultPath,
+        icon: <EvStationOutlined className="nav-icon" />,
+        items: [
           {
             component: CNavItem,
-            name: Sites.Components.Management.name,
-            to: Sites.Components.Management.path,
+            name: routes.Stations.Components.Management.name,
+            to: routes.Stations.Components.Management.path,
           },
-          // {
-          //   component: CNavItem,
-          //   name: Sites.Components.Monitor.name,
-          //   to: Sites.Components.Monitor.path,
-          // },
           {
             component: CNavItem,
-            name: Sites.Components.Analytics.name,
-            to: Sites.Components.Analytics.path,
+            name: routes.Stations.Components.Monitor.name,
+            to: routes.Stations.Components.Monitor.path,
+          },
+          {
+            component: CNavItem,
+            name: routes.Stations.Components.Analytics.name,
+            to: routes.Stations.Components.Analytics.path,
           },
         ],
       });
       newNavigation.push({
-        component: isMobile ? CNavGroup : CNavItem,
-        name: Stations.name,
-        to: Stations.Components[headerActive]?.path || Stations.defaultPath,
-        icon: <EvStationOutlined className="nav-icon" />,
-        items: !isMobile ? undefined : [
-          {
-            component: CNavItem,
-            name: Stations.Components.Management.name,
-            to: Stations.Components.Management.path,
-          },
-          {
-            component: CNavItem,
-            name: Stations.Components.Monitor.name,
-            to: Stations.Components.Monitor.path,
-          },
-          {
-            component: CNavItem,
-            name: Stations.Components.Analytics.name,
-            to: Stations.Components.Analytics.path,
-          },
-        ],
+        component: CNavItem,
+        name: routes.Sites.name,
+        to: routes.Sites.path,
+        icon: <AccountTreeOutlined className="nav-icon" />,
       });
       if (authIsAdmin) {
         newNavigation.push({
-          component: isMobile ? CNavGroup : CNavItem,
-          name: Users.name,
-          to: Users.Components[headerActive]?.path || Users.defaultPath,
-          icon: <GroupsOutlined className="nav-icon" />,
-          items: !isMobile ? undefined : [
-            {
-              component: CNavItem,
-              name: Users.Components.Management.name,
-              to: Users.Components.Management.path,
-            },
-            // {
-            //   component: CNavItem,
-            //   name: Users.Components.Analytics.name,
-            //   to: Users.Components.Analytics.path,
-            // },
-          ],
+          component: CNavItem,
+          name: routes.Users.name,
+          to: routes.Users.path,
+          icon: <PeopleOutlined className="nav-icon" />,
         });
       }
     }
     if (authIsDriver) {
       newNavigation.push({
         component: CNavItem,
-        name: routes.Drivers.name,
-        to: routes.Drivers.path,
+        name: routes.Driver.Components.Dashboard.name,
+        to: routes.Driver.Components.Dashboard.path,
+        icon: <BarChartOutlined className="nav-icon" />,
+      });
+      newNavigation.push({
+        component: CNavItem,
+        name: routes.Driver.Components.Stations.name,
+        to: routes.Driver.Components.Stations.path,
         icon: <EvStationOutlined className="nav-icon" />,
       });
     }
-    // newNavigation.push({
-    //   component: CNavItem,
-    //   name: Transactions.name,
-    //   to: Transactions.Components[headerActive]?.path || Transactions.defaultPath,
-    //   icon: <ReceiptLongOutlined className="nav-icon" />,
-    // });
     setNavigation(newNavigation);
-  }, [authIsAdmin, authIsOwner, authIsDriver, headerActive, isMobile]);
+  }, [authIsAdmin, authIsOwner, authIsDriver, headerActive]);
 
   const SidebarNav = ({ items }) => {
     const NavGroup = ({ component: Component, name, icon, to, items, ...rest }, index) => (
@@ -212,7 +182,7 @@ const Sidebar = () => {
   return (
     <CSidebar
       position="fixed"
-      unfoldable={unfoldable}
+      unfoldable={sidebarFold}
       visible={sidebarShow}
       onVisibleChange={(visible) => {
         dispatch(sidebarSetShow(visible))
@@ -227,7 +197,7 @@ const Sidebar = () => {
       </CSidebarNav>
       <CSidebarToggler
         className="d-none d-xl-flex"
-        onClick={() => dispatch(sidebarSetFold(!unfoldable))}
+        onClick={() => dispatch(sidebarSetFold(!sidebarFold))}
       />
     </CSidebar>
   )

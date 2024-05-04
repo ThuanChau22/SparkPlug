@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   show: true,
   fold: false,
+  mobile: false,
 };
 
 export const sidebarSlice = createSlice({
@@ -15,6 +16,9 @@ export const sidebarSlice = createSlice({
     sidebarSetFold(state, { payload }) {
       state.fold = payload;
     },
+    sidebarSetMobile(state, { payload }) {
+      state.mobile = payload;
+    },
     sidebarClear() {
       return initialState;
     },
@@ -24,6 +28,7 @@ export const sidebarSlice = createSlice({
 export const {
   sidebarSetShow,
   sidebarSetFold,
+  sidebarSetMobile,
   sidebarClear,
 } = sidebarSlice.actions;
 
@@ -32,5 +37,7 @@ export const selectSidebar = (state) => state[sidebarSlice.name];
 export const selectSidebarShow = (state) => selectSidebar(state).show;
 
 export const selectSidebarFold = (state) => selectSidebar(state).fold;
+
+export const selectSidebarMobile = (state) => selectSidebar(state).mobile;
 
 export default sidebarSlice.reducer;
