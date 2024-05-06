@@ -3,13 +3,22 @@ left to right direction
 skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
 
+
+'package "Frontend" {
+'    class Dashboard {
+'        +run()
+'    }
+'}
+
 package "Services" {
     package "Analytics Service" {
         class AnalyticsServiceApp {
+            -AnalyticsEngine
             +run()
         }
 
         class AnalyticsEngine {
+            -User
             +processRevenue()
             +processEnergyCost()
             +processEnergyConsumption()
@@ -24,25 +33,9 @@ package "Services" {
 
     package "Management Service" {
         class ManagementServiceApp {
+            -User
+            -instantiateUser()
             +run()
-        }
-        
-        class StationManager {
-            +addStation()
-            +deleteStation()
-            +modifyStation()
-        }
-        
-        class SiteManager {
-            +addSite()
-            +deleteSite()
-            +modifySite()
-        }
-
-        class EVSEManager {
-            +addEVSE()
-            +deleteEVSE()
-            +modifyEVSE()
         }
     }
 
@@ -65,36 +58,43 @@ package "Services" {
     }
 }
 
-package "Data Access Layer" {
+package "User Models" {
     class User {
+        -CRUDTools
+        -AnalyticsTools
     }   
 
-    class CRUD {
-        +createSite()
-        +readSite()
-        +updateSite()
-        +deleteSite()
-        +createStation()
-        +readStation()
-        +updateStation()
-        +deleteStation()
-        +createEVSE()
-        +readEVSE()
-        +updateEVSE()
-        +deleteEVSE()
-    }   
-    
-    class Analytics {
-        +getTransactions()
+    class Manager extends User {
     }
 
-    class Staff extends User {
+    class Admin extends Manager {
     }
     
-    class Owner extends User {
+    class Owner extends Manager {
     }
     
     class Driver extends User {
+    }
+
+    package "Data Access Layer"{  
+        class CRUDTools {
+            +createSite()
+            +readSite()
+            +updateSite()
+            +deleteSite()
+            +createStation()
+            +readStation()
+            +updateStation()
+            +deleteStation()
+            +createEVSE()
+            +readEVSE()
+            +updateEVSE()
+            +deleteEVSE()
+        }
+        
+        class AnalyticsTools {
+            +getTransactions()
+        }
     }
 }
 
@@ -109,7 +109,10 @@ package "Database Managers" {
 }
 
 ' Hidden connection to enforce layout preference
-EnergyConsumptionForecaster -[hidden]- AnalyticsServiceApp
+' EnergyConsumptionForecaster -[hidden]- AnalyticsServiceApp
+
+'Dashboard ..> AnalyticsServiceApp : REST API
+'Dashboard ..> ManagementServiceApp : REST API
 
 AIServiceApp ..> ChargerAvailabilityPredictor : uses
 AIServiceApp ..> EnergyConsumptionForecaster : uses
@@ -121,25 +124,21 @@ AnalyticsEngine ..> User : uses
 AnalyticsEngine ..> AIServiceApp : REST API
 AnalyticsEngine ..> ManagementServiceApp : REST API
 
-ManagementServiceApp ..> StationManager : uses
-ManagementServiceApp ..> SiteManager : uses
-ManagementServiceApp ..> EVSEManager : uses
+ManagementServiceApp ..> User : uses
 
-StationManager ..> User : uses
-SiteManager ..> User : uses
-EVSEManager ..> User : uses
+User +-- AnalyticsTools
+User +-- CRUDTools
 
-User +-- Analytics
-User +-- CRUD
+CRUDTools ..> MySQLManager : uses
+AnalyticsTools ..> MongoDBManager : uses
 
-CRUD ..> MySQLManager : uses
-Analytics ..> MongoDBManager : uses
+Admin ..> CRUDTools : <<override>>
+Admin ..> AnalyticsTools : <<override>>
+Owner ..> CRUDTools : <<override>>
+Owner ..> AnalyticsTools : <<override>>
+Driver ..> CRUDTools : <<override>>
+Driver ..> AnalyticsTools : <<override>>
+Manager ..> CRUDTools : <<override>>
 
-Staff ..> CRUD : <<override>>
-Staff ..> Analytics : <<override>>
-Owner ..> CRUD : <<override>>
-Owner ..> Analytics : <<override>>
-Driver ..> CRUD : <<override>>
-Driver ..> Analytics : <<override>>
 
 @enduml
