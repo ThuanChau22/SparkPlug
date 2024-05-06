@@ -1,0 +1,111 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+'package "Services" {
+    package "Analytics Service" {
+        class AnalyticsServiceApp {
+            +run()
+        }
+
+        class AnalyticsEngine {
+            +processRevenue()
+            +processEnergyCost()
+            +processEnergyConsumption()
+            +processPeakTime()
+            +processSessionCounts()
+            +processUtilizationRate()
+            +processChargerCounts()
+            +processStatinoGrowth()
+            +processUserGrowth()
+        }
+    }
+/'
+    package "Management Service" {
+        class ManagementServiceApp {
+            +run()
+        }
+        
+        class StationManager {
+            +addStation()
+            +deleteStation()
+            +modifyStation()
+        }
+        
+        class SiteManager {
+            +addSite()
+            +deleteSite()
+            +modifySite()
+        }
+    }
+    '/
+'}
+
+package "AI Analytics Modules" {
+    class EnergyConsumptionForecaster {
+        +forecastConsumption()
+    }
+    class InfrastructureGrowthPredictor {
+        +predictGrowth()
+    }
+    class InfrastructureLocationRecommender {
+        +recommendLocations()
+    }
+}
+
+package "Data Access Layer" {
+    class CRUDRepository {
+        +createSite()
+        +readSite()
+        +updateSite()
+        +deleteSite()
+        +createStation()
+        +readStation()
+        +updateStation()
+        +deleteStation()
+        +createEVSE()
+        +readEVSE()
+        +updateEVSE()
+        +deleteEVSE()
+    }
+    
+    class AnalyticsRepository {
+        +getRevenue()
+        +getEnergyUsage()
+        +getSessionCount()
+        +getSessionTime()
+        -getTransactionsByStation()
+        -getStationsBySite()
+        -getSitesByOwner()
+    }
+}
+
+package "Database Managers" {
+    class MySQLManager {
+        +executeSQL()
+    }
+    
+    class MongoDBManager {
+        +executeMongoQuery()
+    }
+}
+
+AnalyticsServiceApp ..> AnalyticsEngine : uses
+AnalyticsEngine ..> AnalyticsRepository : uses
+AnalyticsEngine ..> EnergyConsumptionForecaster : uses
+AnalyticsEngine ..> InfrastructureGrowthPredictor : uses
+AnalyticsEngine ..> InfrastructureLocationRecommender : uses
+AnalyticsEngine ..> CRUDRepository : uses
+
+'ManagementServiceApp ..> StationManager : uses
+'ManagementServiceApp ..> SiteManager : uses
+
+'StationManager ..> CRUDRepository : uses
+'SiteManager ..> CRUDRepository : uses
+
+CRUDRepository ..> MySQLManager : uses
+AnalyticsRepository ..> MySQLManager : uses
+AnalyticsRepository ..> MongoDBManager : uses
+
+@enduml
