@@ -142,3 +142,89 @@ services:
           target: /app
         - action: rebuild
           path: ./simulator/server/package.json
+
+  sql-db-service:
+    extends:
+      file: compose.prod.yaml
+      service: sql-db-service
+    build:
+      target: development
+    environment:
+      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
+      AUTH_API_ENDPOINT: ${STATION_AUTH_API_ENDPOINT}
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASS: ${MYSQL_PASS}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    develop:
+      watch:
+        - action: sync
+          path: ./sql-db-service
+          target: /app
+        - action: rebuild
+          path: ./sql-db-service/package.json
+  
+  mongo-db-service:
+    extends:
+      file: compose.prod.yaml
+      service: mongo-db-service
+    build:
+      target: development
+    environment:
+      MONGODB_URL: ${MONGODB_URL}
+    develop:
+      watch:
+        - action: sync
+          path: ./mongo-db-service
+          target: /app
+        - action: rebuild
+          path: ./mongo-db-service/package.json
+
+  station-management-service:
+    extends:
+      file: compose.prod.yaml
+      service: station-management-service
+    build:
+      target: development
+    environment:
+      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
+      AUTH_API_ENDPOINT: ${STATION_AUTH_API_ENDPOINT}
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASS: ${MYSQL_PASS}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MONGODB_URL: ${MONGODB_URL}
+    depends_on:
+      - user-management
+      - site-station-analytics
+      - monitoring
+    develop:
+      watch:
+        - action: sync
+          path: ./station-management-service
+          target: /app
+        - action: rebuild
+          path: ./station-management-service/package.json 
+
+  station-analytics-service:
+    extends:
+      file: compose.prod.yaml
+      service: station-analytics-service
+    build:
+      target: development
+    environment:
+      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
+      AUTH_API_ENDPOINT: ${STATION_AUTH_API_ENDPOINT}
+    depends_on:
+      - user-management
+      - site-station-analytics
+      - monitoring
+    develop:
+      watch:
+        - action: sync
+          path: ./station-analytics-service
+          target: /app
+        - action: rebuild
+          path: ./station-analytics-service/package.json

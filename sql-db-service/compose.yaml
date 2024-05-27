@@ -1,0 +1,12 @@
+services:
+
+  sql-db-service:
+    image: sparkplug-sql-db-service
+    container_name: sparkplug-sql-db-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+    ports:
+      - ${PORT}:${PORT}

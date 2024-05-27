@@ -1992,15 +1992,28 @@ INSERT INTO Driver (id) VALUES
 (145753),
 (146059);
 
--- INSERT INTO Site (owner_id, name, street_address, zip_code, latitude, longitude, updated_at, created_at) VALUES
--- (9, 'PALO ALTO CA / BRYANT', 'Bryant St', 94301, 37.446373, -122.162331, '2011-10-13 12:49:00', '2011-10-14 12:49:00'),
--- (11, 'PALO ALTO CA / HAMILTON', '250 Hamilton Ave', 94301, 37.444572, -122.160309, '2012-03-27 14:40:00', '2012-03-28 14:40:00'),
--- (11, 'PALO ALTO CA / HIGH', '528 High St', 94301, 37.443676, -122.16288, '2011-09-02 20:42:00', '2011-09-03 20:42:00');
+INSERT INTO Site (owner_id, name, street_address, zip_code, latitude, longitude, updated_at, created_at, city, state, country) VALUES
+(9, 'PALO ALTO CA / BRYANT', 'Bryant St', 94301, 37.446373, -122.162331, '2011-10-13 12:49:00', '2011-10-14 12:49:00', 'Palo Alto', 'CA', 'USA'),
+(9, 'PALO ALTO CA / HAMILTON', 'Hamilton Ave', 94301, 37.444572, -122.160309, '2012-03-27 14:40:00', '2012-03-28 14:40:00', 'Palo Alto', 'CA', 'USA'),
+(9, 'PALO ALTO CA / HIGH', 'High St', 94301, 37.443676, -122.16288, '2011-09-02 20:42:00', '2011-09-03 20:42:00', 'Palo Alto', 'CA', 'USA');
+
+INSERT INTO Station (name, latitude, longitude, created_at, updated_at, site_id) VALUES
+('PALO ALTO CA / BRYANT #2', 37.44651, -122.16214, '2011-10-10 15:23:00', '2011-10-10 15:23:00', 1),
+('PALO ALTO CA / HAMILTON #2', 37.444607, -122.160263, '2011-08-02 12:26:00', '2011-08-02 12:26:00', 2),
+('PALO ALTO CA / HIGH #4', 37.443676, -122.16288, '2011-09-02 20:42:00', '2011-09-02 20:42:00', 3);
 
 -- INSERT INTO Station (name, charge_level, latitude, longitude, updated_at, created_at, connector_type, price, site_id) VALUES
 -- ('PALO ALTO CA / BRYANT #2', '1 2', 37.44651, -122.16214, '2011-10-10 15:23:00', '2011-10-10 15:23:00', 'J1772 NEMA520', 0, 691),
 -- ('PALO ALTO CA / HAMILTON #2', '1 2', 37.444607, -122.160263, '2011-08-02 12:26:00', '2011-08-02 12:26:00', 'J1772 NEMA520', 0, 692),
 -- ('PALO ALTO CA / HIGH #4', '1 2', 37.443676, -122.16288, '2011-09-02 20:42:00', '2011-09-02 20:42:00', 'J1772 NEMA520', 0, 693);
+
+INSERT INTO EVSE (station_id, evse_number, connector_type, charge_level, price) VALUES
+(1, 1, 'NEMA520', '1', 0),
+(2, 1, 'NEMA520', '1', 0),
+(3, 1, 'NEMA520', '1', 0),
+(1, 2, 'J1772', '2', 0),
+(2, 2, 'J1772', '2', 0),
+(3, 2, 'J1772', '2', 0);
 
 INSERT INTO RFID_map (driver_id, rfid) VALUES
 ( 107, 'ECAD1E990BFC4462' ),
