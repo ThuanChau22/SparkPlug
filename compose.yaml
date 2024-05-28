@@ -173,6 +173,8 @@ services:
       target: development
     environment:
       MONGODB_URL: ${MONGODB_URL}
+      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
+      AUTH_API_ENDPOINT: ${STATION_AUTH_API_ENDPOINT}
     develop:
       watch:
         - action: sync
@@ -198,8 +200,9 @@ services:
       MONGODB_URL: ${MONGODB_URL}
     depends_on:
       - user-management
-      - site-station-analytics
       - monitoring
+      - sql-db-service
+      - mongo-db-service
     develop:
       watch:
         - action: sync
@@ -219,8 +222,9 @@ services:
       AUTH_API_ENDPOINT: ${STATION_AUTH_API_ENDPOINT}
     depends_on:
       - user-management
-      - site-station-analytics
       - monitoring
+      - sql-db-service
+      - mongo-db-service
     develop:
       watch:
         - action: sync

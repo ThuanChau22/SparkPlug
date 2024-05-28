@@ -87,9 +87,9 @@ services:
     build:
       context: ./station-management-service
     ports:
-      - ${STATION_PORT}:${STATION_PORT}
+      - ${STATION_MANAGEMENT_PORT}:${STATION_MANAGEMENT_PORT}
     environment:
-      PORT: ${STATION_PORT}
+      PORT: ${STATION_MANAGEMENT_PORT}
   
   station-analytics-service:
     image: ${CONTAINER_REGISTRY}/station-analytics-service

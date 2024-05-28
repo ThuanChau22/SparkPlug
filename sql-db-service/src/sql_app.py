@@ -72,8 +72,7 @@ def build_query(table, query_params):
     return query
 
 def fetch_data(query):
-    #sql_connection = mysql_pool.connection()
-    sql_connection = mysql_pool
+    sql_connection = mysql_pool.connection()
     with sql_connection.cursor() as cursor:
         cursor.execute(query)
         data = cursor.fetchall()

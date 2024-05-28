@@ -60,3 +60,19 @@ def sanitize_input(input_string):
     sanitized_string = sanitized_string.replace("'", "\\'").replace('"', '\\"')
 
     return sanitized_string
+
+
+@app.route("/api/mongo_test", methods=["GET"])
+def test():
+    return {"message": "Mongo DB Service is up and running!"}
+
+@app.route("/api/db_test", methods=["GET"])
+def db_test():
+    try:
+        # The server_info method is cheap and does not require auth.
+        mongo_connection.server_info()
+        return jsonify({"message": "Mongo DB is connected!"}), 200
+    except Exception as e:
+        return jsonify({"message": "Cannot connect to Mongo DB", "error": str(e)}), 500
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=PORT, debug=True)

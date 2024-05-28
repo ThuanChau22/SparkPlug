@@ -44,3 +44,9 @@ def require_permission(*allowed_roles):
 
     return decorator
 
+@app.route("/api/station_management_test", methods=["GET"])
+def test():
+    return {"message": "Station Management Service is up and running!"}
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=PORT, debug=True)
