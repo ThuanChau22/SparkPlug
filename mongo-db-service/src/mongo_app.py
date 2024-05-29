@@ -19,6 +19,7 @@ from config import (
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": WEB_DOMAIN}})
 
+db = mongo_connection["sparkplug"]
 
 # Decorator for access control
 def require_permission(*allowed_roles):
@@ -39,9 +40,7 @@ def require_permission(*allowed_roles):
                 "role": data["role"],
             }
             return f(*args, **kwargs, user=valid_user)
-
         return decorated_function
-
     return decorator
 
 
@@ -61,7 +60,11 @@ def sanitize_input(input_string):
 
     return sanitized_string
 
+####################################################################################################
+# Routes
+####################################################################################################
 
+# Test routes
 @app.route("/api/mongo_test", methods=["GET"])
 def test():
     return {"message": "Mongo DB Service is up and running!"}
@@ -74,5 +77,25 @@ def db_test():
         return jsonify({"message": "Mongo DB is connected!"}), 200
     except Exception as e:
         return jsonify({"message": "Cannot connect to Mongo DB", "error": str(e)}), 500
+
+########## Transaction routes
+@app.route("/api/mongo/transactions", methods=["GET"])
+@require_permission("staff", "owner")
+def get_transactions(user=None):
+    if not user:
+        return {"message": "Permission denied"}, 403
+    
+    transactions = db.transactions.find({})
+    # Convert the results to a list and format
+    transactions_list = list(transactions)
+    import sys
+    print(f"Number of transactions found: {len(transactions_list)}", file=sys.stderr)
+
+    for transaction in transactions_list:
+        transaction["_id"] = str(transaction["_id"])
+
+    return transactions_list
+
+# Run the app
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=PORT, debug=True)

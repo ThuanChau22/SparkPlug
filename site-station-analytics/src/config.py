@@ -45,5 +45,4 @@ if not isinstance(MONGODB_DATABASE, str):
     raise TypeError("MONGODB_DATABASE must be an instance of str")
 '''
 
-# mongo_connection = pymongo.MongoClient(MONGODB_URL)[MONGODB_DATABASE]
-mongo_connection = pymongo.MongoClient(MONGODB_URL)
+mongo_connection = pymongo.MongoClient(MONGODB_URL)[MONGODB_DATABASE]
