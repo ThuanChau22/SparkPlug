@@ -105,10 +105,10 @@ const DriverStation = () => {
     const isStationLoaded = stationList.length > 0;
     const isConnected = readyState === ReadyState.OPEN;
     if (isStationLoaded && isConnected) {
-      const stationIdList = stationList.map(({ id }) => id.toString());
+      const stationIds = stationList.map(({ id }) => id.toString());
       sendJsonMessage({
         action: "WatchStatusEvent",
-        payload: { stationIdList },
+        payload: { stationIds },
       });
     }
   }, [stationList, readyState, sendJsonMessage]);
