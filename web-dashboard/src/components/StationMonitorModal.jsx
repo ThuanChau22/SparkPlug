@@ -81,8 +81,8 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     const { action, payload } = lastJsonMessage || {};
     if (action === "WatchAllEvent" && payload.stationId) {
       setEventMessages((state) => ([...state, payload]));
-      const { event, payload: { meterValue } } = payload;
-      if (event === "TransactionEvent" && meterValue) {
+      const meterValue = payload.payload?.meterValue;
+      if (payload.event === "TransactionEvent" && meterValue) {
         const [meter] = meterValue;
         const [sample] = meter.sampledValue;
         setMeterValue(sample.value);
@@ -176,15 +176,21 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
               </CContainer>
             )
             : eventMessages.length > 0
-              ? eventMessages.map(({ event, payload, createdAt }) => (
+              ? eventMessages.map(({ id, event, payload, createdAt }) => (
                 <CAccordionItem
-                  key={createdAt}
+                  key={id}
                 >
                   <CAccordionHeader>
                     {createdAt} - {event}
                   </CAccordionHeader>
                   <CAccordionBody>
-                    <pre>{JSON.stringify(payload, null, 2)}</pre>
+                    <pre>
+                      {JSON.stringify({
+                        event,
+                        payload,
+                        createdAt,
+                      }, null, 2)}
+                    </pre>
                   </CAccordionBody>
                 </CAccordionItem>
               ))

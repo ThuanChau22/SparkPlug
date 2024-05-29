@@ -6,7 +6,8 @@ import { clients } from "../server.js";
 
 const remoteControl = {};
 
-remoteControl.requestStartTransactionRequest = async (client, { evseId }) => {
+remoteControl.requestStartTransactionRequest = async ({ client, params }) => {
+  const { evseId } = params;
   const idToken = {
     idToken: uuid(),
     type: "Central",
@@ -15,34 +16,37 @@ remoteControl.requestStartTransactionRequest = async (client, { evseId }) => {
   const { idTokenToTransactionId } = clients.get(client.identity);
   idTokenToTransactionId.set(hashedIdToken, "");
   const method = "RequestStartTransaction";
-  const responsePayload = await client.call(method, {
+  const response = await client.call(method, {
     evseId,
     remoteStartId: Math.floor(1000 + Math.random() * 9000),
     idToken,
   });
   await Monitoring.addEvent({
     stationId: client.identity,
+    source: Monitoring.Sources.Station,
     event: method,
-    payload: responsePayload,
+    payload: response,
   });
-  const { status } = responsePayload;
+  const { status } = response;
   if (status !== "Accepted") {
     idTokenToTransactionId.delete(hashedIdToken);
   }
   return { status };
 };
 
-remoteControl.requestStopTransactionRequest = async (client, { transactionId }) => {
+remoteControl.requestStopTransactionRequest = async ({ client, params }) => {
+  const { evseId } = params;
+  const { evseIdToTransactionId } = clients.get(client.identity);
+  const transactionId = evseIdToTransactionId.get(evseId) || "";
   const method = "RequestStopTransaction";
-  const responsePayload = await client.call(method, {
-    transactionId: transactionId || "",
-  });
+  const response = await client.call(method, { transactionId });
   await Monitoring.addEvent({
     stationId: client.identity,
+    source: Monitoring.Sources.Station,
     event: method,
-    payload: responsePayload,
+    payload: response,
   });
-  const { status } = responsePayload;
+  const { status } = response;
   return { status };
 };
 

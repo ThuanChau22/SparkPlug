@@ -1,9 +1,13 @@
 import { RPCServer, createRPCError } from "ocpp-rpc";
 import { v4 as uuid } from "uuid";
+import WebSocket from "ws";
 
+import Monitoring from "../../repository/monitoring.js";
+import Station from "../../repository/station.js";
 import authorization from "./handlers/authorization.js";
 import availability from "./handlers/availability.js";
 import provisioning from "./handlers/provisioning.js";
+import remoteControl from "./handlers/remote-control.js";
 import transactions from "./handlers/transactions.js";
 
 /**
@@ -41,45 +45,73 @@ server.on("client", async (client) => {
       evseIdToTransactionId: new Map(),
     });
 
-    client.handle("BootNotification", (message) => {
-      return provisioning.bootNotificationResponse(client, message);
+    const changeStream = await Monitoring.watchEvent({
+      stationId: client.identity,
+      source: Monitoring.Sources.Central,
+      event: [
+        "RequestStartTransaction",
+        "RequestStopTransaction",
+      ],
+    })
+    changeStream.on("change", async ({ fullDocument }) => {
+      const { event, payload } = fullDocument;
+      const properties = { client, params: payload };
+      const isConnected = client.state === WebSocket.OPEN;
+      if (isConnected && event === "RequestStartTransaction") {
+        return await remoteControl.requestStartTransactionRequest(properties);
+      }
+      if (isConnected && event === "RequestStopTransaction") {
+        return await remoteControl.requestStopTransactionRequest(properties);
+      }
     });
 
-    client.handle("Heartbeat", (message) => {
-      return availability.heartbeatResponse(client, message);
-    });
+    client.handle(async (properties) => {
+      const { method, params } = properties;
+      await Monitoring.addEvent({
+        stationId: client.identity,
+        source: Monitoring.Sources.Station,
+        event: method,
+        payload: params,
+      });
 
-    client.handle("StatusNotification", (message) => {
-      return availability.statusNotificationResponse(client, message);
-    });
+      properties = { client, ...properties };
+      switch (method) {
+        case "BootNotification":
+          return await provisioning.bootNotificationResponse(properties);
 
-    client.handle("Authorize", (message) => {
-      return authorization.authorizeResponse(client, message);
-    });
+        case "Heartbeat":
+          return await availability.heartbeatResponse(properties);
 
-    client.handle("TransactionEvent", (message) => {
-      return transactions.transactionEventResponse(client, message);
+        case "StatusNotification":
+          return await availability.statusNotificationResponse(properties);
+
+        case "Authorize":
+          return await authorization.authorizeResponse(properties);
+
+        case "TransactionEvent":
+          return await transactions.transactionEventResponse(properties);
+
+        default:
+          console.log(`${method} from ${client.identity}:`, params);
+          throw createRPCError("NotImplemented");
+      }
     });
 
     client.on("close", async () => {
-      await availability.statusNotificationResponse(client, {
-        method: "StatusNotification",
-        params: {
-          connectorStatus: "Unavailable",
+      const status = "Unavailable";
+      await Station.updateStatus(client.identity, status);
+      await Monitoring.addEvent({
+        stationId: client.identity,
+        source: Monitoring.Sources.Central,
+        event: "StatusNotification",
+        payload: {
+          connectorStatus: status,
           timestamp: new Date().toISOString(),
-        }
+        },
       });
+      changeStream.close();
       clients.delete(client.identity);
       console.log(`Disconnected with station: ${client.identity}`);
-    });
-
-    // create a wildcard handler to handle any RPC method
-    client.handle(({ method, params }) => {
-      // This handler will be called if the incoming method cannot be handled elsewhere.
-      console.log(`${method} from ${client.identity}:`, params);
-
-      // throw an RPC error to inform the server that we don"t understand the request.
-      throw createRPCError("NotImplemented");
     });
   } catch (error) {
     if (!error.code) {

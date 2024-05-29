@@ -1,6 +1,5 @@
 import cryptoJs from "crypto-js";
 
-import Monitoring from "../../../repository/monitoring.js";
 import { clients } from "../server.js";
 
 const transactionStart = (client, params) => {
@@ -50,12 +49,7 @@ const transactionStop = (client, params) => {
 
 const transactions = {};
 
-transactions.transactionEventResponse = async (client, { method, params }) => {
-  await Monitoring.addEvent({
-    stationId: client.identity,
-    event: method,
-    payload: params,
-  });
+transactions.transactionEventResponse = async ({ client, params }) => {
   const { eventType } = params;
   if (eventType === "Started") {
     return transactionStart(client, params);
