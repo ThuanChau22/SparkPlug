@@ -1,24 +1,13 @@
-import Monitoring from "../../../repository/monitoring.js";
 import Station from "../../../repository/station.js";
 
 const availability = {};
 
-availability.statusNotificationResponse = async (client, { method, params }) => {
+availability.statusNotificationResponse = async ({ client, params }) => {
   await Station.updateStatus(client.identity, params.connectorStatus);
-  await Monitoring.addEvent({
-    stationId: client.identity,
-    event: method,
-    payload: params,
-  });
   return {};
 };
 
-availability.heartbeatResponse = async (client, { method, params }) => {
-  await Monitoring.addEvent({
-    stationId: client.identity,
-    event: method,
-    payload: params,
-  });
+availability.heartbeatResponse = async () => {
   return { currentTime: new Date().toISOString() };
 };
 

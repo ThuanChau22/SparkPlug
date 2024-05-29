@@ -1,6 +1,5 @@
 import cryptoJs from "crypto-js";
 
-import Monitoring from "../../../repository/monitoring.js";
 import User from "../../../repository/user.js";
 import { clients } from "../server.js";
 
@@ -21,12 +20,7 @@ const authorizeWithRFID = async (client, idToken) => {
 
 const authorization = {};
 
-authorization.authorizeResponse = async (client, { method, params }) => {
-  await Monitoring.addEvent({
-    stationId: client.identity,
-    event: method,
-    payload: params,
-  });
+authorization.authorizeResponse = async ({ client, params }) => {
   const { idToken } = params;
   if (idToken.type === "ISO15693") {
     return await authorizeWithRFID(client, idToken);
