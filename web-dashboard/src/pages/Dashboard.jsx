@@ -108,9 +108,25 @@ const Dashboard = () => {
     return [month, day, year].join("/");
   };
 
-  const fetchData = useCallback(async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
-      const base = `${StationAnalyticsAPI}/${stationId}`;//get endpoint
+      const base = `${StationAnalyticsAPI}/transactions`;//get endpoint
+      const params = [];
+      if (startDate) params.push(`start_date=${formatDate(startDate)}`);
+      if (endDate) params.push(`end_date=${formatDate(endDate)}`);
+      if (chargeLevel !== "All") params.push(`charge_level=${chargeLevel}`);
+      const query = params.length > 0 ? `?${params.join("&")}` : "";
+      const headers = { Authorization: `Bearer ${token}` };//get the authori info
+      const { data } = await apiInstance.get(`${base}${query}`, { headers });//use get function 
+      setAnalyticsData(data);
+    } catch (error) {
+      console.log(error);
+    }
+  }, [StationAnalyticsAPI, stationId, token, startDate, endDate, chargeLevel]);
+
+  const fetchEVSEStatuses = useCallback(async () => {
+    try {
+      const base = `${StationAnalyticsAPI}/evse_status`;//get endpoint
       const params = [];
       if (startDate) params.push(`start_date=${formatDate(startDate)}`);
       if (endDate) params.push(`end_date=${formatDate(endDate)}`);
@@ -125,8 +141,14 @@ const Dashboard = () => {
   }, [StationAnalyticsAPI, stationId, token, startDate, endDate, chargeLevel]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchTransactions();
+  }, [fetchTransactions]);
+
+  useEffect(() => {
+    fetchEVSEStatuses();
+  }, [fetchEVSEStatuses]);
+
+
 
 
     //==================================================
