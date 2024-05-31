@@ -57,6 +57,7 @@ def require_permission(*allowed_roles):
 def test():
     return {"message": "Station Management Service is up and running!"}
 
+'''
 ########## Site Management Routes
 @app.route("/api/sites", methods=["GET"])
 @require_permission("staff", "owner", "driver")
@@ -74,7 +75,7 @@ def read_sites(user=None):
     )
 
     return response.json()
-
+'''
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=PORT, debug=True)
