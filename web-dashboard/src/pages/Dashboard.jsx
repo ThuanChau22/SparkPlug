@@ -69,9 +69,9 @@ import avatar4 from '../assets/default-avatar.jpg'
 import avatar5 from '../assets/default-avatar.jpg'
 import avatar6 from '../assets/default-avatar.jpg'
 
-import WidgetsBrand from './WidgetsBrand.jsx'
-import WidgetsDropdown from './WidgetsDropdown.jsx'
-import MainChart from './MainChart.jsx'
+import WidgetsBrand from '../components/WidgetsBrand.jsx'
+import WidgetsDropdown from '../components/WidgetsDropdown.jsx'
+import MainChart from '../components/MainChart.jsx'
 
 //---------------------------------------------
 import { useCallback, useEffect, useState } from "react";
