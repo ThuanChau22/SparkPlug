@@ -1,6 +1,7 @@
 import express from "express";
 
-import { Monitoring } from "../repository/monitoring.js";
+import Monitoring from "../repository/monitoring.js";
+import utils from "../utils/utils.js";
 import {
   authenticate,
   authorizeRole,
@@ -25,8 +26,13 @@ router.get(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const events = await Monitoring.getEventByStationId(id);
-      res.status(200).json(events);
+      const filter = {
+        stationId: id,
+        source: Monitoring.Sources.Station,
+      };
+      const sort = { createdAt: 1 };
+      const events = await Monitoring.getEvents({ filter, sort });
+      res.status(200).json(utils.toClient(events));
     } catch (error) {
       const { message } = error;
       res.status(400).json({ message });

@@ -34,10 +34,15 @@ export const authorizeResource = async (req, res, next) => {
     const headers = { Authorization: `Bearer ${req.token}` };
     const { data } = await axios.get(`${STATION_API_ENDPOINT}/${id}`, { headers });
     if (!data) {
-      throw { code: 403, message: `Access denied` };
+      throw { code: 403, message: "Access denied" };
     }
     next();
   } catch (error) {
+    if (error.response) {
+      const { status, statusText } = error.response;
+      const message = error.response.data.message || statusText;
+      return res.status(status).json({ message });
+    }
     const { code, message } = error;
     return res.status(code || 400).json({ message });
   }

@@ -81,8 +81,8 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     const { action, payload } = lastJsonMessage || {};
     if (action === "WatchAllEvent" && payload.stationId) {
       setEventMessages((state) => ([...state, payload]));
-      const { event, payload: { meterValue } } = payload;
-      if (event === "TransactionEvent" && meterValue) {
+      const meterValue = payload.payload?.meterValue;
+      if (payload.event === "TransactionEvent" && meterValue) {
         const [meter] = meterValue;
         const [sample] = meter.sampledValue;
         setMeterValue(sample.value);
@@ -98,7 +98,10 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: "RemoteStart",
-        payload: { stationId: station.id.toString() },
+        payload: {
+          stationId: station.id.toString(),
+          evseId: 1,
+        },
       });
     }
   };
@@ -107,7 +110,10 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: "RemoteStop",
-        payload: { stationId: station.id.toString() },
+        payload: {
+          stationId: station.id.toString(),
+          evseId: 1,
+        },
       });
     }
   };
@@ -141,7 +147,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
               variant="outline"
               color="success"
               onClick={handleRemoteStart}
-              disabled={station.status === "Offline"}
+              disabled={station.status === "Unavailable"}
             >
               Remote Start
             </CButton>
@@ -149,7 +155,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
               variant="outline"
               color="info"
               onClick={handleRemoteStop}
-              disabled={station.status === "Offline"}
+              disabled={station.status === "Unavailable"}
             >
               Remote Stop
             </CButton>
@@ -170,15 +176,21 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
               </CContainer>
             )
             : eventMessages.length > 0
-              ? eventMessages.map(({ event, payload, createdAt }) => (
+              ? eventMessages.map(({ id, event, payload, createdAt }) => (
                 <CAccordionItem
-                  key={createdAt}
+                  key={id}
                 >
                   <CAccordionHeader>
                     {createdAt} - {event}
                   </CAccordionHeader>
                   <CAccordionBody>
-                    <pre>{JSON.stringify(payload, null, 2)}</pre>
+                    <pre>
+                      {JSON.stringify({
+                        event,
+                        payload,
+                        createdAt,
+                      }, null, 2)}
+                    </pre>
                   </CAccordionBody>
                 </CAccordionItem>
               ))

@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 import ms from "ms";
 
+import utils from "../utils/utils.js";
+
+const Sources = {
+  Central: "Central",
+  Station: "Station",
+}
+
 const schema = mongoose.Schema({
   stationId: {
     type: String,
@@ -8,10 +15,14 @@ const schema = mongoose.Schema({
     index: true,
     immutable: true,
   },
+  source: {
+    type: String,
+    enum: Object.values(Sources),
+    required: true,
+  },
   event: {
     type: String,
     required: true,
-    index: true,
   },
   payload: {
     type: Object,
@@ -27,63 +38,74 @@ const schema = mongoose.Schema({
 
 schema.index({
   stationId: 1,
-  event: 1
+  source: 1,
 });
 
 schema.index({
-  "event": 1,
-  "payload.eventType": 1,
-  "payload.transactionInfo.transactionId": 1,
-}, { sparse: true });
+  stationId: 1,
+  event: 1,
+});
+
+schema.index({
+  stationId: 1,
+  source: 1,
+  event: 1,
+});
+
+// Indexing TransactionEvent Request for all stations
+// schema.index({
+//   event: 1,
+//   "payload.eventType": 1,
+// }, { sparse: true });
 
 schema.loadClass(class {
-  static async getEventByStationId(stationId) {
+  static async getEvents({ filter, sort, limit } = {}) {
     try {
-      return await this.find({ stationId }).sort({ createdAt: 1 }).lean();
+      return await this.find(filter).sort(sort).limit(limit).lean();
     } catch (error) {
       console.log(error);
     }
   }
-  static async add(data) {
+  static async addEvent(data) {
     try {
-      const { stationId, event, payload } = data;
+      const { stationId, source, event, payload } = data;
       const expireAt = new Date(Date.now() + ms("1h"));
-      await Monitoring.create({ stationId, event, payload, expireAt });
+      await Monitoring.create({ stationId, source, event, payload, expireAt });
     } catch (error) {
       console.log(error);
     }
   }
-  static async watchStatusEvent(data) {
+  static async watchEvent(data = {}) {
     try {
-      const { stationIdList } = data;
+      const { stationId, source, event } = data;
+      const filters = {
+        operationType: "insert",
+        $and: [],
+      };
+      if (stationId) {
+        filters.$and.push({
+          $or: utils.toArray(stationId).map((id) => {
+            return { "fullDocument.stationId": id };
+          })
+        });
+      }
+      if (source) {
+        filters.$and.push({
+          $or: utils.toArray(source).map((src) => {
+            return { "fullDocument.source": src };
+          })
+        });
+      }
+      if (event) {
+        filters.$and.push({
+          $or: utils.toArray(event).map((e) => {
+            return { "fullDocument.event": e }
+          })
+        });
+      }
       return await Monitoring.watch(
         [
-          {
-            $match: {
-              "operationType": "insert",
-              "fullDocument.event": "StatusNotification",
-              $or: stationIdList.map((id) => ({ "fullDocument.stationId": id }))
-            }
-          },
-          { $project: { fullDocument: 1 } },
-        ],
-        { fullDocument: "updateLookup" },
-      );
-    } catch (error) {
-      console.log(error);
-    }
-  }
-  static async watchAllEvent(data) {
-    try {
-      const { stationId } = data;
-      return await Monitoring.watch(
-        [
-          {
-            $match: {
-              "operationType": "insert",
-              "fullDocument.stationId": stationId,
-            }
-          },
+          { $match: filters },
           { $project: { fullDocument: 1 } },
         ],
         { fullDocument: "updateLookup" },
@@ -94,4 +116,8 @@ schema.loadClass(class {
   }
 });
 
-export const Monitoring = mongoose.model("monitoring", schema);
+const Monitoring = mongoose.model("monitoring", schema);
+
+Monitoring.Sources = Sources;
+
+export default Monitoring;

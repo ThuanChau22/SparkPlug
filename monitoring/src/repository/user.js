@@ -1,6 +1,6 @@
 import { mysql } from "../config.js";
 
-export const User = {};
+const User = {};
 
 User.getByRFID = async (rfId) => {
   try {
@@ -12,3 +12,5 @@ User.getByRFID = async (rfId) => {
     console.log(error);
   }
 };
+
+export default User;

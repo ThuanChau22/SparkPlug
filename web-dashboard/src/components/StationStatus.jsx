@@ -7,7 +7,7 @@ const StationStatus = ({ status }) => {
           ? "text-warning"
           : status === "Reserved"
             ? "text-info"
-            : status === "Unavailable" || status === "Faulted"
+            : status === "Faulted"
               ? "text-danger"
               : "text-secondary"
     }>

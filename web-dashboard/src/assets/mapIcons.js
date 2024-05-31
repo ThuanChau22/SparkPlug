@@ -44,9 +44,6 @@ export const createStationIcon = (status) => {
     case "Faulted":
       iconUrl = redStationIconUrl;
       break;
-    case "Offline":
-      iconUrl = grayStationIconUrl;
-      break;
     default:
       iconUrl = stationIconUrl; // Default icon
   }

@@ -3,15 +3,9 @@ import ms from "ms";
 import WebSocket, { WebSocketServer } from "ws";
 
 import { AUTH_API_ENDPOINT } from "../../config.js";
-import {
-  Action,
-  handleRemoteStart,
-  handleRemoteStop,
-  handleWatchAllEvent,
-  handleWatchStatusEvent,
-} from "./message.js";
+import handler, { Action } from "./handler.js";
 
-const createWebSocketServer = () => {
+const webSocketServer = () => {
   const wss = new WebSocketServer({ noServer: true });
   const pingInterval = setInterval(() => {
     for (const ws of wss.clients) {
@@ -28,9 +22,14 @@ const createWebSocketServer = () => {
   });
   const handleUpgrade = (request, socket, head) => {
     wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit("connection", ws, request);
+      ws.sendJson = (payload) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify(payload));
+        }
+      };
       ws.on("pong", () => ws.isAlive = true);
       ws.ping();
+      wss.emit("connection", ws, request);
     });
   };
   const on = (event, handler) => {
@@ -50,20 +49,26 @@ const createWebSocketServer = () => {
   return { wss, handleUpgrade, on, close };
 };
 
-export const socketToUser = new Map();
-export const socketToChangeStream = new Map();
-const server = createWebSocketServer();
+/**
+ * @typedef {Object} Instance
+ * @property {User} user
+ * @property {ChangeStream} changeStream
+ */
+/**
+ * @type {Map.<WebSocket, Instance>}
+ */
+export const sockets = new Map();
+
+const server = webSocketServer();
 server.on("connection", async (ws, req) => {
   try {
-    const { url, headers: { host } } = req;
-    const { searchParams } = new URL(url, `ws://${host}`);
-    const token = searchParams.get("token");
+    const { query: { token } } = req;
     const { data } = await axios.post(`${AUTH_API_ENDPOINT}/verify`, { token });
     const { id, role, ...remain } = data;
 
     console.log(`Connected with user: ${id}`);
 
-    socketToUser.set(ws, { id, role, ...remain, token });
+    sockets.set(ws, { user: { id, role, ...remain, token } });
 
     // Handle incoming message
     ws.on("message", async (data) => {
@@ -71,73 +76,63 @@ server.on("connection", async (ws, req) => {
         if (data.toString() === "ping") {
           return ws.send("pong");
         }
-        const { action, payload } = JSON.parse(data);
+        let message = {};
+        try {
+          message = JSON.parse(data);
+        } catch (error) {
+          const status = "Rejected";
+          const message = "Invalid message";
+          return ws.sendJson({ payload: { status, message } });
+        }
+        const { action, payload } = message;
+        let response = {
+          status: "Rejected",
+          message: "Action not supported",
+        };
         if (action === Action.REMOTE_START) {
-          return await handleRemoteStart({ ws, payload });
+          response = await handler.remoteStart(payload);
         }
         if (action === Action.REMOTE_STOP) {
-          return await handleRemoteStop({ ws, payload });
+          response = await handler.remoteStop(payload);
         }
         if (action === Action.WATCH_ALL_EVENT) {
           if (role !== "staff" && role !== "owner") {
-            throw { code: 403, message: "Access denied" };
+            response.message = "Access denied";
+            return ws.sendJson({ action, payload: response });
           }
-          return await handleWatchAllEvent({ ws, payload });
-        }
-        if (action === Action.WATCH_STATUS_EVENT) {
-          return await handleWatchStatusEvent({ ws, payload });
-        }
-      } catch (error) {
-        if (error.code === 403) {
-          const { code, message } = error;
-          return sendJsonMessage(ws, {
-            action: JSON.parse(data).action,
-            payload: {
-              status: "Rejected",
-              statusInfo: { code, message }
-            },
+          response = await handler.watchAllEvent(ws, payload, (payload) => {
+            ws.sendJson({ action, payload });
           });
         }
+        if (action === Action.WATCH_STATUS_EVENT) {
+          response = await handler.watchStatusEvent(ws, payload, (payload) => {
+            ws.sendJson({ action, payload });
+          });
+        }
+        return ws.sendJson({ action, payload: response });
+      } catch (error) {
+        const status = "Rejected";
+        const message = "An unknown error occurred";
+        ws.sendJson({ payload: { status, message } });
         console.log(error);
       }
-    });
-
-    // Handle socket on error
-    ws.on("error", () => {
-      socketToChangeStream.get(ws)?.close();
-      socketToChangeStream.delete(ws);
-      socketToUser.delete(ws);
     });
 
     // Handle socket on close
     ws.on("close", () => {
-      try {
-        socketToChangeStream.get(ws)?.close();
-        socketToChangeStream.delete(ws);
-        socketToUser.delete(ws);
-        console.log(`Disconnected with user: ${id}`);
-      } catch (error) {
-        console.log(error);
-      }
+      sockets.get(ws).changeStream?.close();
+      sockets.delete(ws);
+      console.log(`Disconnected with user: ${id}`);
     });
   } catch (error) {
     if (error.response?.status === 401) {
-      const { status: code } = error.response;
-      const { message } = error.response.data;
-      return ws.close(1000, JSON.stringify({ code, message }));
+      error.message = error.response.data.message;
+    } else if (!error.code) {
+      console.log(error);
+      error.message = "An unknown error occurred";
     }
-    if (error.code === 403) {
-      const { code, message } = error;
-      return ws.close(1000, JSON.stringify({ code, message }));
-    }
-    console.log(error);
+    ws.close(1000, error.message);
   }
 });
-
-export const sendJsonMessage = (ws, payload) => {
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(payload));
-  }
-};
 
 export default server;

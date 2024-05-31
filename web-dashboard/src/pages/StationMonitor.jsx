@@ -104,10 +104,10 @@ const StationMonitor = () => {
     const isStationLoaded = stationList.length > 0;
     const isConnected = readyState === ReadyState.OPEN;
     if (isStationLoaded && isConnected) {
-      const stationIdList = stationList.map(({ id }) => id.toString());
+      const stationIds = stationList.map(({ id }) => id.toString());
       sendJsonMessage({
         action: "WatchStatusEvent",
-        payload: { stationIdList },
+        payload: { stationIds },
       });
     }
   }, [stationList, readyState, sendJsonMessage]);
@@ -200,7 +200,7 @@ const StationMonitor = () => {
                         <small className="w-100 text-secondary">ID: {id}</small>
                         <p className="mb-0">{name}</p>
                       </div>
-                      <StationStatus status={status}/>
+                      <StationStatus status={status} />
                     </CListGroupItem>
                   ))}
                 </CListGroup>

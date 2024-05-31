@@ -1,14 +1,25 @@
 import { RPCServer, createRPCError } from "ocpp-rpc";
 import { v4 as uuid } from "uuid";
+import WebSocket from "ws";
 
-import authorization from "./messages/authorization.js";
-import availability from "./messages/availability.js";
-import provisioning from "./messages/provisioning.js";
-import transactions from "./messages/transactions.js";
+import Monitoring from "../../repository/monitoring.js";
+import Station from "../../repository/station.js";
+import authorization from "./handlers/authorization.js";
+import availability from "./handlers/availability.js";
+import provisioning from "./handlers/provisioning.js";
+import remoteControl from "./handlers/remote-control.js";
+import transactions from "./handlers/transactions.js";
 
-export const clientIdToClient = new Map();
-export const clientIdToIdToken = new Map();
-export const idTokenToTransactionId = new Map();
+/**
+ * @typedef {Object} Client
+ * @property {RPCServerClient} station
+ * @property {Map.<string, string>} idTokenToTransactionId
+ * @property {Map.<number, string>} evseIdToTransactionId
+ */
+/**
+ * @type {Map.<string, Client>}
+ */
+export const clients = new Map();
 
 const server = new RPCServer({
   protocols: ["ocpp2.0.1"],
@@ -25,53 +36,90 @@ server.auth((accept, reject, handshake) => {
 });
 
 server.on("client", async (client) => {
+  try {
+    console.log(`Connected with station: ${client.identity}`);
 
-  console.log(`Connected with station: ${client.identity}`);
+    clients.set(client.identity, {
+      station: client,
+      idTokenToTransactionId: new Map(),
+      evseIdToTransactionId: new Map(),
+    });
 
-  clientIdToClient.set(client.identity, client);
-
-  client.handle("BootNotification", (params) => {
-    return provisioning.bootNotificationResponse({ ...params, client });
-  });
-
-  client.handle("Heartbeat", (params) => {
-    return availability.heartbeatResponse({ ...params, client });
-  });
-
-  client.handle("StatusNotification", (params) => {
-    return availability.statusNotificationResponse({ ...params, client });
-  });
-
-  client.handle("Authorize", (params) => {
-    return authorization.authorizeResponse({ ...params, client });
-  });
-
-  client.handle("TransactionEvent", (params) => {
-    return transactions.transactionEventResponse({ ...params, client });
-  });
-
-  client.on("close", async () => {
-    await availability.statusNotificationResponse({
-      client,
-      method: "StatusNotification",
-      params: {
-        connectorStatus: "Offline",
-        timestamp: new Date().toISOString(),
+    const changeStream = await Monitoring.watchEvent({
+      stationId: client.identity,
+      source: Monitoring.Sources.Central,
+      event: [
+        "RequestStartTransaction",
+        "RequestStopTransaction",
+      ],
+    })
+    changeStream.on("change", async ({ fullDocument }) => {
+      const { event, payload } = fullDocument;
+      const properties = { client, params: payload };
+      const isConnected = client.state === WebSocket.OPEN;
+      if (isConnected && event === "RequestStartTransaction") {
+        return await remoteControl.requestStartTransactionRequest(properties);
+      }
+      if (isConnected && event === "RequestStopTransaction") {
+        return await remoteControl.requestStopTransactionRequest(properties);
       }
     });
-    clientIdToClient.delete(client.identity);
-    clientIdToIdToken.delete(client.identity);
-    console.log(`Disconnected with station: ${client.identity}`);
-  });
 
-  // create a wildcard handler to handle any RPC method
-  client.handle(({ method, params }) => {
-    // This handler will be called if the incoming method cannot be handled elsewhere.
-    console.log(`${method} from ${client.identity}:`, params);
+    client.handle(async (properties) => {
+      const { method, params } = properties;
+      await Monitoring.addEvent({
+        stationId: client.identity,
+        source: Monitoring.Sources.Station,
+        event: method,
+        payload: params,
+      });
 
-    // throw an RPC error to inform the server that we don"t understand the request.
-    throw createRPCError("NotImplemented");
-  });
+      properties = { client, ...properties };
+      switch (method) {
+        case "BootNotification":
+          return await provisioning.bootNotificationResponse(properties);
+
+        case "Heartbeat":
+          return await availability.heartbeatResponse(properties);
+
+        case "StatusNotification":
+          return await availability.statusNotificationResponse(properties);
+
+        case "Authorize":
+          return await authorization.authorizeResponse(properties);
+
+        case "TransactionEvent":
+          return await transactions.transactionEventResponse(properties);
+
+        default:
+          console.log(`${method} from ${client.identity}:`, params);
+          throw createRPCError("NotImplemented");
+      }
+    });
+
+    client.on("close", async () => {
+      const status = "Unavailable";
+      await Station.updateStatus(client.identity, status);
+      await Monitoring.addEvent({
+        stationId: client.identity,
+        source: Monitoring.Sources.Central,
+        event: "StatusNotification",
+        payload: {
+          connectorStatus: status,
+          timestamp: new Date().toISOString(),
+        },
+      });
+      changeStream.close();
+      clients.delete(client.identity);
+      console.log(`Disconnected with station: ${client.identity}`);
+    });
+  } catch (error) {
+    if (!error.code) {
+      console.log(error);
+      error.message = "An unknown error occurred";
+    }
+    server.close(1000, error.message);
+  }
 });
 
 export default server;

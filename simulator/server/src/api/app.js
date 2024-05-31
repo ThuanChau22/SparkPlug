@@ -2,7 +2,7 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 
-import { WEB_DOMAIN } from "./config.js";
+import { WEB_DOMAIN } from "../config.js";
 
 // Initiate express app
 const app = express();

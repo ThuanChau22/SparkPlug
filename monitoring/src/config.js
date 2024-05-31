@@ -27,7 +27,7 @@ export const mysql = mysql2.createPool({
 });
 
 export const connectMongoDB = async () => {
-  await mongoose.connect(MONGODB_URL);
+  await mongoose.connect(MONGODB_URL, { maxPoolSize: 250 });
 };
 
 export const setGracefulShutdown = (httpServer, wsServers = []) => {
