@@ -84,9 +84,9 @@ def fetch_data(query):
 def ping():
     return {"message": "Pong"}
 
-@app.route("/api/sql/stations_joined", methods=["GET"])
-def get_stations_joined():
-    query = build_query("stations_joined", request.args)
+@app.route("/api/sql/evses_joined", methods=["GET"])
+def get_evses_joined():
+    query = build_query("evses_joined", request.args)
     data = fetch_data(query)
     return jsonify(data)
 
@@ -131,9 +131,10 @@ def create_site(user=None):
     sql_connection = mysql_pool.connection()
     with sql_connection.cursor() as cursor:
         cursor.execute(query)
+        site_id = cursor.lastrowid
         sql_connection.commit()
 
-    return {"message": "Site created successfully"}, 201
+    return {"message": "Site created successfully", "id": site_id}, 201
 
 # update site
 @app.route("/api/sql/sites/<int:site_id>", methods=["PATCH"])
@@ -165,7 +166,7 @@ def update_site(site_id, user=None):
         cursor.execute(query)
         sql_connection.commit()
 
-    return {"message": "Site updated successfully"}, 200
+    return {"message": "Site updated successfully", "id": site_id}, 200
 
 # delete site
 @app.route("/api/sql/sites/<int:site_id>", methods=["DELETE"])
@@ -191,20 +192,20 @@ def delete_site(site_id, user=None):
         cursor.execute(query)
         sql_connection.commit()
 
-    return {"message": "Site deleted successfully"}, 200
+    return {"message": "Site deleted successfully", "id": site_id}, 200
 
 ########## Station CRUD routes
 # read stations
 @app.route("/api/sql/stations", methods=["GET"])
 def get_stations():
-    query = build_query("Station", request.args)
+    query = build_query("stations_joined", request.args)
     data = fetch_data(query)
     return jsonify(data)
 
 # read station by id
 @app.route("/api/sql/stations/<int:station_id>", methods=["GET"])
 def get_station_by_id(station_id):
-    query = f"SELECT * FROM Station WHERE id = {station_id}"
+    query = f"SELECT * FROM stations_joined WHERE id = {station_id}"
     data = fetch_data(query)
     return jsonify(data)
 
@@ -229,9 +230,10 @@ def create_station(user=None):
     sql_connection = mysql_pool.connection()
     with sql_connection.cursor() as cursor:
         cursor.execute(query)
+        station_id = cursor.lastrowid
         sql_connection.commit()
 
-    return {"message": "Station created successfully"}, 201
+    return {"message": "Station created successfully", "id": station_id}, 201
 
 # update station
 @app.route("/api/sql/stations/<int:station_id>", methods=["PATCH"])
@@ -244,7 +246,7 @@ def update_station(station_id, user=None):
 
     if user["role"] == "owner":
         station_id = sanitize_input(station_id)
-        query = f"SELECT owner_id FROM stations_joined WHERE id = {station_id}"
+        query = f"SELECT owner_id FROM stations_joined WHERE station_id = {station_id}"
         sql_connection = mysql_pool.connection()
         with sql_connection.cursor() as cursor:
             cursor.execute(query)
@@ -264,7 +266,7 @@ def update_station(station_id, user=None):
         cursor.execute(query)
         sql_connection.commit()
 
-    return {"message": "Station updated successfully"}, 200
+    return {"message": "Station updated successfully", "id": station_id}, 200
 
 # delete station
 @app.route("/api/sql/stations/<int:station_id>", methods=["DELETE"])
@@ -275,7 +277,7 @@ def delete_station(station_id, user=None):
     
     if user["role"] == "owner":
         station_id = sanitize_input(station_id)
-        query = f"SELECT owner_id FROM stations_joined WHERE id = {station_id}"
+        query = f"SELECT owner_id FROM stations_joined WHERE station_id = {station_id}"
         sql_connection = mysql_pool.connection()
         with sql_connection.cursor() as cursor:
             cursor.execute(query)
@@ -291,20 +293,20 @@ def delete_station(station_id, user=None):
         cursor.execute(query)
         sql_connection.commit()
 
-    return {"message": "Station deleted successfully"}, 200
+    return {"message": "Station deleted successfully", "id": station_id}, 200
 
 ########## EVSE CRUD routes
 # read evse
 @app.route("/api/sql/evses", methods=["GET"])
 def get_evses():
-    query = build_query("stations_joined", request.args)
+    query = build_query("evses_joined", request.args)
     data = fetch_data(query)
     return jsonify(data)
 
 # read evse by id
 @app.route("/api/sql/evses/<int:evse_id>", methods=["GET"])
 def get_evse_by_id(evse_id):
-    query = f"SELECT * FROM stations_joined WHERE evse_id = {evse_id}"
+    query = f"SELECT * FROM evses_joined WHERE evse_id = {evse_id}"
     data = fetch_data(query)
     return jsonify(data)
 
@@ -320,7 +322,7 @@ def create_evse(user=None):
 
     if user["role"] == "owner":
         owner_id = user["user_id"]
-        owned_stations = fetch_data(f"SELECT id FROM stations_joined WHERE owner_id = {owner_id}")
+        owned_stations = fetch_data(f"SELECT station_id FROM evses_joined WHERE owner_id = {owner_id}")
         if not owned_stations or station_id not in [station["id"] for station in owned_stations]:
             return {"message": "Permission denied"}, 403
 
@@ -329,9 +331,10 @@ def create_evse(user=None):
     sql_connection = mysql_pool.connection()
     with sql_connection.cursor() as cursor:
         cursor.execute(query)
+        evse_id = cursor.lastrowid
         sql_connection.commit()
 
-    return {"message": "EVSE created successfully"}, 201
+    return {"message": "EVSE created successfully", "id": evse_id}, 201
 
 # update evse
 @app.route("/api/sql/evses/<int:evse_id>", methods=["PATCH"])
@@ -344,7 +347,7 @@ def update_evse(evse_id, user=None):
 
     if user["role"] == "owner":
         evse_id = sanitize_input(evse_id)
-        query = f"SELECT owner_id FROM stations_joined WHERE evse_id = {evse_id}"
+        query = f"SELECT owner_id FROM evses_joined WHERE evse_id = {evse_id}"
         sql_connection = mysql_pool.connection()
         with sql_connection.cursor() as cursor:
             cursor.execute(query)
@@ -364,7 +367,7 @@ def update_evse(evse_id, user=None):
         cursor.execute(query)
         sql_connection.commit()
 
-    return {"message": "EVSE updated successfully"}, 200
+    return {"message": "EVSE updated successfully", "id": evse_id}, 200
 
 # delete evse
 @app.route("/api/sql/evses/<int:evse_id>", methods=["DELETE"])
@@ -375,7 +378,7 @@ def delete_evse(evse_id, user=None):
     
     if user["role"] == "owner":
         evse_id = sanitize_input(evse_id)
-        query = f"SELECT owner_id FROM stations_joined WHERE evse_id = {evse_id}"
+        query = f"SELECT owner_id FROM evses_joined WHERE evse_id = {evse_id}"
         sql_connection = mysql_pool.connection()
         with sql_connection.cursor() as cursor:
             cursor.execute(query)
@@ -391,7 +394,7 @@ def delete_evse(evse_id, user=None):
         cursor.execute(query)
         sql_connection.commit()
 
-    return {"message": "EVSE deleted successfully"}, 200
+    return {"message": "EVSE deleted successfully", "id": evse_id}, 200
 
 # Run the app
 if __name__ == "__main__":

@@ -6,12 +6,15 @@ from flask_cors import CORS
 from pymysql import MySQLError
 from functools import wraps
 from urllib.parse import urljoin
+import os
 
 # Internal Modules
 from config import (
     PORT,
     WEB_DOMAIN,
     AUTH_API_ENDPOINT,
+    SQL_API_ENDPOINT,
+    MONGO_API_ENDPOINT
 )
 
 
@@ -44,9 +47,34 @@ def require_permission(*allowed_roles):
 
     return decorator
 
+
+####################################################################################################
+# Routes
+####################################################################################################
+
+# Test Route
 @app.route("/api/station_management_test", methods=["GET"])
 def test():
     return {"message": "Station Management Service is up and running!"}
+
+########## Site Management Routes
+@app.route("/api/sites", methods=["GET"])
+@require_permission("staff", "owner", "driver")
+def read_sites(user=None):
+    if not user:
+        return {"message": "Permission denied"}, 403
+
+    args = request.args
+    jwt = request.headers.get('Authorization')
+
+    response = requests.get(
+        url=f'{SQL_API_ENDPOINT}/sites', 
+        params=args, 
+        headers={'Authorization': jwt}
+    )
+
+    return response.json()
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=PORT, debug=True)

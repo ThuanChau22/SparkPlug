@@ -11,3 +11,5 @@ dotenv.load_dotenv(dotenv_path=dotenv_path)
 PORT = os.environ["PORT"]
 WEB_DOMAIN = os.environ["WEB_DOMAIN"]
 AUTH_API_ENDPOINT = os.environ["AUTH_API_ENDPOINT"]
+SQL_API_ENDPOINT = os.environ["SQL_API_ENDPOINT"]
+MONGO_API_ENDPOINT = os.environ["MONGO_API_ENDPOINT"]

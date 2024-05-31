@@ -2007,13 +2007,13 @@ INSERT INTO Station (name, latitude, longitude, created_at, updated_at, site_id)
 -- ('PALO ALTO CA / HAMILTON #2', '1 2', 37.444607, -122.160263, '2011-08-02 12:26:00', '2011-08-02 12:26:00', 'J1772 NEMA520', 0, 692),
 -- ('PALO ALTO CA / HIGH #4', '1 2', 37.443676, -122.16288, '2011-09-02 20:42:00', '2011-09-02 20:42:00', 'J1772 NEMA520', 0, 693);
 
-INSERT INTO EVSE (station_id, evse_number, connector_type, charge_level, price) VALUES
-(1, 1, 'NEMA520', '1', 0),
-(2, 1, 'NEMA520', '1', 0),
-(3, 1, 'NEMA520', '1', 0),
-(1, 2, 'J1772', '2', 0),
-(2, 2, 'J1772', '2', 0),
-(3, 2, 'J1772', '2', 0);
+INSERT INTO EVSE (station_id, connector_type, charge_level, price) VALUES
+(1, 'NEMA520', '1', 0),
+(2, 'NEMA520', '1', 0),
+(3, 'NEMA520', '1', 0),
+(1, 'J1772', '2', 0),
+(2, 'J1772', '2', 0),
+(3, 'J1772', '2', 0);
 
 INSERT INTO RFID_map (driver_id, rfid) VALUES
 ( 107, 'ECAD1E990BFC4462' ),

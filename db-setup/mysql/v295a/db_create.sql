@@ -91,6 +91,21 @@ CREATE TABLE EVSE (
     REFERENCES Station(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
+-- Trigger to increment EVSE number for each station
+DELIMITER //
+CREATE TRIGGER increment_evse_number
+BEFORE INSERT ON EVSE
+FOR EACH ROW
+BEGIN
+    SET NEW.evse_number = (
+        SELECT IFNULL(MAX(evse_number), 0) + 1
+        FROM EVSE
+        WHERE station_id = NEW.station_id
+    );
+END;
+//
+DELIMITER ;
+
 CREATE TABLE RFID_map (
     driver_id INT UNSIGNED,
     rfid CHAR(16),
@@ -101,7 +116,13 @@ CREATE TABLE RFID_map (
 );
 
 CREATE VIEW stations_joined AS
-SELECT Station.id, Station.name, Station.created_at, Station.updated_at, Station.latitude, Station.longitude,
+SELECT Station.id as station_id, Station.name as station_name, Station.latitude, Station.longitude,
+site_id, owner_id, Site.latitude as site_latitude, Site.longitude as site_longitude,
+Site.name as site_name, street_address, zip_code, city, state, country
+FROM Station JOIN Site ON Station.site_id = Site.id;
+
+CREATE VIEW evses_joined AS
+SELECT Station.id as station_id, Station.name as station_name, Station.latitude, Station.longitude,
 site_id, owner_id, Site.latitude as site_latitude, Site.longitude as site_longitude,
 Site.name as site_name, street_address, zip_code, city, state, country, EVSE.id as evse_id, evse_number, price, charge_level, connector_type 
 FROM Station JOIN Site ON Station.site_id = Site.id JOIN EVSE ON Station.id = EVSE.station_id;
