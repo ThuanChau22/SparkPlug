@@ -41,14 +41,14 @@ const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => {
 
   const fetchData = useCallback(async () => {
     try {
-      const base = `${StationAnalyticsAPI}/${stationId}`;
+      const base = `${StationAnalyticsAPI}/${stationId}`;//get endpoint
       const params = [];
       if (startDate) params.push(`start_date=${formatDate(startDate)}`);
       if (endDate) params.push(`end_date=${formatDate(endDate)}`);
       if (chargeLevel !== "All") params.push(`charge_level=${chargeLevel}`);
       const query = params.length > 0 ? `?${params.join("&")}` : "";
-      const headers = { Authorization: `Bearer ${token}` };
-      const { data } = await apiInstance.get(`${base}${query}`, { headers });
+      const headers = { Authorization: `Bearer ${token}` };//get the authori info
+      const { data } = await apiInstance.get(`${base}${query}`, { headers });//use get function 
       setAnalyticsData(data);
     } catch (error) {
       console.log(error);

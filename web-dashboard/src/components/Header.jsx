@@ -37,6 +37,7 @@ import {
   sidebarSetShow,
 } from "redux/sidebar/sidebarSlice";
 import routes from "routes";
+import '../scss/style.scss'
 
 const Header = () => {
   const sidebarShow = useSelector(selectSidebarShow);
@@ -48,6 +49,7 @@ const Header = () => {
   const handleResize = useCallback(() => {
     dispatch(headerSetHeight(ref.current.offsetHeight));
   }, [dispatch]);
+
 
   useEffect(() => {
     handleResize();
@@ -77,6 +79,7 @@ const Header = () => {
     }
   }, [location, dispatch]);
   return (
+    
     <CHeader position="sticky" ref={ref}>
       <CContainer fluid>
         <CHeaderToggler
@@ -104,8 +107,10 @@ const Header = () => {
       <CHeaderDivider />
       <CContainer fluid>
         <Breadcrumb />
-      </CContainer>
+      </CContainer>  
     </CHeader>
+
+    
   )
 };
 
