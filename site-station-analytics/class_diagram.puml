@@ -1,0 +1,145 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+package "Services" {
+    package "Analytics Service" {
+        class AnalyticsServiceApp {
+            +run()
+        }
+
+        class AnalyticsEngine {
+            +processRevenue()
+            +processEnergyCost()
+            +processEnergyConsumption()
+            +processPeakTime()
+            +processSessionCounts()
+            +processUtilizationRate()
+            +processChargerCounts()
+            +processStationGrowth()
+            +processUserGrowth()
+        }
+    }
+
+    package "Management Service" {
+        class ManagementServiceApp {
+            +run()
+        }
+        
+        class StationManager {
+            +addStation()
+            +deleteStation()
+            +modifyStation()
+        }
+        
+        class SiteManager {
+            +addSite()
+            +deleteSite()
+            +modifySite()
+        }
+
+        class EVSEManager {
+            +addEVSE()
+            +deleteEVSE()
+            +modifyEVSE()
+        }
+    }
+
+    package "AI  Service" {
+        class AIServiceApp {
+            +run()
+        }
+        class EnergyConsumptionForecaster {
+            +forecastConsumption()
+        }
+        class InfrastructureGrowthPredictor {
+            +predictGrowth()
+        }
+        class InfrastructureLocationRecommender {
+            +recommendLocations()
+        }
+        class ChargerAvailabilityPredictor {
+            +predictAvailability()
+        }
+    }
+}
+
+package "Data Access Layer" {
+    class User {
+    }   
+
+    class CRUD {
+        +createSite()
+        +readSite()
+        +updateSite()
+        +deleteSite()
+        +createStation()
+        +readStation()
+        +updateStation()
+        +deleteStation()
+        +createEVSE()
+        +readEVSE()
+        +updateEVSE()
+        +deleteEVSE()
+    }   
+    
+    class Analytics {
+        +getTransactions()
+    }
+
+    class Staff extends User {
+    }
+    
+    class Owner extends User {
+    }
+    
+    class Driver extends User {
+    }
+}
+
+package "Database Managers" {
+    class MySQLManager {
+        +executeSQL()
+    }
+    
+    class MongoDBManager {
+        +executeMongoQuery()
+    }
+}
+
+' Hidden connection to enforce layout preference
+EnergyConsumptionForecaster -[hidden]- AnalyticsServiceApp
+
+AIServiceApp ..> ChargerAvailabilityPredictor : uses
+AIServiceApp ..> EnergyConsumptionForecaster : uses
+AIServiceApp ..> InfrastructureGrowthPredictor : uses
+AIServiceApp ..> InfrastructureLocationRecommender : uses
+
+AnalyticsServiceApp ..> AnalyticsEngine : uses
+AnalyticsEngine ..> User : uses
+AnalyticsEngine ..> AIServiceApp : REST API
+AnalyticsEngine ..> ManagementServiceApp : REST API
+
+ManagementServiceApp ..> StationManager : uses
+ManagementServiceApp ..> SiteManager : uses
+ManagementServiceApp ..> EVSEManager : uses
+
+StationManager ..> User : uses
+SiteManager ..> User : uses
+EVSEManager ..> User : uses
+
+User +-- Analytics
+User +-- CRUD
+
+CRUD ..> MySQLManager : uses
+Analytics ..> MongoDBManager : uses
+
+Staff ..> CRUD : <<override>>
+Staff ..> Analytics : <<override>>
+Owner ..> CRUD : <<override>>
+Owner ..> Analytics : <<override>>
+Driver ..> CRUD : <<override>>
+Driver ..> Analytics : <<override>>
+
+@enduml

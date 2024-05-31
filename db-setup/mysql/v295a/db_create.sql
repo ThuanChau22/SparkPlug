@@ -37,7 +37,6 @@ CREATE TABLE Station_Owner (
 CREATE TABLE Site (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     owner_id INT UNSIGNED NOT NULL,
-    -- location POINT NOT NULL,
 	latitude VARCHAR(20),
 	longitude VARCHAR(20),
     name VARCHAR(255) NOT NULL,
@@ -45,6 +44,7 @@ CREATE TABLE Site (
     zip_code INT NOT NULL,
     city VARCHAR(255) NOT NULL,
     state CHAR(2) NOT NULL,
+    country VARCHAR(255) NOT NULL DEFAULT 'USA',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     KEY idx_name (name),
@@ -52,31 +52,59 @@ CREATE TABLE Site (
     KEY idx_zip_code (zip_code),
     CONSTRAINT fk_Site_Station_Owner FOREIGN KEY (owner_id)
     REFERENCES Station_Owner(id) ON DELETE RESTRICT ON UPDATE CASCADE
-    -- CONSTRAINT fk_Site_Zip_Code FOREIGN KEY (zip_code)
-    -- REFERENCES Zip_Code(zip) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 CREATE TABLE Station (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'Offline',
-    -- elec_status VARCHAR(20) NOT NULL,
-    -- net_status VARCHAR(20) NOT NULL,
-    price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    charge_level VARCHAR(50) NOT NULL,
-    connector_type VARCHAR(50) NOT NULL,
+    -- status VARCHAR(20) NOT NULL DEFAULT 'Offline',
+    -- price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    -- charge_level VARCHAR(50) NOT NULL,
+    -- connector_type VARCHAR(50) NOT NULL,
     created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    -- coords POINT,
     latitude VARCHAR(20),
 	longitude VARCHAR(20),
     site_id INT UNSIGNED,
     CONSTRAINT fk_Station_Site FOREIGN KEY (site_id)
-    REFERENCES Site(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    KEY idx_status (status),
-    KEY idx_charge_level (charge_level),
-    KEY idx_connector_type (connector_type)
+    REFERENCES Site(id) ON DELETE RESTRICT ON UPDATE CASCADE
+    -- KEY idx_status (status),
+    -- KEY idx_charge_level (charge_level),
+    -- KEY idx_connector_type (connector_type)
 );
+
+CREATE TABLE EVSE (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    station_id INT UNSIGNED NOT NULL,
+    evse_number INT UNSIGNED NOT NULL,
+    connector_type VARCHAR(50) NOT NULL,
+    -- status VARCHAR(20) NOT NULL DEFAULT 'Offline',
+    price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    charge_level VARCHAR(50) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_station_id (station_id),
+    KEY idx_connector_type (connector_type),
+    -- KEY idx_status (status),
+    KEY idx_charge_level (charge_level),
+    CONSTRAINT fk_EVSE_Station FOREIGN KEY (station_id)
+    REFERENCES Station(id) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- Trigger to increment EVSE number for each station
+DELIMITER //
+CREATE TRIGGER increment_evse_number
+BEFORE INSERT ON EVSE
+FOR EACH ROW
+BEGIN
+    SET NEW.evse_number = (
+        SELECT IFNULL(MAX(evse_number), 0) + 1
+        FROM EVSE
+        WHERE station_id = NEW.station_id
+    );
+END;
+//
+DELIMITER ;
 
 CREATE TABLE RFID_map (
     driver_id INT UNSIGNED,
@@ -88,8 +116,13 @@ CREATE TABLE RFID_map (
 );
 
 CREATE VIEW stations_joined AS
-SELECT Station.id, Station.name, status, price, charge_level, connector_type, 
-Station.created_at, Station.updated_at, Station.latitude, Station.longitude,
+SELECT Station.id as station_id, Station.name as station_name, Station.latitude, Station.longitude,
 site_id, owner_id, Site.latitude as site_latitude, Site.longitude as site_longitude,
-Site.name as site_name, street_address, zip_code, city, state
-FROM Station JOIN Site ON Station.site_id = Site.id
+Site.name as site_name, street_address, zip_code, city, state, country
+FROM Station JOIN Site ON Station.site_id = Site.id;
+
+CREATE VIEW evses_joined AS
+SELECT Station.id as station_id, Station.name as station_name, Station.latitude, Station.longitude,
+site_id, owner_id, Site.latitude as site_latitude, Site.longitude as site_longitude,
+Site.name as site_name, street_address, zip_code, city, state, country, EVSE.id as evse_id, evse_number, price, charge_level, connector_type 
+FROM Station JOIN Site ON Station.site_id = Site.id JOIN EVSE ON Station.id = EVSE.station_id;
