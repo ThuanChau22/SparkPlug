@@ -93,6 +93,9 @@ const Dashboard = () => {
   const station = useSelector((state) => selectStationById(state, stationId));
   const token = useSelector(selectAuthAccessToken);
   const [analyticsData, setAnalyticsData] = useState(null);
+  const [dashboardData, setDashboardData] = useState([]);
+  const [EVSEStatus, setEVSEStatus] = useState([]);
+
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [chargeLevel, setChargeLevel] = useState("All");
@@ -108,35 +111,148 @@ const Dashboard = () => {
     return [month, day, year].join("/");
   };
 
-  const fetchData = useCallback(async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
-      const base = `${StationAnalyticsAPI}/${stationId}`;//get endpoint
+      const base = `${StationAnalyticsAPI}/transactions`;//get endpoint
       const params = [];
       if (startDate) params.push(`start_date=${formatDate(startDate)}`);
       if (endDate) params.push(`end_date=${formatDate(endDate)}`);
       if (chargeLevel !== "All") params.push(`charge_level=${chargeLevel}`);
       const query = params.length > 0 ? `?${params.join("&")}` : "";
       const headers = { Authorization: `Bearer ${token}` };//get the authori info
-      const { data } = await apiInstance.get(`${base}${query}`, { headers });//use get function 
-      setAnalyticsData(data);
+
+      const response = await apiInstance.get(`${base}${query}`, { headers });
+      const sanitizedData = response.data.replace(/NaN/g, 'null');
+      const parsedData = JSON.parse(sanitizedData);
+      setDashboardData(parsedData);
+
+      const status_base = `${StationAnalyticsAPI}/evse_status`;//get endpoint
+      const status_response = await apiInstance.get(`${status_base}${query}`, { headers });
+      setEVSEStatus(status_response.data);
     } catch (error) {
       console.log(error);
     }
   }, [StationAnalyticsAPI, stationId, token, startDate, endDate, chargeLevel]);
 
+
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchTransactions();
+  }, [fetchTransactions]);
 
+  const countStatuses = (statusData) => {
+    const statusCounts = {
+      available: 0,
+      unavailable: 0,
+      in_use: 0
+    };
 
-    //==================================================
+    statusData.forEach(evse => {
+      const lastUpdate = evse.updates[evse.updates.length - 1];
+      if (lastUpdate.new_status in statusCounts) {
+        statusCounts[lastUpdate.new_status]++;
+      }
+    });
+
+    return [statusCounts.available, statusCounts.unavailable, statusCounts.in_use];
+  };
+
+  const [availableCount, unavailableCount, inUseCount] = countStatuses(EVSEStatus);
+  const outOfServiceCount = EVSEStatus.length - availableCount - unavailableCount - inUseCount;
+
+  const calculatePercentage = (part, total) => {
+    return total === 0 ? 0 : ((part / total) * 100).toFixed(1);
+  };
+
+  const availablePercentage = calculatePercentage(availableCount, EVSEStatus.length);
+  const unAvailablePercentage = calculatePercentage(unavailableCount, EVSEStatus.length);
+  const inUsePercentage = calculatePercentage(inUseCount, EVSEStatus.length);
+  const outOfServicePercentage = calculatePercentage(outOfServiceCount, EVSEStatus.length);
+
   const progressExample = [
-    { title: 'Total Chargers', value :'619', percent: 100, color: 'success' },
-    { title: 'Available Chargers', value: '512', percent: 78, color: 'info' },
-    { title: 'In Use Chargers', value: '124', percent: 49, color: 'warning' },
-    { title: 'Out of Service Chargers', value: '4', percent: 1.5, color: 'danger' },
-    { title: 'Unavailable Chargers', value: '9', percent: 2, color: 'primary' },
+    { title: 'Total Chargers', value: EVSEStatus.length, percent: 100, color: 'success' },
+    { title: 'Available Chargers', value: availableCount, percent: availablePercentage, color: 'info' },
+    { title: 'In Use Chargers', value: inUseCount, percent: inUsePercentage, color: 'warning' },
+    { title: 'Out of Service Chargers', value: outOfServiceCount, percent: outOfServicePercentage, color: 'danger' },
+    { title: 'Unavailable Chargers', value: unavailableCount, percent: unAvailablePercentage, color: 'primary' },
   ]
+
+  const [barChartData, setBarChartData] = useState({
+    labels: [],
+    datasets: [
+      {
+        label: 'Transactions per Month',
+        backgroundColor: 'rgba(144, 238, 144, 1)',
+        borderColor: 'rgba(255,255,255,.55)',
+        data: [],
+        barPercentage: 0.6,
+      },
+    ],
+  });
+
+  const [lineChartData, setLineChartData] = useState({
+    labels: [],
+    datasets: [
+      {
+        label: 'Monthly Fees',
+        backgroundColor: 'transparent',
+        borderColor: 'rgba(255,255,255,.55)',
+        pointBackgroundColor: getStyle('--cui-primary'),
+        data: [],
+      },
+    ],
+  });
+
+  useEffect(() => {
+    // Process the data to count transactions and sum fees per month
+    const transactionsPerMonth = {};
+    const feesPerMonth = {};
+
+    dashboardData.forEach((transaction) => {
+      const date = new Date(transaction.transaction_date);
+      const month = date.toLocaleString('default', { month: 'long' });
+      const year = date.getFullYear();
+      const monthYear = `${month} ${year}`;
+
+      if (!transactionsPerMonth[monthYear]) {
+        transactionsPerMonth[monthYear] = 0;
+        feesPerMonth[monthYear] = 0;
+      }
+      transactionsPerMonth[monthYear] += 1;
+      feesPerMonth[monthYear] += transaction.fee;
+    });
+
+    // Generate labels and data for the charts
+    const labels = Object.keys(transactionsPerMonth).sort((a, b) => new Date(a) - new Date(b));
+    const transactionData = labels.map(label => transactionsPerMonth[label]);
+    const feeData = labels.map(label => feesPerMonth[label]);
+
+    // Update the chart data
+    setBarChartData({
+      labels,
+      datasets: [
+        {
+          label: 'Transactions per Month',
+          backgroundColor: 'rgba(144, 238, 144, 1)',
+          borderColor: 'rgba(255,255,255,.55)',
+          data: transactionData,
+          barPercentage: 0.6,
+        },
+      ],
+    });
+
+    setLineChartData({
+      labels,
+      datasets: [
+        {
+          label: 'Monthly Fees',
+          backgroundColor: 'transparent',
+          borderColor: 'rgba(255,255,255,.55)',
+          pointBackgroundColor: getStyle('--cui-primary'),
+          data: feeData,
+        },
+      ],
+    });
+  }, [dashboardData]);
 
   const progressGroupExample1 = [
     { title: 'Monday', value1: 34, value2: 78 },
@@ -438,35 +554,7 @@ const Dashboard = () => {
               <CChartBar
                 className="mt-3 mx-3"
                 style={{ height: '120px' }}
-                data={{
-                  labels: [
-                    'January',
-                    'February',
-                    'March',
-                    'April',
-                    'May',
-                    'June',
-                    'July',
-                    'August',
-                    'September',
-                    'October',
-                    'November',
-                    'December',
-                    'January',
-                    'February',
-                    'March',
-                    'April',
-                  ],
-                  datasets: [
-                    {
-                      label: 'My First dataset',
-                      backgroundColor: 'rgba(144, 238, 144, 1)',
-                      borderColor: 'rgba(255,255,255,.55)',
-                      data: [78, 81, 80, 45, 34, 12, 40, 85, 65, 23, 12, 98, 34, 84, 67, 82],
-                      barPercentage: 0.6,
-                    },
-                  ],
-                }}
+                data={barChartData}
                 options={{
                   maintainAspectRatio: false,
                   plugins: {
@@ -516,18 +604,7 @@ const Dashboard = () => {
                 //ref={WidgetsDropdown.widgetChartRef1}
                 className="mt-3 mx-3"
                 style={{ height: '120px' }}
-                data={{
-                  labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-                  datasets: [
-                    {
-                      label: 'My First dataset',
-                      backgroundColor: 'transparent',
-                      borderColor: 'rgba(255,255,255,.55)',
-                      pointBackgroundColor: getStyle('--cui-primary'),
-                      data: [65, 59, 84, 84, 51, 55, 40],
-                    },
-                  ],
-                }}
+                data={lineChartData}
                 options={{
                   plugins: {
                     legend: {
@@ -549,8 +626,8 @@ const Dashboard = () => {
                       },
                     },
                     y: {
-                      min: 30,
-                      max: 89,
+                      min: 0,
+                      //max: 89,
                       display: false,
                       grid: {
                         display: false,
