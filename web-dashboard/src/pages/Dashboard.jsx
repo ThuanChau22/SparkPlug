@@ -202,10 +202,89 @@ const Dashboard = () => {
     ],
   });
 
+  const [energyChartData, setEnergyChartData] = useState({
+    labels: [],
+    datasets: [
+      {
+        label: 'Energy Consumption',
+        backgroundColor: 'rgba(191, 148, 228, 1)',
+        borderColor: 'rgba(255,255,255,.55)',
+        data: [],
+        barPercentage: 0.6,
+      },
+    ],
+  });
+
+  const [timeCategoryChartData, setTimeCategoryChartData] = useState({
+    labels: ['Off-Peak', 'Partial Peak', 'Peak'],
+    datasets: [
+      {
+        label: 'Slow Charge',
+        backgroundColor: 'rgba(255, 179, 102, 1)',
+        borderColor: 'rgba(255,255,255,.55)',
+        data: [0, 0, 0],
+        barPercentage: 0.6,
+        stack: 'Stack 0',
+      },
+      {
+        label: 'Fast Charge',
+        backgroundColor: 'rgba(255, 140, 0, 1)',
+        borderColor: 'rgba(255,255,255,.55)',
+        data: [0, 0, 0],
+        barPercentage: 0.6,
+        stack: 'Stack 0',
+      },
+    ],
+  });
+
+  const [energyTimeChartData, setEnergyTimeChartData] = useState({
+    labels: [],
+    datasets: [
+      {
+        label: 'Off-Peak Energy Consumption',
+        backgroundColor: 'transparent',
+        borderColor: getStyle('--cui-primary'),
+        pointBackgroundColor: getStyle('--cui-primary'),
+        data: [],
+      },
+      {
+        label: 'Partial Peak Energy Consumption',
+        backgroundColor: 'transparent',
+        borderColor: getStyle('--cui-warning'),
+        pointBackgroundColor: getStyle('--cui-warning'),
+        data: [],
+      },
+      {
+        label: 'Peak Energy Consumption',
+        backgroundColor: 'transparent',
+        borderColor: getStyle('--cui-danger'),
+        pointBackgroundColor: getStyle('--cui-danger'),
+        data: [],
+      },
+    ],
+  });
+
+  const [donutData, setDonutData] = useState({
+    labels: ['Available', 'Unavailable', 'In Use'],
+    datasets: [
+      {
+        data: [0, 0, 0],
+        backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56'],
+        hoverBackgroundColor: ['#36A2EB', '#FF6384', '#FFCE56'],
+      },
+    ],
+  });
+
   useEffect(() => {
-    // Process the data to count transactions and sum fees per month
+    // Process the data to count transactions, sum fees, sum energy_kwh per month, and categorize time
     const transactionsPerMonth = {};
     const feesPerMonth = {};
+    const energyPerMonth = {};
+    const timeCategories = {
+      offPeak: { fastCharge: 0, slowCharge: 0, energy: [] },
+      partialPeak: { fastCharge: 0, slowCharge: 0, energy: [] },
+      peak: { fastCharge: 0, slowCharge: 0, energy: [] },
+    };
 
     dashboardData.forEach((transaction) => {
       const date = new Date(transaction.transaction_date);
@@ -216,15 +295,65 @@ const Dashboard = () => {
       if (!transactionsPerMonth[monthYear]) {
         transactionsPerMonth[monthYear] = 0;
         feesPerMonth[monthYear] = 0;
+        energyPerMonth[monthYear] = 0;
       }
       transactionsPerMonth[monthYear] += 1;
       feesPerMonth[monthYear] += transaction.fee;
+      energyPerMonth[monthYear] += transaction.energy_kwh;
+
+      // Categorize by time and charge level
+      const startDate = new Date(transaction.start_date);
+      const hours = startDate.getHours();
+      let category = '';
+      if (hours >= 0 && hours < 12) {
+        category = 'offPeak';
+      } else if ((hours >= 12 && hours < 16) || (hours >= 21 && hours < 24)) {
+        category = 'partialPeak';
+      } else if (hours >= 16 && hours < 21) {
+        category = 'peak';
+      }
+
+      const chargeLevel = transaction.charge_level === 'Level 2' ? 'fastCharge' : 'slowCharge';
+      timeCategories[category][chargeLevel] += 1;
+      timeCategories[category].energy.push({ monthYear, value: transaction.energy_kwh });
     });
 
     // Generate labels and data for the charts
     const labels = Object.keys(transactionsPerMonth).sort((a, b) => new Date(a) - new Date(b));
-    const transactionData = labels.map(label => transactionsPerMonth[label]);
-    const feeData = labels.map(label => feesPerMonth[label]);
+    const transactionData = labels.map((label) => transactionsPerMonth[label]);
+    const feeData = labels.map((label) => feesPerMonth[label]);
+    const energyData = labels.map((label) => energyPerMonth[label]);
+
+    // Aggregate energy consumption by month for each category
+    const aggregateEnergy = (category) => {
+      const energyByMonth = {};
+      timeCategories[category].energy.forEach((entry) => {
+        if (!energyByMonth[entry.monthYear]) {
+          energyByMonth[entry.monthYear] = 0;
+        }
+        energyByMonth[entry.monthYear] += entry.value;
+      });
+      return labels.map((label) => energyByMonth[label] || 0);
+    };
+
+    const offPeakEnergyData = aggregateEnergy('offPeak');
+    const partialPeakEnergyData = aggregateEnergy('partialPeak');
+    const peakEnergyData = aggregateEnergy('peak');
+
+    // Calculate percentages
+    const totalEnergyData = labels.map((label, index) => (
+      offPeakEnergyData[index] + partialPeakEnergyData[index] + peakEnergyData[index]
+    ));
+
+    const offPeakPercentageData = offPeakEnergyData.map((value, index) => (
+      (value / totalEnergyData[index]) * 100
+    ));
+    const partialPeakPercentageData = partialPeakEnergyData.map((value, index) => (
+      (value / totalEnergyData[index]) * 100
+    ));
+    const peakPercentageData = peakEnergyData.map((value, index) => (
+      (value / totalEnergyData[index]) * 100
+    ));
 
     // Update the chart data
     setBarChartData({
@@ -252,7 +381,116 @@ const Dashboard = () => {
         },
       ],
     });
-  }, [dashboardData]);
+
+    setEnergyChartData({
+      labels,
+      datasets: [
+        {
+          label: 'Energy Consumption',
+          backgroundColor: 'rgba(191, 148, 228, 1)',
+          borderColor: 'rgba(255,255,255,.55)',
+          data: energyData,
+          barPercentage: 0.6,
+        },
+      ],
+    });
+
+    setTimeCategoryChartData({
+      labels: ['Off-Peak', 'Partial Peak', 'Peak'],
+      datasets: [
+        {
+          label: 'Slow Charge',
+          backgroundColor: 'rgba(255, 179, 102, 1)',
+          borderColor: 'rgba(255,255,255,.55)',
+          data: [
+            timeCategories.offPeak.slowCharge,
+            timeCategories.partialPeak.slowCharge,
+            timeCategories.peak.slowCharge,
+          ],
+          barPercentage: 0.6,
+          stack: 'Stack 0',
+        },
+        {
+          label: 'Fast Charge',
+          backgroundColor: 'rgba(255, 140, 0, 1)',
+          borderColor: 'rgba(255,255,255,.55)',
+          data: [
+            timeCategories.offPeak.fastCharge,
+            timeCategories.partialPeak.fastCharge,
+            timeCategories.peak.fastCharge,
+          ],
+          barPercentage: 0.6,
+          stack: 'Stack 0',
+        },
+      ],
+    });
+
+    setEnergyTimeChartData({
+      labels,
+      datasets: [
+        {
+          label: 'Off-Peak Energy Consumption',
+          backgroundColor: 'transparent',
+          borderColor: getStyle('--cui-primary'),
+          pointBackgroundColor: getStyle('--cui-primary'),
+          data: offPeakPercentageData,
+        },
+        {
+          label: 'Partial Peak Energy Consumption',
+          backgroundColor: 'transparent',
+          borderColor: getStyle('--cui-warning'),
+          pointBackgroundColor: getStyle('--cui-warning'),
+          data: partialPeakPercentageData,
+        },
+        {
+          label: 'Peak Energy Consumption',
+          backgroundColor: 'transparent',
+          borderColor: getStyle('--cui-danger'),
+          pointBackgroundColor: getStyle('--cui-danger'),
+          data: peakPercentageData,
+        },
+      ],
+    });
+
+    const calculateUptime = (data) => {
+      let availableCount = 0;
+      let unavailableCount = 0;
+      let inUseCount = 0;
+      let totalCount = data.length;
+
+      data.forEach((evse) => {
+        evse.updates.forEach((update) => {
+          if (update.new_status === 'available') {
+            availableCount += 1;
+          } else if (update.new_status === 'unavailable') {
+            unavailableCount += 1;
+          } else if (update.new_status === 'in_use') {
+            inUseCount += 1;
+          }
+          totalCount += 1;
+        });
+      });
+
+      const availablePercentage = (availableCount / totalCount) * 100;
+      const unavailablePercentage = (unavailableCount / totalCount) * 100;
+      const inUsePercentage = (inUseCount / totalCount) * 100;
+
+      return [availablePercentage, unavailablePercentage, inUsePercentage];
+    };
+
+    const [availablePercentage, unavailablePercentage, inUsePercentage] = calculateUptime(EVSEStatus);
+
+    setDonutData({
+      labels: ['Available', 'Unavailable', 'In Use'],
+      datasets: [
+        {
+          data: [availablePercentage, unavailablePercentage, inUsePercentage],
+          backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56'],
+          hoverBackgroundColor: ['#36A2EB', '#FF6384', '#FFCE56'],
+        },
+      ],
+    });
+  }, [dashboardData, EVSEStatus]);
 
   const progressGroupExample1 = [
     { title: 'Monday', value1: 34, value2: 78 },
@@ -315,11 +553,11 @@ const Dashboard = () => {
   };
 
   const donut_data = {
-    labels: ['Light Green', 'Medium Green', 'Dark Green', 'Very Dark Green'],
+    labels: ['Available', 'Unavailable', 'In-Use'],
     datasets: [
       {
         label: 'Uptime Percentage',
-        data: [12, 19, 3, 5],
+        data: [49.9, 13.4, 36.7],
         backgroundColor: [
           'rgba(144, 238, 144, 0.2)', // Light Green
           'rgba(0, 128, 0, 0.2)',     // Medium Green
@@ -524,7 +762,7 @@ const Dashboard = () => {
             lg={{ cols: 4 }}
             xl={{ cols: 5 }}
             className="mb-2 text-center"
-            style={{ color: 'grey' }} 
+            style={{ color: 'white' }} 
       >
         {progressExample.map((item, index, items) => (
           <CCol
@@ -667,29 +905,7 @@ const Dashboard = () => {
               <CChartBar
                 className="mt-3 mx-3"
                 style={{ height: '120px' }}
-                data={{
-                  labels: [
-                    'OFF-PEAK',
-                    'PARTIAL-PEAK',
-                    'PEAK',
-                  ],
-                  datasets: [
-                    {
-                      label: 'Energy',
-                      backgroundColor: 'rgba(191, 148, 228, 1)',
-                      borderColor: 'rgba(255,255,255,.55)',
-                      data: [78, 81, 82],
-                      barPercentage: 0.6,
-                    },
-                    {
-                      label: 'Consumption',
-                      backgroundColor: 'rgba(75, 0, 130, 1)',
-                      borderColor: 'rgba(255,255,255,.55)',
-                      data: [84, 67, 82],
-                      barPercentage: 0.6,
-                    },
-                  ],
-                }}
+                data={energyChartData}
                 options={{
                   maintainAspectRatio: false,
                   plugins: {
@@ -727,7 +943,69 @@ const Dashboard = () => {
           />
         </CCol>  
         <CCol xs={6}>
-          <MainChart />
+        <CWidgetStatsA
+      color="dark"
+      value={
+        <>
+          Peak/Off-peak Time{' '}
+        </>
+      }
+      chart={
+        <CChartLine
+          className="mt-3 mx-3"
+          style={{ height: '120px' }}
+          data={energyTimeChartData}
+          options={{
+            plugins: {
+              legend: {
+                display: false,
+              },
+            },
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                border: {
+                  display: true,
+                },
+                grid: {
+                  display: true,
+                  drawBorder: true,
+                },
+                ticks: {
+                  display: true,
+                },
+              },
+              y: {
+                min: 0,
+                max: 100,
+                display: true,
+                grid: {
+                  display: true,
+                  drawBorder: true,
+                },
+                ticks: {
+                  display: true,
+                  callback: function(value) {
+                    return value + "%";
+                  },
+                },
+              },
+            },
+            elements: {
+              line: {
+                borderWidth: 2,
+                tension: 0.4,
+              },
+              point: {
+                radius: 0,
+                hitRadius: 10,
+                hoverRadius: 4,
+              },
+            },
+          }}
+        />
+      }
+    />
         </CCol>
       </CRow>
       <CRow className="custom-row-spacing">
@@ -743,31 +1021,7 @@ const Dashboard = () => {
               <CChartBar
                 className="mt-3 mx-3"
                 style={{ height: '120px' }}
-                data={{
-                  labels: [
-                    'OFF-PEAK',
-                    'PARTIAL-PEAK',
-                    'PEAK',
-                  ],
-                  datasets: [
-                    {
-                      label: 'Slow Charger',
-                      backgroundColor: 'rgba(255, 179, 102, 1)',
-                      borderColor: 'rgba(255,255,255,.55)',
-                      data: [78, 81, 82],
-                      barPercentage: 0.6,
-                      stack: 'Stack 0'
-                    },
-                    {
-                      label: 'Fast Charger',
-                      backgroundColor: 'rgba(255, 140, 0, 1)',
-                      borderColor: 'rgba(255,255,255,.55)',
-                      data: [84, 67, 82],
-                      barPercentage: 0.6,
-                      stack: 'Stack 0'
-                    },
-                  ],
-                }}
+                data={timeCategoryChartData}
                 options={{
                   maintainAspectRatio: false,
                   plugins: {
@@ -819,7 +1073,7 @@ const Dashboard = () => {
           <CRow>
             <div style={{ height: '120px', width: '340px', display: 'flex', justifyContent: 'center' }}>
               
-              <Doughnut data={donut_data} options={donut_options} />
+              <Doughnut data={donut_data} options={donut_options} /> 
             </div>
           </CRow>
         </CCol>
