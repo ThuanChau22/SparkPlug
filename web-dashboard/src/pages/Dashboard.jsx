@@ -275,11 +275,54 @@ const Dashboard = () => {
     ],
   });
 
+  const [driversChartData, setDriversChartData] = useState({
+    labels: [],
+    datasets: [
+      {
+        label: 'Drivers per Month',
+        backgroundColor: 'transparent',
+        borderColor: 'rgba(144, 238, 144, 1)',
+        pointBackgroundColor: getStyle('--cui-info'),
+        data: [],
+      },
+    ],
+  });
+
+  const [ownersChartData, setOwnersChartData] = useState({
+    labels: [],
+    datasets: [
+      {
+        label: 'Owners per Month',
+        backgroundColor: 'transparent',
+        borderColor: 'rgba(191, 148, 228, 1)',
+        pointBackgroundColor: getStyle('--cui-info'),
+        data: [],
+      },
+    ],
+  });
+
+  const [stationChartData, setStationChartData] = useState({
+    labels: [],
+    datasets: [
+      {
+        label: 'Stations per Month',
+        backgroundColor: 'rgba(144, 238, 144, 1)',
+        borderColor: 'rgba(255,255,255,.55)',
+        data: [],
+        barPercentage: 0.6,
+      },
+    ],
+  });
+
   useEffect(() => {
     // Process the data to count transactions, sum fees, sum energy_kwh per month, and categorize time
     const transactionsPerMonth = {};
     const feesPerMonth = {};
     const energyPerMonth = {};
+    const uniqueUsersPerMonth = {};
+    const evsePerMonth = {};
+    const ownersPerMonth = {};
+    const stationsPerMonth = {};
     const timeCategories = {
       offPeak: { fastCharge: 0, slowCharge: 0, energy: [] },
       partialPeak: { fastCharge: 0, slowCharge: 0, energy: [] },
@@ -296,13 +339,18 @@ const Dashboard = () => {
         transactionsPerMonth[monthYear] = 0;
         feesPerMonth[monthYear] = 0;
         energyPerMonth[monthYear] = 0;
+        uniqueUsersPerMonth[monthYear] = new Set();
+        stationsPerMonth[monthYear] = new Set();
       }
       transactionsPerMonth[monthYear] += 1;
       feesPerMonth[monthYear] += transaction.fee;
       energyPerMonth[monthYear] += transaction.energy_kwh;
+      uniqueUsersPerMonth[monthYear].add(transaction.user_id);
+      stationsPerMonth[monthYear].add(transaction.station_id);
 
       // Categorize by time and charge level
       const startDate = new Date(transaction.start_date);
+      
       const hours = startDate.getHours();
       let category = '';
       if (hours >= 0 && hours < 12) {
@@ -323,6 +371,29 @@ const Dashboard = () => {
     const transactionData = labels.map((label) => transactionsPerMonth[label]);
     const feeData = labels.map((label) => feesPerMonth[label]);
     const energyData = labels.map((label) => energyPerMonth[label]);
+    const uniqueDriversData = labels.map((label) => uniqueUsersPerMonth[label].size);
+    const stationData = labels.map((label) => stationsPerMonth[label].size);
+
+    EVSEStatus.forEach((evse) => {
+      if (evse.updates.length > 0) {
+        const firstUpdate = evse.updates[0];
+        const date = new Date(firstUpdate.timestamp);
+        const month = date.toLocaleString('default', { month: 'long' });
+        const year = date.getFullYear();
+        const monthYear = `${month} ${year}`;
+
+        if (!ownersPerMonth[monthYear]) {
+          ownersPerMonth[monthYear] = 0;
+          evsePerMonth[monthYear] = new Set();
+        }
+        ownersPerMonth[monthYear] += 1;
+        evsePerMonth[monthYear].add(evse.id);
+      }
+    });
+
+    const evse_labels = Object.keys(ownersPerMonth).sort((a, b) => new Date(a) - new Date(b));
+    const ownersData = evse_labels.map((label) => evsePerMonth[label].size);
+    
 
     // Aggregate energy consumption by month for each category
     const aggregateEnergy = (category) => {
@@ -456,7 +527,7 @@ const Dashboard = () => {
       let availableCount = 0;
       let unavailableCount = 0;
       let inUseCount = 0;
-      let totalCount = data.length;
+      let totalCount = 0;
 
       data.forEach((evse) => {
         evse.updates.forEach((update) => {
@@ -490,6 +561,46 @@ const Dashboard = () => {
         },
       ],
     });
+
+    setDriversChartData({
+      labels,
+      datasets: [
+        {
+          label: 'Drivers per Month',
+          backgroundColor: 'transparent',
+          borderColor: 'rgba(144, 238, 144, 1)',
+          pointBackgroundColor: getStyle('--cui-info'),
+          data: uniqueDriversData,
+        },
+      ],
+    });
+
+    setOwnersChartData({
+      labels,
+      datasets: [
+        {
+          label: 'Number of Owners per Month',
+          backgroundColor: 'transparent',
+          borderColor: 'rgba(191, 148, 228, 1)',
+          pointBackgroundColor: getStyle('--cui-info'),
+          data: ownersData,
+        },
+      ],
+    });
+
+    setStationChartData({
+      labels,
+      datasets: [
+        {
+          label: 'Stations per Month',
+          backgroundColor: 'rgba(144, 238, 144, 1)',
+          borderColor: 'rgba(255,255,255,.55)',
+          data: stationData,
+          barPercentage: 0.6,
+        },
+      ],
+    });
+
   }, [dashboardData, EVSEStatus]);
 
   const progressGroupExample1 = [
@@ -771,7 +882,7 @@ const Dashboard = () => {
             })}
             key={index}
           >
-            <div className="text-body-secondary">{item.title}</div>
+            <div>{item.title}</div>
             <div className="fw-semibold text-truncate">
               {item.value} ({item.percent}%)
             </div>
@@ -1068,14 +1179,14 @@ const Dashboard = () => {
             }
           />
         </CCol>  
-        <CCol xs={6} className="d-flex justify-content-center align-items-center" style={{ height: '100%' }}>
-          <CRow>Uptime Percentage</CRow>
+        <CCol xs={6} className="d-flex justify-content-center align-items-center" style={{ height: '100%'}}>
+         {/* <CRow>Uptime Percentage</CRow>
           <CRow>
             <div style={{ height: '120px', width: '340px', display: 'flex', justifyContent: 'center' }}>
               
               <Doughnut data={donut_data} options={donut_options} /> 
             </div>
-          </CRow>
+          </CRow>*/}
         </CCol>
       </CRow> 
       <CRow className="custom-row-spacing">
@@ -1091,18 +1202,7 @@ const Dashboard = () => {
               <CChartLine
                 className="mt-3 mx-3"
                 style={{ height: '120px' }}
-                data={{
-                  labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-                  datasets: [
-                    {
-                      label: 'My First dataset',
-                      backgroundColor: 'transparent',
-                      borderColor: 'rgba(144, 238, 144, 1)',
-                      pointBackgroundColor: getStyle('--cui-info'),
-                      data: [1, 18, 9, 17, 34, 22, 11],
-                    },
-                  ],
-                }}
+                data={driversChartData}
                 options={{
                   plugins: {
                     legend: {
@@ -1124,8 +1224,8 @@ const Dashboard = () => {
                       },
                     },
                     y: {
-                      min: -9,
-                      max: 39,
+                      min: 0,
+                     // max: 39,
                       display: true,
                       grid: {
                         display: true,
@@ -1195,7 +1295,7 @@ const Dashboard = () => {
                       },
                     },
                     y: {
-                      min: -9,
+                      min: 0,
                       max: 39,
                       display: true,
                       grid: {
@@ -1235,25 +1335,7 @@ const Dashboard = () => {
               <CChartBar
                 className="mt-3 mx-3"
                 style={{ height: '120px' }}
-                data={{
-                  labels: [
-                    '1/6',
-                    '2/6',
-                    '3/6',
-                    '4/6',
-                    '5/6',
-                    '6/6',
-                  ],
-                  datasets: [
-                    {
-                      label: 'My First dataset',
-                      backgroundColor: 'rgba(144, 238, 144, 1)',
-                      borderColor: 'rgba(255,255,255,.55)',
-                      data: [78, 81, 80, 45, 34, 12],
-                      barPercentage: 0.6,
-                    },
-                  ],
-                }}
+                data={stationChartData}
                 options={{
                   indexAxis: 'y',
                   maintainAspectRatio: false,
@@ -1292,12 +1374,12 @@ const Dashboard = () => {
           />
         </CCol>
         <CCol xs={6}>
-        <CRow>Station Growth by Region</CRow>
+        {/*<CRow>Station Growth by Region</CRow>
         <CRow>
         <div style={{ height: '120px', width: '340px', display: 'flex', justifyContent: 'center' }}>
           <Pie data={pie_data} options={pie_options} />
         </div>
-        </CRow>
+          </CRow>*/}
         </CCol>
       </CRow>
     
