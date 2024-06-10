@@ -26,6 +26,7 @@ export const stationSlice = createSlice({
   initialState,
   reducers: {
     stationStateSetAll(state, { payload }) {
+      console.log("createSlice", payload);
       stationEntityAdapter.setAll(state, payload);
     },
     stationStateSetById(state, { payload }) {
@@ -77,7 +78,8 @@ export const stationGetAll = createAsyncThunk(
   async (query = "", { dispatch, getState }) => {
     try {
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.get(`${StationAPI}${query}`, config);
+      const { data } = await apiInstance.get(`${StationAPI}_by_evses${query}`, config);
+      console.log("createAsyncThunk", data);
       dispatch(stationStateSetAll(data));
     } catch (error) {
       handleError({ error, dispatch });

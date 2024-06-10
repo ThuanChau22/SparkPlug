@@ -71,7 +71,7 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
     useEffect(() => {
       if (station) {
         setInput({
-          name: station.name,
+          name: station.station_name,
           price: station.price,
         });
       }
@@ -140,7 +140,7 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
 
     useEffect(() => {
       if (station) {
-        setName(station.name);
+        setName(station.station_name);
       }
     }, []);
 

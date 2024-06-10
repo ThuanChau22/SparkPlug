@@ -40,6 +40,7 @@ const StationManagement = () => {
   const filterRef = createRef();
   const headerHeight = useSelector(selectHeaderHeight);
   const stationList = useSelector(selectStationList);
+
   const stationSelectedState = useSelector(selectSelectedState);
   const stationStateOptions = useSelector(selectStateOptions);
   const stationSelectedCity = useSelector(selectSelectedCity);
@@ -100,10 +101,10 @@ const StationManagement = () => {
   const displayMap = useMemo(() => {
     const renderStationMarker = station => (
       <StationMarker
-        key={station.id}
+        key={station.station_id}
         station={station}
         icon={stationIcon}
-        onMarkerClick={() => handleViewStation(station.id)}
+        onMarkerClick={() => handleViewStation(station.station_id)}
       />
     );
     return (
@@ -154,15 +155,15 @@ const StationManagement = () => {
               )
               : (
                 <CListGroup>
-                  {stationList.map(({ id, name }) => (
+                  {stationList.map(({ station_id, station_name }) => (
                     <CListGroupItem
-                      key={id}
+                      key={station_id}
                       className="py-3"
                       component="button"
-                      onClick={() => handleViewStation(id)}
+                      onClick={() => handleViewStation(station_id)}
                     >
-                      <small className="w-100 text-secondary">ID: {id}</small>
-                      <p className="mb-0">{name}</p>
+                      <small className="w-100 text-secondary">ID: {station_id}</small>
+                      <p className="mb-0">{station_name}</p>
                     </CListGroupItem>
                   ))}
                 </CListGroup>

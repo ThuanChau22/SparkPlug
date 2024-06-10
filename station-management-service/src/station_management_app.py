@@ -8,6 +8,8 @@ from functools import wraps
 from urllib.parse import urljoin
 import os
 from sys import stderr
+from collections import defaultdict
+
 
 # Internal Modules
 from config import (
@@ -168,6 +170,59 @@ def read_stations(user=None):
     stations = convert_coords_to_float_stations(stations)
     return stations
 
+# Aggregate EVSEs into stations
+@app.route("/api/stations_by_evses", methods=["GET"])
+@require_permission("staff", "owner")
+def get_stations_by_evses(user=None):
+    if not user:
+        return {"message": "Permission denied"}, 403
+
+    args = request.args.to_dict()
+
+    if user["role"] == 'owner':
+        args['owner_id'] = user["user_id"]
+    jwt = request.headers.get('Authorization')
+
+    response = requests.get(
+        url=f'{SQL_API_ENDPOINT}/evses', 
+        params=args, 
+        headers={'Authorization': jwt}
+    )
+
+    evses = response.json()
+    evses = convert_coords_to_float_stations(evses)
+
+    stations = defaultdict(list)
+    for evse in evses:
+        station_id = evse['station_id']
+        if not stations[station_id]:
+            stations[station_id] = {
+                "city": evse["city"],
+                "country": evse["country"],
+                "latitude": evse["latitude"],
+                "longitude": evse["longitude"],
+                "owner_id": evse["owner_id"],
+                "price": evse["price"],
+                "site_id": evse["site_id"],
+                "site_latitude": evse["site_latitude"],
+                "site_longitude": evse["site_longitude"],
+                "site_name": evse["site_name"],
+                "state": evse["state"],
+                "station_id": station_id,
+                "station_name": evse["station_name"],
+                "street_address": evse["street_address"],
+                "zip_code": evse["zip_code"],
+                "evses": []
+            }
+        stations[station_id]['evses'].append({
+            "charge_level": evse["charge_level"],
+            "connector_type": evse["connector_type"],
+            "evse_id": evse["evse_id"],
+            "evse_number": evse["evse_number"]
+        })
+
+    return list(stations.values())
+
 @app.route("/api/stations", methods=["POST"])
 @require_permission("staff", "owner")
 def create_station(user=None):
@@ -228,6 +283,27 @@ def read_evses(user=None):
 
     if user["role"] == 'owner':
         args['owner_id'] = user["user_id"]
+    jwt = request.headers.get('Authorization')
+
+    response = requests.get(
+        url=f'{SQL_API_ENDPOINT}/evses', 
+        params=args, 
+        headers={'Authorization': jwt}
+    )
+
+    evses = response.json()
+    evses = convert_coords_to_float_stations(evses)
+    return evses
+
+# Get EVSEs by station_id
+@app.route("/api/evses/<int:station_id>", methods=["GET"])
+@require_permission("staff", "owner", "driver")
+def read_evses_by_station_id(station_id, user=None):
+    if not user:
+        return {"message": "Permission denied"}, 403
+
+    args = request.args.to_dict()
+    args['station_id'] = station_id
     jwt = request.headers.get('Authorization')
 
     response = requests.get(
