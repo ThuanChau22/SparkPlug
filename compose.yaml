@@ -10,7 +10,6 @@ services:
       REACT_APP_USER_API_ENDPOINT: ${WEB_DASHBOARD_USER_API}
       REACT_APP_SITE_API_ENDPOINT: ${WEB_DASHBOARD_SITE_API}
       REACT_APP_STATION_API_ENDPOINT: ${WEB_DASHBOARD_STATION_API}
-      REACT_APP_ANALYTICS_SITE_API_ENDPOINT: ${WEB_DASHBOARD_ANALYTICS_SITE_API}
       REACT_APP_ANALYTICS_STATION_API_ENDPOINT: ${WEB_DASHBOARD_ANALYTICS_STATION_API}
       REACT_APP_MONITORING_API_ENDPOINT: ${WEB_DASHBOARD_MONITORING_API}
       REACT_APP_MONITORING_WS_ENDPOINT: ${WEB_DASHBOARD_MONITORING_WS}
@@ -18,7 +17,8 @@ services:
       REACT_APP_SECURE_LOCAL_STORAGE_HASH_KEY: ${WEB_DASHBOARD_SECURE_LOCAL_STORAGE_HASH_KEY}
     depends_on:
       - user-management
-      - site-station-analytics
+      - station-management
+      - analytics
       - monitoring
     develop:
       watch:
@@ -50,30 +50,91 @@ services:
         - action: rebuild
           path: ./user-management/package.json
 
-  site-station-analytics:
+  sql-db-service:
     extends:
       file: compose.prod.yaml
-      service: site-station-analytics
+      service: sql-db-service
     build:
       target: development
     environment:
       WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
-      AUTH_API_ENDPOINT: ${STATION_AUTH_API_ENDPOINT}
+      AUTH_API_ENDPOINT: ${SQL_AUTH_API_ENDPOINT}
       MYSQL_HOST: ${MYSQL_HOST}
       MYSQL_PORT: ${MYSQL_PORT}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASS: ${MYSQL_PASS}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MONGODB_URL: ${MONGODB_URL}
-    depends_on:
-      - user-management
     develop:
       watch:
         - action: sync
-          path: ./site-station-analytics
+          path: ./sql-db-service
           target: /app
         - action: rebuild
-          path: ./site-station-analytics/requirements.txt
+          path: ./sql-db-service/requirements.txt
+
+  mongo-db-service:
+    extends:
+      file: compose.prod.yaml
+      service: mongo-db-service
+    build:
+      target: development
+    environment:
+      MONGODB_URL: ${MONGODB_URL}
+      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
+      AUTH_API_ENDPOINT: ${MONGO_AUTH_API_ENDPOINT}
+    develop:
+      watch:
+        - action: sync
+          path: ./mongo-db-service
+          target: /app
+        - action: rebuild
+          path: ./mongo-db-service/requirements.txt
+
+  station-management:
+    extends:
+      file: compose.prod.yaml
+      service: station-management
+    build:
+      target: development
+    environment:
+      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
+      AUTH_API_ENDPOINT: ${STATION_AUTH_API_ENDPOINT}
+      SQL_API_ENDPOINT: ${STATION_SQL_API_ENDPOINT}
+      MONGO_API_ENDPOINT: ${STATION_MONGO_API_ENDPOINT}
+    depends_on:
+      - user-management
+      - sql-db-service
+      - mongo-db-service
+    develop:
+      watch:
+        - action: sync
+          path: ./station-management
+          target: /app
+        - action: rebuild
+          path: ./station-management/requirements.txt
+
+  analytics:
+    extends:
+      file: compose.prod.yaml
+      service: analytics
+    build:
+      target: development
+    environment:
+      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
+      AUTH_API_ENDPOINT: ${ANALYTICS_AUTH_API_ENDPOINT}
+      SQL_API_ENDPOINT: ${ANALYTICS_SQL_API_ENDPOINT}
+      MONGO_API_ENDPOINT: ${ANALYTICS_MONGO_API_ENDPOINT}
+    depends_on:
+      - user-management
+      - sql-db-service
+      - mongo-db-service
+    develop:
+      watch:
+        - action: sync
+          path: ./analytics
+          target: /app
+        - action: rebuild
+          path: ./analytics/requirements.txt
 
   monitoring:
     extends:
@@ -93,7 +154,7 @@ services:
       MONGODB_URL: ${MONGODB_URL}
     depends_on:
       - user-management
-      - site-station-analytics
+      - station-management
     develop:
       watch:
         - action: sync
@@ -144,91 +205,3 @@ services:
           target: /app
         - action: rebuild
           path: ./simulator/server/package.json
-
-  sql-db-service:
-    extends:
-      file: compose.prod.yaml
-      service: sql-db-service
-    build:
-      target: development
-    environment:
-      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
-      AUTH_API_ENDPOINT: ${SQL_AUTH_API_ENDPOINT}
-      MYSQL_HOST: ${MYSQL_HOST}
-      MYSQL_PORT: ${MYSQL_PORT}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASS: ${MYSQL_PASS}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-    develop:
-      watch:
-        - action: sync
-          path: ./sql-db-service
-          target: /app
-        - action: rebuild
-          path: ./sql-db-service/package.json
-  
-  mongo-db-service:
-    extends:
-      file: compose.prod.yaml
-      service: mongo-db-service
-    build:
-      target: development
-    environment:
-      MONGODB_URL: ${MONGODB_URL}
-      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
-      AUTH_API_ENDPOINT: ${MONGO_AUTH_API_ENDPOINT}
-    develop:
-      watch:
-        - action: sync
-          path: ./mongo-db-service
-          target: /app
-        - action: rebuild
-          path: ./mongo-db-service/package.json
-
-  station-management-service:
-    extends:
-      file: compose.prod.yaml
-      service: station-management-service
-    build:
-      target: development
-    environment:
-      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
-      AUTH_API_ENDPOINT: ${STATION_AUTH_API_ENDPOINT}
-      SQL_API_ENDPOINT: ${STATION_SQL_API_ENDPOINT}
-      MONGO_API_ENDPOINT: ${STATION_MONGO_API_ENDPOINT}
-    depends_on:
-      - user-management
-      - monitoring
-      - sql-db-service
-      - mongo-db-service
-    develop:
-      watch:
-        - action: sync
-          path: ./station-management-service
-          target: /app
-        - action: rebuild
-          path: ./station-management-service/package.json 
-
-  station-analytics-service:
-    extends:
-      file: compose.prod.yaml
-      service: station-analytics-service
-    build:
-      target: development
-    environment:
-      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
-      AUTH_API_ENDPOINT: ${ANALYTICS_AUTH_API_ENDPOINT}
-      SQL_API_ENDPOINT: ${ANALYTICS_SQL_API_ENDPOINT}
-      MONGO_API_ENDPOINT: ${ANALYTICS_MONGO_API_ENDPOINT}
-    depends_on:
-      - user-management
-      - monitoring
-      - sql-db-service
-      - mongo-db-service
-    develop:
-      watch:
-        - action: sync
-          path: ./station-analytics-service
-          target: /app
-        - action: rebuild
-          path: ./station-analytics-service/package.json
