@@ -205,7 +205,7 @@ def get_stations():
 # read station by id
 @app.route("/api/sql/stations/<int:station_id>", methods=["GET"])
 def get_station_by_id(station_id):
-    query = f"SELECT * FROM stations_joined WHERE id = {station_id}"
+    query = f"SELECT * FROM stations_joined WHERE station_id = {station_id}"
     data = fetch_data(query)
     return jsonify(data)
 
@@ -326,7 +326,7 @@ def create_evse(user=None):
         if not owned_stations or station_id not in [station["id"] for station in owned_stations]:
             return {"message": "Permission denied"}, 403
 
-    query = f"INSERT INTO EVSE (station_id, evse_number, connector_type, price, charge_level) VALUES ({station_id}, '{sanitize_input(data['evse_number'])}', '{sanitize_input(data['connector_type'])}', {sanitize_input(data['price'])}, {sanitize_input(data['charge_level'])})"
+    query = f"INSERT INTO EVSE (station_id, evse_number, connector_type, price, charge_level) VALUES ({station_id}, {sanitize_input(data['evse_number'])}, '{sanitize_input(data['connector_type'])}', {sanitize_input(data['price'])}, '{sanitize_input(data['charge_level'])}')"
 
     sql_connection = mysql_pool.connection()
     with sql_connection.cursor() as cursor:
