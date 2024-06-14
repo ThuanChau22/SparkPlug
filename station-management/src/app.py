@@ -16,13 +16,13 @@ CORS(app, resources={r"/api/*": {"origins": WEB_DOMAIN}})
 
 ########## Site Management Routes
 @app.route("/api/sites", methods=["GET"])
-@auth.require_permission("staff", "owner", "driver")
-def get_sites():
+@auth.require_permission("all", "staff", "owner", "driver")
+def read_sites():
     return site.read_sites()
 
 
 @app.route("/api/sites/<int:site_id>", methods=["GET"])
-@auth.require_permission("staff", "owner", "driver")
+@auth.require_permission("all", "staff", "owner", "driver")
 def read_site_by_id(site_id):
     return site.read_site_by_id(site_id)
 
@@ -47,13 +47,13 @@ def delete_site(site_id):
 
 ########## Station Management Routes
 @app.route("/api/stations", methods=["GET"])
-@auth.require_permission("staff", "owner", "driver")
+@auth.require_permission("all", "staff", "owner", "driver")
 def read_stations():
     return station.read_stations()
 
 
 @app.route("/api/stations/<int:station_id>", methods=["GET"])
-@auth.require_permission("staff", "owner", "driver")
+@auth.require_permission("all", "staff", "owner", "driver")
 def read_station_by_id(station_id):
     return station.read_station_by_id(station_id)
 
@@ -78,13 +78,13 @@ def delete_station(station_id):
 
 ########## EVSE Management Routes
 @app.route("/api/evses", methods=["GET"])
-@auth.require_permission("staff", "owner", "driver")
+@auth.require_permission("all", "staff", "owner", "driver")
 def read_evses():
     return evse.read_evses()
 
 
 @app.route("/api/evses/<int:evse_id>", methods=["GET"])
-@auth.require_permission("staff", "owner", "driver")
+@auth.require_permission("all", "staff", "owner", "driver")
 def read_evse_by_id(evse_id):
     return evse.read_evse_by_id(evse_id)
 
