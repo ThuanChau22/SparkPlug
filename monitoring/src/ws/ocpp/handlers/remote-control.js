@@ -1,7 +1,7 @@
 import cryptoJs from "crypto-js";
 import { v4 as uuid } from "uuid";
 
-import Monitoring from "../../../repository/monitoring.js";
+import StationEvent from "../../../repositories/station-event.js";
 import { clients } from "../server.js";
 
 const remoteControl = {};
@@ -21,9 +21,9 @@ remoteControl.requestStartTransactionRequest = async ({ client, params }) => {
     remoteStartId: Math.floor(1000 + Math.random() * 9000),
     idToken,
   });
-  await Monitoring.addEvent({
+  await StationEvent.addEvent({
     stationId: client.identity,
-    source: Monitoring.Sources.Station,
+    source: StationEvent.Sources.Station,
     event: method,
     payload: response,
   });
@@ -40,9 +40,9 @@ remoteControl.requestStopTransactionRequest = async ({ client, params }) => {
   const transactionId = evseIdToTransactionId.get(evseId) || "";
   const method = "RequestStopTransaction";
   const response = await client.call(method, { transactionId });
-  await Monitoring.addEvent({
+  await StationEvent.addEvent({
     stationId: client.identity,
-    source: Monitoring.Sources.Station,
+    source: StationEvent.Sources.Station,
     event: method,
     payload: response,
   });
