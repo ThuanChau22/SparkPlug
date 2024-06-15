@@ -83,34 +83,34 @@ def read_evses():
     return evse.read_evses()
 
 
-@app.route("/api/evses/<int:evse_id>", methods=["GET"])
+@app.route("/api/stations/<int:station_id>/evses", methods=["GET"])
 @auth.require_permission("all", "staff", "owner", "driver")
-def read_evse_by_id(evse_id):
-    return evse.read_evse_by_id(evse_id)
+def read_evses_by_station(station_id):
+    return evse.read_evses_by_station(station_id)
 
 
-@app.route("/api/evses", methods=["POST"])
+@app.route("/api/stations/<int:station_id>/evses/<int:evse_id>", methods=["GET"])
+@auth.require_permission("all", "staff", "owner", "driver")
+def read_evse_by_id(station_id, evse_id):
+    return evse.read_evse_by_id(station_id, evse_id)
+
+
+@app.route("/api/stations/<int:station_id>/evses", methods=["POST"])
 @auth.require_permission("staff", "owner")
-def create_evse():
-    return evse.create_evse()
+def create_evse(station_id):
+    return evse.create_evse(station_id)
 
 
-@app.route("/api/evses/<int:evse_id>", methods=["PATCH"])
+@app.route("/api/stations/<int:station_id>/evses/<int:evse_id>", methods=["PATCH"])
 @auth.require_permission("staff", "owner")
-def update_evse(evse_id):
-    return evse.update_evse(evse_id)
+def update_evse(station_id, evse_id):
+    return evse.update_evse(station_id, evse_id)
 
 
-# @app.route("/api/evses/status/<int:evse_id>", methods=["PATCH"])
-# @auth.require_permission("staff", "owner")
-# def update_evse_status(evse_id):
-#     return evse.update_evse_status(evse_id)
-
-
-@app.route("/api/evses/<int:evse_id>", methods=["DELETE"])
+@app.route("/api/stations/<int:station_id>/evses/<int:evse_id>", methods=["DELETE"])
 @auth.require_permission("staff", "owner")
-def delete_evse(evse_id):
-    return evse.delete_evse(evse_id)
+def delete_evse(station_id, evse_id):
+    return evse.delete_evse(station_id, evse_id)
 
 
 # Handle path not found
