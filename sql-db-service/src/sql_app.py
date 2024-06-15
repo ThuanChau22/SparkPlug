@@ -320,7 +320,7 @@ def delete_station(station_id, user=None):
 
 ########## EVSE CRUD routes
 # read evses
-@app.route("/api/sql/evses", methods=["GET"])
+@app.route("/api/sql/stations/evses", methods=["GET"])
 def get_evses():
     query = build_query("evses_joined", request.args)
     data = fetch_data(query)
