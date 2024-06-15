@@ -12,7 +12,7 @@ def read_evses():
         args["owner_id"] = request.auth["user_id"]
 
     response = requests.get(
-        url=f"{SQL_API_ENDPOINT}/evses",
+        url=f"{SQL_API_ENDPOINT}/stations/evses",
         params=args,
         headers={"Authorization": request.headers.get("Authorization")},
     )

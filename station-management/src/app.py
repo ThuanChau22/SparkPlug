@@ -77,7 +77,7 @@ def delete_station(station_id):
 
 
 ########## EVSE Management Routes
-@app.route("/api/evses", methods=["GET"])
+@app.route("/api/stations/evses", methods=["GET"])
 @auth.require_permission("all", "staff", "owner", "driver")
 def read_evses():
     return evse.read_evses()
