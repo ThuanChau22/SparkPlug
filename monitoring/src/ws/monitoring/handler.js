@@ -90,7 +90,7 @@ handler.watchStatusEvent = async (ws, payload, response) => {
     const { user: { token } } = instance;
     const headers = { Authorization: `Bearer ${token}` };
     const { data } = await axios.get(`${STATION_API_ENDPOINT}`, { headers });
-    const ownedStationIdList = new Set(data.map(({ station_id: id }) => id));
+    const ownedStationIdList = new Set(data.map(({ id }) => id));
     for (const stationId of stationIds) {
       if (!ownedStationIdList.has(stationId)) {
         throw { code: 403, message: `Access denied on station ${stationId}` };

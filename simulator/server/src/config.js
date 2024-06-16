@@ -6,5 +6,5 @@ export const {
   PORT,
   WEB_DOMAIN,
   CSMS_WS_ENDPOINT,
-  EVSE_API_ENDPOINT,
+  STATION_API_ENDPOINT,
 } = process.env;

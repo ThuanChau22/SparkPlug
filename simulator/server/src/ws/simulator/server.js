@@ -2,7 +2,7 @@ import axios from "axios";
 import ms from "ms";
 import WebSocket, { WebSocketServer } from "ws";
 
-import { EVSE_API_ENDPOINT } from "../../config.js";
+import { STATION_API_ENDPOINT } from "../../config.js";
 import Connector from "../../model/connector.js";
 import EVSE from "../../model/evse.js";
 import Station from "../../model/station.js";
@@ -67,7 +67,7 @@ server.on("connection", async (ws, req) => {
   try {
     const { params: { id } } = req;
     if (!stations.has(id)) {
-      const { data } = await axios.get(`${EVSE_API_ENDPOINT}?station_id=${id}`);
+      const { data } = await axios.get(`${STATION_API_ENDPOINT}/${id}/evses`);
       if (data.length === 0) {
         throw { code: 404, message: `Station ${id} not found` };
       }
@@ -76,7 +76,7 @@ server.on("connection", async (ws, req) => {
           return new Connector({ id: index + 1, connectorType: type });
         });
         const power = evse.power || 3500.0;
-        const newEVSE = new EVSE({ id: evse.evse_number, power, connectors });
+        const newEVSE = new EVSE({ id: evse.evse_id, power, connectors });
         newEVSE.onAuthorize((evse, { isAuthorized }) => {
           const response = handler.authorize({ evseId: evse.id, isAuthorized });
           stations.get(id)?.sockets.forEach((socket) => {

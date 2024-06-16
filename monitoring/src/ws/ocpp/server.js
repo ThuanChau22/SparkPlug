@@ -3,7 +3,7 @@ import { RPCServer, createRPCError } from "ocpp-rpc";
 import { v4 as uuid } from "uuid";
 import WebSocket from "ws";
 
-import { EVSE_API_ENDPOINT } from "../../config.js";
+import { STATION_API_ENDPOINT } from "../../config.js";
 import StationEvent from "../../repositories/station-event.js";
 import StationStatus from "../../repositories/station-status.js";
 import authorization from "./handlers/authorization.js";
@@ -102,8 +102,7 @@ server.on("client", async (client) => {
     client.on("close", async () => {
       try {
         const requests = [];
-        const params = `station_id=${client.identity}`
-        const { data } = await axios.get(`${EVSE_API_ENDPOINT}?${params}`);
+        const { data } = await axios.get(`${STATION_API_ENDPOINT}/${client.identity}/evses`);
         if (!data) {
           throw { code: 404, message: `Station ${client.identity} not found` };
         }
@@ -112,7 +111,7 @@ server.on("client", async (client) => {
             requests.push(
               StationStatus.addStationStatus({
                 stationId: client.identity,
-                evseId: evse.evse_number,
+                evseId: evse.evse_id,
                 connectorId: index + 1,
                 status: StationStatus.Status.Unavailable,
               })
