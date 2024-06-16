@@ -10,7 +10,7 @@ const Sources = {
 
 const schema = mongoose.Schema({
   stationId: {
-    type: String,
+    type: Number,
     required: true,
     index: true,
     immutable: true,
@@ -70,7 +70,7 @@ schema.loadClass(class {
     try {
       const { stationId, source, event, payload } = data;
       const expireAt = new Date(Date.now() + ms("1h"));
-      await Monitoring.create({ stationId, source, event, payload, expireAt });
+      await StationEvent.create({ stationId, source, event, payload, expireAt });
     } catch (error) {
       console.log(error);
     }
@@ -103,7 +103,7 @@ schema.loadClass(class {
           })
         });
       }
-      return await Monitoring.watch(
+      return await StationEvent.watch(
         [
           { $match: filters },
           { $project: { fullDocument: 1 } },
@@ -116,8 +116,8 @@ schema.loadClass(class {
   }
 });
 
-const Monitoring = mongoose.model("monitoring", schema);
+const StationEvent = mongoose.model("station_event", schema);
 
-Monitoring.Sources = Sources;
+StationEvent.Sources = Sources;
 
-export default Monitoring;
+export default StationEvent;

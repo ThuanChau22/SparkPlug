@@ -43,7 +43,7 @@ const webSocketApp = () => {
 };
 
 const app = webSocketApp();
-app.use("/ws/monitoring", monitoringServer);
+app.use("/ws/monitoring/station-events", monitoringServer);
 app.use("/ws/ocpp/:id", ocppServer);
 
 export default app;
