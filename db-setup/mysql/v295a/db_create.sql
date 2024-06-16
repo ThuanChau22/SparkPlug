@@ -108,7 +108,7 @@ END;
 //
 DELIMITER ;
 
-CREATE TABLE RFID_map (
+CREATE TABLE RFID (
     driver_id INT UNSIGNED,
     rfid CHAR(16),
     PRIMARY KEY (driver_id, rfid),
@@ -118,13 +118,13 @@ CREATE TABLE RFID_map (
 );
 
 CREATE VIEW stations_joined AS
-SELECT Station.id as station_id, Station.name as station_name, Station.latitude, Station.longitude,
+SELECT Station.id as id, Station.name as name, Station.latitude, Station.longitude,
 site_id, owner_id, Site.latitude as site_latitude, Site.longitude as site_longitude,
 Site.name as site_name, street_address, zip_code, city, state, country
 FROM Station JOIN Site ON Station.site_id = Site.id;
 
 CREATE VIEW evses_joined AS
-SELECT Station.id as station_id, Station.name as station_name, Station.latitude, Station.longitude,
+SELECT Station.id as id, Station.name as name, Station.latitude, Station.longitude,
 site_id, owner_id, Site.latitude as site_latitude, Site.longitude as site_longitude,
 Site.name as site_name, street_address, zip_code, city, state, country, 
 EVSE.id as evse_id, evse_number, price, charge_level, connector_type, EVSE.latitude as evse_latitude, EVSE.longitude as evse_longitude
