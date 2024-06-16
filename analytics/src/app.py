@@ -1,19 +1,14 @@
 import requests
-from collections import defaultdict
-from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from pymysql import MySQLError
 from functools import wraps
-from urllib.parse import urljoin
 
 # Internal Modules
-from config import (
-    PORT,
+from src.config import (
     WEB_DOMAIN,
     AUTH_API_ENDPOINT,
     SQL_API_ENDPOINT,
-    MONGO_API_ENDPOINT
+    MONGO_API_ENDPOINT,
 )
 
 
@@ -46,12 +41,13 @@ def require_permission(*allowed_roles):
 
     return decorator
 
+
 def get_transactions(query_params, header):
     try:
         response = requests.get(
-            url=f'{MONGO_API_ENDPOINT}/transactions', 
-            params=query_params, 
-            headers=header
+            url=f"{MONGO_API_ENDPOINT}/transactions",
+            params=query_params,
+            headers=header,
         )
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
@@ -63,13 +59,12 @@ def get_transactions(query_params, header):
     except ValueError:
         print("Error: Response does not contain valid JSON")
         return None
-    
+
+
 def get_evse_status(query_params, header):
     try:
         response = requests.get(
-            url=f'{MONGO_API_ENDPOINT}/evse_status', 
-            params=query_params, 
-            headers=header
+            url=f"{MONGO_API_ENDPOINT}/evse_status", params=query_params, headers=header
         )
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
@@ -81,13 +76,12 @@ def get_evse_status(query_params, header):
     except ValueError:
         print("Error: Response does not contain valid JSON")
         return None
+
 
 def get_sites(query_params, header):
     try:
         response = requests.get(
-            url=f'{SQL_API_ENDPOINT}/sites', 
-            params=query_params, 
-            headers=header
+            url=f"{SQL_API_ENDPOINT}/sites", params=query_params, headers=header
         )
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
@@ -99,13 +93,12 @@ def get_sites(query_params, header):
     except ValueError:
         print("Error: Response does not contain valid JSON")
         return None
+
 
 def get_stations(query_params, header):
     try:
         response = requests.get(
-            url=f'{SQL_API_ENDPOINT}/stations', 
-            params=query_params, 
-            headers=header
+            url=f"{SQL_API_ENDPOINT}/stations", params=query_params, headers=header
         )
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
@@ -117,13 +110,12 @@ def get_stations(query_params, header):
     except ValueError:
         print("Error: Response does not contain valid JSON")
         return None
+
 
 def get_evses(query_params, header):
     try:
         response = requests.get(
-            url=f'{SQL_API_ENDPOINT}/evses', 
-            params=query_params, 
-            headers=header
+            url=f"{SQL_API_ENDPOINT}/evses", params=query_params, headers=header
         )
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
@@ -135,15 +127,19 @@ def get_evses(query_params, header):
     except ValueError:
         print("Error: Response does not contain valid JSON")
         return None
+
 
 ####################################################################################################
 # Routes
 ####################################################################################################
 
-# Test Routes
-@app.route("/api/station_analytics_test", methods=["GET"])
-def test():
-    return {"message": "Station Analytics Service is up and running!"}
+
+# Base endpoint
+@app.route("/api/stations/analytics", methods=["GET"])
+def base_endpoint():
+    message = "SparkPlug Analytics API!"
+    return {"message": message}, 200
+
 
 # Get stations
 @app.route("/api/stations", methods=["GET"])
@@ -153,15 +149,14 @@ def read_stations(user=None):
         return {"message": "Permission denied"}, 403
 
     args = request.args
-    jwt = request.headers.get('Authorization')
+    jwt = request.headers.get("Authorization")
 
     response = requests.get(
-        url=f'{SQL_API_ENDPOINT}/stations', 
-        params=args, 
-        headers={'Authorization': jwt}
+        url=f"{SQL_API_ENDPOINT}/stations", params=args, headers={"Authorization": jwt}
     )
 
     return response.json()
+
 
 # Get Transactions
 @app.route("/api/stations/analytics/transactions", methods=["GET"])
@@ -171,31 +166,38 @@ def read_transactions(user=None):
         return {"message": "Permission denied"}, 403
 
     args = request.args
-    jwt = request.headers.get('Authorization')
+    jwt = request.headers.get("Authorization")
 
     tranactions_params_out = {}
     stations_params_out = {}
-    
+
     for key in args.keys():
-        if key == 'station_id' or key == 'start_date' or key == 'end_date':
+        if key == "station_id" or key == "start_date" or key == "end_date":
             tranactions_params_out[key] = args[key]
 
     for key in args.keys():
-        if key == 'site_id' or key == 'country' or key == 'state' or key == 'city' or key == 'zip_code':
+        if (
+            key == "site_id"
+            or key == "country"
+            or key == "state"
+            or key == "city"
+            or key == "zip_code"
+        ):
             stations_params_out[key] = args[key]
-    
-    if stations_params_out:
-        stations = get_stations(stations_params_out, {'Authorization': jwt})
-        if stations is not None:
-            station_ids = [station['station_id'] for station in stations]
-            tranactions_params_out['station_id'] = station_ids
 
-    transactions = get_transactions(tranactions_params_out, {'Authorization': jwt})
+    if stations_params_out:
+        stations = get_stations(stations_params_out, {"Authorization": jwt})
+        if stations is not None:
+            station_ids = [station["station_id"] for station in stations]
+            tranactions_params_out["station_id"] = station_ids
+
+    transactions = get_transactions(tranactions_params_out, {"Authorization": jwt})
 
     if transactions is not None:
         return jsonify(transactions)
     else:
         return {"message": "Error occurred while getting transactions"}, 500
+
 
 # Get EVSE status updates
 @app.route("/api/stations/analytics/evse_status", methods=["GET"])
@@ -205,26 +207,32 @@ def read_evse_status(user=None):
         return {"message": "Permission denied"}, 403
 
     args = request.args
-    jwt = request.headers.get('Authorization')
+    jwt = request.headers.get("Authorization")
 
     evse_status_params_out = {}
     stations_params_out = {}
-    
+
     for key in args.keys():
-        if key == 'station_id' or key == 'start_date' or key == 'end_date':
+        if key == "station_id" or key == "start_date" or key == "end_date":
             evse_status_params_out[key] = args[key]
 
     for key in args.keys():
-        if key == 'site_id' or key == 'country' or key == 'state' or key == 'city' or key == 'zip_code':
+        if (
+            key == "site_id"
+            or key == "country"
+            or key == "state"
+            or key == "city"
+            or key == "zip_code"
+        ):
             stations_params_out[key] = args[key]
-    
-    if stations_params_out:
-        stations = get_stations(stations_params_out, {'Authorization': jwt})
-        if stations is not None:
-            station_ids = [station['station_id'] for station in stations]
-            evse_status_params_out['station_id'] = station_ids
 
-    evse_statuses = get_evse_status(args, {'Authorization': jwt})
+    if stations_params_out:
+        stations = get_stations(stations_params_out, {"Authorization": jwt})
+        if stations is not None:
+            station_ids = [station["station_id"] for station in stations]
+            evse_status_params_out["station_id"] = station_ids
+
+    evse_statuses = get_evse_status(args, {"Authorization": jwt})
 
     if evse_statuses is not None:
         return jsonify(evse_statuses)
@@ -232,5 +240,8 @@ def read_evse_status(user=None):
         return {"message": "Error occurred while getting transactions"}, 500
 
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=PORT, debug=True)
+# Handle path not found
+@app.errorhandler(404)
+def path_not_found(_):
+    message = f"The requested path {request.path} was not found on server."
+    return {"message": message}, 404

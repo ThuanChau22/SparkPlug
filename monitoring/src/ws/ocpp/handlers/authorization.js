@@ -1,6 +1,6 @@
 import cryptoJs from "crypto-js";
 
-import User from "../../../repository/user.js";
+import User from "../../../repositories/user.js";
 import { clients } from "../server.js";
 
 const authorizeWithRFID = async (client, idToken) => {

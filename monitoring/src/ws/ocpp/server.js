@@ -1,9 +1,11 @@
+import axios from "axios";
 import { RPCServer, createRPCError } from "ocpp-rpc";
 import { v4 as uuid } from "uuid";
 import WebSocket from "ws";
 
-import Monitoring from "../../repository/monitoring.js";
-import Station from "../../repository/station.js";
+import { STATION_API_ENDPOINT } from "../../config.js";
+import StationEvent from "../../repositories/station-event.js";
+import StationStatus from "../../repositories/station-status.js";
 import authorization from "./handlers/authorization.js";
 import availability from "./handlers/availability.js";
 import provisioning from "./handlers/provisioning.js";
@@ -45,9 +47,9 @@ server.on("client", async (client) => {
       evseIdToTransactionId: new Map(),
     });
 
-    const changeStream = await Monitoring.watchEvent({
-      stationId: client.identity,
-      source: Monitoring.Sources.Central,
+    const changeStream = await StationEvent.watchEvent({
+      stationId: parseInt(client.identity),
+      source: StationEvent.Sources.Central,
       event: [
         "RequestStartTransaction",
         "RequestStopTransaction",
@@ -67,9 +69,9 @@ server.on("client", async (client) => {
 
     client.handle(async (properties) => {
       const { method, params } = properties;
-      await Monitoring.addEvent({
+      await StationEvent.addEvent({
         stationId: client.identity,
-        source: Monitoring.Sources.Station,
+        source: StationEvent.Sources.Station,
         event: method,
         payload: params,
       });
@@ -98,20 +100,42 @@ server.on("client", async (client) => {
     });
 
     client.on("close", async () => {
-      const status = "Unavailable";
-      await Station.updateStatus(client.identity, status);
-      await Monitoring.addEvent({
-        stationId: client.identity,
-        source: Monitoring.Sources.Central,
-        event: "StatusNotification",
-        payload: {
-          connectorStatus: status,
-          timestamp: new Date().toISOString(),
-        },
-      });
-      changeStream.close();
-      clients.delete(client.identity);
-      console.log(`Disconnected with station: ${client.identity}`);
+      try {
+        const requests = [];
+        const { data } = await axios.get(`${STATION_API_ENDPOINT}/${client.identity}/evses`);
+        if (!data) {
+          throw { code: 404, message: `Station ${client.identity} not found` };
+        }
+        for (const evse of data) {
+          for (const index of evse.connector_type.split(" ").keys()) {
+            requests.push(
+              StationStatus.addStationStatus({
+                stationId: client.identity,
+                evseId: evse.evse_id,
+                connectorId: index + 1,
+                status: StationStatus.Status.Unavailable,
+              })
+            );
+          }
+        }
+        requests.push(
+          StationEvent.addEvent({
+            stationId: client.identity,
+            source: StationEvent.Sources.Central,
+            event: "StatusNotification",
+            payload: {
+              connectorStatus: StationStatus.Status.Unavailable,
+              timestamp: new Date().toISOString(),
+            },
+          })
+        );
+        await Promise.all(requests);
+        changeStream.close();
+        clients.delete(client.identity);
+        console.log(`Disconnected with station: ${client.identity}`);
+      } catch (error) {
+        console.log(error);
+      }
     });
   } catch (error) {
     if (!error.code) {

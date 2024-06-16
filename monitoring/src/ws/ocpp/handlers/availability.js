@@ -1,9 +1,15 @@
-import Station from "../../../repository/station.js";
+import StationStatus from "../../../repositories/station-status.js";
 
 const availability = {};
 
 availability.statusNotificationResponse = async ({ client, params }) => {
-  await Station.updateStatus(client.identity, params.connectorStatus);
+  await StationStatus.addStationStatus({
+    stationId: client.identity,
+    evseId: params.evseId,
+    connectorId: params.connectorId,
+    status: params.connectorStatus,
+    timestamp: params.timestamp,
+  });
   return {};
 };
 

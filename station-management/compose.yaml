@@ -1,8 +1,8 @@
 services:
 
   sql-db-service:
-    image: sparkplug-station-management-service
-    container_name: sparkplug-station-management-service
+    image: sparkplug-station-management
+    container_name: sparkplug-station-management
     build:
       context: .
       dockerfile: Dockerfile

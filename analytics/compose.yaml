@@ -1,8 +1,8 @@
 services:
 
   sql-db-service:
-    image: sparkplug-station-analytics-service
-    container_name: sparkplug-station-analytics-service
+    image: sparkplug-analytics
+    container_name: sparkplug-analytics
     build:
       context: .
       dockerfile: Dockerfile
