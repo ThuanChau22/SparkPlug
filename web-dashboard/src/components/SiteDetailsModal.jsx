@@ -10,12 +10,20 @@ import {
 } from "@coreui/react";
 
 import {
+  selectAuthUserId,
+  selectAuthRoleIsStaff,
+  selectAuthRoleIsOwner,
+} from "redux/auth/authSlice";
+import {
   siteUpdateById,
   siteDeleteById,
   selectSiteById,
 } from "redux/site/siteSlide";
 
 const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
+  const userId = useSelector(selectAuthUserId);
+  const authIsAdmin = useSelector(selectAuthRoleIsStaff);
+  const authIsOwner = useSelector(selectAuthRoleIsOwner);
   const site = useSelector((state) => selectSiteById(state, siteId));
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
@@ -45,39 +53,68 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
         </div>
       </div>
       <CModalBody className="pt-1">
-        <p>Owner ID: {site.owner_id}</p>
-        <p>Address: {site.street_address}, {site.city}, {site.state} {site.zip_code}</p>
+        {authIsAdmin && <p>Owner ID: {site.owner_id}</p>}
+        <p>Address: {site.street_address}, {site.city}, {site.state} {site.zip_code}, {site.country}</p>
         <p>Coordinate: {site.latitude}, {site.longitude}</p>
       </CModalBody>
     </>
   );
 
   const EditModal = () => {
-    const initialInput = { name: "" };
-    const [input, setInput] = useState(initialInput);
+    const initialFormData = {
+      name: "",
+      ownerId: "",
+      latitude: "",
+      longitude: "",
+      streetAddress: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      country: "",
+    };
+    const [formData, setFormData] = useState(initialFormData);
 
     useEffect(() => {
       if (site) {
-        setInput({
+        setFormData({
           name: site.name,
+          ownerId: site.owner_id,
+          latitude: site.latitude,
+          longitude: site.longitude,
+          streetAddress: site.street_address,
+          city: site.city,
+          state: site.state,
+          zipCode: site.zip_code,
+          country: site.country,
         });
       }
     }, []);
 
-    const handleInputChanged = ({ target }) => {
+    const handleInputChange = ({ target }) => {
       const { name, value } = target;
-      setInput({ ...input, [name]: value });
+      setFormData({ ...formData, [name]: value });
     };
 
     const handleSave = () => {
-      if (!input.name) {
+      const data = {
+        ...formData,
+        id: site.id,
+      };
+      if (authIsOwner) {
+        data.ownerId = userId;
+      }
+      if (!data.name
+        || !data.ownerId
+        || !data.latitude
+        || !data.longitude
+        || !data.streetAddress
+        || !data.city
+        || !data.state
+        || !data.zipCode
+        || !data.country) {
         return;
       }
-      const siteData = {
-        id: site.id,
-        name: input.name,
-      };
-      dispatch(siteUpdateById(siteData));
+      dispatch(siteUpdateById(data));
       setIsEdit(false);
     };
 
@@ -89,8 +126,92 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
           id="siteName"
           name="name"
           type="text"
-          value={input.name}
-          onChange={handleInputChanged}
+          placeholder="Name"
+          value={formData.name}
+          onChange={handleInputChange}
+        />
+        {authIsAdmin &&
+          <>
+            <label htmlFor="ownerId">Owner ID</label>
+            <CFormInput
+              className="mb-3 shadow-none"
+              id="ownerId"
+              name="ownerId"
+              type="text"
+              placeholder="Owner ID"
+              onChange={handleInputChange}
+              value={formData.ownerId}
+            />
+          </>}
+        <label htmlFor="latitude">Latitude</label>
+        <CFormInput
+          className="mb-3 shadow-none"
+          id="latitude"
+          name="latitude"
+          type="text"
+          placeholder="Latitude"
+          onChange={handleInputChange}
+          value={formData.latitude}
+        />
+        <label htmlFor="longitude">Longitude</label>
+        <CFormInput
+          className="mb-3 shadow-none"
+          name="longitude"
+          id="longitude"
+          type="text"
+          placeholder="Longitude"
+          onChange={handleInputChange}
+          value={formData.longitude}
+        />
+        <label htmlFor="streetAddress">Street Address</label>
+        <CFormInput
+          className="mb-3 shadow-none"
+          id="streetAddress"
+          name="streetAddress"
+          type="text"
+          placeholder="Street Address"
+          onChange={handleInputChange}
+          value={formData.streetAddress}
+        />
+        <label htmlFor="city">City</label>
+        <CFormInput
+          className="mb-3 shadow-none"
+          id="city"
+          name="city"
+          type="text"
+          placeholder="City"
+          onChange={handleInputChange}
+          value={formData.city}
+        />
+        <label htmlFor="state">State</label>
+        <CFormInput
+          className="mb-3 shadow-none"
+          id="state"
+          name="state"
+          type="text"
+          placeholder="State"
+          onChange={handleInputChange}
+          value={formData.state}
+        />
+        <label htmlFor="zipCode">Zip Code</label>
+        <CFormInput
+          className="mb-3 shadow-none"
+          id="zipCode"
+          name="zipCode"
+          type="text"
+          placeholder="Zip Code"
+          onChange={handleInputChange}
+          value={formData.zipCode}
+        />
+        <label htmlFor="country">Country</label>
+        <CFormInput
+          className="mb-3 shadow-none"
+          id="country"
+          name="country"
+          type="text"
+          placeholder="Country"
+          onChange={handleInputChange}
+          value={formData.country}
         />
         <CButton
           variant="outline"
@@ -134,7 +255,6 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
         <label htmlFor="siteName">Type "{name}" to delete site</label>
         <CFormInput
           className="mb-3 shadow-none"
-          id="siteName"
           type="text"
           name="name"
           value={inputName}
