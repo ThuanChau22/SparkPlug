@@ -25,15 +25,15 @@ import { selectAuthAccessToken } from "redux/auth/authSlice";
 import { selectStationById } from "redux/station/stationSlide";
 
 const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
-  const MonitoringAPI = process.env.REACT_APP_MONITORING_API_ENDPOINT;
-  const MonitoringWS = process.env.REACT_APP_MONITORING_WS_ENDPOINT;
+  const StationEventAPI = process.env.REACT_APP_STATION_EVENT_API_ENDPOINT;
+  const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
   const station = useSelector((state) => selectStationById(state, stationId));
   const meterTimeoutRef = useRef(0);
   const [loading, setLoading] = useState(false);
   const [meterValue, setMeterValue] = useState(0);
   const [eventMessages, setEventMessages] = useState([]);
-  const socket = useWebSocket(`${MonitoringWS}`, {
+  const socket = useWebSocket(`${StationEventWS}`, {
     queryParams: { token },
     heartbeat: {
       message: "ping",
@@ -56,13 +56,13 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const { data } = await apiInstance.get(`${MonitoringAPI}/${stationId}`, { headers });
+      const { data } = await apiInstance.get(`${StationEventAPI}/${stationId}`, { headers });
       setEventMessages(data);
     } catch (error) {
       console.log(error);
     }
     setLoading(false);
-  }, [MonitoringAPI, stationId, token]);
+  }, [StationEventAPI, stationId, token]);
 
   useEffect(() => {
     fetchData();
@@ -72,7 +72,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     if (station && readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: "WatchAllEvent",
-        payload: { stationId: station.id.toString() },
+        payload: { stationId: station.id },
       });
     }
   }, [station, readyState, sendJsonMessage]);
@@ -99,7 +99,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
       sendJsonMessage({
         action: "RemoteStart",
         payload: {
-          stationId: station.id.toString(),
+          stationId: station.id,
           evseId: 1,
         },
       });
@@ -111,7 +111,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
       sendJsonMessage({
         action: "RemoteStop",
         payload: {
-          stationId: station.id.toString(),
+          stationId: station.id,
           evseId: 1,
         },
       });

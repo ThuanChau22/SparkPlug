@@ -38,7 +38,7 @@ import {
 } from "redux/station/stationSlide";
 
 const StationMonitor = () => {
-  const MonitoringWS = process.env.REACT_APP_MONITORING_WS_ENDPOINT;
+  const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
   const titleRef = createRef();
   const filterRef = createRef();
   const headerHeight = useSelector(selectHeaderHeight);
@@ -57,7 +57,7 @@ const StationMonitor = () => {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStationId, setSelectedStationId] = useState(null);
-  const socket = useWebSocket(`${MonitoringWS}`, {
+  const socket = useWebSocket(`${StationEventWS}`, {
     queryParams: { token },
     heartbeat: {
       message: "ping",
@@ -104,7 +104,7 @@ const StationMonitor = () => {
     const isStationLoaded = stationList.length > 0;
     const isConnected = readyState === ReadyState.OPEN;
     if (isStationLoaded && isConnected) {
-      const stationIds = stationList.map(({ id }) => id.toString());
+      const stationIds = stationList.map(({ id }) => id);
       sendJsonMessage({
         action: "WatchStatusEvent",
         payload: { stationIds },
@@ -117,7 +117,7 @@ const StationMonitor = () => {
     if (action === "WatchStatusEvent" && payload.stationId) {
       const { stationId, payload: { connectorStatus } } = payload;
       dispatch(stationStateUpdateById({
-        id: parseInt(stationId),
+        id: stationId,
         status: connectorStatus,
       }));
     }
@@ -127,7 +127,7 @@ const StationMonitor = () => {
     const params = [];
     if (state !== "All") params.push(`state=${state}`);
     if (city !== "All") params.push(`city=${city}`);
-    if (zipCode !== "All") params.push(`zip=${zipCode}`);
+    if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
     const query = params.length > 0 ? `?${params.join("&")}` : "";
     dispatch(stationGetAll(query));
     dispatch(stationSetStateSelected(state));
