@@ -21,11 +21,9 @@ const StationAddModal = ({ isOpen, onClose }) => {
   const siteList = useSelector(selectSiteList);
   const initialFormData = {
     name: "",
-    chargeLevel: "",
-    connectorType: "",
+    siteId: "",
     latitude: "",
     longitude: "",
-    siteId: ""
   };
   const [formData, setFormData] = useState(initialFormData);
   const [siteOptions, setSiteOptions] = useState([]);
@@ -48,22 +46,12 @@ const StationAddModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = () => {
     if (!formData.name
-      || !formData.chargeLevel
-      || !formData.connectorType
+      || !formData.siteId
       || !formData.latitude
-      || !formData.longitude
-      || !formData.siteId) {
+      || !formData.longitude) {
       return;
     }
-    const stationData = {
-      name: formData.name,
-      charge_level: Number(formData.chargeLevel),
-      connector_type: formData.connectorType,
-      latitude: Number(formData.latitude),
-      longitude: Number(formData.longitude),
-      site_id: formData.siteId ? Number(formData.siteId) : null
-    };
-    dispatch(stationAdd(stationData));
+    dispatch(stationAdd(formData));
     handleClose();
   };
 
@@ -94,6 +82,18 @@ const StationAddModal = ({ isOpen, onClose }) => {
           />
           <CFormSelect
             className="mb-3 shadow-none"
+            name="siteId"
+            onChange={handleInputChange}
+            value={formData.siteId}
+            options={[
+              { label: "Select Site ID", value: "" },
+              ...siteOptions.map((id) => (
+                { label: id, value: id }
+              )),
+            ]}
+          />
+          {/* <CFormSelect
+            className="mb-3 shadow-none"
             name="chargeLevel"
             value={formData.chargeLevel}
             onChange={handleInputChange}
@@ -111,7 +111,7 @@ const StationAddModal = ({ isOpen, onClose }) => {
             placeholder="Connector Type"
             onChange={handleInputChange}
             value={formData.connectorType}
-          />
+          /> */}
           <CFormInput
             className="mb-3 shadow-none"
             type="text"
@@ -127,18 +127,6 @@ const StationAddModal = ({ isOpen, onClose }) => {
             placeholder="Longitude"
             onChange={handleInputChange}
             value={formData.longitude}
-          />
-          <CFormSelect
-            className="mb-3 shadow-none"
-            name="siteId"
-            onChange={handleInputChange}
-            value={formData.siteId}
-            options={[
-              { label: "Select Site ID", value: "" },
-              ...siteOptions.map((id) => (
-                { label: id, value: id }
-              )),
-            ]}
           />
           <CButton
             className="w-100"

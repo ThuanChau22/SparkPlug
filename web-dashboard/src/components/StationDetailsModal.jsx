@@ -7,8 +7,16 @@ import {
   CModalTitle,
   CModalBody,
   CFormInput,
+  CFormSelect,
 } from "@coreui/react";
 
+import {
+  selectAuthRoleIsStaff,
+} from "redux/auth/authSlice";
+import {
+  siteGetAll,
+  selectSiteList,
+} from "redux/site/siteSlide";
 import {
   stationUpdateById,
   stationDeleteById,
@@ -16,17 +24,30 @@ import {
 } from "redux/station/stationSlide";
 
 const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
+  const authIsAdmin = useSelector(selectAuthRoleIsStaff);
+  const siteList = useSelector(selectSiteList);
   const station = useSelector((state) => selectStationById(state, stationId));
+  const [siteOptions, setSiteOptions] = useState([]);
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
   const dispatch = useDispatch();
 
+  useEffect(() => {
+    if (siteList.length === 0) {
+      dispatch(siteGetAll());
+    }
+  }, [siteList, dispatch]);
+
+  useEffect(() => {
+    setSiteOptions(siteList.map(site => site.id));
+  }, [siteList]);
+
   const InfoModal = () => {
 
-    const formatPrice = (price) => {
-      const options = { style: 'currency', currency: 'USD' };
-      return new Intl.NumberFormat('en-US', options).format(price);
-    };
+    // const formatPrice = (price) => {
+    //   const options = { style: 'currency', currency: 'USD' };
+    //   return new Intl.NumberFormat('en-US', options).format(price);
+    // };
 
     return (
       <>
@@ -52,46 +73,56 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
           </div>
         </div>
         <CModalBody>
-          <p>Owner ID: {station.owner_id}</p>
-          <p>Price: {formatPrice(station.price)}</p>
-          <p>Charge Level: {station.charge_level}</p>
-          <p>Connector Type: {station.connector_type}</p>
-          <p>Coordinate: {station.latitude}, {station.longitude}</p>
+          {authIsAdmin && <p>Owner ID: {station.owner_id}</p>}
           <p>Site ID: {station.site_id}</p>
-          <p>Address: {station.street_address}, {station.city}, {station.state} {station.zip_code}</p>
+          <p>Site Name: {station.site_name}</p>
+          <p>Address: {station.street_address}, {station.city}, {station.state} {station.zip_code}, {station.country}</p>
+          <p>Coordinate: {station.latitude}, {station.longitude}</p>
+          {/* <p>Price: {formatPrice(station.price)}</p> */}
+          {/* <p>Charge Level: {station.charge_level}</p> */}
+          {/* <p>Connector Type: {station.connector_type}</p> */}
         </CModalBody>
       </>
     );
   };
 
   const EditModal = () => {
-    const initialInput = { name: "", price: "" };
-    const [input, setInput] = useState(initialInput);
+    const initialFormData = {
+      name: "",
+      siteId: "",
+      latitude: "",
+      longitude: "",
+    };
+    const [formData, setFormData] = useState(initialFormData);
 
     useEffect(() => {
       if (station) {
-        setInput({
+        setFormData({
           name: station.name,
-          price: station.price,
+          siteId: station.site_id,
+          latitude: station.latitude,
+          longitude: station.longitude,
         });
       }
     }, []);
 
-    const handleInputChanged = ({ target }) => {
+    const handleInputChange = ({ target }) => {
       const { name, value } = target;
-      setInput({ ...input, [name]: value });
+      setFormData({ ...formData, [name]: value });
     };
 
     const handleSave = () => {
-      if (!input.name || !input.price) {
+      const data = {
+        ...formData,
+        id: station.id,
+      };
+      if (!data.name
+        || !data.siteId
+        || !data.latitude
+        || !data.longitude) {
         return;
       }
-      const stationData = {
-        id: station.id,
-        name: input.name,
-        price: parseFloat(input.price)
-      };
-      dispatch(stationUpdateById(stationData));
+      dispatch(stationUpdateById(data));
       setIsEdit(false);
     };
 
@@ -103,10 +134,44 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
           id="stationName"
           name="name"
           type="text"
-          value={input.name}
-          onChange={handleInputChanged}
+          value={formData.name}
+          onChange={handleInputChange}
         />
-        <label htmlFor="stationPrice">Station Price</label>
+        <label htmlFor="siteId">Site ID</label>
+        <CFormSelect
+          className="mb-3 shadow-none"
+          id="siteId"
+          name="siteId"
+          onChange={handleInputChange}
+          value={formData.siteId}
+          options={[
+            { label: "Select Site ID", value: "" },
+            ...siteOptions.map((id) => (
+              { label: id, value: id }
+            )),
+          ]}
+        />
+        <label htmlFor="latitude">Latitude</label>
+        <CFormInput
+          className="mb-3 shadow-none"
+          id="latitude"
+          name="latitude"
+          type="number"
+          placeholder="Latitude"
+          onChange={handleInputChange}
+          value={formData.latitude}
+        />
+        <label htmlFor="longitude">Longitude</label>
+        <CFormInput
+          className="mb-3 shadow-none"
+          id="longitude"
+          name="longitude"
+          type="number"
+          placeholder="Longitude"
+          onChange={handleInputChange}
+          value={formData.longitude}
+        />
+        {/* <label htmlFor="stationPrice">Station Price</label>
         <CFormInput
           className="mb-3 shadow-none"
           id="stationPrice"
@@ -114,7 +179,7 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
           type="number"
           value={input.price}
           onChange={handleInputChanged}
-        />
+        /> */}
         <CButton
           variant="outline"
           color="warning"
