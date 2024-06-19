@@ -2,33 +2,37 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 import { JWT_SECRET } from "../config.js";
-import userRepository, { Role } from "../repositories/UserRepository.js";
+import User from "../repositories/UserRepository.js";
 
+const saltRounds = 12;
 const tokenLimit = "15d";
 
 export const signup = async (req, res) => {
   try {
-    const { email, password, name, role = Role.Driver } = req.body;
-    const assignedRole = role === Role.Staff ? Role.Driver : role;
+    const { Role: { Staff, Driver } } = User;
+    const { email, password, name, role = Driver } = req.body;
+    const assignedRole = role === Staff ? Driver : role;
     let user;
     try {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const userId = await userRepository.createUser({ email, hashedPassword, name });
-      user = await userRepository.getUserById(userId);
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      const userId = await User.createUser({ email, hashedPassword, name });
+      user = await User.getUserById(userId);
     } catch (error) {
       if (error.errno === 1062) {
-        user = await userRepository.getUserByEmail(email);
+        const filter = { email };
+        user = (await User.getUsers({ filter }))[0];
         if (!await bcrypt.compare(password, user.password)) {
           return res.status(401).json({ message: "Invalid credentials" });
         }
-        if (await userRepository.getUserByIdAndRole(user.id, assignedRole)) {
+        user = await User.getUserById(user.id);
+        if (user.roles.includes(assignedRole)) {
           return res.status(409).json({ message: "User already existed" });
         }
       } else {
         throw error;
       }
     }
-    await userRepository.addRole(user.id, assignedRole);
+    await User.addRole(user.id, assignedRole);
     const token = jwt.sign({
       id: user.id,
       email: user.email,
@@ -42,8 +46,8 @@ export const signup = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password, role = Role.Driver } = req.body;
-    const user = await userRepository.getUserByEmailAndRole(email, role);
+    const { email, password, role = User.Role.Driver } = req.body;
+    const user = await User.getUserByEmailAndRole(email, role);
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -69,7 +73,7 @@ export const verify = async (req, res) => {
     if (error.name === "JsonWebTokenError") {
       return res.status(401).json({ message: "Invalid token" });
     }
-    if(error.name === "TokenExpiredError") {
+    if (error.name === "TokenExpiredError") {
       return res.status(401).json({ message: "Expired token" });
     }
     res.status(500).json({ message: error.message });
