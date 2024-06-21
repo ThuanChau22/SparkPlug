@@ -11,6 +11,7 @@ import {
 } from "@coreui/react";
 
 import {
+  userGetById,
   userUpdateById,
   userDeleteById,
   selectUserById,
@@ -21,6 +22,12 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (!user.roles) {
+      dispatch(userGetById(user.id));
+    }
+  }, [user, dispatch]);
 
   const InfoModal = () => (
     <>
@@ -49,14 +56,20 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
         <p>Email: {user.email}</p>
         <p>Status: <span
           className={
-            user.status === "Active"
+            user.status === "active"
               ? "text-success"
-              : user.status === "Blocked"
-                ? "text-warning"
-                : "text-danger"
+              : user.status === "terminated"
+                ? "text-danger"
+                : "text-warning"
           }>
           {user.status}
         </span>
+        </p>
+        <p>
+          Role: {user.roles?.reduce((s, role) => {
+            role = role.charAt(0).toUpperCase() + role.slice(1);
+            return s ? `${s}, ${role}` : role;
+          }, "")}
         </p>
         <p>Registered on: {new Date(user.created_at).toLocaleString("en-US")}</p>
       </CModalBody>
@@ -111,9 +124,9 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
           id="userStatus"
           name="status"
           options={[
-            { label: "Active", value: "Active" },
-            { label: "Blocked", value: "Blocked" },
-            { label: "Terminated", value: "Terminated" },
+            { label: "active", value: "active" },
+            { label: "blocked", value: "blocked" },
+            { label: "terminated", value: "terminated" },
           ]}
           value={input.status}
           onChange={handleInputChanged}
@@ -191,6 +204,7 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
   return (
     <CModal
       alignment="center"
+      backdrop="static"
       visible={isOpen}
       onClose={onClose}
     >

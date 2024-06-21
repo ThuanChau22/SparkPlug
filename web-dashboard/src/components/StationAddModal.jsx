@@ -62,8 +62,8 @@ const StationAddModal = ({ isOpen, onClose }) => {
 
   return (
     <CModal
-      backdrop="static"
       alignment="center"
+      backdrop="static"
       visible={isOpen}
       onClose={handleClose}
     >

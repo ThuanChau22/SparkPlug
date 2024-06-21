@@ -285,6 +285,7 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
   return (
     <CModal
       alignment="center"
+      backdrop="static"
       visible={isOpen}
       onClose={onClose}
     >

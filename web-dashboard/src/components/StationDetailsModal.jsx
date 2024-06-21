@@ -253,6 +253,7 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
   return (
     <CModal
       alignment="center"
+      backdrop="static"
       visible={isOpen}
       onClose={onClose}
     >

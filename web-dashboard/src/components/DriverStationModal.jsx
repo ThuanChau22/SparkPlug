@@ -63,6 +63,7 @@ const DriverStationModal = ({ isOpen, onClose, stationId }) => {
     <CModal
       size="xl"
       alignment="center"
+      backdrop="static"
       visible={isOpen}
       onClose={onClose}
       scrollable

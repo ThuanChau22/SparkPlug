@@ -122,6 +122,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     <CModal
       size="lg"
       alignment="center"
+      backdrop="static"
       visible={isOpen}
       onClose={onClose}
       scrollable
