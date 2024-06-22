@@ -9,8 +9,7 @@ import {
   CListGroupItem,
 } from "@coreui/react";
 
-import EvseAdd from "components/EvseAdd";
-import EvseDetails from "components/EvseDetails";
+import EvseMonitorDetails from "./EvseMonitorDetails";
 import {
   selectStationById,
 } from "redux/station/stationSlide";
@@ -19,7 +18,7 @@ import {
   selectEvseByStation,
 } from "redux/evse/evseSlice";
 
-const EvseManagement = ({ stationId }) => {
+const EvseMonitor = ({ stationId, remoteStart, remoteStop }) => {
   const station = useSelector((state) => selectStationById(state, stationId));
   const evseList = useSelector((state) => selectEvseByStation(state, stationId));
   const [loading, setLoading] = useState(false);
@@ -40,9 +39,9 @@ const EvseManagement = ({ stationId }) => {
   return (
     <CCard
       className="border-0 rounded-top-0 overflow-y-auto"
-      style={{ maxHeight: window.innerHeight * 0.5 }}
+      style={{ maxHeight: window.innerHeight * 0.3 }}
     >
-      <CCardBody className="py-2">
+      <CCardBody className="p-0">
         {loading
           ? (
             <div
@@ -60,16 +59,20 @@ const EvseManagement = ({ stationId }) => {
             <CListGroup className={evseList.length > 0 ? "mb-2" : ""}>
               {evseList.map(({ station_id, evse_id }) => (
                 <CListGroupItem key={`${station_id},${evse_id}`}>
-                  <EvseDetails stationId={station_id} evseId={evse_id} />
+                  <EvseMonitorDetails
+                    stationId={station_id}
+                    evseId={evse_id}
+                    remoteStart={remoteStart}
+                    remoteStop={remoteStop}
+                  />
                 </CListGroupItem>
               ))}
             </CListGroup>
           )
         }
-        <EvseAdd stationId={stationId} />
       </CCardBody>
     </CCard>
   );
 };
 
-export default EvseManagement;
+export default EvseMonitor;
