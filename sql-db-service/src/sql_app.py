@@ -135,13 +135,13 @@ def create_site(user=None):
     if not user:
         return {"message": "Permission denied"}, 403
 
-    data = request.json
+    body = request.json
 
-    owner_id = sanitize_input(data.get("owner_id"))
+    owner_id = sanitize_input(body.get("owner_id"))
     if user["role"] == "owner":
         owner_id = user["user_id"]
 
-    query = f"INSERT INTO Site (owner_id, latitude, longitude, name, street_address, zip_code, city, state, country) VALUES ({owner_id}, '{sanitize_input(data['latitude'])}', {sanitize_input(data['longitude'])}, '{sanitize_input(data['name'])}', '{sanitize_input(data['street_address'])}', '{sanitize_input(data['zip_code'])}', '{sanitize_input(data['city'])}', '{sanitize_input(data['state'])}', '{sanitize_input(data['country'])}')"
+    query = f"INSERT INTO Site (owner_id, latitude, longitude, name, street_address, zip_code, city, state, country) VALUES ({owner_id}, '{sanitize_input(body['latitude'])}', {sanitize_input(body['longitude'])}, '{sanitize_input(body['name'])}', '{sanitize_input(body['street_address'])}', '{sanitize_input(body['zip_code'])}', '{sanitize_input(body['city'])}', '{sanitize_input(body['state'])}', '{sanitize_input(body['country'])}')"
 
     sql_connection = mysql_pool.connection()
     with sql_connection.cursor() as cursor:
@@ -159,20 +159,21 @@ def update_site(site_id, user=None):
     if not user:
         return {"message": "Permission denied"}, 403
 
-    data = request.json
+    body = request.json
 
     if user["role"] == "owner":
         query = f"SELECT owner_id FROM Site WHERE id = {site_id}"
         sql_connection = mysql_pool.connection()
         with sql_connection.cursor() as cursor:
             cursor.execute(query)
-            owner_id = cursor.fetchone()
-
-        if not owner_id or owner_id[0] != user["user_id"]:
+            data = cursor.fetchone()
+        if not data:
+            return {"message": "Resource not found"}, 404
+        if data["owner_id"] != user["user_id"]:
             return {"message": "Permission denied"}, 403
 
     query = "UPDATE Site SET "
-    for key, value in data.items():
+    for key, value in body.items():
         query += f"{key} = '{sanitize_input(value)}', "
     query = query[:-2]
     query += f" WHERE id = {site_id}"
@@ -197,9 +198,10 @@ def delete_site(site_id, user=None):
         sql_connection = mysql_pool.connection()
         with sql_connection.cursor() as cursor:
             cursor.execute(query)
-            owner_id = cursor.fetchone()
-
-        if not owner_id or owner_id[0] != user["user_id"]:
+            data = cursor.fetchone()
+        if not data:
+            return {"message": "Resource not found"}, 404
+        if data["owner_id"] != user["user_id"]:
             return {"message": "Permission denied"}, 403
 
     query = f"DELETE FROM Site WHERE id = {site_id}"
@@ -236,16 +238,21 @@ def create_station(user=None):
     if not user:
         return {"message": "Permission denied"}, 403
 
-    data = request.json
-    site_id = sanitize_input(data.get("site_id"))
+    body = request.json
+    site_id = sanitize_input(body.get("site_id"))
 
     if user["role"] == "owner":
-        owner_id = user["user_id"]
-        owned_sites = fetch_data(f"SELECT id FROM Site WHERE owner_id = {owner_id}")
-        if not owned_sites or site_id not in [site["id"] for site in owned_sites]:
+        query = f"SELECT owner_id FROM Site WHERE id = {site_id}"
+        sql_connection = mysql_pool.connection()
+        with sql_connection.cursor() as cursor:
+            cursor.execute(query)
+            data = cursor.fetchone()
+        if not data:
+            return {"message": "Resource not found"}, 404
+        if data["owner_id"] != user["user_id"]:
             return {"message": "Permission denied"}, 403
 
-    query = f"INSERT INTO Station (name, latitude, longitude, site_id) VALUES ('{sanitize_input(data['name'])}', '{sanitize_input(data['latitude'])}', '{sanitize_input(data['longitude'])}', {site_id})"
+    query = f"INSERT INTO Station (name, latitude, longitude, site_id) VALUES ('{sanitize_input(body['name'])}', '{sanitize_input(body['latitude'])}', '{sanitize_input(body['longitude'])}', {site_id})"
 
     sql_connection = mysql_pool.connection()
     with sql_connection.cursor() as cursor:
@@ -263,21 +270,22 @@ def update_station(station_id, user=None):
     if not user:
         return {"message": "Permission denied"}, 403
 
-    data = request.json
+    body = request.json
+    station_id = sanitize_input(station_id)
 
     if user["role"] == "owner":
-        station_id = sanitize_input(station_id)
         query = f"SELECT owner_id FROM stations_joined WHERE id = {station_id}"
         sql_connection = mysql_pool.connection()
         with sql_connection.cursor() as cursor:
             cursor.execute(query)
-            owner_id = cursor.fetchone()
-
-        if not owner_id or owner_id[0] != user["user_id"]:
+            data = cursor.fetchone()
+        if not data:
+            return {"message": "Resource not found"}, 404
+        if data["owner_id"] != user["user_id"]:
             return {"message": "Permission denied"}, 403
 
     query = "UPDATE Station SET "
-    for key, value in data.items():
+    for key, value in body.items():
         query += f"{key} = '{sanitize_input(value)}', "
     query = query[:-2]
     query += f" WHERE id = {station_id}"
@@ -297,15 +305,17 @@ def delete_station(station_id, user=None):
     if not user:
         return {"message": "Permission denied"}, 403
 
+    station_id = sanitize_input(station_id)
+
     if user["role"] == "owner":
-        station_id = sanitize_input(station_id)
         query = f"SELECT owner_id FROM stations_joined WHERE id = {station_id}"
         sql_connection = mysql_pool.connection()
         with sql_connection.cursor() as cursor:
             cursor.execute(query)
-            owner_id = cursor.fetchone()
-
-        if not owner_id or owner_id[0] != user["user_id"]:
+            data = cursor.fetchone()
+        if not data:
+            return {"message": "Resource not found"}, 404
+        if data["owner_id"] != user["user_id"]:
             return {"message": "Permission denied"}, 403
 
     query = f"DELETE FROM Station WHERE id = {station_id}"
@@ -352,26 +362,34 @@ def create_evse(station_id, user=None):
     if not user:
         return {"message": "Permission denied"}, 403
 
-    data = request.json
+    body = request.json
     station_id = sanitize_input(station_id)
-    evse_id = sanitize_input(data["evse_id"])
+    evse_id = sanitize_input(body["evse_id"])
 
     if user["role"] == "owner":
-        owner_id = user["user_id"]
-        owned_stations = fetch_data(
-            f"SELECT station_id FROM evses_joined WHERE owner_id = {owner_id}"
-        )
-        if not owned_stations or station_id not in [
-            station["id"] for station in owned_stations
-        ]:
+        query = f"SELECT owner_id FROM stations_joined WHERE id = {station_id}"
+        sql_connection = mysql_pool.connection()
+        with sql_connection.cursor() as cursor:
+            cursor.execute(query)
+            data = cursor.fetchone()
+        if not data:
+            return {"message": "Resource not found"}, 404
+        if data["owner_id"] != user["user_id"]:
             return {"message": "Permission denied"}, 403
 
-    query = f"INSERT INTO EVSE (station_id, evse_id, connector_type, price, charge_level) VALUES ({station_id}, {evse_id}, '{sanitize_input(data['connector_type'])}', {sanitize_input(data['price'])}, '{sanitize_input(data['charge_level'])}')"
+    query = f"INSERT INTO EVSE (station_id, evse_id, connector_type, price, charge_level) VALUES ({station_id}, {evse_id}, '{sanitize_input(body['connector_type'])}', {sanitize_input(body['price'])}, '{sanitize_input(body['charge_level'])}')"
 
     sql_connection = mysql_pool.connection()
     with sql_connection.cursor() as cursor:
         cursor.execute(query)
         sql_connection.commit()
+
+    query = f"SELECT evse_id FROM EVSE ORDER BY created_at DESC LIMIT 1"
+    sql_connection = mysql_pool.connection()
+    with sql_connection.cursor() as cursor:
+        cursor.execute(query)
+        data = cursor.fetchone()
+        evse_id = data["evse_id"]
 
     return {"message": "EVSE created successfully", "id": evse_id}, 201
 
@@ -383,7 +401,7 @@ def update_evse(station_id, evse_id, user=None):
     if not user:
         return {"message": "Permission denied"}, 403
 
-    data = request.json
+    body = request.json
 
     if user["role"] == "owner":
         station_id = sanitize_input(station_id)
@@ -393,13 +411,14 @@ def update_evse(station_id, evse_id, user=None):
         sql_connection = mysql_pool.connection()
         with sql_connection.cursor() as cursor:
             cursor.execute(query)
-            owner_id = cursor.fetchone()
-
-        if not owner_id or owner_id[0] != user["user_id"]:
+            data = cursor.fetchone()
+        if not data:
+            return {"message": "Resource not found"}, 404
+        if data["owner_id"] != user["user_id"]:
             return {"message": "Permission denied"}, 403
 
     query = "UPDATE EVSE SET "
-    for key, value in data.items():
+    for key, value in body.items():
         query += f"{key} = '{sanitize_input(value)}', "
     query = query[:-2]
     query += f" WHERE station_id = {station_id} AND evse_id = {evse_id}"
@@ -427,9 +446,10 @@ def delete_evse(station_id, evse_id, user=None):
         sql_connection = mysql_pool.connection()
         with sql_connection.cursor() as cursor:
             cursor.execute(query)
-            owner_id = cursor.fetchone()
-
-        if not owner_id or owner_id[0] != user["user_id"]:
+            data = cursor.fetchone()
+        if not data:
+            return {"message": "Resource not found"}, 404
+        if data["owner_id"] != user["user_id"]:
             return {"message": "Permission denied"}, 403
 
     query = f"DELETE FROM EVSE WHERE station_id = {station_id} AND evse_id = {evse_id}"
