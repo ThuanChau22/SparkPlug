@@ -1,39 +1,35 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import useWebSocket, { ReadyState } from "react-use-websocket";
-import { GooeyCircleLoader } from "react-loaders-kit";
 import ms from "ms";
 import {
-  CButton,
-  CContainer,
   CModal,
   CModalHeader,
   CModalTitle,
   CModalBody,
-  CAccordion,
-  CAccordionItem,
-  CAccordionHeader,
-  CAccordionBody,
 } from "@coreui/react";
-import {
-  EvStation,
-} from '@mui/icons-material';
 
+import EvseMonitorList from "components/EvseMonitorList";
+import StationEventList from "./StationEventList";
 import StationStatus from "components/StationStatus";
-import { apiInstance } from "redux/api";
-import { selectAuthAccessToken } from "redux/auth/authSlice";
-import { selectStationById } from "redux/station/stationSlide";
+import {
+  selectAuthRoleIsStaff,
+  selectAuthAccessToken,
+} from "redux/auth/authSlice";
+import {
+  selectStationById,
+} from "redux/station/stationSlide";
+import {
+  evseStateUpsertById,
+} from "redux/evse/evseSlice";
 
 const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
-  const MonitoringAPI = process.env.REACT_APP_MONITORING_API_ENDPOINT;
-  const MonitoringWS = process.env.REACT_APP_MONITORING_WS_ENDPOINT;
+  const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
+  const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const token = useSelector(selectAuthAccessToken);
   const station = useSelector((state) => selectStationById(state, stationId));
-  const meterTimeoutRef = useRef(0);
-  const [loading, setLoading] = useState(false);
-  const [meterValue, setMeterValue] = useState(0);
   const [eventMessages, setEventMessages] = useState([]);
-  const socket = useWebSocket(`${MonitoringWS}`, {
+  const socket = useWebSocket(`${StationEventWS}`, {
     queryParams: { token },
     heartbeat: {
       message: "ping",
@@ -52,27 +48,11 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
   } = socket;
   const dispatch = useDispatch();
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const { data } = await apiInstance.get(`${MonitoringAPI}/${stationId}`, { headers });
-      setEventMessages(data);
-    } catch (error) {
-      console.log(error);
-    }
-    setLoading(false);
-  }, [MonitoringAPI, stationId, token]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
   useEffect(() => {
     if (station && readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: "WatchAllEvent",
-        payload: { stationId: station.id.toString() },
+        payload: { stationId: station.id },
       });
     }
   }, [station, readyState, sendJsonMessage]);
@@ -85,35 +65,29 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
       if (payload.event === "TransactionEvent" && meterValue) {
         const [meter] = meterValue;
         const [sample] = meter.sampledValue;
-        setMeterValue(sample.value);
-        clearTimeout(meterTimeoutRef.current);
-        meterTimeoutRef.current = setTimeout(() => {
-          setMeterValue(0);
-        }, ms("5s"));
+        dispatch(evseStateUpsertById({
+          station_id: payload.stationId,
+          evse_id: payload.payload.evse.id,
+          meterValue: sample.value,
+        }));
       }
     }
   }, [lastJsonMessage, dispatch]);
 
-  const handleRemoteStart = () => {
+  const remoteStart = (stationId, evseId) => {
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: "RemoteStart",
-        payload: {
-          stationId: station.id.toString(),
-          evseId: 1,
-        },
+        payload: { stationId, evseId },
       });
     }
   };
 
-  const handleRemoteStop = () => {
+  const remoteStop = (stationId, evseId) => {
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: "RemoteStop",
-        payload: {
-          stationId: station.id.toString(),
-          evseId: 1,
-        },
+        payload: { stationId, evseId },
       });
     }
   };
@@ -122,6 +96,7 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     <CModal
       size="lg"
       alignment="center"
+      backdrop="static"
       visible={isOpen}
       onClose={onClose}
       scrollable
@@ -131,75 +106,24 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
           {station.name} - <StationStatus status={station.status} />
         </CModalTitle>
       </CModalHeader>
-      <p className="ps-3" >
+      <p className="ps-3 mb-0">
         <span className="text-secondary" >Station ID: {station.id}</span>
-        <span className="text-secondary float-end pe-3">Owner ID: {station.owner_id}</span>
+        {authIsAdmin &&
+          <span className="text-secondary float-end pe-3">
+            Owner ID: {station.owner_id}
+          </span>}
       </p>
       <CModalBody>
-        <div className="d-flex justify-content-between align-items-center">
-          <div className="d-flex align-items-center">
-            <EvStation color="warning" />
-            <h5 className="text-warning p-1 m-0">{meterValue}Wh</h5>
-          </div>
-          <div>
-            <CButton
-              className="me-1"
-              variant="outline"
-              color="success"
-              onClick={handleRemoteStart}
-              disabled={station.status === "Unavailable"}
-            >
-              Remote Start
-            </CButton>
-            <CButton
-              variant="outline"
-              color="info"
-              onClick={handleRemoteStop}
-              disabled={station.status === "Unavailable"}
-            >
-              Remote Stop
-            </CButton>
-          </div>
-        </div>
-        <CAccordion
-          alwaysOpen
-          className="d-flex flex-column-reverse pt-4 pb-3"
-        >
-          {loading
-            ? (
-              <CContainer className="d-flex flex-row justify-content-center">
-                <GooeyCircleLoader
-                  className="mx-auto"
-                  color={["#f6b93b", "#5e22f0", "#ef5777"]}
-                  loading={true}
-                />
-              </CContainer>
-            )
-            : eventMessages.length > 0
-              ? eventMessages.map(({ id, event, payload, createdAt }) => (
-                <CAccordionItem
-                  key={id}
-                >
-                  <CAccordionHeader>
-                    {createdAt} - {event}
-                  </CAccordionHeader>
-                  <CAccordionBody>
-                    <pre>
-                      {JSON.stringify({
-                        event,
-                        payload,
-                        createdAt,
-                      }, null, 2)}
-                    </pre>
-                  </CAccordionBody>
-                </CAccordionItem>
-              ))
-              : (
-                <div className="text-secondary text-center" >
-                  Station event not available
-                </div>
-              )}
-        </CAccordion>
+        <EvseMonitorList
+          stationId={stationId}
+          remoteStart={remoteStart}
+          remoteStop={remoteStop}
+        />
+        <StationEventList
+          stationId={stationId}
+          eventMessages={eventMessages}
+          setEventMessages={setEventMessages}
+        />
       </CModalBody>
     </CModal>
   );

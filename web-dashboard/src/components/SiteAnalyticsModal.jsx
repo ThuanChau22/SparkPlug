@@ -63,6 +63,7 @@ const SiteAnalyticsModal = ({ isOpen, onClose, siteId }) => {
     <CModal
       size="xl"
       alignment="center"
+      backdrop="static"
       visible={isOpen}
       onClose={onClose}
       scrollable

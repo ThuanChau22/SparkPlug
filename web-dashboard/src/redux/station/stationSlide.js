@@ -13,7 +13,9 @@ import { createLocationFilterAdapter } from "redux/locationFilterAdapter";
 
 const StationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
 
-const stationEntityAdapter = createEntityAdapter();
+const stationEntityAdapter = createEntityAdapter({
+  sortComparer: (a, b) => a.site_id - b.site_id,
+});
 const locationFilterAdapter = createLocationFilterAdapter();
 
 const initialState = {
@@ -28,8 +30,12 @@ export const stationSlice = createSlice({
     stationStateSetAll(state, { payload }) {
       stationEntityAdapter.setAll(state, payload);
     },
-    stationStateSetById(state, { payload }) {
-      stationEntityAdapter.setOne(state, payload);
+    stationStateUpsertById(state, { payload }) {
+      stationEntityAdapter.upsertOne(state, payload);
+    },
+    stationStateUpdateMany(state, { payload }) {
+      const mapper = ({ id, ...changes }) => ({ id, changes });
+      stationEntityAdapter.updateMany(state, payload.map(mapper));
     },
     stationStateUpdateById(state, { payload }) {
       const { id, ...changes } = payload;
@@ -63,7 +69,8 @@ export const stationSlice = createSlice({
 
 export const {
   stationStateSetAll,
-  stationStateSetById,
+  stationStateUpsertById,
+  stationStateUpdateMany,
   stationStateUpdateById,
   stationStateDeleteById,
   stationSetStateSelected,
@@ -87,11 +94,11 @@ export const stationGetAll = createAsyncThunk(
 
 export const stationGetById = createAsyncThunk(
   `${stationSlice.name}/getById`,
-  async (stationId, { dispatch, getState }) => {
+  async (id, { dispatch, getState }) => {
     try {
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.get(`${StationAPI}/${stationId}`, config);
-      dispatch(stationStateSetById(data));
+      const { data } = await apiInstance.get(`${StationAPI}/${id}`, config);
+      dispatch(stationStateUpsertById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -100,11 +107,16 @@ export const stationGetById = createAsyncThunk(
 
 export const stationAdd = createAsyncThunk(
   `${stationSlice.name}/add`,
-  async (stationData, { dispatch, getState }) => {
+  async ({
+    name,
+    siteId: site_id,
+    latitude, longitude,
+  }, { dispatch, getState }) => {
     try {
+      const body = { name, site_id, latitude, longitude };
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.post(`${StationAPI}`, stationData, config);
-      dispatch(stationGetById(data.inserted_id));
+      const { data } = await apiInstance.post(`${StationAPI}`, body, config);
+      dispatch(stationGetById(data.id));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -113,11 +125,15 @@ export const stationAdd = createAsyncThunk(
 
 export const stationUpdateById = createAsyncThunk(
   `${stationSlice.name}/updateById`,
-  async (stationData, { dispatch, getState }) => {
+  async ({
+    id, name,
+    siteId: site_id,
+    latitude, longitude,
+  }, { dispatch, getState }) => {
     try {
-      const { id, ...remain } = stationData;
+      const body = { name, site_id, latitude, longitude };
       const config = await tokenConfig({ dispatch, getState });
-      await apiInstance.patch(`${StationAPI}/${id}`, remain, config);
+      await apiInstance.patch(`${StationAPI}/${id}`, body, config);
       dispatch(stationGetById(id));
     } catch (error) {
       handleError({ error, dispatch });
@@ -127,11 +143,11 @@ export const stationUpdateById = createAsyncThunk(
 
 export const stationDeleteById = createAsyncThunk(
   `${stationSlice.name}/deleteById`,
-  async (stationId, { dispatch, getState }) => {
+  async (id, { dispatch, getState }) => {
     try {
       const config = await tokenConfig({ dispatch, getState });
-      await apiInstance.delete(`${StationAPI}/${stationId}`, config);
-      dispatch(stationStateDeleteById(stationId));
+      await apiInstance.delete(`${StationAPI}/${id}`, config);
+      dispatch(stationStateDeleteById(id));
     } catch (error) {
       handleError({ error, dispatch });
     }

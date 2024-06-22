@@ -2,9 +2,9 @@ import { Marker, Tooltip } from "react-leaflet";
 
 import { createStationIcon } from "assets/mapIcons";
 
-const DriverStationMarker = ({ station, onMarkerClick }) => {
-  const { name, price, status, latitude, longitude } = station;
-  const { street_address, city, state, zip_code } = station;
+const StationStatusMarker = ({ station, onMarkerClick }) => {
+  const { name, status, latitude, longitude } = station;
+  const { street_address, city, state, zip_code, country } = station;
   return (
     <Marker
       position={[latitude, longitude]}
@@ -13,12 +13,11 @@ const DriverStationMarker = ({ station, onMarkerClick }) => {
     >
       <Tooltip direction="top" offset={[0, -20]} opacity={1} permanent={false}>
         <div>{`Station: ${name}`}</div>
-        <div>{`Price: ${price}`}</div>
         <div>{`Status: ${status}`}</div>
-        <div>{`${street_address}, ${city}, ${state} ${zip_code}`}</div>
+        <div>{`${street_address}, ${city}, ${state} ${zip_code}, ${country}`}</div>
       </Tooltip>
     </Marker>
   );
 };
 
-export default DriverStationMarker;
+export default StationStatusMarker;

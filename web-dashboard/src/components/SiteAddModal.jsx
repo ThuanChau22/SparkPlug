@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
   CModal,
@@ -10,16 +10,27 @@ import {
   CFormInput,
 } from "@coreui/react";
 
+import {
+  selectAuthUserId,
+  selectAuthRoleIsStaff,
+  selectAuthRoleIsOwner,
+} from "redux/auth/authSlice";
 import { siteAdd } from "redux/site/siteSlide";
 
 const SiteAddModal = ({ isOpen, onClose }) => {
+  const userId = useSelector(selectAuthUserId);
+  const authIsAdmin = useSelector(selectAuthRoleIsStaff);
+  const authIsOwner = useSelector(selectAuthRoleIsOwner);
   const initialFormData = {
     name: "",
     ownerId: "",
-    streetAddress: "",
     latitude: "",
     longitude: "",
-    zipCode: ""
+    streetAddress: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "",
   };
   const [formData, setFormData] = useState(initialFormData);
   const dispatch = useDispatch();
@@ -30,23 +41,22 @@ const SiteAddModal = ({ isOpen, onClose }) => {
   };
 
   const handleSubmit = () => {
-    if (!formData.name
-      || !formData.ownerId
-      || !formData.streetAddress
-      || !formData.latitude
-      || !formData.longitude
-      || !formData.zipCode) {
+    const data = formData;
+    if (authIsOwner) {
+      data.ownerId = userId;
+    }
+    if (!data.name
+      || !data.ownerId
+      || !data.latitude
+      || !data.longitude
+      || !data.streetAddress
+      || !data.city
+      || !data.state
+      || !data.zipCode
+      || !data.country) {
       return;
     }
-    const siteData = {
-      name: formData.name,
-      owner_id: Number(formData.ownerId),
-      street_address: formData.streetAddress,
-      latitude: Number(formData.latitude),
-      longitude: Number(formData.longitude),
-      zip_code: formData.zipCode,
-    };
-    dispatch(siteAdd(siteData));
+    dispatch(siteAdd(data));
     handleClose();
   };
 
@@ -57,8 +67,8 @@ const SiteAddModal = ({ isOpen, onClose }) => {
 
   return (
     <CModal
-      backdrop="static"
       alignment="center"
+      backdrop="static"
       visible={isOpen}
       onClose={handleClose}
     >
@@ -75,22 +85,15 @@ const SiteAddModal = ({ isOpen, onClose }) => {
             onChange={handleInputChange}
             value={formData.name}
           />
-          <CFormInput
-            className="mb-3 shadow-none"
-            type="text"
-            name="ownerId"
-            placeholder="Owner ID"
-            onChange={handleInputChange}
-            value={formData.ownerId}
-          />
-          <CFormInput
-            className="mb-3 shadow-none"
-            type="text"
-            name="streetAddress"
-            placeholder="Street Address"
-            onChange={handleInputChange}
-            value={formData.streetAddress}
-          />
+          {authIsAdmin &&
+            <CFormInput
+              className="mb-3 shadow-none"
+              type="text"
+              name="ownerId"
+              placeholder="Owner ID"
+              onChange={handleInputChange}
+              value={formData.ownerId}
+            />}
           <CFormInput
             className="mb-3 shadow-none"
             type="text"
@@ -102,9 +105,34 @@ const SiteAddModal = ({ isOpen, onClose }) => {
           <CFormInput
             className="mb-3 shadow-none"
             type="text"
-            name="longitude" placeholder="Longitude"
+            name="longitude"
+            placeholder="Longitude"
             onChange={handleInputChange}
             value={formData.longitude} />
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="streetAddress"
+            placeholder="Street Address"
+            onChange={handleInputChange}
+            value={formData.streetAddress}
+          />
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="city"
+            placeholder="City"
+            onChange={handleInputChange}
+            value={formData.city}
+          />
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="state"
+            placeholder="State"
+            onChange={handleInputChange}
+            value={formData.state}
+          />
           <CFormInput
             className="mb-3 shadow-none"
             type="text"
@@ -112,6 +140,14 @@ const SiteAddModal = ({ isOpen, onClose }) => {
             placeholder="Zip Code"
             onChange={handleInputChange}
             value={formData.zipCode}
+          />
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="country"
+            placeholder="Country"
+            onChange={handleInputChange}
+            value={formData.country}
           />
           <div className="text-center">
             <CButton

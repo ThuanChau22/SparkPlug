@@ -36,9 +36,14 @@ import {
   selectSelectedZipCode,
   selectZipCodeOptions,
 } from "redux/station/stationSlide";
+import {
+  evseStateUpsertById,
+  evseGetAllStatus,
+  selectEvseList,
+} from "redux/evse/evseSlice";
 
 const DriverStation = () => {
-  const MonitoringWS = process.env.REACT_APP_MONITORING_WS_ENDPOINT;
+  const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
   const titleRef = createRef();
   const filterRef = createRef();
   const headerHeight = useSelector(selectHeaderHeight);
@@ -50,6 +55,7 @@ const DriverStation = () => {
   const stationCityOptions = useSelector(selectCityOptions);
   const stationSelectedZipCode = useSelector(selectSelectedZipCode);
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
+  const evseList = useSelector(selectEvseList);
   const [listHeight, setListHeight] = useState(window.innerHeight);
   const [mapHeight, setMapHeight] = useState(window.innerHeight);
   const [loading, setLoading] = useState(false);
@@ -58,7 +64,7 @@ const DriverStation = () => {
   const [isCenter, setIsCenter] = useState(true);
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [selectedStationId, setSelectedStationId] = useState(null);
-  const socket = useWebSocket(`${MonitoringWS}`, {
+  const socket = useWebSocket(`${StationEventWS}`, {
     queryParams: { token },
     heartbeat: {
       message: "ping",
@@ -102,10 +108,22 @@ const DriverStation = () => {
   }, [fetchData]);
 
   useEffect(() => {
+    const isStatusLoaded = (stations) => {
+      for (const { evseStatusLoaded } of stations) {
+        if (!evseStatusLoaded) return false;
+      }
+      return true;
+    };
+    if (!isStatusLoaded(stationList)) {
+      dispatch(evseGetAllStatus());
+    }
+  }, [stationList, dispatch]);
+
+  useEffect(() => {
     const isStationLoaded = stationList.length > 0;
     const isConnected = readyState === ReadyState.OPEN;
     if (isStationLoaded && isConnected) {
-      const stationIds = stationList.map(({ id }) => id.toString());
+      const stationIds = stationList.map(({ id }) => id);
       sendJsonMessage({
         action: "WatchStatusEvent",
         payload: { stationIds },
@@ -116,19 +134,46 @@ const DriverStation = () => {
   useEffect(() => {
     const { action, payload } = lastJsonMessage || {};
     if (action === "WatchStatusEvent" && payload.stationId) {
-      const { stationId, payload: { connectorStatus } } = payload;
-      dispatch(stationStateUpdateById({
-        id: parseInt(stationId),
+      const { stationId, payload: { evseId, connectorStatus } } = payload;
+      const station = {
+        id: stationId,
         status: connectorStatus,
-      }));
+      };
+      if (evseId) {
+        dispatch(evseStateUpsertById({
+          station_id: stationId,
+          evse_id: evseId,
+          status: connectorStatus,
+        }));
+        const evses = evseList.filter(({ station_id, evse_id }) => {
+          return station_id === stationId && evse_id !== evseId;
+        });
+        const statuses = evses.reduce((object, { status }) => {
+          const count = object[status] + 1;
+          object[status] = count || 1;
+          return object;
+        }, {});
+        const count = statuses[connectorStatus] + 1;
+        statuses[connectorStatus] = count || 1;
+        if (statuses.Available) {
+          station.status = "Available";
+        } else if (statuses.Occupied) {
+          station.status = "Occupied";
+        } else if (statuses.Reserved) {
+          station.status = "Reserved";
+        } else if (statuses.Faulted) {
+          station.status = "Faulted";
+        }
+      }
+      dispatch(stationStateUpdateById(station));
     }
-  }, [lastJsonMessage, dispatch]);
+  }, [lastJsonMessage, evseList, dispatch]);
 
   const handleFilter = (state, city, zipCode) => {
     const params = [];
     if (state !== "All") params.push(`state=${state}`);
     if (city !== "All") params.push(`city=${city}`);
-    if (zipCode !== "All") params.push(`zip=${zipCode}`);
+    if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
     const query = params.length > 0 ? `?${params.join("&")}` : "";
     dispatch(stationGetAll(query));
     dispatch(stationSetStateSelected(state));

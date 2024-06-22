@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-import userRepository, { Role } from "../repositories/UserRepository.js";
+import User from "../repositories/UserRepository.js";
 import { JWT_SECRET } from "../config.js";
 
 export const authenticate = (req, res, next) => {
@@ -25,11 +25,11 @@ export const authorizeRole = (role) => (req, res, next) => {
 };
 
 export const authorizeResource = async (req, res, next) => {
-  const user = await userRepository.getUserById(req.params.id);
+  const user = await User.getUserById(req.params.id);
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
-  if (req.user.role !== Role.Staff && req.user.id !== user.id) {
+  if (req.user.role !== User.Role.Staff && req.user.id !== user.id) {
     return res.status(403).json({ message: "Access denied" });
   }
   next();

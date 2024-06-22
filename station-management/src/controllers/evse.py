@@ -18,8 +18,8 @@ def read_evses():
     )
 
     evses = response.json()
-    evses = utils.convert_coords_to_float_stations(evses)
-
+    evses = utils.convert_coords_to_float(evses)
+    evses = utils.convert_price_to_float(evses)
     return evses
 
 
@@ -36,7 +36,8 @@ def read_evses_by_station(station_id):
     )
 
     evses = response.json()
-    evses = utils.convert_coords_to_float_stations(evses)
+    evses = utils.convert_coords_to_float(evses)
+    evses = utils.convert_price_to_float(evses)
     return evses
 
 
@@ -53,7 +54,8 @@ def read_evse_by_id(station_id, evse_id):
     )
 
     evses = response.json()
-    evses = utils.convert_coords_to_float_stations(evses)
+    evses = utils.convert_coords_to_float(evses)
+    evses = utils.convert_price_to_float(evses)
     return evses[0]
 
 
