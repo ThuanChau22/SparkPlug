@@ -105,7 +105,8 @@ const SiteAddModal = ({ isOpen, onClose }) => {
           <CFormInput
             className="mb-3 shadow-none"
             type="text"
-            name="longitude" placeholder="Longitude"
+            name="longitude"
+            placeholder="Longitude"
             onChange={handleInputChange}
             value={formData.longitude} />
           <CFormInput

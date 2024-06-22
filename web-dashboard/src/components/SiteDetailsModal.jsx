@@ -6,6 +6,7 @@ import {
   CModalHeader,
   CModalTitle,
   CModalBody,
+  CForm,
   CFormInput,
 } from "@coreui/react";
 
@@ -32,7 +33,7 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
   const InfoModal = () => (
     <>
       <div className="d-flex justify-content-between">
-        <small className="text-secondary ps-3 my-auto">ID: {site.id}</small>
+        <small className="text-secondary ps-3 my-auto">Site ID: {site.id}</small>
         <div>
           <CButton
             className="me-2"
@@ -54,7 +55,14 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
       </div>
       <CModalBody className="pt-1">
         {authIsAdmin && <p>Owner ID: {site.owner_id}</p>}
-        <p>Address: {site.street_address}, {site.city}, {site.state} {site.zip_code}, {site.country}</p>
+        <p>
+          <span>Address: </span>
+          <span>{site.street_address}, </span>
+          <span>{site.city}, </span>
+          <span>{site.state} </span>
+          <span>{site.zip_code}, </span>
+          <span>{site.country}</span>
+        </p>
         <p>Coordinate: {site.latitude}, {site.longitude}</p>
       </CModalBody>
     </>
@@ -120,114 +128,116 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
 
     return (
       <CModalBody>
-        <label htmlFor="siteName">Name</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="siteName"
-          name="name"
-          type="text"
-          placeholder="Name"
-          value={formData.name}
-          onChange={handleInputChange}
-        />
-        {authIsAdmin &&
-          <>
-            <label htmlFor="ownerId">Owner ID</label>
-            <CFormInput
-              className="mb-3 shadow-none"
-              id="ownerId"
-              name="ownerId"
-              type="text"
-              placeholder="Owner ID"
-              onChange={handleInputChange}
-              value={formData.ownerId}
-            />
-          </>}
-        <label htmlFor="latitude">Latitude</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="latitude"
-          name="latitude"
-          type="text"
-          placeholder="Latitude"
-          onChange={handleInputChange}
-          value={formData.latitude}
-        />
-        <label htmlFor="longitude">Longitude</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          name="longitude"
-          id="longitude"
-          type="text"
-          placeholder="Longitude"
-          onChange={handleInputChange}
-          value={formData.longitude}
-        />
-        <label htmlFor="streetAddress">Street Address</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="streetAddress"
-          name="streetAddress"
-          type="text"
-          placeholder="Street Address"
-          onChange={handleInputChange}
-          value={formData.streetAddress}
-        />
-        <label htmlFor="city">City</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="city"
-          name="city"
-          type="text"
-          placeholder="City"
-          onChange={handleInputChange}
-          value={formData.city}
-        />
-        <label htmlFor="state">State</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="state"
-          name="state"
-          type="text"
-          placeholder="State"
-          onChange={handleInputChange}
-          value={formData.state}
-        />
-        <label htmlFor="zipCode">Zip Code</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="zipCode"
-          name="zipCode"
-          type="text"
-          placeholder="Zip Code"
-          onChange={handleInputChange}
-          value={formData.zipCode}
-        />
-        <label htmlFor="country">Country</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="country"
-          name="country"
-          type="text"
-          placeholder="Country"
-          onChange={handleInputChange}
-          value={formData.country}
-        />
-        <CButton
-          variant="outline"
-          color="warning"
-          onClick={handleSave}
-        >
-          Save
-        </CButton>
-        <CButton
-          className="ms-2"
-          variant="outline"
-          color="secondary"
-          onClick={() => setIsEdit(false)}
-        >
-          Cancel
-        </CButton>
+        <CForm>
+          <label htmlFor="siteName">Name</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="siteName"
+            name="name"
+            type="text"
+            placeholder="Name"
+            value={formData.name}
+            onChange={handleInputChange}
+          />
+          {authIsAdmin &&
+            <>
+              <label htmlFor="ownerId">Owner ID</label>
+              <CFormInput
+                className="mb-3 shadow-none"
+                id="ownerId"
+                name="ownerId"
+                type="text"
+                placeholder="Owner ID"
+                onChange={handleInputChange}
+                value={formData.ownerId}
+              />
+            </>}
+          <label htmlFor="latitude">Latitude</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="latitude"
+            name="latitude"
+            type="text"
+            placeholder="Latitude"
+            onChange={handleInputChange}
+            value={formData.latitude}
+          />
+          <label htmlFor="longitude">Longitude</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            name="longitude"
+            id="longitude"
+            type="text"
+            placeholder="Longitude"
+            onChange={handleInputChange}
+            value={formData.longitude}
+          />
+          <label htmlFor="streetAddress">Street Address</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="streetAddress"
+            name="streetAddress"
+            type="text"
+            placeholder="Street Address"
+            onChange={handleInputChange}
+            value={formData.streetAddress}
+          />
+          <label htmlFor="city">City</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="city"
+            name="city"
+            type="text"
+            placeholder="City"
+            onChange={handleInputChange}
+            value={formData.city}
+          />
+          <label htmlFor="state">State</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="state"
+            name="state"
+            type="text"
+            placeholder="State"
+            onChange={handleInputChange}
+            value={formData.state}
+          />
+          <label htmlFor="zipCode">Zip Code</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="zipCode"
+            name="zipCode"
+            type="text"
+            placeholder="Zip Code"
+            onChange={handleInputChange}
+            value={formData.zipCode}
+          />
+          <label htmlFor="country">Country</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="country"
+            name="country"
+            type="text"
+            placeholder="Country"
+            onChange={handleInputChange}
+            value={formData.country}
+          />
+          <CButton
+            variant="outline"
+            color="warning"
+            onClick={handleSave}
+          >
+            Save
+          </CButton>
+          <CButton
+            className="ms-2"
+            variant="outline"
+            color="secondary"
+            onClick={() => setIsEdit(false)}
+          >
+            Cancel
+          </CButton>
+        </CForm>
       </CModalBody>
     );
   };
@@ -252,32 +262,35 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
 
     return (
       <CModalBody>
-        <label htmlFor="siteName">Type "{name}" to delete site</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          type="text"
-          name="name"
-          value={inputName}
-          onChange={(e) => setInputName(e.target.value)}
-        />
-        <div className="float-end">
-          <CButton
-            variant="outline"
-            color="secondary"
-            onClick={() => setIsDelete(false)}
-          >
-            Cancel
-          </CButton>
-          <CButton
-            className="ms-2"
-            variant="outline"
-            color="danger"
-            disabled={name !== inputName}
-            onClick={handleDelete}
-          >
-            Delete
-          </CButton>
-        </div>
+        <CForm>
+          <label htmlFor="siteName">Type "{name}" to delete site</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            type="text"
+            name="name"
+            placeholder="Confirmation"
+            value={inputName}
+            onChange={(e) => setInputName(e.target.value)}
+          />
+          <div className="float-end">
+            <CButton
+              variant="outline"
+              color="secondary"
+              onClick={() => setIsDelete(false)}
+            >
+              Cancel
+            </CButton>
+            <CButton
+              className="ms-2"
+              variant="outline"
+              color="danger"
+              disabled={name !== inputName}
+              onClick={handleDelete}
+            >
+              Delete
+            </CButton>
+          </div>
+        </CForm>
       </CModalBody>
     );
   };

@@ -6,6 +6,7 @@ import {
   CModalHeader,
   CModalTitle,
   CModalBody,
+  CForm,
   CFormInput,
   CFormSelect,
 } from "@coreui/react";
@@ -109,43 +110,46 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
 
     return (
       <CModalBody>
-        <label htmlFor="userName">Name</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="userName"
-          name="name"
-          type="text"
-          value={input.name}
-          onChange={handleInputChanged}
-        />
-        <label htmlFor="userStatus">Status</label>
-        <CFormSelect
-          className="mb-3 shadow-none"
-          id="userStatus"
-          name="status"
-          options={[
-            { label: "active", value: "active" },
-            { label: "blocked", value: "blocked" },
-            { label: "terminated", value: "terminated" },
-          ]}
-          value={input.status}
-          onChange={handleInputChanged}
-        />
-        <CButton
-          variant="outline"
-          color="warning"
-          onClick={handleSave}
-        >
-          Save
-        </CButton>
-        <CButton
-          className="ms-2"
-          variant="outline"
-          color="secondary"
-          onClick={() => setIsEdit(false)}
-        >
-          Cancel
-        </CButton>
+        <CForm>
+          <label htmlFor="userName">Name</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="userName"
+            name="name"
+            type="text"
+            placeholder="Name"
+            value={input.name}
+            onChange={handleInputChanged}
+          />
+          <label htmlFor="userStatus">Status</label>
+          <CFormSelect
+            className="mb-3 shadow-none"
+            id="userStatus"
+            name="status"
+            options={[
+              { label: "active", value: "active" },
+              { label: "blocked", value: "blocked" },
+              { label: "terminated", value: "terminated" },
+            ]}
+            value={input.status}
+            onChange={handleInputChanged}
+          />
+          <CButton
+            variant="outline"
+            color="warning"
+            onClick={handleSave}
+          >
+            Save
+          </CButton>
+          <CButton
+            className="ms-2"
+            variant="outline"
+            color="secondary"
+            onClick={() => setIsEdit(false)}
+          >
+            Cancel
+          </CButton>
+        </CForm>
       </CModalBody>
     );
   };
@@ -170,33 +174,36 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
 
     return (
       <CModalBody>
-        <label htmlFor="userName">Type "{email}" to delete user</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="userName"
-          type="text"
-          name="email"
-          value={inputEmail}
-          onChange={(e) => setInputEmail(e.target.value)}
-        />
-        <div className="float-end">
-          <CButton
-            variant="outline"
-            color="secondary"
-            onClick={() => setIsDelete(false)}
-          >
-            Cancel
-          </CButton>
-          <CButton
-            className="ms-2"
-            variant="outline"
-            color="danger"
-            disabled={email !== inputEmail}
-            onClick={handleDelete}
-          >
-            Delete
-          </CButton>
-        </div>
+        <CForm>
+          <label htmlFor="userName">Type "{email}" to delete user</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="userName"
+            name="email"
+            type="text"
+            placeholder="Confirmation"
+            value={inputEmail}
+            onChange={(e) => setInputEmail(e.target.value)}
+          />
+          <div className="float-end">
+            <CButton
+              variant="outline"
+              color="secondary"
+              onClick={() => setIsDelete(false)}
+            >
+              Cancel
+            </CButton>
+            <CButton
+              className="ms-2"
+              variant="outline"
+              color="danger"
+              disabled={email !== inputEmail}
+              onClick={handleDelete}
+            >
+              Delete
+            </CButton>
+          </div>
+        </CForm>
       </CModalBody>
     );
   };

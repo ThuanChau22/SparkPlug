@@ -92,26 +92,6 @@ const StationAddModal = ({ isOpen, onClose }) => {
               )),
             ]}
           />
-          {/* <CFormSelect
-            className="mb-3 shadow-none"
-            name="chargeLevel"
-            value={formData.chargeLevel}
-            onChange={handleInputChange}
-            options={[
-              { label: "chargeLevel", value: "" },
-              { label: "1", value: "1" },
-              { label: "2", value: "2" },
-              { label: "3", value: "3" },
-            ]}
-          />
-          <CFormInput
-            className="mb-3 shadow-none"
-            type="text"
-            name="connectorType"
-            placeholder="Connector Type"
-            onChange={handleInputChange}
-            value={formData.connectorType}
-          /> */}
           <CFormInput
             className="mb-3 shadow-none"
             type="text"
