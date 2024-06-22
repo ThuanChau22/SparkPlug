@@ -18,7 +18,7 @@ def read_stations():
     )
 
     stations = response.json()
-    stations = utils.convert_coords_to_float_stations(stations)
+    stations = utils.convert_coords_to_float(stations)
 
     return stations
 
@@ -35,7 +35,7 @@ def read_station_by_id(station_id):
     )
 
     stations = response.json()
-    stations = utils.convert_coords_to_float_stations(stations)
+    stations = utils.convert_coords_to_float(stations)
 
     return stations[0]
 

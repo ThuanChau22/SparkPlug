@@ -1,22 +1,13 @@
-def convert_coords_to_float_sites(sites):
+def convert_coords_to_float(data):
     return [
         {
-            **site,
-            "latitude": float(site["latitude"]),
-            "longitude": float(site["longitude"]),
+            **item,
+            "latitude": float(item["latitude"]),
+            "longitude": float(item["longitude"]),
         }
-        for site in sites
+        for item in data
     ]
 
 
-def convert_coords_to_float_stations(stations):
-    return [
-        {
-            **station,
-            "latitude": float(station["latitude"]),
-            "longitude": float(station["longitude"]),
-            "site_latitude": float(station["site_latitude"]),
-            "site_longitude": float(station["site_longitude"]),
-        }
-        for station in stations
-    ]
+def convert_price_to_float(data):
+    return [{**item, "price": float(item["price"])} for item in data]
