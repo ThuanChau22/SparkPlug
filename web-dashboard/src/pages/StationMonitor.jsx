@@ -36,6 +36,11 @@ import {
   selectSelectedZipCode,
   selectZipCodeOptions,
 } from "redux/station/stationSlide";
+import {
+  evseStateUpsertById,
+  evseGetAllStatus,
+  selectEvseList,
+} from "redux/evse/evseSlice";
 
 const StationMonitor = () => {
   const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
@@ -50,6 +55,7 @@ const StationMonitor = () => {
   const stationCityOptions = useSelector(selectCityOptions);
   const stationSelectedZipCode = useSelector(selectSelectedZipCode);
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
+  const evseList = useSelector(selectEvseList);
   const [listHeight, setListHeight] = useState(window.innerHeight);
   const [mapHeight, setMapHeight] = useState(window.innerHeight);
   const [isMount, setIsMount] = useState(true);
@@ -101,6 +107,18 @@ const StationMonitor = () => {
   }, [fetchData]);
 
   useEffect(() => {
+    const isStatusLoaded = (stations) => {
+      for (const { evseStatusLoaded } of stations) {
+        if (!evseStatusLoaded) return false;
+      }
+      return true;
+    };
+    if (!isStatusLoaded(stationList)) {
+      dispatch(evseGetAllStatus());
+    }
+  }, [stationList, dispatch]);
+
+  useEffect(() => {
     const isStationLoaded = stationList.length > 0;
     const isConnected = readyState === ReadyState.OPEN;
     if (isStationLoaded && isConnected) {
@@ -115,13 +133,40 @@ const StationMonitor = () => {
   useEffect(() => {
     const { action, payload } = lastJsonMessage || {};
     if (action === "WatchStatusEvent" && payload.stationId) {
-      const { stationId, payload: { connectorStatus } } = payload;
-      dispatch(stationStateUpdateById({
+      const { stationId, payload: { evseId, connectorStatus } } = payload;
+      const station = {
         id: stationId,
         status: connectorStatus,
-      }));
+      };
+      if (evseId) {
+        dispatch(evseStateUpsertById({
+          station_id: stationId,
+          evse_id: evseId,
+          status: connectorStatus,
+        }));
+        const evses = evseList.filter(({ station_id, evse_id }) => {
+          return station_id === stationId && evse_id !== evseId;
+        });
+        const statuses = evses.reduce((object, { status }) => {
+          const count = object[status] + 1;
+          object[status] = count || 1;
+          return object;
+        }, {});
+        const count = statuses[connectorStatus] + 1;
+        statuses[connectorStatus] = count || 1;
+        if (statuses.Available) {
+          station.status = "Available";
+        } else if (statuses.Occupied) {
+          station.status = "Occupied";
+        } else if (statuses.Reserved) {
+          station.status = "Reserved";
+        } else if (statuses.Faulted) {
+          station.status = "Faulted";
+        }
+      }
+      dispatch(stationStateUpdateById(station));
     }
-  }, [lastJsonMessage, dispatch]);
+  }, [lastJsonMessage, evseList, dispatch]);
 
   const handleFilter = (state, city, zipCode) => {
     const params = [];

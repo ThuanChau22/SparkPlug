@@ -6,10 +6,12 @@ import {
   CModalHeader,
   CModalTitle,
   CModalBody,
+  CForm,
   CFormInput,
   CFormSelect,
 } from "@coreui/react";
 
+import EvseManagement from "components/EvseManagement";
 import {
   selectAuthRoleIsStaff,
 } from "redux/auth/authSlice";
@@ -42,49 +44,45 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
     setSiteOptions(siteList.map(site => site.id));
   }, [siteList]);
 
-  const InfoModal = () => {
-
-    // const formatPrice = (price) => {
-    //   const options = { style: 'currency', currency: 'USD' };
-    //   return new Intl.NumberFormat('en-US', options).format(price);
-    // };
-
-    return (
-      <>
-        <div className="d-flex justify-content-between">
-          <small className="text-secondary ps-3 my-auto">ID: {station.id}</small>
-          <div>
-            <CButton
-              className="me-2"
-              variant="outline"
-              color="warning"
-              onClick={() => setIsEdit(true)}
-            >
-              Edit
-            </CButton>
-            <CButton
-              className="me-3"
-              variant="outline"
-              color="danger"
-              onClick={() => setIsDelete(true)}
-            >
-              Delete
-            </CButton>
-          </div>
+  const InfoModal = () => (
+    <>
+      <div className="d-flex justify-content-between">
+        <small className="text-secondary ps-3 my-auto">Station ID: {station.id}</small>
+        <div>
+          <CButton
+            className="me-2"
+            variant="outline"
+            color="warning"
+            onClick={() => setIsEdit(true)}
+          >
+            Edit
+          </CButton>
+          <CButton
+            className="me-3"
+            variant="outline"
+            color="danger"
+            onClick={() => setIsDelete(true)}
+          >
+            Delete
+          </CButton>
         </div>
-        <CModalBody>
-          {authIsAdmin && <p>Owner ID: {station.owner_id}</p>}
-          <p>Site ID: {station.site_id}</p>
-          <p>Site Name: {station.site_name}</p>
-          <p>Address: {station.street_address}, {station.city}, {station.state} {station.zip_code}, {station.country}</p>
-          <p>Coordinate: {station.latitude}, {station.longitude}</p>
-          {/* <p>Price: {formatPrice(station.price)}</p> */}
-          {/* <p>Charge Level: {station.charge_level}</p> */}
-          {/* <p>Connector Type: {station.connector_type}</p> */}
-        </CModalBody>
-      </>
-    );
-  };
+      </div>
+      <CModalBody className="pb-0">
+        {authIsAdmin && <p>Owner ID: {station.owner_id}</p>}
+        <p>Site ID: {station.site_id}</p>
+        <p>Site Name: {station.site_name}</p>
+        <p>
+          <span>Address: </span>
+          <span>{station.street_address}, </span>
+          <span>{station.city}, </span>
+          <span>{station.state} </span>
+          <span>{station.zip_code}, </span>
+          <span>{station.country}</span>
+        </p>
+        <p>Coordinate: {station.latitude}, {station.longitude}</p>
+      </CModalBody>
+    </>
+  );
 
   const EditModal = () => {
     const initialFormData = {
@@ -127,74 +125,68 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
     };
 
     return (
-      <CModalBody>
-        <label htmlFor="stationName">Station Name</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="stationName"
-          name="name"
-          type="text"
-          value={formData.name}
-          onChange={handleInputChange}
-        />
-        <label htmlFor="siteId">Site ID</label>
-        <CFormSelect
-          className="mb-3 shadow-none"
-          id="siteId"
-          name="siteId"
-          onChange={handleInputChange}
-          value={formData.siteId}
-          options={[
-            { label: "Select Site ID", value: "" },
-            ...siteOptions.map((id) => (
-              { label: id, value: id }
-            )),
-          ]}
-        />
-        <label htmlFor="latitude">Latitude</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="latitude"
-          name="latitude"
-          type="number"
-          placeholder="Latitude"
-          onChange={handleInputChange}
-          value={formData.latitude}
-        />
-        <label htmlFor="longitude">Longitude</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="longitude"
-          name="longitude"
-          type="number"
-          placeholder="Longitude"
-          onChange={handleInputChange}
-          value={formData.longitude}
-        />
-        {/* <label htmlFor="stationPrice">Station Price</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="stationPrice"
-          name="price"
-          type="number"
-          value={input.price}
-          onChange={handleInputChanged}
-        /> */}
-        <CButton
-          variant="outline"
-          color="warning"
-          onClick={handleSave}
-        >
-          Save
-        </CButton>
-        <CButton
-          className="ms-2"
-          variant="outline"
-          color="secondary"
-          onClick={() => setIsEdit(false)}
-        >
-          Cancel
-        </CButton>
+      <CModalBody className="pb-0">
+        <CForm>
+          <label htmlFor="stationName">Station Name</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="stationName"
+            name="name"
+            type="text"
+            placeholder="Name"
+            value={formData.name}
+            onChange={handleInputChange}
+          />
+          <label htmlFor="siteId">Site ID</label>
+          <CFormSelect
+            className="mb-3 shadow-none"
+            id="siteId"
+            name="siteId"
+            onChange={handleInputChange}
+            value={formData.siteId}
+            options={[
+              { label: "Select Site ID", value: "" },
+              ...siteOptions.map((id) => (
+                { label: id, value: id }
+              )),
+            ]}
+          />
+          <label htmlFor="latitude">Latitude</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="latitude"
+            name="latitude"
+            type="text"
+            placeholder="Latitude"
+            onChange={handleInputChange}
+            value={formData.latitude}
+          />
+          <label htmlFor="longitude">Longitude</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="longitude"
+            name="longitude"
+            type="text"
+            placeholder="Longitude"
+            onChange={handleInputChange}
+            value={formData.longitude}
+          />
+          <CButton
+            variant="outline"
+            color="warning"
+            onClick={handleSave}
+          >
+            Save
+          </CButton>
+          <CButton
+            className="ms-2"
+            variant="outline"
+            color="secondary"
+            onClick={() => setIsEdit(false)}
+          >
+            Cancel
+          </CButton>
+        </CForm>
       </CModalBody>
     );
   };
@@ -218,34 +210,37 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
     };
 
     return (
-      <CModalBody>
-        <label htmlFor="stationName">Type "{name}" to delete station</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="stationName"
-          type="text"
-          name="name"
-          value={inputName}
-          onChange={(e) => setInputName(e.target.value)}
-        />
-        <div className="float-end">
-          <CButton
-            variant="outline"
-            color="secondary"
-            onClick={() => setIsDelete(false)}
-          >
-            Cancel
-          </CButton>
-          <CButton
-            className="ms-2"
-            variant="outline"
-            color="danger"
-            disabled={name !== inputName}
-            onClick={handleDelete}
-          >
-            Delete
-          </CButton>
-        </div>
+      <CModalBody className="pb-0">
+        <CForm>
+          <label htmlFor="stationName">Type "{name}" to delete station</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="stationName"
+            type="text"
+            name="name"
+            placeholder="Confirmation"
+            value={inputName}
+            onChange={(e) => setInputName(e.target.value)}
+          />
+          <div className="float-end">
+            <CButton
+              variant="outline"
+              color="secondary"
+              onClick={() => setIsDelete(false)}
+            >
+              Cancel
+            </CButton>
+            <CButton
+              className="ms-2"
+              variant="outline"
+              color="danger"
+              disabled={name !== inputName}
+              onClick={handleDelete}
+            >
+              Delete
+            </CButton>
+          </div>
+        </CForm>
       </CModalBody>
     );
   };
@@ -266,7 +261,8 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
           ? <DeleteModal />
           : <InfoModal />
       }
-    </CModal>
+      <EvseManagement stationId={stationId} />
+    </CModal >
   );
 };
 

@@ -4,6 +4,7 @@ import { authSlice } from "redux/auth/authSlice";
 import { userSlice } from "redux/user/userSlide";
 import { siteSlice } from "redux/site/siteSlide";
 import { stationSlice } from "redux/station/stationSlide";
+import { evseSlice } from "redux/evse/evseSlice";
 import { sidebarSlice } from "redux/sidebar/sidebarSlice";
 import { headerSlice } from "redux/header/headerSlice";
 import { errorSlice } from "redux/error/errorSlice";
@@ -16,6 +17,7 @@ export const store = configureStore({
     [userSlice.name]: userSlice.reducer,
     [siteSlice.name]: siteSlice.reducer,
     [stationSlice.name]: stationSlice.reducer,
+    [evseSlice.name]: evseSlice.reducer,
     [errorSlice.name]: errorSlice.reducer,
   },
 });

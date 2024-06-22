@@ -12,7 +12,6 @@ import {
 import { createLocationFilterAdapter } from "redux/locationFilterAdapter";
 
 const StationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
-const stationStatusAPI = process.env.REACT_APP_STATION_STATUS_API_ENDPOINT;
 
 const stationEntityAdapter = createEntityAdapter({
   sortComparer: (a, b) => a.site_id - b.site_id,
@@ -31,8 +30,12 @@ export const stationSlice = createSlice({
     stationStateSetAll(state, { payload }) {
       stationEntityAdapter.setAll(state, payload);
     },
-    stationStateSetById(state, { payload }) {
-      stationEntityAdapter.setOne(state, payload);
+    stationStateUpsertById(state, { payload }) {
+      stationEntityAdapter.upsertOne(state, payload);
+    },
+    stationStateUpdateMany(state, { payload }) {
+      const mapper = ({ id, ...changes }) => ({ id, changes });
+      stationEntityAdapter.updateMany(state, payload.map(mapper));
     },
     stationStateUpdateById(state, { payload }) {
       const { id, ...changes } = payload;
@@ -66,7 +69,8 @@ export const stationSlice = createSlice({
 
 export const {
   stationStateSetAll,
-  stationStateSetById,
+  stationStateUpsertById,
+  stationStateUpdateMany,
   stationStateUpdateById,
   stationStateDeleteById,
   stationSetStateSelected,
@@ -80,35 +84,8 @@ export const stationGetAll = createAsyncThunk(
   async (query = "", { dispatch, getState }) => {
     try {
       const config = await tokenConfig({ dispatch, getState });
-      const [{ data: stations }, { data: statuses }] = await Promise.all([
-        apiInstance.get(`${StationAPI}${query}`, config),
-        apiInstance.get(`${stationStatusAPI}/latest${query}`, config),
-      ]);
-      const statusesByStation = statuses.reduce((object, evse) => {
-        const { station_id, status } = evse;
-        if (!object[station_id]) {
-          object[station_id] = {};
-        }
-        const count = object[station_id][status] + 1;
-        object[station_id][status] = count || 1;
-        return object;
-      }, {});
-      for (const station of stations) {
-        station.status = "Unavailable";
-        if (statusesByStation[station.id]) {
-          const status = statusesByStation[station.id];
-          if (status.Available) {
-            station.status = "Available";
-          } else if (status.Occupied) {
-            station.status = "Occupied";
-          } else if (status.Reserved) {
-            station.status = "Reserved";
-          } else if (status.Faulted) {
-            station.status = "Faulted";
-          }
-        }
-      }
-      dispatch(stationStateSetAll(stations));
+      const { data } = await apiInstance.get(`${StationAPI}${query}`, config);
+      dispatch(stationStateSetAll(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -120,26 +97,8 @@ export const stationGetById = createAsyncThunk(
   async (id, { dispatch, getState }) => {
     try {
       const config = await tokenConfig({ dispatch, getState });
-      const [{ data: station }, { data: statuses }] = await Promise.all([
-        apiInstance.get(`${StationAPI}/${id}`, config),
-        apiInstance.get(`${stationStatusAPI}/latest/${id}`, config),
-      ]);
-      const status = statuses.reduce((object, { status }) => {
-        const count = object[status] + 1;
-        object[status] = count || 1;
-        return object;
-      }, {});
-      station.status = "Unavailable";
-      if (status.Available) {
-        station.status = "Available";
-      } else if (status.Occupied) {
-        station.status = "Occupied";
-      } else if (status.Reserved) {
-        station.status = "Reserved";
-      } else if (status.Faulted) {
-        station.status = "Faulted";
-      }
-      dispatch(stationStateSetById(station));
+      const { data } = await apiInstance.get(`${StationAPI}/${id}`, config);
+      dispatch(stationStateUpsertById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
