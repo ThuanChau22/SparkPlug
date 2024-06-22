@@ -1,60 +1,94 @@
 import { db } from "../config.js";
+import utils from "../utils.js";
 
 const repository = {};
 
-export const Role = {
+repository.Role = {
   Staff: "staff",
   Owner: "owner",
   Driver: "driver",
 };
 
+repository.Status = {
+  Active: "active",
+  Blocked: "blocked",
+  Terminated: "terminated",
+};
+
 const roleToTable = (role) => {
-  return role === Role.Staff
+  return role === repository.Role.Staff
     ? "Staff"
-    : role === Role.Owner
+    : role === repository.Role.Owner
       ? "Station_Owner"
       : "Driver";
 };
 
-repository.addRole = async (userId, role) => {
-  role = roleToTable(role);
-  await db.query(`INSERT INTO ${role} (id) VALUES (?)`, [userId]);
+repository.getFields = async () => {
+  const [result] = await db.query("SHOW COLUMNS FROM User");
+  return result.map(({ Field }) => Field);
 };
 
-repository.getAllUsers = async () => {
-  const select = "id, email, name, status, created_at, updated_at";
-  const [users] = await db.query(`SELECT ${select} FROM User`);
-  return users;
+repository.addRole = async (userId, role) => {
+  const roleTable = roleToTable(role);
+  await db.query(`INSERT INTO ${roleTable} (id) VALUES (?)`, [userId]);
+};
+
+repository.getUsers = async ({ filter = {}, select = "" } = {}) => {
+  let query = `SELECT ${select || "*"} FROM User`;
+  const fieldValues = [];
+  if (!utils.isObjectEmpty(filter)) {
+    const fields = new Set(await repository.getFields());
+    for (const [field, value] of Object.entries(filter)) {
+      if (fields.has(field)) {
+        query += `${fieldValues.length === 0 ? " WHERE" : " AND"} ${field} = ?`;
+        fieldValues.push(Array.isArray(value) ? value[0] : value);
+      }
+    }
+  }
+  const [result] = await db.query(query, fieldValues);
+  return result;
 };
 
 repository.getUserById = async (userId) => {
   const select = "id, email, name, status, created_at, updated_at";
-  const [users] = await db.query(`SELECT ${select} FROM User WHERE id = ?`, [userId]);
-  return users[0];
-};
-
-repository.getUserByIdAndRole = async (userId, role) => {
-  role = roleToTable(role);
-  const [result] = await db.query(`SELECT id FROM ${role} WHERE id = ?`, [userId]);
-  return result.length > 0;
-};
-
-repository.getUserByEmail = async (email) => {
-  const [users] = await db.query(`SELECT * FROM User WHERE email = ?`, [email]);
-  return users[0];
+  const [
+    [[user]],
+    [[{ isStaff }]],
+    [[{ isOwner }]],
+    [[{ isDriver }]],
+  ] = await Promise.all([
+    db.query(`SELECT ${select} FROM User WHERE id = ?`, [userId]),
+    db.query("SELECT EXISTS(SELECT * FROM Staff WHERE id = ?) AS isStaff", [userId]),
+    db.query("SELECT EXISTS(SELECT * FROM Station_Owner WHERE id = ?) AS isOwner", [userId]),
+    db.query("SELECT EXISTS(SELECT * FROM Driver WHERE id = ?) AS isDriver", [userId]),
+  ]);
+  if (user) {
+    user.roles = [];
+    if (isStaff) {
+      user.roles.push(repository.Role.Staff);
+    }
+    if (isOwner) {
+      user.roles.push(repository.Role.Owner);
+    }
+    if (isDriver) {
+      user.roles.push(repository.Role.Driver);
+    }
+  }
+  return user;
 };
 
 repository.getUserByEmailAndRole = async (email, role) => {
-  role = roleToTable(role);
-  const [users] = await db.query(
-    `SELECT * FROM User JOIN ${role} USING(id) WHERE email = ?`,
+  const roleTable = roleToTable(role);
+  const [[user]] = await db.query(
+    `SELECT * FROM User JOIN ${roleTable} USING(id) WHERE email = ?`,
     [email],
   );
-  return users[0];
+  return user;
 };
 
 repository.createUser = async (userData) => {
-  const { email, hashedPassword, name, status = "Active" } = userData;
+  const { Active } = repository.Status;
+  const { email, hashedPassword, name, status = Active } = userData;
   const [result] = await db.query(
     "INSERT INTO User (email, password, name, status) VALUES (?, ?, ?, ?)",
     [email, hashedPassword, name, status],
@@ -73,9 +107,11 @@ repository.updateUserById = async (userData) => {
 
 repository.deleteUserById = async (userId) => {
   try {
-    await db.query("DELETE FROM Staff WHERE id = ?", [userId]);
-    await db.query("DELETE FROM Driver WHERE id = ?", [userId]);
-    await db.query("DELETE FROM Station_Owner WHERE id = ?", [userId]);
+    await Promise.all([
+      db.query("DELETE FROM Staff WHERE id = ?", [userId]),
+      db.query("DELETE FROM Station_Owner WHERE id = ?", [userId]),
+      db.query("DELETE FROM Driver WHERE id = ?", [userId]),
+    ]);
     const [result] = await db.query("DELETE FROM User WHERE id = ?", [userId]);
     return result.affectedRows > 0;
   } catch (error) {

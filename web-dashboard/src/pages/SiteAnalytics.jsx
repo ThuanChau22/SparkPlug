@@ -77,7 +77,7 @@ const SiteAnalytics = () => {
     const params = [];
     if (state !== "All") params.push(`state=${state}`);
     if (city !== "All") params.push(`city=${city}`);
-    if (zipCode !== "All") params.push(`zip=${zipCode}`);
+    if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
     const query = params.length > 0 ? `?${params.join("&")}` : "";
     dispatch(siteGetAll(query));
     dispatch(siteSetStateSelected(state));

@@ -1,7 +1,7 @@
 import express from "express";
 
 import {
-  getAllUsers,
+  getUsers,
   getUserById,
   updateUserById,
   deleteUserById,
@@ -11,12 +11,10 @@ import {
   authorizeRole,
   authorizeResource,
 } from "../middlewares/auth.js";
-import {
-  Role,
-} from "../repositories/UserRepository.js";
+import User from "../repositories/UserRepository.js";
 
 const router = express.Router();
-router.get("/", authenticate, authorizeRole(Role.Staff), getAllUsers);
+router.get("/", authenticate, authorizeRole(User.Role.Staff), getUsers);
 router.get("/:id", authenticate, authorizeResource, getUserById);
 router.put("/:id", authenticate, authorizeResource, updateUserById);
 router.delete("/:id", authenticate, authorizeResource, deleteUserById);

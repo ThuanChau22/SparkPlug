@@ -18,7 +18,7 @@ def read_sites():
     )
 
     sites = response.json()
-    sites = utils.convert_coords_to_float_sites(sites)
+    sites = utils.convert_coords_to_float(sites)
 
     return sites
 
@@ -35,7 +35,7 @@ def read_site_by_id(site_id):
     )
 
     sites = response.json()
-    sites = utils.convert_coords_to_float_sites(sites)
+    sites = utils.convert_coords_to_float(sites)
 
     return sites[0]
 

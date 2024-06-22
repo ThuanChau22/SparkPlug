@@ -94,11 +94,11 @@ const UserManagement = () => {
                     <span>Email: {email}</span>
                     <span
                       className={
-                        status === "Active"
+                        status === "active"
                           ? "text-success"
-                          : status === "Blocked"
-                            ? "text-warning"
-                            : "text-danger"
+                          : status === "terminated"
+                            ? "text-danger"
+                            : "text-warning"
                       }>
                       {status}
                     </span>

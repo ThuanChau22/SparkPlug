@@ -6,11 +6,13 @@ import {
   CModalHeader,
   CModalTitle,
   CModalBody,
+  CForm,
   CFormInput,
   CFormSelect,
 } from "@coreui/react";
 
 import {
+  userGetById,
   userUpdateById,
   userDeleteById,
   selectUserById,
@@ -21,6 +23,12 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (!user.roles) {
+      dispatch(userGetById(user.id));
+    }
+  }, [user, dispatch]);
 
   const InfoModal = () => (
     <>
@@ -49,14 +57,20 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
         <p>Email: {user.email}</p>
         <p>Status: <span
           className={
-            user.status === "Active"
+            user.status === "active"
               ? "text-success"
-              : user.status === "Blocked"
-                ? "text-warning"
-                : "text-danger"
+              : user.status === "terminated"
+                ? "text-danger"
+                : "text-warning"
           }>
           {user.status}
         </span>
+        </p>
+        <p>
+          Role: {user.roles?.reduce((s, role) => {
+            role = role.charAt(0).toUpperCase() + role.slice(1);
+            return s ? `${s}, ${role}` : role;
+          }, "")}
         </p>
         <p>Registered on: {new Date(user.created_at).toLocaleString("en-US")}</p>
       </CModalBody>
@@ -96,43 +110,46 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
 
     return (
       <CModalBody>
-        <label htmlFor="userName">Name</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="userName"
-          name="name"
-          type="text"
-          value={input.name}
-          onChange={handleInputChanged}
-        />
-        <label htmlFor="userStatus">Status</label>
-        <CFormSelect
-          className="mb-3 shadow-none"
-          id="userStatus"
-          name="status"
-          options={[
-            { label: "Active", value: "Active" },
-            { label: "Blocked", value: "Blocked" },
-            { label: "Terminated", value: "Terminated" },
-          ]}
-          value={input.status}
-          onChange={handleInputChanged}
-        />
-        <CButton
-          variant="outline"
-          color="warning"
-          onClick={handleSave}
-        >
-          Save
-        </CButton>
-        <CButton
-          className="ms-2"
-          variant="outline"
-          color="secondary"
-          onClick={() => setIsEdit(false)}
-        >
-          Cancel
-        </CButton>
+        <CForm>
+          <label htmlFor="userName">Name</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="userName"
+            name="name"
+            type="text"
+            placeholder="Name"
+            value={input.name}
+            onChange={handleInputChanged}
+          />
+          <label htmlFor="userStatus">Status</label>
+          <CFormSelect
+            className="mb-3 shadow-none"
+            id="userStatus"
+            name="status"
+            options={[
+              { label: "active", value: "active" },
+              { label: "blocked", value: "blocked" },
+              { label: "terminated", value: "terminated" },
+            ]}
+            value={input.status}
+            onChange={handleInputChanged}
+          />
+          <CButton
+            variant="outline"
+            color="warning"
+            onClick={handleSave}
+          >
+            Save
+          </CButton>
+          <CButton
+            className="ms-2"
+            variant="outline"
+            color="secondary"
+            onClick={() => setIsEdit(false)}
+          >
+            Cancel
+          </CButton>
+        </CForm>
       </CModalBody>
     );
   };
@@ -157,33 +174,36 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
 
     return (
       <CModalBody>
-        <label htmlFor="userName">Type "{email}" to delete user</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="userName"
-          type="text"
-          name="email"
-          value={inputEmail}
-          onChange={(e) => setInputEmail(e.target.value)}
-        />
-        <div className="float-end">
-          <CButton
-            variant="outline"
-            color="secondary"
-            onClick={() => setIsDelete(false)}
-          >
-            Cancel
-          </CButton>
-          <CButton
-            className="ms-2"
-            variant="outline"
-            color="danger"
-            disabled={email !== inputEmail}
-            onClick={handleDelete}
-          >
-            Delete
-          </CButton>
-        </div>
+        <CForm>
+          <label htmlFor="userName">Type "{email}" to delete user</label>
+          <CFormInput
+            className="mb-3 shadow-none"
+            id="userName"
+            name="email"
+            type="text"
+            placeholder="Confirmation"
+            value={inputEmail}
+            onChange={(e) => setInputEmail(e.target.value)}
+          />
+          <div className="float-end">
+            <CButton
+              variant="outline"
+              color="secondary"
+              onClick={() => setIsDelete(false)}
+            >
+              Cancel
+            </CButton>
+            <CButton
+              className="ms-2"
+              variant="outline"
+              color="danger"
+              disabled={email !== inputEmail}
+              onClick={handleDelete}
+            >
+              Delete
+            </CButton>
+          </div>
+        </CForm>
       </CModalBody>
     );
   };
@@ -191,6 +211,7 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
   return (
     <CModal
       alignment="center"
+      backdrop="static"
       visible={isOpen}
       onClose={onClose}
     >

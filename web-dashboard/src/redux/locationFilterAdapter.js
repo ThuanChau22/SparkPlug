@@ -49,15 +49,10 @@ export const createLocationFilterAdapter = () => ({
 
   setZipCodeOptions: (state, data) => {
     const set = new Set(data.map(({ zip_code }) => zip_code));
-    state.filters.zipCode.options = ["All", ...Array.from(set).sort((a, b) => a - b)];
-  },
-  /*
-  setZipCodeOptions: (state, data) => {
-    const set = new Set(data.map(({ zip_code }) => zip_code));
-    const sorter = (a, b) => a.localeCompare(b);
+    const sorter = (a, b) => a - b;
     state.filters.zipCode.options = ["All", ...Array.from(set).sort(sorter)];
   },
-  */
+  
 
   getSelectors: (selectState) => {
     const selectAll = createDraftSafeSelector(

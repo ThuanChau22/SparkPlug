@@ -78,26 +78,26 @@ schema.loadClass(class {
   static async watchEvent(data = {}) {
     try {
       const { stationId, source, event } = data;
-      const filters = {
+      const filter = {
         operationType: "insert",
         $and: [],
       };
       if (stationId) {
-        filters.$and.push({
+        filter.$and.push({
           $or: utils.toArray(stationId).map((id) => {
             return { "fullDocument.stationId": id };
           })
         });
       }
       if (source) {
-        filters.$and.push({
+        filter.$and.push({
           $or: utils.toArray(source).map((src) => {
             return { "fullDocument.source": src };
           })
         });
       }
       if (event) {
-        filters.$and.push({
+        filter.$and.push({
           $or: utils.toArray(event).map((e) => {
             return { "fullDocument.event": e }
           })
@@ -105,7 +105,7 @@ schema.loadClass(class {
       }
       return await StationEvent.watch(
         [
-          { $match: filters },
+          { $match: filter },
           { $project: { fullDocument: 1 } },
         ],
         { fullDocument: "updateLookup" },

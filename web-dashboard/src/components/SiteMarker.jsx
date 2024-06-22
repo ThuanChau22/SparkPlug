@@ -1,7 +1,7 @@
 import { Marker, Tooltip } from "react-leaflet";
 
 const SiteMarker = ({ site, icon, onSiteClick }) => {
-  const formattedAddress = `${site.street_address}, ${site.city}, ${site.state} ${site.zip_code}`;
+  const { street_address, city, state, zip_code, country } = site;
 
   return (
     <Marker
@@ -11,7 +11,7 @@ const SiteMarker = ({ site, icon, onSiteClick }) => {
     >
       <Tooltip direction="top" offset={[0, -20]} opacity={1} permanent={false}>
         <div>{site.name}</div>
-        <div>{formattedAddress}</div>
+        <div>{`${street_address}, ${city}, ${state} ${zip_code}, ${country}`}</div>
       </Tooltip>
     </Marker>
   );

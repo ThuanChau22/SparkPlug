@@ -89,10 +89,10 @@ export const siteGetAll = createAsyncThunk(
 
 export const siteGetById = createAsyncThunk(
   `${siteSlice.name}/getById`,
-  async (siteId, { dispatch, getState }) => {
+  async (id, { dispatch, getState }) => {
     try {
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.get(`${SiteAPI}/${siteId}`, config);
+      const { data } = await apiInstance.get(`${SiteAPI}/${id}`, config);
       dispatch(siteStateSetById(data));
     } catch (error) {
       handleError({ error, dispatch });
@@ -102,11 +102,21 @@ export const siteGetById = createAsyncThunk(
 
 export const siteAdd = createAsyncThunk(
   `${siteSlice.name}/add`,
-  async (siteData, { dispatch, getState }) => {
+  async ({
+    name,
+    ownerId: owner_id,
+    latitude, longitude,
+    streetAddress: street_address,
+    city, state, zipCode: zip_code, country,
+  }, { dispatch, getState }) => {
     try {
+      const body = {
+        name, owner_id, latitude, longitude,
+        street_address, city, state, zip_code, country,
+      };
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.post(`${SiteAPI}`, siteData, config);
-      dispatch(siteGetById(data.inserted_id));
+      const { data } = await apiInstance.post(`${SiteAPI}`, body, config);
+      dispatch(siteGetById(data.id));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -115,11 +125,20 @@ export const siteAdd = createAsyncThunk(
 
 export const siteUpdateById = createAsyncThunk(
   `${siteSlice.name}/updateById`,
-  async (siteData, { dispatch, getState }) => {
+  async ({
+    id, name,
+    ownerId: owner_id,
+    latitude, longitude,
+    streetAddress: street_address,
+    city, state, zipCode: zip_code, country,
+  }, { dispatch, getState }) => {
     try {
-      const { id, ...remain } = siteData;
+      const body = {
+        name, owner_id, latitude, longitude,
+        street_address, city, state, zip_code, country,
+      };
       const config = await tokenConfig({ dispatch, getState });
-      await apiInstance.patch(`${SiteAPI}/${id}`, remain, config);
+      await apiInstance.patch(`${SiteAPI}/${id}`, body, config);
       dispatch(siteGetById(id));
     } catch (error) {
       handleError({ error, dispatch });
@@ -129,11 +148,11 @@ export const siteUpdateById = createAsyncThunk(
 
 export const siteDeleteById = createAsyncThunk(
   `${siteSlice.name}/deleteById`,
-  async (siteId, { dispatch, getState }) => {
+  async (id, { dispatch, getState }) => {
     try {
       const config = await tokenConfig({ dispatch, getState });
-      await apiInstance.delete(`${SiteAPI}/${siteId}`, config);
-      dispatch(siteStateDeleteById(siteId));
+      await apiInstance.delete(`${SiteAPI}/${id}`, config);
+      dispatch(siteStateDeleteById(id));
     } catch (error) {
       handleError({ error, dispatch });
     }
