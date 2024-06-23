@@ -2,6 +2,8 @@ import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from functools import wraps
+from collections import defaultdict
+from datetime import datetime
 
 # Internal Modules
 from src.config import (
@@ -129,6 +131,135 @@ def get_evses(query_params, header):
         return None
 
 
+# Charting functions
+def time_string_to_hours(time_str):
+    try:
+        hours, minutes, seconds = map(int, time_str.split(":"))
+        return hours + minutes / 60 + seconds / 3600
+    except ValueError:
+        return 0  # Return 0 if the time format is incorrect
+
+def generate_charts(raw_docs):
+    revenue_by_date = defaultdict(float)
+    sessions_by_date = defaultdict(int)
+    utilization_by_date = defaultdict(float)
+    hour_counts = [0] * 24
+
+    # return jsonify(raw_docs[0])
+
+    for doc in raw_docs:
+        mongo_timestamp = doc["transaction_date"]
+        timestamp_seconds = mongo_timestamp / 1000.0
+        date = datetime.utcfromtimestamp(timestamp_seconds)
+
+        # Revenue
+        f_date = date.strftime("%Y-%m-%d")
+        revenue_by_date[f_date] += doc["fee"]
+        sessions_by_date[f_date] += 1
+
+        # Utilization Rate
+        charging_time_hours = time_string_to_hours(doc["charging_time"])
+        utilization_by_date[f_date] += charging_time_hours
+
+        # Peak Time
+        hour = date.hour
+        hour_counts[hour] += 1
+
+    # Calculate utilization rate as a percentage
+    for date in utilization_by_date:
+        utilization_by_date[date] = (
+            utilization_by_date[date] / 24
+        ) * 100  # Convert to percentage
+
+    sorted_dates = sorted(revenue_by_date.keys())
+    rev_chart_data = {
+        "labels": sorted_dates,
+        "datasets": [
+            {
+                "label": "Daily Revenue",
+                "data": [revenue_by_date[date] for date in sorted_dates],
+                "backgroundColor": "rgba(75, 192, 192, 0.6)",
+            }
+        ],
+    }
+
+    sessions_chart_data = {
+        "labels": sorted_dates,
+        "datasets": [
+            {
+                "label": "Number of Sessions",
+                "data": [sessions_by_date[date] for date in sorted_dates],
+                "backgroundColor": "rgba(255, 99, 132, 0.6)",
+            }
+        ],
+    }
+
+    peak_chart_data = {
+        "labels": [f"{i}:00 - {i+1}:00" for i in range(24)],
+        "datasets": [{"label": "Number of Transactions", "data": hour_counts}],
+    }
+
+    utilization_chart_data = {
+        "labels": sorted_dates,
+        "datasets": [
+            {
+                "label": "Utilization Rate (%)",
+                "data": [utilization_by_date[date] for date in sorted_dates],
+                "backgroundColor": "rgba(153, 102, 255, 0.6)",
+            }
+        ],
+    }
+
+    data_pack = {
+        "revenue": rev_chart_data,
+        "sessions_count": sessions_chart_data,
+        "utilization_rate": utilization_chart_data,
+        "peak_time": peak_chart_data,
+    }
+
+    return data_pack
+
+
+def generate_peak(raw_docs):
+    revenue_by_date = defaultdict(float)
+    sessions_by_date = defaultdict(int)
+    utilization_by_date = defaultdict(float)
+    hour_counts = [0] * 24
+
+    # return jsonify(raw_docs[0])
+
+    for doc in raw_docs:
+        mongo_timestamp = doc["transaction_date"]
+        timestamp_seconds = mongo_timestamp / 1000.0
+        date = datetime.utcfromtimestamp(timestamp_seconds)
+
+        # Revenue
+        f_date = date.strftime("%Y-%m-%d")
+        revenue_by_date[f_date] += doc["fee"]
+        sessions_by_date[f_date] += 1
+
+        # Utilization Rate
+        charging_time_hours = time_string_to_hours(doc["charging_time"])
+        utilization_by_date[f_date] += charging_time_hours
+
+        # Peak Time
+        hour = date.hour
+        hour_counts[hour] += 1
+
+    # Calculate utilization rate as a percentage
+    for date in utilization_by_date:
+        utilization_by_date[date] = (
+            utilization_by_date[date] / 24
+        ) * 100  # Convert to percentage
+
+    peak_chart_data = {
+        "labels": [f"{i}:00 - {i+1}:00" for i in range(24)],
+        "datasets": [{"label": "Number of Transactions", "data": hour_counts}],
+    }
+
+    data_pack = {"peak_time": peak_chart_data}
+
+    return data_pack
 ####################################################################################################
 # Routes
 ####################################################################################################
@@ -245,3 +376,46 @@ def read_evse_status(user=None):
 def path_not_found(_):
     message = f"The requested path {request.path} was not found on server."
     return {"message": message}, 404
+
+
+@app.route("/api/stations/analytics/<station_id>", methods=["GET"])
+@require_permission("staff", "owner", "driver")
+def station_analytics(user, station_id):
+    if not user:
+        return {"message": "Permission denied"}, 403
+
+    args = request.args
+    jwt = request.headers.get("Authorization")
+
+    tranactions_params_out = {}
+    stations_params_out = {}
+
+    for key in args.keys():
+        if key == "start_date" or key == "end_date":
+            tranactions_params_out[key] = args[key]
+    tranactions_params_out["station_id"] = station_id
+
+    for key in args.keys():
+        if (
+            key == "site_id"
+            or key == "country"
+            or key == "state"
+            or key == "city"
+            or key == "zip_code"
+        ):
+            stations_params_out[key] = args[key]
+
+    if stations_params_out:
+        stations = get_stations(stations_params_out, {"Authorization": jwt})
+        if stations is not None:
+            station_ids = [station["station_id"] for station in stations]
+            tranactions_params_out["station_id"] = station_ids
+
+    transactions = get_transactions(tranactions_params_out, {"Authorization": jwt})
+
+
+    if user["role"] == "driver":
+        return generate_peak(transactions)
+    return generate_charts(transactions)
+
+    

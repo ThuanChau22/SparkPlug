@@ -95,6 +95,7 @@ const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => {
             onChange={(e) => setEndDate(e.target.value)}
           />
         </CInputGroup>
+{/*        
         <CInputGroup>
           <CInputGroupText className="bg-secondary text-white rounded-0">
             Charge Level
@@ -111,6 +112,7 @@ const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => {
             onChange={(e) => setChargeLevel(e.target.value)}
           />
         </CInputGroup>
+*/}
       </CForm>
       <CModalBody>
         {analyticsData
