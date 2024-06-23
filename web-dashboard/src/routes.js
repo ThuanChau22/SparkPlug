@@ -11,6 +11,7 @@ import StationAnalytics from "pages/StationAnalytics";
 import UserManagement from "pages/UserManagement";
 import DriverDashboard from "pages/DriverDashboard";
 import DriverStations from "pages/DriverStation";
+import AIPredictedLocation from "pages/AIPredictedLocation";
 import Unauthorized from "pages/Unauthorized";
 import NotFound from "pages/NotFound";
 
@@ -43,6 +44,11 @@ const Driver = {
     path: "/driver/stations",
     element: <DriverStations />
   },
+  AIPredictedLocation: {
+    name: "AIPredictedLocation",
+    path: "/driver/aipredictedlocation",
+    element: <AIPredictedLocation />,
+  },
 };
 
 const routes = {
@@ -55,6 +61,11 @@ const routes = {
     name: "Dashboard",
     path: "/dashboard",
     element: <Dashboard />,
+  },
+  AIPredictedLocation: {
+    name: "AIPredictedLocation",
+    path: "/aipredictedlocation",
+    element: <AIPredictedLocation />,
   },
   Stations: {
     name: "Stations",

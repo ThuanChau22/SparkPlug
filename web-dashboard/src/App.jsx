@@ -86,6 +86,7 @@ const App = () => {
       if (authIsOwner) {
         restricted.add(routes.Users.path);
       }
+      restricted.add(routes.Driver.Components.AIPredictedLocation.path)
     }
     if (authIsDriver) {
       restricted.add(routes.Dashboard.path);
@@ -94,6 +95,7 @@ const App = () => {
       restricted.add(routes.Stations.Components.Analytics.path);
       restricted.add(routes.Sites.path);
       restricted.add(routes.Users.path);
+      restricted.add(routes.AIPredictedLocation.path);
     }
     let path = location.pathname;
     if (path.charAt(path.length - 1) === "/") {
