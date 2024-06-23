@@ -25,6 +25,7 @@ import {
   BarChartOutlined,
   EvStationOutlined,
   PeopleOutlined,
+  StarOutlined,
 } from '@mui/icons-material';
 
 import logo from "assets/logo";
@@ -122,6 +123,12 @@ const Sidebar = () => {
           icon: <PeopleOutlined className="nav-icon" />,
         });
       }
+      newNavigation.push({
+        component: CNavItem,
+        name: routes.AIPredictedLocation.name,
+        to: routes.AIPredictedLocation.path,
+        icon: <StarOutlined className="nav-icon" />,
+      });
     }
     if (authIsDriver) {
       newNavigation.push({

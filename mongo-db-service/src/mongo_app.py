@@ -304,6 +304,29 @@ def post_evse_status(user=None):
 
     return {"message": "EVSE status updated successfully", "id": result}, 200
 
+@app.route("/api/mongo/new_stations/<int:zip_code>", methods=["GET"])
+def get_new_stations(zip_code, user=None):
+    
+    # Get stations summary
+    summary = db.new_stations_summary.find_one({"zip_code": zip_code}) 
+    summary['_id'] = str(summary['_id'])
+
+    print(summary, file=sys.stderr)
+
+    # Get stations details
+    stations = list(db.new_stations_details.find({"zip_code": zip_code}))  # Convert cursor to list
+    for station in stations:
+        station['_id'] = str(station['_id'])
+        print(station, file=sys.stderr)
+
+    # Combine summary and stations in one response
+    response = {
+        "summary": summary,
+        "stations": stations
+    }
+
+    return response
+
 # Run the app
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=PORT, debug=True)

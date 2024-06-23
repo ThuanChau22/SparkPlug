@@ -87,6 +87,10 @@ const router = createBrowserRouter([
               path: routes.Settings.path,
               element: routes.Settings.element,
             },
+            {
+              path: routes.AIPredictedLocation.path,
+              element: routes.AIPredictedLocation.element,
+            },
           ],
       },
     ],

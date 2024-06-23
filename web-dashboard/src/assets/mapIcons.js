@@ -21,6 +21,13 @@ export const stationIcon = L.icon({
   popupAnchor: [0, -80],
 });
 
+export const newStationIcon = L.icon({
+  iconUrl: greenStationIconUrl,
+  iconSize: [80, 80],
+  iconAnchor: [40, 80],
+  popupAnchor: [0, -80],
+});
+
 export const siteIcon = L.icon({
   iconUrl: siteIconUrl,
   iconSize: [80, 80],
