@@ -130,6 +130,21 @@ def get_evses(query_params, header):
         print("Error: Response does not contain valid JSON")
         return None
 
+def get_planning(query_params, zip_code):
+    try:
+        response = requests.get(
+            url=f"{MONGO_API_ENDPOINT}/new_stations/{zip_code}", params=query_params
+        )
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Error: {e}")
+        return None
+
+    try:
+        return response.json()
+    except ValueError:
+        print("Error: Response does not contain valid JSON")
+        return None
 
 # Charting functions
 def time_string_to_hours(time_str):
@@ -435,4 +450,19 @@ def station_analytics(user, station_id):
         return generate_peak(transactions)
     return generate_charts(transactions)
 
-    
+
+@app.route("/api/stations/analytics/ai_planning/<int:zip_code>", methods=["GET"])
+def ai_planning(zip_code):
+
+    args = request.args
+    jwt = request.headers.get("Authorization")
+
+    params_out = {}
+    params_out["zip_code"] = zip_code
+
+    new_stations = get_planning(params_out, zip_code)
+
+    if new_stations is not None:
+        return jsonify(new_stations)
+    else:
+        return {"message": "Error occurred while getting stations"}, 500

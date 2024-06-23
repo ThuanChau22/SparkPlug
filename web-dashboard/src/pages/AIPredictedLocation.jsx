@@ -15,6 +15,7 @@ import {
 } from "@coreui/react";
 
 import { stationIcon } from "assets/mapIcons";
+import { newStationIcon } from "assets/mapIcons";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
 import StationAnalyticsModal from "components/StationAnalyticsModal";
@@ -35,7 +36,7 @@ import {
   selectZipCodeOptions,
 } from "redux/station/stationSlide";
 
-const StationAnalytics = () => {
+const AIPredictedLocation = () => {
   const titleRef = createRef();
   const filterRef = createRef();
   const headerHeight = useSelector(selectHeaderHeight);
@@ -52,6 +53,17 @@ const StationAnalytics = () => {
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [selectedStationId, setSelectedStation] = useState(null);
   const dispatch = useDispatch();
+  
+
+  const [newStations, setNewStations] = useState([]);
+
+
+  // New stations needed
+  const [apiData, setApiData] = useState({stations: [], summary: {new_stations: 0, new_stations_ids: []}});
+
+
+
+  const [zipCodeInput, setZipCodeInput] = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -65,21 +77,30 @@ const StationAnalytics = () => {
     fetchData();
   }, [fetchData]);
 
-  const handleFilter = (state, city, zipCode) => {
+  const handleFilter = useCallback((state, city, zipCode) => {
     const params = [];
     if (state !== "All") params.push(`state=${state}`);
     if (city !== "All") params.push(`city=${city}`);
-    if (zipCode !== "All") params.push(`zip=${zipCode}`);
+    if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
     const query = params.length > 0 ? `?${params.join("&")}` : "";
     dispatch(stationGetAll(query));
     dispatch(stationSetStateSelected(state));
     dispatch(stationSetCitySelected(city));
     dispatch(stationSetZipCodeSelected(zipCode));
-  };
+  }, [dispatch]);
 
-  const handleViewStation = (stationId) => {
-    setSelectedStation(stationId);
-    setIsAnalyticsModalOpen(true);
+  const handleSearch = async () => {
+      const zipCode = parseInt(zipCodeInput, 10);
+      const url = `${process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT}/ai_planning/${zipCode}`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        setApiData(data); // Set the existing stations
+        // Hypothetical code to set new stations, adjust as per your actual data structure
+        setNewStations(data.new_stations); 
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
   };
 
   const displayMap = useMemo(() => {
@@ -88,7 +109,6 @@ const StationAnalytics = () => {
         key={station.id}
         station={station}
         icon={stationIcon}
-        onMarkerClick={() => handleViewStation(station.id)}
       />
     );
     return (
@@ -101,6 +121,26 @@ const StationAnalytics = () => {
     );
   }, [stationList, mapHeight]);
 
+  const newStationsMap = useMemo(() => {
+    const renderNewStationMarker = station => (
+      <StationMarker
+        key={`${station.lat}-${station.lon}`} // Use lat-lon as a key since there's no ID
+        station={station}
+        icon={newStationIcon}
+      />
+    );
+
+    return (
+      <div style={{ height: `${mapHeight}px` }}>
+        <MapContainer
+          locations={newStations}
+          renderMarker={renderNewStationMarker}
+        />
+      </div>
+    );
+  }, [newStations, mapHeight, newStationIcon]);
+
+
   return (
     <CCard className="border border-top-0 rounded-0">
       <CRow className="justify-content-center my-3">
@@ -108,30 +148,29 @@ const StationAnalytics = () => {
           <div className="d-flex w-100" style={{ maxWidth: '500px' }}>
             <CFormInput
               type="text"
-              placeholder="Enter search text"
+              placeholder="Enter Zip Code"
               className="flex-grow-1 me-2"
+              value={zipCodeInput}
+              onChange={(e) => setZipCodeInput(e.target.value)}
             />
-            <CButton color="primary">Search</CButton>
+            <CButton color="primary" onClick={handleSearch}>Search</CButton>
+          </div>
+        </CCol>
+      </CRow>
+      <CRow>
+        <CCol>
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            New stations needed: {apiData.summary.new_stations}
           </div>
         </CCol>
       </CRow>
       <CRow className="justify-content-center">
         <CCol md={6} lg={7}>
-          <StickyContainer top={`${headerHeight}px`}>
-            <LocationFilter
-              ref={filterRef}
-              selectedState={stationSelectedState}
-              states={stationStateOptions}
-              selectedCity={stationSelectedCity}
-              cities={stationCityOptions}
-              selectedZipCode={stationSelectedZipCode}
-              zipCodes={stationZipCodeOptions}
-              onChange={handleFilter}
-            />
-            {displayMap}
-          </StickyContainer>
+            <StickyContainer top={`${headerHeight}px`}>
+                {displayMap} 
+            </StickyContainer>
         </CCol>
-      </CRow>
+    </CRow>
       {isAnalyticsModalOpen && (
         <StationAnalyticsModal
           isOpen={isAnalyticsModalOpen}
@@ -143,4 +182,4 @@ const StationAnalytics = () => {
   );
 };
 
-export default StationAnalytics;
+export default AIPredictedLocation;
