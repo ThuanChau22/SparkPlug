@@ -143,6 +143,7 @@ def generate_charts(raw_docs):
     revenue_by_date = defaultdict(float)
     sessions_by_date = defaultdict(int)
     utilization_by_date = defaultdict(float)
+    energy_consumption_by_date = defaultdict(float)
     hour_counts = [0] * 24
 
     # return jsonify(raw_docs[0])
@@ -164,6 +165,9 @@ def generate_charts(raw_docs):
         # Peak Time
         hour = date.hour
         hour_counts[hour] += 1
+
+        # Energy Consumption
+        energy_consumption_by_date[f_date] += doc["energy_consumed_kwh"]
 
     # Calculate utilization rate as a percentage
     for date in utilization_by_date:
@@ -210,11 +214,23 @@ def generate_charts(raw_docs):
         ],
     }
 
+    energy_consumption_chart_data = {
+        "labels": sorted_dates,
+        "datasets": [
+            {
+                "label": "Energy Consumption (kWh)",
+                "data": [energy_consumption_by_date[date] for date in sorted_dates],
+                "backgroundColor": "rgba(255, 206, 86, 0.6)",
+            }
+        ],
+    }
+
     data_pack = {
         "revenue": rev_chart_data,
         "sessions_count": sessions_chart_data,
         "utilization_rate": utilization_chart_data,
         "peak_time": peak_chart_data,
+        "energy_consumption": energy_consumption_chart_data,
     }
 
     return data_pack
@@ -260,6 +276,7 @@ def generate_peak(raw_docs):
     data_pack = {"peak_time": peak_chart_data}
 
     return data_pack
+
 ####################################################################################################
 # Routes
 ####################################################################################################
