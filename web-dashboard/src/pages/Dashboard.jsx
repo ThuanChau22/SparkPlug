@@ -122,8 +122,7 @@ const Dashboard = () => {
       const headers = { Authorization: `Bearer ${token}` };//get the authori info
 
       const response = await apiInstance.get(`${base}${query}`, { headers });
-      const sanitizedData = response.data.replace(/NaN/g, 'null');
-      const parsedData = JSON.parse(sanitizedData);
+      const parsedData = response.data;
       setDashboardData(parsedData);
 
       const status_base = `${StationAnalyticsAPI}/evse_status`;//get endpoint
