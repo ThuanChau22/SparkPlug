@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "connection-string-parser": "^1.0.4",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "dotenv-expand": "^10.0.0",

@@ -2,6 +2,7 @@ import os
 import dotenv
 import pymysql
 from dbutils.pooled_db import PooledDB
+from sqlalchemy.engine.url import make_url
 
 # Load environment variables
 env = os.environ.get("ENV", "prod")
@@ -12,22 +13,18 @@ else:
 dotenv.load_dotenv(dotenv_path=dotenv_path)
 PORT = os.environ["PORT"]
 WEB_DOMAIN = os.environ["WEB_DOMAIN"]
-MYSQL_HOST = os.environ["MYSQL_HOST"]
-MYSQL_PORT = os.environ["MYSQL_PORT"]
-MYSQL_USER = os.environ["MYSQL_USER"]
-MYSQL_PASS = os.environ["MYSQL_PASS"]
-MYSQL_DATABASE = os.environ["MYSQL_DATABASE"]
 AUTH_API_ENDPOINT = os.environ["AUTH_API_ENDPOINT"]
-
+MYSQL_URI = os.environ["MYSQL_URI"]
 
 # MySQL Configuration
+mysql_credential = make_url(MYSQL_URI)
 mysql_pool = PooledDB(
     creator=pymysql,
-    host=MYSQL_HOST,
-    port=int(MYSQL_PORT),
-    user=MYSQL_USER,
-    password=MYSQL_PASS,
-    database=MYSQL_DATABASE,
     cursorclass=pymysql.cursors.DictCursor,
-    maxconnections=10,
+    maxconnections=100,
+    host=mysql_credential.host,
+    port=mysql_credential.port,
+    user=mysql_credential.username,
+    password=mysql_credential.password,
+    database=mysql_credential.database,
 )
