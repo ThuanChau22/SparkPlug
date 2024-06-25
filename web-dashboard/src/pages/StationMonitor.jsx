@@ -62,7 +62,7 @@ const StationMonitor = () => {
   const [numberOfStations, setNumberOfStations] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedStationId, setSelectedStationId] = useState(null);
+  const [stationId, setStationId] = useState(null);
   const socket = useWebSocket(`${StationEventWS}`, {
     queryParams: { token },
     heartbeat: {
@@ -181,7 +181,7 @@ const StationMonitor = () => {
   };
 
   const handleViewStation = (stationId) => {
-    setSelectedStationId(stationId);
+    setStationId(stationId);
     setIsModalOpen(true);
   };
 
@@ -270,9 +270,9 @@ const StationMonitor = () => {
       </CRow>
       {isModalOpen &&
         <StationMonitorModal
+          stationId={stationId}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          stationId={selectedStationId}
         />
       }
     </CCard>

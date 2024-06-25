@@ -125,7 +125,7 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
     };
 
     return (
-      <CModalBody className="pb-0">
+      <CModalBody>
         <CForm>
           <label htmlFor="stationName">Station Name</label>
           <CFormInput
@@ -210,7 +210,7 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
     };
 
     return (
-      <CModalBody className="pb-0">
+      <CModalBody>
         <CForm>
           <label htmlFor="stationName">Type "{name}" to delete station</label>
           <CFormInput
@@ -259,9 +259,11 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
         ? <EditModal />
         : isDelete
           ? <DeleteModal />
-          : <InfoModal />
+          : <>
+            <InfoModal />
+            <EvseManagement stationId={stationId} />
+          </>
       }
-      <EvseManagement stationId={stationId} />
     </CModal >
   );
 };
