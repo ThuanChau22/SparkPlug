@@ -4,7 +4,7 @@ import utils from "../utils.js";
 export const getUsers = async (req, res) => {
   try {
     const filter = req.query;
-    const select = "id, email, name, status, created_at, updated_at";
+    const select = { password: 0 };
     const users = await User.getUsers({ filter, select });
     res.status(200).json(users);
   } catch (error) {

@@ -33,19 +33,36 @@ repository.addRole = async (userId, role) => {
   await db.query(`INSERT INTO ${roleTable} (id) VALUES (?)`, [userId]);
 };
 
-repository.getUsers = async ({ filter = {}, select = "" } = {}) => {
-  let query = `SELECT ${select || "*"} FROM User`;
-  const fieldValues = [];
+repository.getUsers = async ({ filter = {}, select = {} } = {}) => {
+  const fieldList = await repository.getFields();
+  let selectFields = "*";
+  if (!utils.isObjectEmpty(select)) {
+    const fieldSet = new Set(fieldList);
+    select = Object.entries(select).filter(([field]) => fieldSet.has(field));
+    for (const [field] of select.filter(([_, value]) => value === 0)) {
+      fieldSet.delete(field);
+    }
+    if (fieldSet.size !== fieldList.length) {
+      const reducer = (s, field) => `${s}, ${field}`;
+      selectFields = Array.from(fieldSet).reduce(reducer);
+    } else if (select.length !== 0) {
+      const filter = ([field, value]) => field !== "id" && value === 1;
+      const reducer = (s, [field]) => `${s}, ${field}`;
+      selectFields = select.filter(filter).reduce(reducer, "id");
+    }
+  }
+  let query = `SELECT ${selectFields} FROM User`;
+  const filterValues = [];
   if (!utils.isObjectEmpty(filter)) {
-    const fields = new Set(await repository.getFields());
+    const fieldSet = new Set(fieldList);
     for (const [field, value] of Object.entries(filter)) {
-      if (fields.has(field)) {
-        query += `${fieldValues.length === 0 ? " WHERE" : " AND"} ${field} = ?`;
-        fieldValues.push(Array.isArray(value) ? value[0] : value);
+      if (fieldSet.has(field)) {
+        query += `${filterValues.length === 0 ? " WHERE" : " AND"} ${field} = ?`;
+        filterValues.push(Array.isArray(value) ? value[0] : value);
       }
     }
   }
-  const [result] = await db.query(query, fieldValues);
+  const [result] = await db.query(query, filterValues);
   return result;
 };
 
@@ -79,8 +96,9 @@ repository.getUserById = async (userId) => {
 
 repository.getUserByEmailAndRole = async (email, role) => {
   const roleTable = roleToTable(role);
+  const select = "id, email, password";
   const [[user]] = await db.query(
-    `SELECT * FROM User JOIN ${roleTable} USING(id) WHERE email = ?`,
+    `SELECT ${select} FROM User JOIN ${roleTable} USING(id) WHERE email = ?`,
     [email],
   );
   return user;
