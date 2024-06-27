@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 
 import { JWT_SECRET } from "../config.js";
 import User from "../repositories/UserRepository.js";
+import utils from "../utils.js";
 
 const saltRounds = 12;
 const tokenLimit = "15d";
@@ -22,11 +23,11 @@ export const signup = async (req, res) => {
         const filter = { email };
         user = (await User.getUsers({ filter }))[0];
         if (!await bcrypt.compare(password, user.password)) {
-          return res.status(401).json({ message: "Invalid credentials" });
+          throw { code: 401, message: "Invalid credentials" };
         }
         user = await User.getUserById(user.id);
         if (user.roles.includes(assignedRole)) {
-          return res.status(409).json({ message: "User already existed" });
+          throw { code: 409, message: "User already existed" };
         }
       } else {
         throw error;
@@ -40,7 +41,7 @@ export const signup = async (req, res) => {
     }, JWT_SECRET, { expiresIn: tokenLimit });
     res.status(201).json({ token });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return utils.handleError(res, error);
   }
 };
 
@@ -49,7 +50,7 @@ export const login = async (req, res) => {
     const { email, password, role = User.Role.Driver } = req.body;
     const user = await User.getUserByEmailAndRole(email, role);
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      throw { code: 401, message: "Invalid credentials" };
     }
     const token = jwt.sign({
       id: user.id,
@@ -58,7 +59,7 @@ export const login = async (req, res) => {
     }, JWT_SECRET, { expiresIn: tokenLimit });
     res.status(201).json({ token });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return utils.handleError(res, error);
   }
 };
 
@@ -66,16 +67,16 @@ export const verify = async (req, res) => {
   try {
     const { token } = req.body;
     if (!token) {
-      return res.status(401).json({ message: "Missing token" });
+      throw { code: 401, message: "Missing token" };
     }
     return res.status(200).json({ ...jwt.verify(token, JWT_SECRET) });
   } catch (error) {
     if (error.name === "JsonWebTokenError") {
-      return res.status(401).json({ message: "Invalid token" });
+      error = { code: 401, message: "Invalid token" };
     }
     if (error.name === "TokenExpiredError") {
-      return res.status(401).json({ message: "Expired token" });
+      error = { code: 401, message: "Expired token" };
     }
-    res.status(500).json({ message: error.message });
+    return utils.handleError(res, error);
   }
 };

@@ -106,17 +106,13 @@ repository.updateUserById = async (userData) => {
 };
 
 repository.deleteUserById = async (userId) => {
-  try {
-    await Promise.all([
-      db.query("DELETE FROM Staff WHERE id = ?", [userId]),
-      db.query("DELETE FROM Station_Owner WHERE id = ?", [userId]),
-      db.query("DELETE FROM Driver WHERE id = ?", [userId]),
-    ]);
-    const [result] = await db.query("DELETE FROM User WHERE id = ?", [userId]);
-    return result.affectedRows > 0;
-  } catch (error) {
-    throw error;
-  }
+  await Promise.all([
+    db.query("DELETE FROM Staff WHERE id = ?", [userId]),
+    db.query("DELETE FROM Station_Owner WHERE id = ?", [userId]),
+    db.query("DELETE FROM Driver WHERE id = ?", [userId]),
+  ]);
+  const [result] = await db.query("DELETE FROM User WHERE id = ?", [userId]);
+  return result.affectedRows > 0;
 };
 
 export default repository;
