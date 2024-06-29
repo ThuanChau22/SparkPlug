@@ -16,7 +16,8 @@
     "express": "^4.18.2",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.6.5"
+    "mysql2": "^3.6.5",
+    "safe-base64": "^2.0.1-0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

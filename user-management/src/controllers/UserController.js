@@ -3,10 +3,15 @@ import utils from "../utils.js";
 
 export const getUsers = async (req, res) => {
   try {
-    const filter = req.query;
+    const { limit, cursor, ...filter } = req.query;
     const select = { password: 0 };
-    const users = await User.getUsers({ filter, select });
-    res.status(200).json(users);
+    const sort = { created_at: 1, id: 1 };
+    const options = { filter, select, sort, limit, cursor };
+    const data = await User.getUsers(options);
+    res.status(200).json({
+      users: data.users,
+      cursor: data.cursor,
+    });
   } catch (error) {
     return utils.handleError(res, error);
   }
@@ -30,9 +35,10 @@ export const updateUserById = async (req, res) => {
     if (!currentUser) {
       throw { code: 404, message: "User not found" };
     }
-    const userData = { ...currentUser, ...req.body };
+    const { password, ...remain } = req.body;
+    const userData = { id: req.params.id, ...remain };
     if (!await User.updateUserById(userData)) {
-      throw { code: 400, message: "Update failed" }
+      throw { code: 400, message: "Update failed" };
     }
     res.status(200).json(await User.getUserById(userData.id));
   } catch (error) {

@@ -16,24 +16,25 @@ export const signup = async (req, res) => {
     let user;
     try {
       const hashedPassword = await bcrypt.hash(password, saltRounds);
-      const userId = await User.createUser({ email, hashedPassword, name });
+      const params = { email, hashedPassword, name, role: assignedRole };
+      const userId = await User.createUser(params);
       user = await User.getUserById(userId);
     } catch (error) {
       if (error.errno === 1062) {
         const filter = { email };
-        user = (await User.getUsers({ filter }))[0];
-        if (!await bcrypt.compare(password, user.password)) {
+        const { users: [existedUser] } = await User.getUsers({ filter });
+        if (!await bcrypt.compare(password, existedUser.password)) {
           throw { code: 401, message: "Invalid credentials" };
         }
-        user = await User.getUserById(user.id);
-        if (user.roles.includes(assignedRole)) {
+        if (existedUser[assignedRole] !== 0) {
           throw { code: 409, message: "User already existed" };
         }
+        await User.addRole(existedUser.id, assignedRole);
+        user = existedUser;
       } else {
         throw error;
       }
     }
-    await User.addRole(user.id, assignedRole);
     const token = jwt.sign({
       id: user.id,
       email: user.email,
@@ -48,8 +49,12 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password, role = User.Role.Driver } = req.body;
-    const user = await User.getUserByEmailAndRole(email, role);
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    const filter = { email, [role]: 1 };
+    const { users: [user] } = await User.getUsers({ filter });
+    if (!user
+      || !Object.values(User.Role).includes(role)
+      || !(await bcrypt.compare(password, user.password))
+    ) {
       throw { code: 401, message: "Invalid credentials" };
     }
     const token = jwt.sign({
