@@ -1,73 +1,97 @@
-import requests
 from flask import request
 
 # Internal Modules
-from src.config import SQL_API_ENDPOINT
-from src import utils
+from src.repositories import site
+from src.repositories import station
+from src.utils import handle_error
 
 
 def get_stations():
-    args = request.args.to_dict()
-    if request.auth["role"] == "owner":
-        args["owner_id"] = request.auth["user_id"]
+    try:
+        filter = request.args.to_dict()
+        if request.auth["role"] == "owner":
+            filter["owner_id"] = request.auth["user_id"]
 
-    response = requests.get(
-        url=f"{SQL_API_ENDPOINT}/stations",
-        params=args,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+        limit = filter.get("limit")
+        limit = int(limit) if limit else None
 
-    stations = response.json()
-    stations = utils.convert_coords_to_float(stations)
-
-    return stations
+        data = station.get_stations(filter=filter, limit=limit)
+        return data, 200
+    except Exception as e:
+        return handle_error(e)
 
 
 def get_station_by_id(station_id):
-    args = request.args.to_dict()
-    if request.auth["role"] == "owner":
-        args["owner_id"] = request.auth["user_id"]
-
-    response = requests.get(
-        url=f"{SQL_API_ENDPOINT}/stations/{station_id}",
-        params=args,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
-
-    stations = response.json()
-    stations = utils.convert_coords_to_float(stations)
-
-    return stations[0]
+    try:
+        data = station.get_station_by_id(station_id)
+        if not data:
+            raise Exception("Station not found", 404)
+        return data, 200
+    except Exception as e:
+        return handle_error(e)
 
 
 def create_station():
-    data = request.json
+    try:
+        body = request.json
 
-    response = requests.post(
-        url=f"{SQL_API_ENDPOINT}/stations",
-        json=data,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+        required_fields = ("name", "site_id", "latitude", "longitude")
+        for field in required_fields:
+            if not body.get(field):
+                raise Exception(f"{field} is required", 400)
 
-    return response.json()
+        if request.auth["role"] == "owner":
+            data = site.get_site_by_id(body["site_id"])
+            if request.auth["user_id"] != data["owner_id"]:
+                raise Exception("Access denied", 403)
+
+        station_id = station.create_station(body)
+        data = station.get_station_by_id(station_id)
+        return data, 201
+    except Exception as e:
+        return handle_error(e)
 
 
 def update_station(station_id):
-    data = request.json
+    try:
+        data = station.get_station_by_id(station_id)
+        if not data:
+            raise Exception("Station not found", 404)
 
-    response = requests.patch(
-        url=f"{SQL_API_ENDPOINT}/stations/{station_id}",
-        json=data,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+        is_owner = request.auth["role"] == "owner"
+        user_id = request.auth["user_id"]
+        owner_id = data["owner_id"]
+        if is_owner and user_id != owner_id:
+            raise Exception("Access denied", 403)
 
-    return response.json()
+        body = request.json
+        if body.get("site_id"):
+            del body["site_id"]
+
+        if not station.update_station(station_id, body):
+            raise Exception("Update failed", 400)
+
+        data = station.get_station_by_id(station_id)
+        return data, 200
+    except Exception as e:
+        return handle_error(e)
 
 
 def delete_station(station_id):
-    response = requests.delete(
-        url=f"{SQL_API_ENDPOINT}/stations/{station_id}",
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+    try:
+        data = station.get_station_by_id(station_id)
+        if not data:
+            raise Exception("Station not found", 404)
 
-    return response.json()
+        is_owner = request.auth["role"] == "owner"
+        user_id = request.auth["user_id"]
+        owner_id = data["owner_id"]
+        if is_owner and user_id != owner_id:
+            raise Exception("Access denied", 403)
+
+        if not station.delete_station(station_id):
+            raise Exception("Delete failed", 400)
+
+        return {}, 204
+    except Exception as e:
+        return handle_error(e)
