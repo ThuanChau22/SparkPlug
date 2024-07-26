@@ -92,7 +92,9 @@ services:
     environment:
       WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
       AUTH_API_ENDPOINT: ${STATION_AUTH_API_ENDPOINT}
-      SQL_API_ENDPOINT: ${STATION_SQL_API_ENDPOINT}
+      MYSQL_URI: ${MYSQL_URI}
+      GEOIP_ACCOUNT_ID: ${STATION_GEOIP_ACCOUNT_ID}
+      GEOIP_LICENSE_KEY: ${STATION_GEOIP_LICENSE_KEY}
     depends_on:
       - user-management
       - sql-db-service

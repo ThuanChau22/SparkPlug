@@ -1,75 +1,88 @@
-import requests
 from flask import request
 
 # Internal Modules
-from src.config import SQL_API_ENDPOINT
-from src import utils
+from src.repositories import site
+from src.utils import handle_error
 
 
-def read_sites():
-    args = request.args.to_dict()
-    if request.auth["role"] == "owner":
-        args["owner_id"] = request.auth["user_id"]
+def get_sites():
+    try:
+        filter = request.args.to_dict()
+        if request.auth["role"] == "owner":
+            filter["owner_id"] = request.auth["user_id"]
 
-    response = requests.get(
-        url=f"{SQL_API_ENDPOINT}/sites",
-        params=args,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+        limit = filter.get("limit")
+        limit = int(limit) if limit else None
 
-    sites = response.json()
-    sites = utils.convert_coords_to_float(sites)
-
-    return sites
+        data = site.get_sites(filter=filter, limit=limit)
+        return data, 200
+    except Exception as e:
+        return handle_error(e)
 
 
-def read_site_by_id(site_id):
-    args = request.args.to_dict()
-    if request.auth["role"] == "owner":
-        args["owner_id"] = request.auth["user_id"]
-
-    response = requests.get(
-        url=f"{SQL_API_ENDPOINT}/sites/{site_id}",
-        params=args,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
-
-    sites = response.json()
-    sites = utils.convert_coords_to_float(sites)
-
-    return sites[0]
+def get_site_by_id(site_id):
+    try:
+        data = site.get_site_by_id(site_id)
+        if not data:
+            raise Exception("Site not found", 404)
+        return data, 200
+    except Exception as e:
+        return handle_error(e)
 
 
 def create_site():
-    data = request.json
-    if request.auth["role"] == "owner":
-        data["owner_id"] = request.auth["user_id"]
+    try:
+        body = request.json
+        if request.auth["role"] == "owner":
+            body["owner_id"] = request.auth["user_id"]
 
-    response = requests.post(
-        url=f"{SQL_API_ENDPOINT}/sites",
-        json=data,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
-
-    return response.json()
+        site_id = site.create_site(body)
+        data = site.get_site_by_id(site_id)
+        return data, 201
+    except Exception as e:
+        return handle_error(e)
 
 
 def update_site(site_id):
-    data = request.json
+    try:
+        data = site.get_site_by_id(site_id)
+        if not data:
+            raise Exception("Site not found", 404)
 
-    response = requests.patch(
-        url=f"{SQL_API_ENDPOINT}/sites/{site_id}",
-        json=data,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+        is_owner = request.auth["role"] == "owner"
+        user_id = request.auth["user_id"]
+        owner_id = data["owner_id"]
+        if is_owner and user_id != owner_id:
+            raise Exception("Access denied", 403)
 
-    return response.json()
+        body = request.json
+        if is_owner and body.get("owner_id"):
+            del body["owner_id"]
+
+        if not site.update_site(site_id, body):
+            raise Exception("Update failed", 400)
+
+        data = site.get_site_by_id(site_id)
+        return data, 200
+    except Exception as e:
+        return handle_error(e)
 
 
 def delete_site(site_id):
-    response = requests.delete(
-        url=f"{SQL_API_ENDPOINT}/sites/{site_id}",
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+    try:
+        data = site.get_site_by_id(site_id)
+        if not data:
+            raise Exception("Site not found", 404)
 
-    return response.json()
+        is_owner = request.auth["role"] == "owner"
+        user_id = request.auth["user_id"]
+        owner_id = data["owner_id"]
+        if is_owner and user_id != owner_id:
+            raise Exception("Access denied", 403)
+
+        if not site.delete_site(site_id):
+            raise Exception("Delete failed", 400)
+
+        return {}, 204
+    except Exception as e:
+        return handle_error(e)

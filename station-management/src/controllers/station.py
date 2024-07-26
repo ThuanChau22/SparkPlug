@@ -6,7 +6,7 @@ from src.config import SQL_API_ENDPOINT
 from src import utils
 
 
-def read_stations():
+def get_stations():
     args = request.args.to_dict()
     if request.auth["role"] == "owner":
         args["owner_id"] = request.auth["user_id"]
@@ -23,7 +23,7 @@ def read_stations():
     return stations
 
 
-def read_station_by_id(station_id):
+def get_station_by_id(station_id):
     args = request.args.to_dict()
     if request.auth["role"] == "owner":
         args["owner_id"] = request.auth["user_id"]
