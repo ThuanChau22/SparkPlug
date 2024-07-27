@@ -35,7 +35,12 @@ def create_station():
     try:
         body = request.json
 
-        required_fields = ("name", "site_id", "latitude", "longitude")
+        required_fields = (
+            "name",
+            "site_id",
+            "latitude",
+            "longitude",
+        )
         for field in required_fields:
             if not body.get(field):
                 raise Exception(f"{field} is required", 400)

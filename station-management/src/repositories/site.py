@@ -36,13 +36,13 @@ def get_site_by_id(site_id):
 def create_site(site_data):
     query = f"""
       INSERT INTO {Table.Site.value} (
-        owner_id, name, latitude, longitude,
+        name, owner_id, latitude, longitude,
         street_address, city, state, zip_code, country
       ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     values = (
-        site_data["owner_id"],
         site_data["name"],
+        site_data["owner_id"],
         site_data["latitude"],
         site_data["longitude"],
         site_data["street_address"],

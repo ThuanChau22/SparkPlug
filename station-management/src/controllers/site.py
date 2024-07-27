@@ -33,8 +33,24 @@ def get_site_by_id(site_id):
 def create_site():
     try:
         body = request.json
+
         if request.auth["role"] == "owner":
             body["owner_id"] = request.auth["user_id"]
+
+        required_fields = (
+            "name",
+            "owner_id",
+            "latitude",
+            "longitude",
+            "street_address",
+            "city",
+            "state",
+            "zip_code",
+            "country",
+        )
+        for field in required_fields:
+            if not body.get(field):
+                raise Exception(f"{field} is required", 400)
 
         site_id = site.create_site(body)
         data = site.get_site_by_id(site_id)
