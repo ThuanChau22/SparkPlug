@@ -37,11 +37,7 @@ services:
       target: development
     environment:
       WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
-      MYSQL_HOST: ${MYSQL_HOST}
-      MYSQL_PORT: ${MYSQL_PORT}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASS: ${MYSQL_PASS}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_URI: ${MYSQL_URI}
       JWT_SECRET: ${USER_JWT_SECRET}
     develop:
       watch:
@@ -60,11 +56,7 @@ services:
     environment:
       WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
       AUTH_API_ENDPOINT: ${SQL_AUTH_API_ENDPOINT}
-      MYSQL_HOST: ${MYSQL_HOST}
-      MYSQL_PORT: ${MYSQL_PORT}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASS: ${MYSQL_PASS}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_URI: ${MYSQL_URI}
     develop:
       watch:
         - action: sync
@@ -80,9 +72,9 @@ services:
     build:
       target: development
     environment:
-      MONGODB_URL: ${MONGODB_URL}
       WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
       AUTH_API_ENDPOINT: ${MONGO_AUTH_API_ENDPOINT}
+      MONGODB_URI: ${MONGODB_URI}
     develop:
       watch:
         - action: sync
@@ -100,12 +92,12 @@ services:
     environment:
       WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
       AUTH_API_ENDPOINT: ${STATION_AUTH_API_ENDPOINT}
-      SQL_API_ENDPOINT: ${STATION_SQL_API_ENDPOINT}
-      MONGO_API_ENDPOINT: ${STATION_MONGO_API_ENDPOINT}
+      MYSQL_URI: ${MYSQL_URI}
+      GEOIP_ACCOUNT_ID: ${STATION_GEOIP_ACCOUNT_ID}
+      GEOIP_LICENSE_KEY: ${STATION_GEOIP_LICENSE_KEY}
     depends_on:
       - user-management
       - sql-db-service
-      - mongo-db-service
     develop:
       watch:
         - action: sync
@@ -147,12 +139,8 @@ services:
       WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
       AUTH_API_ENDPOINT: ${MONITORING_AUTH_API_ENDPOINT}
       STATION_API_ENDPOINT: ${MONITORING_STATION_API_ENDPOINT}
-      MYSQL_HOST: ${MYSQL_HOST}
-      MYSQL_PORT: ${MYSQL_PORT}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASS: ${MYSQL_PASS}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MONGODB_URL: ${MONGODB_URL}
+      MYSQL_URI: ${MYSQL_URI}
+      MONGODB_URI: ${MONGODB_URI}
     depends_on:
       - user-management
       - station-management
@@ -191,8 +179,8 @@ services:
       target: development
     environment:
       WEB_DOMAIN: ${SIMULATOR_CLIENT_DOMAIN}
-      CSMS_WS_ENDPOINT: ${SIMULATOR_CSMS_WS}
       STATION_API_ENDPOINT: ${SIMULATOR_SERVER_STATION_API_ENDPOINT}
+      CSMS_WS_ENDPOINT: ${SIMULATOR_CSMS_WS}
     depends_on:
       - station-management
       - monitoring

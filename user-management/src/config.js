@@ -1,3 +1,4 @@
+import { ConnectionStringParser } from "connection-string-parser";
 import dotenv from "dotenv";
 import dotenvExpand from "dotenv-expand";
 import mysql from "mysql2/promise";
@@ -6,18 +7,16 @@ dotenvExpand.expand(dotenv.config());
 export const {
   PORT,
   WEB_DOMAIN,
-  MYSQL_HOST,
-  MYSQL_PORT,
-  MYSQL_USER,
-  MYSQL_PASS,
-  MYSQL_DATABASE,
+  MYSQL_URI,
   JWT_SECRET,
 } = process.env;
 
+const parser = new ConnectionStringParser({ scheme: "mysql" });
+const mysqlCredential = parser.parse(MYSQL_URI);
 export const db = mysql.createPool({
-  host: MYSQL_HOST,
-  port: MYSQL_PORT,
-  user: MYSQL_USER,
-  password: MYSQL_PASS,
-  database: MYSQL_DATABASE,
+  host: mysqlCredential.hosts[0].host,
+  port: mysqlCredential.hosts[0].port,
+  user: mysqlCredential.username,
+  password: mysqlCredential.password,
+  database: mysqlCredential.endpoint,
 });

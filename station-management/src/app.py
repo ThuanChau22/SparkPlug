@@ -17,14 +17,14 @@ CORS(app, resources={r"/api/*": {"origins": WEB_DOMAIN}})
 ########## Site Management Routes
 @app.route("/api/sites", methods=["GET"])
 @auth.require_permission("all", "staff", "owner", "driver")
-def read_sites():
-    return site.read_sites()
+def get_sites():
+    return site.get_sites()
 
 
 @app.route("/api/sites/<int:site_id>", methods=["GET"])
 @auth.require_permission("all", "staff", "owner", "driver")
-def read_site_by_id(site_id):
-    return site.read_site_by_id(site_id)
+def get_site_by_id(site_id):
+    return site.get_site_by_id(site_id)
 
 
 @app.route("/api/sites", methods=["POST"])
@@ -48,14 +48,14 @@ def delete_site(site_id):
 ########## Station Management Routes
 @app.route("/api/stations", methods=["GET"])
 @auth.require_permission("all", "staff", "owner", "driver")
-def read_stations():
-    return station.read_stations()
+def get_stations():
+    return station.get_stations()
 
 
 @app.route("/api/stations/<int:station_id>", methods=["GET"])
 @auth.require_permission("all", "staff", "owner", "driver")
-def read_station_by_id(station_id):
-    return station.read_station_by_id(station_id)
+def get_station_by_id(station_id):
+    return station.get_station_by_id(station_id)
 
 
 @app.route("/api/stations", methods=["POST"])
@@ -79,20 +79,20 @@ def delete_station(station_id):
 ########## EVSE Management Routes
 @app.route("/api/stations/evses", methods=["GET"])
 @auth.require_permission("all", "staff", "owner", "driver")
-def read_evses():
-    return evse.read_evses()
+def get_evses():
+    return evse.get_evses()
 
 
 @app.route("/api/stations/<int:station_id>/evses", methods=["GET"])
 @auth.require_permission("all", "staff", "owner", "driver")
-def read_evses_by_station(station_id):
-    return evse.read_evses_by_station(station_id)
+def get_evses_by_station(station_id):
+    return evse.get_evses_by_station(station_id)
 
 
 @app.route("/api/stations/<int:station_id>/evses/<int:evse_id>", methods=["GET"])
 @auth.require_permission("all", "staff", "owner", "driver")
-def read_evse_by_id(station_id, evse_id):
-    return evse.read_evse_by_id(station_id, evse_id)
+def get_evse_by_id(station_id, evse_id):
+    return evse.get_evse_by_id(station_id, evse_id)
 
 
 @app.route("/api/stations/<int:station_id>/evses", methods=["POST"])

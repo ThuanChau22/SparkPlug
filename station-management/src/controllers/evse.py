@@ -1,92 +1,127 @@
-import requests
 from flask import request
 
 # Internal Modules
-from src.config import SQL_API_ENDPOINT
-from src import utils
+from src.repositories import evse
+from src.repositories import station
+from src.repositories.utils import transaction
+from src.utils import handle_error
 
 
-def read_evses():
-    args = request.args.to_dict()
-    if request.auth["role"] == "owner":
-        args["owner_id"] = request.auth["user_id"]
+def get_evses():
+    def session(connection):
+        filter = request.args.to_dict()
+        if request.auth["role"] == "owner":
+            filter["owner_id"] = request.auth["user_id"]
 
-    response = requests.get(
-        url=f"{SQL_API_ENDPOINT}/stations/evses",
-        params=args,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+        limit = filter.get("limit")
+        limit = int(limit) if limit else None
 
-    evses = response.json()
-    evses = utils.convert_coords_to_float(evses)
-    evses = utils.convert_price_to_float(evses)
-    return evses
+        return evse.get_evses(connection, filter, limit=limit)
 
-
-def read_evses_by_station(station_id):
-    args = request.args.to_dict()
-    if request.auth["role"] == "owner":
-        args["owner_id"] = request.auth["user_id"]
-    jwt = request.headers.get("Authorization")
-
-    response = requests.get(
-        url=f"{SQL_API_ENDPOINT}/stations/{station_id}/evses",
-        params=args,
-        headers={"Authorization": jwt},
-    )
-
-    evses = response.json()
-    evses = utils.convert_coords_to_float(evses)
-    evses = utils.convert_price_to_float(evses)
-    return evses
+    try:
+        return transaction(session), 200
+    except Exception as e:
+        return handle_error(e)
 
 
-def read_evse_by_id(station_id, evse_id):
-    args = request.args.to_dict()
-    if request.auth["role"] == "owner":
-        args["owner_id"] = request.auth["user_id"]
-    jwt = request.headers.get("Authorization")
+def get_evses_by_station(station_id):
+    def session(connection):
+        filter = {"station_id": station_id}
+        if request.auth["role"] == "owner":
+            filter["owner_id"] = request.auth["user_id"]
+        return evse.get_evses(connection, filter)
 
-    response = requests.get(
-        url=f"{SQL_API_ENDPOINT}/stations/{station_id}/evses/{evse_id}",
-        params=args,
-        headers={"Authorization": jwt},
-    )
+    try:
+        return transaction(session), 200
+    except Exception as e:
+        return handle_error(e)
 
-    evses = response.json()
-    evses = utils.convert_coords_to_float(evses)
-    evses = utils.convert_price_to_float(evses)
-    return evses[0]
+
+def get_evse_by_id(station_id, evse_id):
+    def session(connection):
+        evse_data = evse.get_evse_by_ids(connection, station_id, evse_id)
+        if not evse_data:
+            raise Exception("Evse not found", 404)
+        return evse_data
+
+    try:
+        return transaction(session), 200
+    except Exception as e:
+        return handle_error(e)
 
 
 def create_evse(station_id):
-    data = request.json
+    def session(connection):
+        body = request.json
 
-    response = requests.post(
-        url=f"{SQL_API_ENDPOINT}/stations/{station_id}/evses",
-        json=data,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+        body["station_id"] = station_id
+        required_fields = (
+            "evse_id",
+            "connector_type",
+            "charge_level",
+            "price",
+        )
+        for field in required_fields:
+            if not body.get(field):
+                raise Exception(f"{field} is required", 400)
 
-    return response.json()
+        if request.auth["role"] == "owner":
+            station_data = station.get_station_by_id(connection, station_id)
+            if request.auth["user_id"] != station_data["owner_id"]:
+                raise Exception("Access denied", 403)
+
+        entry_id = evse.create_evse(connection, body)
+        return evse.get_evse_by_id(connection, entry_id)
+
+    try:
+        return transaction(session, modify=True), 201
+    except Exception as e:
+        if isinstance(e.args[0], int) and e.args[0] == 1062:
+            e = Exception("Evse duplicated", 409)
+        return handle_error(e)
 
 
 def update_evse(station_id, evse_id):
-    data = request.json
+    def session(connection):
+        is_owner = request.auth["role"] == "owner"
+        user_id = request.auth["user_id"]
+        evse_data = evse.get_evse_by_ids(connection, station_id, evse_id)
+        if not evse_data:
+            raise Exception("Evse not found", 404)
+        if is_owner and user_id != evse_data["owner_id"]:
+            raise Exception("Access denied", 403)
 
-    response = requests.patch(
-        url=f"{SQL_API_ENDPOINT}/stations/{station_id}/evses/{evse_id}",
-        json=data,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+        body = request.json
+        if body.get("station_id"):
+            del body["station_id"]
 
-    return response.json()
+        if not evse.update_evse(connection, station_id, evse_id, body):
+            raise Exception("Evse not updated", 400)
+        return evse.get_evse_by_ids(connection, station_id, evse_id)
+
+    try:
+        return transaction(session, modify=True), 200
+    except Exception as e:
+        if isinstance(e.args[0], int) and e.args[0] == 1062:
+            e = Exception("Evse duplicated", 409)
+        return handle_error(e)
 
 
 def delete_evse(station_id, evse_id):
-    response = requests.delete(
-        url=f"{SQL_API_ENDPOINT}/stations/{station_id}/evses/{evse_id}",
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+    def session(connection):
+        is_owner = request.auth["role"] == "owner"
+        user_id = request.auth["user_id"]
+        evse_data = evse.get_evse_by_ids(connection, station_id, evse_id)
+        if not evse_data:
+            raise Exception("Evse not found", 404)
+        if is_owner and user_id != evse_data["owner_id"]:
+            raise Exception("Access denied", 403)
 
-    return response.json()
+        if not evse.delete_evse(connection, station_id, evse_id):
+            raise Exception("Evse not deleted", 400)
+        return {}
+
+    try:
+        return transaction(session, modify=True), 204
+    except Exception as e:
+        return handle_error(e)

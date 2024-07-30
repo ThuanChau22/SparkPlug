@@ -18,7 +18,7 @@ import {
   selectEvseByStation,
 } from "redux/evse/evseSlice";
 
-const EvseMonitor = ({ stationId, remoteStart, remoteStop }) => {
+const EvseMonitorList = ({ stationId, remoteStart, remoteStop }) => {
   const station = useSelector((state) => selectStationById(state, stationId));
   const evseList = useSelector((state) => selectEvseByStation(state, stationId));
   const [loading, setLoading] = useState(false);
@@ -75,4 +75,4 @@ const EvseMonitor = ({ stationId, remoteStart, remoteStop }) => {
   );
 };
 
-export default EvseMonitor;
+export default EvseMonitorList;

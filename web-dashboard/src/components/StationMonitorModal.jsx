@@ -10,7 +10,7 @@ import {
 } from "@coreui/react";
 
 import EvseMonitorList from "components/EvseMonitorList";
-import StationEventList from "./StationEventList";
+import StationEventList from "components/StationEventList";
 import StationStatus from "components/StationStatus";
 import {
   selectAuthRoleIsStaff,
