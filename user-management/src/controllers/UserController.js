@@ -38,7 +38,7 @@ export const updateUserById = async (req, res) => {
     const { password, ...remain } = req.body;
     const userData = { id: req.params.id, ...remain };
     if (!await User.updateUserById(userData)) {
-      throw { code: 400, message: "Update failed" };
+      throw { code: 400, message: "User not updated" };
     }
     res.status(200).json(await User.getUserById(userData.id));
   } catch (error) {
@@ -53,7 +53,7 @@ export const deleteUserById = async (req, res) => {
       throw { code: 404, message: "User not found" };
     }
     if (!await User.deleteUserById(req.params.id)) {
-      throw { code: 400, message: "Delete failed" };
+      throw { code: 400, message: "User not deleted" };
     }
     res.status(204).json({});
   } catch (error) {

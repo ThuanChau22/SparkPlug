@@ -183,8 +183,8 @@ repository.updateUserById = async (userData) => {
     }
     query += ` WHERE id = ?`;
     updateValues.push(id);
-    const [{ affectedRows }] = await conn.query(query, updateValues);
-    return affectedRows > 0;
+    const [{ changedRows }] = await conn.query(query, updateValues);
+    return changedRows > 0;
   });
 };
 
