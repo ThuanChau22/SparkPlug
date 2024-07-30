@@ -18,8 +18,6 @@ MYSQL_URI = os.environ["MYSQL_URI"]
 GEOIP_ACCOUNT_ID = os.environ["GEOIP_ACCOUNT_ID"]
 GEOIP_LICENSE_KEY = os.environ["GEOIP_LICENSE_KEY"]
 
-SQL_API_ENDPOINT = "http://host.docker.internal:8005/api/sql"
-
 # MySQL Configuration
 mysql_credential = make_url(MYSQL_URI)
 mysql = PooledDB(
