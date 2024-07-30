@@ -12,54 +12,30 @@ class Table(Enum):
     EvseView = "evses_joined"
 
 
-def fetch_all(query, values=None):
+def transaction(callback, modify=False):
     connection = mysql.connection()
     try:
-        with connection.cursor() as cursor:
-            cursor.execute(query, values)
-            return cursor.fetchall()
-    finally:
-        connection.close()
-
-
-def fetch_one(query, values=None):
-    connection = mysql.connection()
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute(query, values)
-            return cursor.fetchone()
-    finally:
-        connection.close()
-
-
-def insert_one(query, values=None):
-    connection = mysql.connection()
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute(query, values)
-            return cursor.lastrowid
+        return callback(connection)
     except Exception as e:
-        connection.rollback()
+        if modify:
+            connection.rollback()
         raise e
     finally:
-        connection.commit()
+        if modify:
+            connection.commit()
         connection.close()
 
 
-def modify_one(query, values=None):
-    connection = mysql.connection()
-    try:
-        with connection.cursor() as cursor:
-            return cursor.execute(query, values)
-    except Exception as e:
-        connection.rollback()
-        raise e
-    finally:
-        connection.commit()
-        connection.close()
-
-
-def get_table_fields(table):
+def get_fields(connection, table):
     query = f"SHOW COLUMNS FROM {table}"
-    data = fetch_all(query)
-    return [item["Field"] for item in data]
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        data = cursor.fetchall()
+        return [item["Field"] for item in data]
+
+
+def fetch_by_id(connection, table, id):
+    query = f"SELECT * FROM {table} WHERE id = %s"
+    with connection.cursor() as cursor:
+        cursor.execute(query, id)
+        return cursor.fetchone()

@@ -1,18 +1,15 @@
 from src.repositories.utils import (
     Table,
-    get_table_fields,
-    fetch_all,
-    fetch_one,
-    insert_one,
-    modify_one,
+    get_fields,
+    fetch_by_id,
 )
 from src.utils import convert_coords_to_float
 
 
-def get_sites(filter={}, select={}, sort={}, limit=None):
+def get_sites(connection, filter={}, select={}, sort={}, limit=None):
     query = f"SELECT * FROM {Table.Site.value}"
 
-    field_set = set(get_table_fields(Table.Site.value))
+    field_set = set(get_fields(connection, Table.Site.value))
     filter_values = []
     for field, value in filter.items():
         if field in field_set:
@@ -23,22 +20,24 @@ def get_sites(filter={}, select={}, sort={}, limit=None):
     if limit and limit > 0:
         query += f" LIMIT {limit}"
 
-    sites = fetch_all(query, filter_values)
+    with connection.cursor() as cursor:
+        cursor.execute(query, filter_values)
+        sites = cursor.fetchall()
+
     return convert_coords_to_float(sites)
 
 
-def get_site_by_id(site_id):
-    query = f"SELECT * FROM {Table.Site.value} WHERE id = %s"
-    site = fetch_one(query, site_id)
-    return convert_coords_to_float([site])[0]
+def get_site_by_id(connection, site_id):
+    site = fetch_by_id(connection, Table.Site.value, site_id)
+    return convert_coords_to_float([site])[0] if site else None
 
 
-def create_site(site_data):
+def create_site(connection, site_data):
     query = f"""
-      INSERT INTO {Table.Site.value} (
-        name, owner_id, latitude, longitude,
-        street_address, city, state, zip_code, country
-      ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO {Table.Site.value} (
+          name, owner_id, latitude, longitude,
+          street_address, city, state, zip_code, country
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     values = (
         site_data["name"],
@@ -51,13 +50,16 @@ def create_site(site_data):
         site_data["zip_code"],
         site_data["country"],
     )
-    return insert_one(query, values)
+    with connection.cursor() as cursor:
+        cursor.execute(query, values)
+        site_id = cursor.lastrowid
+    return site_id
 
 
-def update_site(site_id, site_data):
+def update_site(connection, site_id, site_data):
     query = f"UPDATE {Table.Site.value} SET"
 
-    field_set = set(get_table_fields(Table.Site.value))
+    field_set = set(get_fields(connection, Table.Site.value))
     update_values = []
     for field, value in site_data.items():
         if field in field_set:
@@ -71,11 +73,13 @@ def update_site(site_id, site_data):
     query += f" WHERE id = %s"
     update_values.append(site_id)
 
-    affected_rows = modify_one(query, update_values)
-    return affected_rows > 0
+    with connection.cursor() as cursor:
+        affected_rows = cursor.execute(query, update_values)
+    return affected_rows > 0 if affected_rows else False
 
 
-def delete_site(site_id):
+def delete_site(connection, site_id):
     query = f"DELETE FROM {Table.Site.value} WHERE id = %s"
-    affected_rows = modify_one(query, site_id)
-    return affected_rows > 0
+    with connection.cursor() as cursor:
+        affected_rows = cursor.execute(query, site_id)
+    return affected_rows > 0 if affected_rows else False

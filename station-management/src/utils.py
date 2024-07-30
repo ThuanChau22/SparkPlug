@@ -38,8 +38,12 @@ def get_geo_data(ip_address):
 
 def handle_error(error):
     try:
-        if len(error.args) != 2:
-            raise Exception(error)
+        if not (
+            len(error.args) == 2
+            and isinstance(error.args[0], str)
+            and isinstance(error.args[1], int)
+        ):
+            raise error
         message, status_code = error.args
         if status_code >= 500:
             raise Exception(message)
