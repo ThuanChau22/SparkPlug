@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect, useMemo, createRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { GooeyCircleLoader } from "react-loaders-kit";
+import { useOutletContext } from "react-router-dom"; 
 import {
   CButton,
   CContainer,
@@ -36,6 +37,7 @@ import {
 } from "redux/site/siteSlide";
 
 const SiteManagement = () => {
+  const { theme, toggleTheme } = useOutletContext();
   const titleRef = createRef();
   const filterRef = createRef();
   const headerHeight = useSelector(selectHeaderHeight);
@@ -118,16 +120,16 @@ const SiteManagement = () => {
   }, [siteList, mapHeight, isMount, numberOfStations]);
 
   return (
-    <CCard className="border border-top-0 rounded-0">
+    <CCard className="border border-top-0 rounded-0 card">
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
-          <CCardBody className="pt-0">
+          <CCardBody className="pt-0 card">
             <StickyContainer
               ref={titleRef}
-              className="bg-white py-3"
+              className="py-3 card"
               top={`${headerHeight}px`}
             >
-              <CCardTitle className="d-flex flex-row justify-content-between align-items-center">
+              <CCardTitle className="d-flex flex-row justify-content-between align-items-center card">
                 Sites Management
                 <CButton
                   variant="outline"
@@ -144,7 +146,7 @@ const SiteManagement = () => {
                   className="d-flex align-items-center"
                   style={{ height: `${listHeight}px` }}
                 >
-                  <CContainer className="d-flex flex-row justify-content-center">
+                  <CContainer className="d-flex flex-row justify-content-center card">
                     <GooeyCircleLoader
                       color={["#f6b93b", "#5e22f0", "#ef5777"]}
                       loading={true}
@@ -157,7 +159,7 @@ const SiteManagement = () => {
                   {siteList.map(({ id, name }) => (
                     <CListGroupItem
                       key={id}
-                      className="py-3"
+                      className="py-3 card"
                       component="button"
                       onClick={() => handleViewSite(id)}
                     >

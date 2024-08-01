@@ -29,6 +29,11 @@
   --text-dark: #fff;
 }
 
+.header-black {
+  background-color: rgb(66, 62, 62);
+  color: white; /* Optional: If you want to change the text color as well */
+}
+
 .header.light {
   background-color: var(--background-light);
   color: var(--text-light);
@@ -54,3 +59,44 @@
   margin-right: 20px;
   margin-top: 40px;
 }
+
+/* src/scss/style.scss */
+body.light {
+  background-color: white;
+  color: black;
+}
+
+body.dark {
+  background-color: rgb(66, 62, 62);
+  color: white;
+}
+
+.light .card {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.dark .card {
+  background-color: rgb(66, 62, 62);
+  color: #ffffff;
+}
+
+.theme-toggle {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+}
+
+.theme-toggle .btn {
+  background-color: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.theme-toggle .btn:focus {
+  outline: none;
+}
+
+

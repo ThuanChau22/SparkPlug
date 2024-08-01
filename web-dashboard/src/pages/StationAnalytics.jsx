@@ -110,13 +110,14 @@ const StationAnalytics = () => {
   }, [stationList, mapHeight]);
 
   return (
-    <CCard className="border border-top-0 rounded-0">
+    <div>
+    <CCard className="border border-top-0 rounded-0 card">
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
-          <CCardBody className="pt-0">
+          <CCardBody className="pt-0 card">
             <StickyContainer
               ref={titleRef}
-              className="bg-white py-3"
+              className="py-3 card"
               top={`${headerHeight}px`}
             >
               <CCardTitle>
@@ -126,10 +127,10 @@ const StationAnalytics = () => {
             {loading
               ? (
                 <div
-                  className="d-flex align-items-center"
+                  className="d-flex align-items-center card"
                   style={{ height: `${listHeight}px` }}
                 >
-                  <CContainer className="d-flex flex-row justify-content-center">
+                  <CContainer className="d-flex flex-row justify-content-center card">
                     <GooeyCircleLoader
                       color={["#f6b93b", "#5e22f0", "#ef5777"]}
                       loading={true}
@@ -142,7 +143,7 @@ const StationAnalytics = () => {
                   {stationList.map(({ id, name }) => (
                     <CListGroupItem
                       key={id}
-                      className="py-3"
+                      className="py-3 card"
                       component="button"
                       onClick={() => handleViewStation(id)}
                     >
@@ -180,6 +181,7 @@ const StationAnalytics = () => {
         )
       }
     </CCard >
+    </div>
   );
 };
 

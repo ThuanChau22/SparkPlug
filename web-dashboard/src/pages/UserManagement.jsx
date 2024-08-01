@@ -1,6 +1,8 @@
 import { useCallback, useState, useEffect, createRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { GooeyCircleLoader } from "react-loaders-kit";
+import UserDetailsModal from "components/UserDetailsModal";
+
 import {
   CContainer,
   CCard,
@@ -12,7 +14,6 @@ import {
 
 import StickyContainer from "components/StickyContainer";
 import { selectHeaderHeight } from "redux/header/headerSlice";
-import UserDetailsModal from "components/UserDetailsModal";
 import {
   userGetAll,
   selectUserList,
@@ -51,11 +52,12 @@ const UserManagement = () => {
   };
 
   return (
+    <div>
     <CCard className="border border-top-0 rounded-0">
-      <CCardBody className="pt-0">
+      <CCardBody className="pt-0 card">
         <StickyContainer
           ref={titleRef}
-          className="bg-white py-3"
+          className="py-3"
           top={`${headerHeight}px`}
         >
           <CCardTitle>
@@ -68,7 +70,7 @@ const UserManagement = () => {
               className="d-flex align-items-center"
               style={{ height: `${listHeight}px` }}
             >
-              <CContainer className="d-flex flex-row justify-content-center">
+              <CContainer className="d-flex flex-row justify-content-center card">
                 <GooeyCircleLoader
                   color={["#f6b93b", "#5e22f0", "#ef5777"]}
                   loading={true}
@@ -81,7 +83,7 @@ const UserManagement = () => {
               {userList.map(({ id, name, email, status }) => (
                 <CListGroupItem
                   key={id}
-                  className="align-items-center py-3"
+                  className="align-items-center py-3 card"
                   component="button"
                   onClick={() => handleViewUser(id)}
                 >
@@ -118,6 +120,7 @@ const UserManagement = () => {
         )
       }
     </CCard >
+    </div>
   );
 };
 

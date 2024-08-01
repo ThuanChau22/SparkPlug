@@ -1,15 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { GooeyCircleLoader } from "react-loaders-kit";
-import {
-  useNavigate,
-  useLocation,
-  Outlet,
-} from "react-router-dom";
-import {
-  CContainer,
-} from "@coreui/react";
-
+import { useNavigate, useLocation, Outlet } from "react-router-dom";
+import { CContainer } from "@coreui/react";
 import Header from "components/Header";
 import Sidebar from "components/Sidebar";
 import Footer from "components/Footer";
@@ -24,6 +17,7 @@ import {
   selectAuthSecureStorage,
 } from "redux/auth/authSlice";
 import routes from "routes";
+import './scss/style.scss'; // 确保路径正确
 
 const App = () => {
   const authenticated = useSelector(selectAuthAuthenticated);
@@ -35,6 +29,7 @@ const App = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [theme, setTheme] = useState('light'); // State for theme
 
   useEffect(() => {
     if (token) {
@@ -107,20 +102,27 @@ const App = () => {
     }
   }, [authIsAdmin, authIsOwner, authIsDriver, location, navigate]);
 
-  return (authenticated
-    ? (
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+  };
+
+  useEffect(() => {
+    document.body.className = theme; // Apply theme class to body
+  }, [theme]);
+
+  return (
+    authenticated ? (
       <>
         <Sidebar />
-        <div className="bg-light min-vh-100 d-flex flex-column wrapper">
-          <Header />
+        <div className={`min-vh-100 d-flex flex-column wrapper ${theme}`}>
+          <Header theme={theme} toggleTheme={toggleTheme} /> {/* Passing theme and toggleTheme as props */}
           <div className="body flex-grow-1">
-            <Outlet />
+            <Outlet context={{ theme, toggleTheme }} /> {/* Passing theme and toggleTheme to Outlet context */}
           </div>
           <Footer />
         </div>
       </>
-    )
-    : (
+    ) : (
       <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
         <CContainer className="d-flex flex-row justify-content-center">
           <GooeyCircleLoader
