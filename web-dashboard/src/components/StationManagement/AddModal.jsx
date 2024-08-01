@@ -12,13 +12,14 @@ import {
 } from "@coreui/react";
 
 import {
-  siteGetAll,
+  siteGetList,
   selectSiteList,
 } from "redux/site/siteSlide";
 import { stationAdd } from "redux/station/stationSlide";
 
 const StationAddModal = ({ isOpen, onClose }) => {
   const siteList = useSelector(selectSiteList);
+
   const initialFormData = {
     name: "",
     siteId: "",
@@ -26,12 +27,14 @@ const StationAddModal = ({ isOpen, onClose }) => {
     longitude: "",
   };
   const [formData, setFormData] = useState(initialFormData);
+
   const [siteOptions, setSiteOptions] = useState([]);
+
   const dispatch = useDispatch();
 
   useEffect(() => {
     if (siteList.length === 0) {
-      dispatch(siteGetAll());
+      dispatch(siteGetList());
     }
   }, [siteList, dispatch]);
 

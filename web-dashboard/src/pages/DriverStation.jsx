@@ -1,9 +1,7 @@
 import { useCallback, useState, useEffect, useMemo, createRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import useWebSocket, { ReadyState } from "react-use-websocket";
-import { GooeyCircleLoader } from "react-loaders-kit";
 import {
-  CContainer,
   CRow,
   CCol,
   CCard,
@@ -14,12 +12,12 @@ import {
 } from "@coreui/react";
 import ms from "ms";
 
-import { stationIcon } from "assets/mapIcons";
+import LoadingIndicator from "components/LoadingIndicator";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
-import DriverStationModal from "components/DriverStationModal";
 import StationStatusMarker from "components/StationStatusMarker";
 import StickyContainer from "components/StickyContainer";
+import DriverStationDetailsModal from "components/DriverStation/DetailsModal";
 import { selectHeaderHeight } from "redux/header/headerSlice";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
@@ -27,7 +25,7 @@ import {
   stationSetStateSelected,
   stationSetCitySelected,
   stationSetZipCodeSelected,
-  stationGetAll,
+  stationGetList,
   selectStationList,
   selectSelectedState,
   selectStateOptions,
@@ -44,8 +42,9 @@ import {
 
 const DriverStation = () => {
   const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
-  const titleRef = createRef();
+
   const filterRef = createRef();
+
   const headerHeight = useSelector(selectHeaderHeight);
   const token = useSelector(selectAuthAccessToken);
   const stationList = useSelector(selectStationList);
@@ -56,15 +55,22 @@ const DriverStation = () => {
   const stationSelectedZipCode = useSelector(selectSelectedZipCode);
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
   const evseList = useSelector(selectEvseList);
-  const [listHeight, setListHeight] = useState(window.innerHeight);
-  const [mapHeight, setMapHeight] = useState(window.innerHeight);
+
   const [loading, setLoading] = useState(false);
+
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
+  const [stationId, setStationId] = useState(null);
+
+  const [mapHeight, setMapHeight] = useState(window.innerHeight);
   const [isMount, setIsMount] = useState(true);
   const [numberOfStations, setNumberOfStations] = useState(0);
   const [isCenter, setIsCenter] = useState(true);
-  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
-  const [selectedStationId, setSelectedStationId] = useState(null);
-  const socket = useWebSocket(`${StationEventWS}`, {
+
+  const {
+    readyState,
+    lastJsonMessage,
+    sendJsonMessage,
+  } = useWebSocket(`${StationEventWS}`, {
     queryParams: { token },
     heartbeat: {
       message: "ping",
@@ -72,33 +78,17 @@ const DriverStation = () => {
       timeout: ms("60s"),
       interval: ms("30s"),
     },
-    shouldReconnect: ({ code }) => {
-      return code === 1006;
-    },
+    shouldReconnect: ({ code }) => code === 1006,
   });
-  const {
-    readyState,
-    lastJsonMessage,
-    sendJsonMessage,
-  } = socket;
+
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    const titleHeight = titleRef.current.offsetHeight;
-    setListHeight(window.innerHeight - (headerHeight + titleHeight));
-  }, [headerHeight, titleRef]);
-
-  useEffect(() => {
-    const filterHeight = filterRef.current.offsetHeight;
-    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
-  }, [headerHeight, filterRef]);
 
   const fetchData = useCallback(async () => {
     setIsMount(false);
     setNumberOfStations(stationList.length);
     setLoading(true);
     if (stationList.length === 0) {
-      await dispatch(stationGetAll()).unwrap();
+      await dispatch(stationGetList()).unwrap();
     }
     setLoading(false);
   }, [stationList, dispatch]);
@@ -169,30 +159,34 @@ const DriverStation = () => {
     }
   }, [lastJsonMessage, evseList, dispatch]);
 
+  const handleViewStation = (stationId) => {
+    setStationId(stationId);
+    setIsAnalyticsModalOpen(true);
+  };
+
   const handleFilter = (state, city, zipCode) => {
     const params = [];
     if (state !== "All") params.push(`state=${state}`);
     if (city !== "All") params.push(`city=${city}`);
     if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
     const query = params.length > 0 ? `?${params.join("&")}` : "";
-    dispatch(stationGetAll(query));
+    dispatch(stationGetList(query));
     dispatch(stationSetStateSelected(state));
     dispatch(stationSetCitySelected(city));
     dispatch(stationSetZipCodeSelected(zipCode));
     setIsCenter(false);
   };
 
-  const handleViewStation = (stationId) => {
-    setSelectedStationId(stationId);
-    setIsAnalyticsModalOpen(true);
-  };
+  useEffect(() => {
+    const filterHeight = filterRef.current.offsetHeight;
+    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
+  }, [headerHeight, filterRef]);
 
   const displayMap = useMemo(() => {
     const renderStationMarker = (station) => (
       <StationStatusMarker
         key={station.id}
         station={station}
-        icon={stationIcon}
         onMarkerClick={() => handleViewStation(station.id)}
       />
     );
@@ -210,12 +204,11 @@ const DriverStation = () => {
   }, [stationList, mapHeight, isMount, numberOfStations, isCenter]);
 
   return (
-    <CCard className="border border-top-0 rounded-0">
+    <CCard className="flex-grow-1 border border-top-0 rounded-0">
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
-          <CCardBody className="pt-0">
+          <CCardBody className="d-flex flex-column h-100 pt-0">
             <StickyContainer
-              ref={titleRef}
               className="bg-white py-3"
               top={`${headerHeight}px`}
             >
@@ -224,19 +217,7 @@ const DriverStation = () => {
               </CCardTitle>
             </StickyContainer>
             {loading
-              ? (
-                <div
-                  className="d-flex align-items-center"
-                  style={{ height: `${listHeight}px` }}
-                >
-                  <CContainer className="d-flex flex-row justify-content-center">
-                    <GooeyCircleLoader
-                      color={["#f6b93b", "#5e22f0", "#ef5777"]}
-                      loading={true}
-                    />
-                  </CContainer>
-                </div>
-              )
+              ? <LoadingIndicator loading={loading} />
               : (
                 <CListGroup>
                   {stationList.map(({ id, name, status }) => (
@@ -284,10 +265,10 @@ const DriverStation = () => {
         </CCol>
       </CRow>
       {isAnalyticsModalOpen && (
-        <DriverStationModal
+        <DriverStationDetailsModal
           isOpen={isAnalyticsModalOpen}
           onClose={() => setIsAnalyticsModalOpen(false)}
-          stationId={selectedStationId}
+          stationId={stationId}
         />
       )}
     </CCard>

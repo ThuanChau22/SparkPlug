@@ -4,17 +4,20 @@ import ms from "ms";
 import { CButton } from "@coreui/react";
 import { EvStation } from '@mui/icons-material';
 
-import StationStatus from "components/StationStatus";
+import AvailabilityStatus from "components/AvailabilityStatus";
 import {
   evseStateUpsertById,
   selectEvseById,
 } from "redux/evse/evseSlice";
 
-const EvseMonitorDetails = ({ stationId, evseId, remoteStart, remoteStop }) => {
+const StationMonitorEvseListItem = ({ stationId, evseId, remoteStart, remoteStop }) => {
   const id = { stationId, evseId };
   const evse = useSelector((state) => selectEvseById(state, id));
+
   const meterTimeout = useRef(0)
+
   const [meterValue, setMeterValue] = useState(evse.meterValue || 0);
+
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -31,12 +34,13 @@ const EvseMonitorDetails = ({ stationId, evseId, remoteStart, remoteStop }) => {
       }, ms("5s"));
     }
   }, [evse, meterTimeout, dispatch]);
+
   return (
     <div className="d-flex justify-content-between">
       <p className="text-secondary my-auto">
         <span>EVSE ID: {evseId} - </span>
         <span className="fw-medium">
-          <StationStatus status={evse.status} />
+          <AvailabilityStatus status={evse.status} />
         </span>
       </p>
       <div className="d-flex align-items-center">
@@ -66,4 +70,4 @@ const EvseMonitorDetails = ({ stationId, evseId, remoteStart, remoteStop }) => {
   );
 };
 
-export default EvseMonitorDetails;
+export default StationMonitorEvseListItem;

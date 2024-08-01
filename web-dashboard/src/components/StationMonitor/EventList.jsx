@@ -1,8 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
-import { GooeyCircleLoader } from "react-loaders-kit";
 import {
-  CContainer,
   CCard,
   CCardBody,
   CAccordion,
@@ -11,12 +9,15 @@ import {
   CAccordionBody,
 } from "@coreui/react";
 
+import LoadingIndicator from "components/LoadingIndicator";
 import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 
-const StationEventList = ({ stationId, eventMessages, setEventMessages }) => {
+const StationMonitorEventList = ({ stationId, eventMessages, setEventMessages }) => {
   const StationEventAPI = process.env.REACT_APP_STATION_EVENT_API_ENDPOINT;
+
   const token = useSelector(selectAuthAccessToken);
+
   const [loading, setLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -47,15 +48,7 @@ const StationEventList = ({ stationId, eventMessages, setEventMessages }) => {
           className="d-flex flex-column-reverse p-0"
         >
           {loading
-            ? (
-              <CContainer className="d-flex flex-row justify-content-center">
-                <GooeyCircleLoader
-                  className="mx-auto"
-                  color={["#f6b93b", "#5e22f0", "#ef5777"]}
-                  loading={true}
-                />
-              </CContainer>
-            )
+            ? <LoadingIndicator loading={loading} />
             : eventMessages.length > 0
               ? eventMessages.map(({ id, event, payload, createdAt }) => (
                 <CAccordionItem
@@ -86,4 +79,4 @@ const StationEventList = ({ stationId, eventMessages, setEventMessages }) => {
   );
 };
 
-export default StationEventList;
+export default StationMonitorEventList;

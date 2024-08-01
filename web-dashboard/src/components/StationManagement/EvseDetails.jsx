@@ -16,8 +16,10 @@ import {
 const EvseDetails = ({ stationId, evseId }) => {
   const id = { stationId, evseId };
   const evse = useSelector((state) => selectEvseById(state, id));
+
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
+
   const dispatch = useDispatch();
 
   const Info = () => {

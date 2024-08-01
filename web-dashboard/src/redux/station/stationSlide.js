@@ -27,11 +27,11 @@ export const stationSlice = createSlice({
   name: "station",
   initialState,
   reducers: {
-    stationStateSetAll(state, { payload }) {
-      stationEntityAdapter.setAll(state, payload);
+    stationStateSetMany(state, { payload }) {
+      stationEntityAdapter.setMany(state, payload);
     },
-    stationStateUpsertById(state, { payload }) {
-      stationEntityAdapter.upsertOne(state, payload);
+    stationStateSetById(state, { payload }) {
+      stationEntityAdapter.setOne(state, payload);
     },
     stationStateUpdateMany(state, { payload }) {
       const mapper = ({ id, ...changes }) => ({ id, changes });
@@ -68,8 +68,8 @@ export const stationSlice = createSlice({
 });
 
 export const {
-  stationStateSetAll,
-  stationStateUpsertById,
+  stationStateSetMany,
+  stationStateSetById,
   stationStateUpdateMany,
   stationStateUpdateById,
   stationStateDeleteById,
@@ -79,13 +79,13 @@ export const {
   stationStateClear,
 } = stationSlice.actions;
 
-export const stationGetAll = createAsyncThunk(
-  `${stationSlice.name}/getAll`,
+export const stationGetList = createAsyncThunk(
+  `${stationSlice.name}/getList`,
   async (query = "", { dispatch, getState }) => {
     try {
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(`${StationAPI}${query}`, config);
-      dispatch(stationStateSetAll(data));
+      dispatch(stationStateSetMany(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -98,7 +98,7 @@ export const stationGetById = createAsyncThunk(
     try {
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(`${StationAPI}/${id}`, config);
-      dispatch(stationStateUpsertById(data));
+      dispatch(stationStateSetById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -116,7 +116,7 @@ export const stationAdd = createAsyncThunk(
       const body = { name, site_id, latitude, longitude };
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.post(`${StationAPI}`, body, config);
-      dispatch(stationGetById(data.id));
+      dispatch(stationStateSetById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -133,8 +133,8 @@ export const stationUpdateById = createAsyncThunk(
     try {
       const body = { name, site_id, latitude, longitude };
       const config = await tokenConfig({ dispatch, getState });
-      await apiInstance.patch(`${StationAPI}/${id}`, body, config);
-      dispatch(stationGetById(id));
+      const { data } = await apiInstance.patch(`${StationAPI}/${id}`, body, config);
+      dispatch(stationStateUpdateById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }

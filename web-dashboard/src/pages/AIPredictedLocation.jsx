@@ -18,12 +18,12 @@ import { stationIcon } from "assets/mapIcons";
 import { newStationIcon } from "assets/mapIcons";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
-import StationAnalyticsModal from "components/StationAnalyticsModal";
+import StationAnalyticsDetailsModal from "components/StationAnalytics/DetailsModal";
 import StationMarker from "components/StationMarker";
 import StickyContainer from "components/StickyContainer";
 import { selectHeaderHeight } from "redux/header/headerSlice";
 import {
-  stationGetAll,
+  stationGetList,
   stationSetStateSelected,
   stationSetCitySelected,
   stationSetZipCodeSelected,
@@ -68,7 +68,7 @@ const AIPredictedLocation = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     if (stationList.length === 0) {
-      await dispatch(stationGetAll()).unwrap();
+      await dispatch(stationGetList()).unwrap();
     }
     setLoading(false);
   }, [stationList, dispatch]);
@@ -83,7 +83,7 @@ const AIPredictedLocation = () => {
     if (city !== "All") params.push(`city=${city}`);
     if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
     const query = params.length > 0 ? `?${params.join("&")}` : "";
-    dispatch(stationGetAll(query));
+    dispatch(stationGetList(query));
     dispatch(stationSetStateSelected(state));
     dispatch(stationSetCitySelected(city));
     dispatch(stationSetZipCodeSelected(zipCode));
@@ -172,7 +172,7 @@ const AIPredictedLocation = () => {
         </CCol>
     </CRow>
       {isAnalyticsModalOpen && (
-        <StationAnalyticsModal
+        <StationAnalyticsDetailsModal
           isOpen={isAnalyticsModalOpen}
           onClose={() => setIsAnalyticsModalOpen(false)}
           stationId={selectedStationId}

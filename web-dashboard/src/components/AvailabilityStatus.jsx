@@ -1,4 +1,4 @@
-const StationStatus = ({ status }) => {
+const AvailabilityStatus = ({ status }) => {
   return (
     <span className={
       status === "Available"
@@ -16,4 +16,4 @@ const StationStatus = ({ status }) => {
   );
 };
 
-export default StationStatus;
+export default AvailabilityStatus;

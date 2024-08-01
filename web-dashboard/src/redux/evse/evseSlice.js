@@ -17,7 +17,7 @@ import {
 } from "redux/station/stationSlide";
 
 const StationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
-const stationStatusAPI = process.env.REACT_APP_STATION_STATUS_API_ENDPOINT;
+const StationStatusAPI = process.env.REACT_APP_STATION_STATUS_API_ENDPOINT;
 
 const evseEntityAdapter = createEntityAdapter({
   selectId: ({ station_id, evse_id }) => `${station_id},${evse_id}`,
@@ -102,7 +102,7 @@ export const evseAdd = createAsyncThunk(
       const body = { evse_id, charge_level, connector_type, price };
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.post(baseUrl, body, config);
-      dispatch(evseGetById({ stationId, evseId: data.id }));
+      dispatch(evseStateUpsertById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -122,8 +122,8 @@ export const evseUpdateById = createAsyncThunk(
       const baseUrl = `${StationAPI}/${stationId}/evses/${evseId}`;
       const body = { charge_level, connector_type, price };
       const config = await tokenConfig({ dispatch, getState });
-      await apiInstance.patch(baseUrl, body, config);
-      dispatch(evseGetById({ stationId, evseId }));
+      const { data } = await apiInstance.patch(baseUrl, body, config);
+      dispatch(evseStateUpsertById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -152,7 +152,7 @@ export const evseGetAllStatus = createAsyncThunk(
   async (_, { dispatch, getState }) => {
     try {
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.get(`${stationStatusAPI}/latest`, config);
+      const { data } = await apiInstance.get(`${StationStatusAPI}/latest`, config);
       const evses = data.map(({ station_id, evse_id, status }) => ({
         station_id, evse_id, status
       }));
@@ -199,7 +199,7 @@ export const evseGetStatusByStation = createAsyncThunk(
   `${evseSlice.name}/getStatusByStation`,
   async (stationId, { dispatch, getState }) => {
     try {
-      const baseUrl = `${stationStatusAPI}/latest/${stationId}`;
+      const baseUrl = `${StationStatusAPI}/latest/${stationId}`;
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(baseUrl, config);
       const evses = data.map(({ station_id, evse_id, status }) => ({
@@ -237,10 +237,12 @@ export const selectEvse = (state) => state[evseSlice.name];
 
 const evseSelectors = evseEntityAdapter.getSelectors(selectEvse);
 export const selectEvseList = evseSelectors.selectAll;
+
 export const selectEvseByStation = createSelector(
   [selectEvseList, (_, stationId) => stationId],
   (evses, stationId) => evses.filter(({ station_id }) => station_id === stationId),
 );
+
 export const selectEvseById = (state, compoundId) => {
   const { stationId: station_id, evseId: evse_id } = compoundId;
   const id = evseEntityAdapter.selectId({ station_id, evse_id });

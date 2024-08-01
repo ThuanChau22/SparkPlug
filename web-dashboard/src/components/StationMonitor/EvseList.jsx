@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { GooeyCircleLoader } from "react-loaders-kit";
 import {
-  CContainer,
   CCard,
   CCardBody,
   CListGroup,
   CListGroupItem,
 } from "@coreui/react";
 
-import EvseMonitorDetails from "./EvseMonitorDetails";
+import LoadingIndicator from "components/LoadingIndicator";
+import MonitorEvseListItem from "components/StationMonitor/EvseListItem";
 import {
   selectStationById,
 } from "redux/station/stationSlide";
@@ -18,19 +17,21 @@ import {
   selectEvseByStation,
 } from "redux/evse/evseSlice";
 
-const EvseMonitorList = ({ stationId, remoteStart, remoteStop }) => {
+const StationMonitorEvseList = ({ stationId, remoteStart, remoteStop }) => {
   const station = useSelector((state) => selectStationById(state, stationId));
   const evseList = useSelector((state) => selectEvseByStation(state, stationId));
+
   const [loading, setLoading] = useState(false);
+
   const dispatch = useDispatch();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    if (!station.evseDetailsLoaded) {
+    if (evseList.length === 0) {
       await dispatch(evseGetByStation(station.id)).unwrap();
     }
     setLoading(false);
-  }, [station, dispatch]);
+  }, [station, evseList, dispatch]);
 
   useEffect(() => {
     fetchData();
@@ -43,23 +44,12 @@ const EvseMonitorList = ({ stationId, remoteStart, remoteStop }) => {
     >
       <CCardBody className="p-0">
         {loading
-          ? (
-            <div
-              className="d-flex align-items-center"
-            >
-              <CContainer className="d-flex flex-row justify-content-center">
-                <GooeyCircleLoader
-                  color={["#f6b93b", "#5e22f0", "#ef5777"]}
-                  loading={true}
-                />
-              </CContainer>
-            </div>
-          )
+          ? <LoadingIndicator loading={loading} />
           : (
             <CListGroup className={evseList.length > 0 ? "mb-2" : ""}>
               {evseList.map(({ station_id, evse_id }) => (
                 <CListGroupItem key={`${station_id},${evse_id}`}>
-                  <EvseMonitorDetails
+                  <MonitorEvseListItem
                     stationId={station_id}
                     evseId={evse_id}
                     remoteStart={remoteStart}
@@ -75,4 +65,4 @@ const EvseMonitorList = ({ stationId, remoteStart, remoteStop }) => {
   );
 };
 
-export default EvseMonitorList;
+export default StationMonitorEvseList;

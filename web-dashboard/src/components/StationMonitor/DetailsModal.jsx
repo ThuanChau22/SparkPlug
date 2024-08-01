@@ -9,9 +9,9 @@ import {
   CModalBody,
 } from "@coreui/react";
 
-import EvseMonitorList from "components/EvseMonitorList";
-import StationEventList from "components/StationEventList";
-import StationStatus from "components/StationStatus";
+import AvailabilityStatus from "components/AvailabilityStatus";
+import StationMonitorEventList from "components/StationMonitor/EventList";
+import StationMonitorEvseList from "components/StationMonitor/EvseList";
 import {
   selectAuthRoleIsStaff,
   selectAuthAccessToken,
@@ -23,13 +23,20 @@ import {
   evseStateUpsertById,
 } from "redux/evse/evseSlice";
 
-const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
+const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
   const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
+
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const token = useSelector(selectAuthAccessToken);
   const station = useSelector((state) => selectStationById(state, stationId));
+
   const [eventMessages, setEventMessages] = useState([]);
-  const socket = useWebSocket(`${StationEventWS}`, {
+
+  const {
+    readyState,
+    lastJsonMessage,
+    sendJsonMessage,
+  } = useWebSocket(`${StationEventWS}`, {
     queryParams: { token },
     heartbeat: {
       message: "ping",
@@ -37,15 +44,9 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
       timeout: ms("60s"),
       interval: ms("30s"),
     },
-    shouldReconnect: ({ code }) => {
-      return code === 1006;
-    },
+    shouldReconnect: ({ code }) => code === 1006,
   });
-  const {
-    readyState,
-    lastJsonMessage,
-    sendJsonMessage,
-  } = socket;
+
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -103,23 +104,24 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
     >
       <CModalHeader className="mb-2">
         <CModalTitle>
-          {station.name} - <StationStatus status={station.status} />
+          {station.name} - <AvailabilityStatus status={station.status} />
         </CModalTitle>
       </CModalHeader>
       <p className="ps-3 mb-0">
         <span className="text-secondary" >Station ID: {station.id}</span>
-        {authIsAdmin &&
+        {authIsAdmin && (
           <span className="text-secondary float-end pe-3">
             Owner ID: {station.owner_id}
-          </span>}
+          </span>
+        )}
       </p>
       <CModalBody>
-        <EvseMonitorList
+        <StationMonitorEvseList
           stationId={stationId}
           remoteStart={remoteStart}
           remoteStop={remoteStop}
         />
-        <StationEventList
+        <StationMonitorEventList
           stationId={stationId}
           eventMessages={eventMessages}
           setEventMessages={setEventMessages}
@@ -129,4 +131,4 @@ const StationMonitorModal = ({ isOpen, onClose, stationId }) => {
   );
 };
 
-export default StationMonitorModal;
+export default StationMonitorDetailsModal;

@@ -21,6 +21,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
   const userId = useSelector(selectAuthUserId);
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
+
   const initialFormData = {
     name: "",
     ownerId: "",
@@ -33,6 +34,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
     country: "",
   };
   const [formData, setFormData] = useState(initialFormData);
+
   const dispatch = useDispatch();
 
   const handleInputChange = (e) => {

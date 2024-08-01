@@ -12,23 +12,20 @@ import {
 } from "@coreui/react";
 
 import {
-  userGetById,
   userUpdateById,
   userDeleteById,
   selectUserById,
+  selectUserRoleById,
 } from "redux/user/userSlide";
 
 const UserDetailsModal = ({ isOpen, onClose, userId }) => {
   const user = useSelector((state) => selectUserById(state, userId));
+  const userRole = useSelector((state) => selectUserRoleById(state, userId));
+
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
-  const dispatch = useDispatch();
 
-  useEffect(() => {
-    if (!user.roles) {
-      dispatch(userGetById(user.id));
-    }
-  }, [user, dispatch]);
+  const dispatch = useDispatch();
 
   const InfoModal = () => (
     <>
@@ -67,10 +64,12 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
         </span>
         </p>
         <p>
-          Role: {user.roles?.reduce((s, role) => {
-            role = role.charAt(0).toUpperCase() + role.slice(1);
-            return s ? `${s}, ${role}` : role;
-          }, "")}
+          Role: {
+            userRole.reduce((s, role) => {
+              role = role.charAt(0).toUpperCase() + role.slice(1);
+              return s ? `${s}, ${role}` : role;
+            }, "")
+          }
         </p>
         <p>Registered on: {new Date(user.created_at).toLocaleString("en-US")}</p>
       </CModalBody>
