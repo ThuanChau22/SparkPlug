@@ -114,14 +114,15 @@ const App = () => {
     document.body.className = theme;
   }, [theme]);
 
+  // TODO: Change background color
   return (
-    <div className="bg-light min-vh-100 d-flex flex-row align-items-center"> // TODO: Change background color
+    <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
       {!authenticated
         ? <LoadingIndicator loading={!authenticated} />
         : (
           <>
             <Sidebar />
-            <div className=`min-vh-100 d-flex flex-column wrapper ${theme}`>
+            <div className={`min-vh-100 d-flex flex-column wrapper ${theme}`}>
               <Header theme={theme} toggleTheme={toggleTheme} />
               <div className="body d-flex flex-column flex-grow-1">
                 <Outlet context={{ theme, toggleTheme }} />

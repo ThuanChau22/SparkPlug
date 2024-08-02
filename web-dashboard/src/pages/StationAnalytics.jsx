@@ -161,7 +161,6 @@ const StationAnalytics = () => {
         />
       )}
     </CCard >
-    </div>
   );
 };
 

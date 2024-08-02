@@ -190,7 +190,6 @@ const StationManagement = () => {
         />
       )}
     </CCard>
-    </div>
   );
 };
 
