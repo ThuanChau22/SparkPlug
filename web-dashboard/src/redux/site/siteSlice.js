@@ -27,8 +27,8 @@ export const siteSlice = createSlice({
   name: "site",
   initialState,
   reducers: {
-    siteStateSetAll(state, { payload }) {
-      siteEntityAdapter.setAll(state, payload);
+    siteStateSetMany(state, { payload }) {
+      siteEntityAdapter.setMany(state, payload);
     },
     siteStateSetById(state, { payload }) {
       siteEntityAdapter.setOne(state, payload);
@@ -64,7 +64,7 @@ export const siteSlice = createSlice({
 });
 
 export const {
-  siteStateSetAll,
+  siteStateSetMany,
   siteStateSetById,
   siteStateUpdateById,
   siteStateDeleteById,
@@ -74,13 +74,13 @@ export const {
   siteStateClear,
 } = siteSlice.actions;
 
-export const siteGetAll = createAsyncThunk(
-  `${siteSlice.name}/getAll`,
+export const siteGetList = createAsyncThunk(
+  `${siteSlice.name}/getList`,
   async (query = "", { dispatch, getState }) => {
     try {
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(`${SiteAPI}${query}`, config);
-      dispatch(siteStateSetAll(data));
+      dispatch(siteStateSetMany(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -116,7 +116,7 @@ export const siteAdd = createAsyncThunk(
       };
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.post(`${SiteAPI}`, body, config);
-      dispatch(siteGetById(data.id));
+      dispatch(siteStateSetById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -138,8 +138,8 @@ export const siteUpdateById = createAsyncThunk(
         street_address, city, state, zip_code, country,
       };
       const config = await tokenConfig({ dispatch, getState });
-      await apiInstance.patch(`${SiteAPI}/${id}`, body, config);
-      dispatch(siteGetById(id));
+      const { data } = await apiInstance.patch(`${SiteAPI}/${id}`, body, config);
+      dispatch(siteStateUpdateById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -162,6 +162,7 @@ export const siteDeleteById = createAsyncThunk(
 export const selectSite = (state) => state[siteSlice.name];
 
 const siteSelectors = siteEntityAdapter.getSelectors(selectSite);
+export const selectSiteIds = siteSelectors.selectIds;
 export const selectSiteList = siteSelectors.selectAll;
 export const selectSiteById = siteSelectors.selectById;
 

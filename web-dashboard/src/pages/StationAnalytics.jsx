@@ -1,8 +1,6 @@
 import { useCallback, useState, useEffect, useMemo, createRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { GooeyCircleLoader } from "react-loaders-kit";
 import {
-  CContainer,
   CRow,
   CCol,
   CCard,
@@ -13,14 +11,15 @@ import {
 } from "@coreui/react";
 
 import { stationIcon } from "assets/mapIcons";
+import LoadingIndicator from "components/LoadingIndicator";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
-import StationAnalyticsModal from "components/StationAnalyticsModal";
 import StationMarker from "components/StationMarker";
 import StickyContainer from "components/StickyContainer";
+import StationAnalyticsDetailsModal from "components/StationAnalytics/DetailsModal";
 import { selectHeaderHeight } from "redux/header/headerSlice";
 import {
-  stationGetAll,
+  stationGetList,
   stationSetStateSelected,
   stationSetCitySelected,
   stationSetZipCodeSelected,
@@ -31,11 +30,11 @@ import {
   selectCityOptions,
   selectSelectedZipCode,
   selectZipCodeOptions,
-} from "redux/station/stationSlide";
+} from "redux/station/stationSlice";
 
 const StationAnalytics = () => {
-  const titleRef = createRef();
   const filterRef = createRef();
+
   const headerHeight = useSelector(selectHeaderHeight);
   const stationList = useSelector(selectStationList);
   const stationSelectedState = useSelector(selectSelectedState);
@@ -44,34 +43,31 @@ const StationAnalytics = () => {
   const stationCityOptions = useSelector(selectCityOptions);
   const stationSelectedZipCode = useSelector(selectSelectedZipCode);
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
-  const [listHeight, setListHeight] = useState(window.innerHeight);
-  const [mapHeight, setMapHeight] = useState(window.innerHeight);
+
   const [loading, setLoading] = useState(false);
+
+  const [mapHeight, setMapHeight] = useState(window.innerHeight);
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
-  const [selectedStationId, setSelectedStation] = useState(null);
+  const [stationId, setStationId] = useState(null);
+
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    const titleHeight = titleRef.current.offsetHeight;
-    setListHeight(window.innerHeight - (headerHeight + titleHeight));
-  }, [headerHeight, titleRef]);
-
-  useEffect(() => {
-    const filterHeight = filterRef.current.offsetHeight;
-    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
-  }, [headerHeight, filterRef]);
-
   const fetchData = useCallback(async () => {
-    setLoading(true);
     if (stationList.length === 0) {
-      await dispatch(stationGetAll()).unwrap();
+      setLoading(true);
+      await dispatch(stationGetList()).unwrap();
+      setLoading(false);
     }
-    setLoading(false);
-  }, [stationList, dispatch]);
+  }, [stationList.length, dispatch]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const handleViewStation = (stationId) => {
+    setStationId(stationId);
+    setIsAnalyticsModalOpen(true);
+  };
 
   const handleFilter = (state, city, zipCode) => {
     const params = [];
@@ -79,16 +75,16 @@ const StationAnalytics = () => {
     if (city !== "All") params.push(`city=${city}`);
     if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
     const query = params.length > 0 ? `?${params.join("&")}` : "";
-    dispatch(stationGetAll(query));
+    dispatch(stationGetList(query));
     dispatch(stationSetStateSelected(state));
     dispatch(stationSetCitySelected(city));
     dispatch(stationSetZipCodeSelected(zipCode));
   };
 
-  const handleViewStation = (stationId) => {
-    setSelectedStation(stationId);
-    setIsAnalyticsModalOpen(true);
-  };
+  useEffect(() => {
+    const filterHeight = filterRef.current.offsetHeight;
+    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
+  }, [headerHeight, filterRef]);
 
   const displayMap = useMemo(() => {
     const renderStationMarker = station => (
@@ -110,14 +106,12 @@ const StationAnalytics = () => {
   }, [stationList, mapHeight]);
 
   return (
-    <div>
-    <CCard className="border border-top-0 rounded-0 card">
+    <CCard className="flex-grow-1 border border-top-0 rounded-0 card">
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
-          <CCardBody className="pt-0 card">
+          <CCardBody className="d-flex flex-column h-100 pt-0 card">
             <StickyContainer
-              ref={titleRef}
-              className="py-3 card"
+              className="bg-white py-3 card" // TODO: Change background color
               top={`${headerHeight}px`}
             >
               <CCardTitle>
@@ -125,19 +119,7 @@ const StationAnalytics = () => {
               </CCardTitle>
             </StickyContainer>
             {loading
-              ? (
-                <div
-                  className="d-flex align-items-center card"
-                  style={{ height: `${listHeight}px` }}
-                >
-                  <CContainer className="d-flex flex-row justify-content-center card">
-                    <GooeyCircleLoader
-                      color={["#f6b93b", "#5e22f0", "#ef5777"]}
-                      loading={true}
-                    />
-                  </CContainer>
-                </div>
-              )
+              ? <LoadingIndicator loading={loading} />
               : (
                 <CListGroup>
                   {stationList.map(({ id, name }) => (
@@ -171,15 +153,13 @@ const StationAnalytics = () => {
           </StickyContainer>
         </CCol>
       </CRow>
-      {
-        isAnalyticsModalOpen && (
-          <StationAnalyticsModal
-            isOpen={isAnalyticsModalOpen}
-            onClose={() => setIsAnalyticsModalOpen(false)}
-            stationId={selectedStationId}
-          />
-        )
-      }
+      {isAnalyticsModalOpen && (
+        <StationAnalyticsDetailsModal
+          isOpen={isAnalyticsModalOpen}
+          onClose={() => setIsAnalyticsModalOpen(false)}
+          stationId={stationId}
+        />
+      )}
     </CCard >
     </div>
   );

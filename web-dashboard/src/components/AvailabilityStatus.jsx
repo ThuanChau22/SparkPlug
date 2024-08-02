@@ -1,4 +1,4 @@
-const StationStatus = ({ status }) => {
+const AvailabilityStatus = ({ status }) => {
   return (
     <span className={
       status === "Available"
@@ -11,9 +11,9 @@ const StationStatus = ({ status }) => {
               ? "text-danger"
               : "text-secondary"
     }>
-      {status}
+      {status || "Unknown"}
     </span>
   );
 };
 
-export default StationStatus;
+export default AvailabilityStatus;

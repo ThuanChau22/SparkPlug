@@ -1,8 +1,10 @@
 DBUtils==3.0.3
 Flask==3.0.0
 Flask-Cors==4.0.0
+geoip2==4.8.0
 gunicorn==20.1.0
 pymongo==4.6.1
 PyMySQL==1.1.0
 python-dotenv==1.0.0
 requests==2.31.0
+SQLAlchemy==2.0.31

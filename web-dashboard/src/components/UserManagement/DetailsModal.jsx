@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -11,24 +11,37 @@ import {
   CFormSelect,
 } from "@coreui/react";
 
+import LoadingIndicator from "components/LoadingIndicator";
 import {
   userGetById,
   userUpdateById,
   userDeleteById,
   selectUserById,
-} from "redux/user/userSlide";
+  selectUserRoleById,
+} from "redux/user/userSlice";
 
 const UserDetailsModal = ({ isOpen, onClose, userId }) => {
   const user = useSelector((state) => selectUserById(state, userId));
+  const userRole = useSelector((state) => selectUserRoleById(state, userId));
+
+  const [loading, setLoading] = useState(false);
+
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
+
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    if (!user.roles) {
-      dispatch(userGetById(user.id));
+  const fetchData = useCallback(async () => {
+    if (!user) {
+      setLoading(true);
+      await dispatch(userGetById(userId)).unwrap();
+      setLoading(false);
     }
-  }, [user, dispatch]);
+  }, [userId, user, dispatch]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const InfoModal = () => (
     <>
@@ -67,10 +80,12 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
         </span>
         </p>
         <p>
-          Role: {user.roles?.reduce((s, role) => {
-            role = role.charAt(0).toUpperCase() + role.slice(1);
-            return s ? `${s}, ${role}` : role;
-          }, "")}
+          Role: {
+            userRole.reduce((s, role) => {
+              role = role.charAt(0).toUpperCase() + role.slice(1);
+              return s ? `${s}, ${role}` : role;
+            }, "")
+          }
         </p>
         <p>Registered on: {new Date(user.created_at).toLocaleString("en-US")}</p>
       </CModalBody>
@@ -216,13 +231,19 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
       onClose={onClose}
     >
       <CModalHeader className="mb-2">
-        <CModalTitle>{user.name}</CModalTitle>
+        {!loading &&
+          <CModalTitle>
+            {user.name}
+          </CModalTitle>
+        }
       </CModalHeader>
-      {isEdit
-        ? <EditModal />
-        : isDelete
-          ? <DeleteModal />
-          : <InfoModal />
+      {loading
+        ? <LoadingIndicator loading={loading} />
+        : isEdit
+          ? <EditModal />
+          : isDelete
+            ? <DeleteModal />
+            : <InfoModal />
       }
     </CModal>
   );

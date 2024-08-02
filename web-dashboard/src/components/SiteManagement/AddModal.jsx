@@ -15,12 +15,13 @@ import {
   selectAuthRoleIsStaff,
   selectAuthRoleIsOwner,
 } from "redux/auth/authSlice";
-import { siteAdd } from "redux/site/siteSlide";
+import { siteAdd } from "redux/site/siteSlice";
 
 const SiteAddModal = ({ isOpen, onClose }) => {
   const userId = useSelector(selectAuthUserId);
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
+
   const initialFormData = {
     name: "",
     ownerId: "",
@@ -33,6 +34,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
     country: "",
   };
   const [formData, setFormData] = useState(initialFormData);
+
   const dispatch = useDispatch();
 
   const handleInputChange = (e) => {

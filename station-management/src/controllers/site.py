@@ -1,75 +1,108 @@
-import requests
 from flask import request
 
 # Internal Modules
-from src.config import SQL_API_ENDPOINT
-from src import utils
+from src.repositories import site
+from src.repositories.utils import transaction
+from src.utils import handle_error
 
 
-def read_sites():
-    args = request.args.to_dict()
-    if request.auth["role"] == "owner":
-        args["owner_id"] = request.auth["user_id"]
+def get_sites():
+    def session(connection):
+        filter = request.args.to_dict()
+        if request.auth["role"] == "owner":
+            filter["owner_id"] = request.auth["user_id"]
+        limit = filter.get("limit")
+        limit = int(limit) if limit else None
+        return site.get_sites(connection, filter, limit=limit)
 
-    response = requests.get(
-        url=f"{SQL_API_ENDPOINT}/sites",
-        params=args,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
-
-    sites = response.json()
-    sites = utils.convert_coords_to_float(sites)
-
-    return sites
+    try:
+        return transaction(session), 200
+    except Exception as e:
+        return handle_error(e)
 
 
-def read_site_by_id(site_id):
-    args = request.args.to_dict()
-    if request.auth["role"] == "owner":
-        args["owner_id"] = request.auth["user_id"]
+def get_site_by_id(site_id):
+    def session(connection):
+        site_data = site.get_site_by_id(connection, site_id)
+        if not site_data:
+            raise Exception("Site not found", 404)
+        return site_data
 
-    response = requests.get(
-        url=f"{SQL_API_ENDPOINT}/sites/{site_id}",
-        params=args,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
-
-    sites = response.json()
-    sites = utils.convert_coords_to_float(sites)
-
-    return sites[0]
+    try:
+        return transaction(session), 200
+    except Exception as e:
+        return handle_error(e)
 
 
 def create_site():
-    data = request.json
-    if request.auth["role"] == "owner":
-        data["owner_id"] = request.auth["user_id"]
+    def session(connection):
+        body = request.json
 
-    response = requests.post(
-        url=f"{SQL_API_ENDPOINT}/sites",
-        json=data,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+        if request.auth["role"] == "owner":
+            body["owner_id"] = request.auth["user_id"]
 
-    return response.json()
+        required_fields = (
+            "name",
+            "owner_id",
+            "latitude",
+            "longitude",
+            "street_address",
+            "city",
+            "state",
+            "zip_code",
+            "country",
+        )
+        for field in required_fields:
+            if not body.get(field):
+                raise Exception(f"{field} is required", 400)
+
+        site_id = site.create_site(connection, body)
+        return site.get_site_by_id(connection, site_id)
+
+    try:
+        return transaction(session, modify=True), 201
+    except Exception as e:
+        return handle_error(e)
 
 
 def update_site(site_id):
-    data = request.json
+    def session(connection):
+        is_owner = request.auth["role"] == "owner"
+        user_id = request.auth["user_id"]
+        site_data = site.get_site_by_id(connection, site_id)
+        if not site_data:
+            raise Exception("Site not found", 404)
+        if is_owner and user_id != site_data["owner_id"]:
+            raise Exception("Access denied", 403)
 
-    response = requests.patch(
-        url=f"{SQL_API_ENDPOINT}/sites/{site_id}",
-        json=data,
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+        body = request.json
+        if is_owner and body.get("owner_id"):
+            del body["owner_id"]
 
-    return response.json()
+        if not site.update_site(connection, site_id, body):
+            raise Exception("Site not updated", 400)
+        return site.get_site_by_id(connection, site_id)
+
+    try:
+        return transaction(session, modify=True), 200
+    except Exception as e:
+        return handle_error(e)
 
 
 def delete_site(site_id):
-    response = requests.delete(
-        url=f"{SQL_API_ENDPOINT}/sites/{site_id}",
-        headers={"Authorization": request.headers.get("Authorization")},
-    )
+    def session(connection):
+        is_owner = request.auth["role"] == "owner"
+        user_id = request.auth["user_id"]
+        site_data = site.get_site_by_id(connection, site_id)
+        if not site_data:
+            raise Exception("Site not found", 404)
+        if is_owner and user_id != site_data["owner_id"]:
+            raise Exception("Access denied", 403)
+        if not site.delete_site(connection, site_id):
+            raise Exception("Site not deleted", 400)
+        return {}
 
-    return response.json()
+    try:
+        return transaction(session, modify=True), 204
+    except Exception as e:
+        return handle_error(e)

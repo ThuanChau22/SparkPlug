@@ -2,12 +2,11 @@ import { mysql } from "../config.js";
 
 const User = {};
 
-User.getByRFID = async (rfId) => {
+User.hasRFID = async (rfid) => {
   try {
-    const field = "id, email, name, rfid, status, created_at, updated_at";
-    const query = `SELECT ${field} FROM User JOIN RFID ON id = driver_id WHERE rfid = ?`;
-    const [[result]] = await mysql.query(query, [rfId]);
-    return result;
+    const query = `SELECT EXISTS(SELECT * FROM RFID WHERE rfid = ?) as hasRFID`;
+    const [[{ hasRFID }]] = await mysql.query(query, [rfid]);
+    return hasRFID;
   } catch (error) {
     console.log(error);
   }

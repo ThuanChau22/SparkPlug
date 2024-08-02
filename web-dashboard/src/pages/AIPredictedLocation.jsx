@@ -18,12 +18,12 @@ import { stationIcon } from "assets/mapIcons";
 import { newStationIcon } from "assets/mapIcons";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
-import StationAnalyticsModal from "components/StationAnalyticsModal";
+import StationAnalyticsDetailsModal from "components/StationAnalytics/DetailsModal";
 import StationMarker from "components/StationMarker";
 import StickyContainer from "components/StickyContainer";
 import { selectHeaderHeight } from "redux/header/headerSlice";
 import {
-  stationGetAll,
+  stationGetList,
   stationSetStateSelected,
   stationSetCitySelected,
   stationSetZipCodeSelected,
@@ -34,7 +34,7 @@ import {
   selectCityOptions,
   selectSelectedZipCode,
   selectZipCodeOptions,
-} from "redux/station/stationSlide";
+} from "redux/station/stationSlice";
 
 const AIPredictedLocation = () => {
   const titleRef = createRef();
@@ -53,25 +53,25 @@ const AIPredictedLocation = () => {
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [selectedStationId, setSelectedStation] = useState(null);
   const dispatch = useDispatch();
-  
+
 
   const [newStations, setNewStations] = useState([]);
 
 
   // New stations needed
-  const [apiData, setApiData] = useState({stations: [], summary: {new_stations: 0, new_stations_ids: []}});
+  const [apiData, setApiData] = useState({ stations: [], summary: { new_stations: 0, new_stations_ids: [] } });
 
 
 
   const [zipCodeInput, setZipCodeInput] = useState('');
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
     if (stationList.length === 0) {
-      await dispatch(stationGetAll()).unwrap();
+      setLoading(true);
+      await dispatch(stationGetList()).unwrap();
+      setLoading(false);
     }
-    setLoading(false);
-  }, [stationList, dispatch]);
+  }, [stationList.length, dispatch]);
 
   useEffect(() => {
     fetchData();
@@ -83,24 +83,24 @@ const AIPredictedLocation = () => {
     if (city !== "All") params.push(`city=${city}`);
     if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
     const query = params.length > 0 ? `?${params.join("&")}` : "";
-    dispatch(stationGetAll(query));
+    dispatch(stationGetList(query));
     dispatch(stationSetStateSelected(state));
     dispatch(stationSetCitySelected(city));
     dispatch(stationSetZipCodeSelected(zipCode));
   }, [dispatch]);
 
   const handleSearch = async () => {
-      const zipCode = parseInt(zipCodeInput, 10);
-      const url = `${process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT}/ai_planning/${zipCode}`;
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
-        setApiData(data); // Set the existing stations
-        // Hypothetical code to set new stations, adjust as per your actual data structure
-        setNewStations(data.new_stations); 
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-      }
+    const zipCode = parseInt(zipCodeInput, 10);
+    const url = `${process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT}/ai_planning/${zipCode}`;
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      setApiData(data); // Set the existing stations
+      // Hypothetical code to set new stations, adjust as per your actual data structure
+      setNewStations(data.new_stations);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+    }
   };
 
   const displayMap = useMemo(() => {
@@ -166,13 +166,13 @@ const AIPredictedLocation = () => {
       </CRow>
       <CRow className="justify-content-center">
         <CCol md={6} lg={7}>
-            <StickyContainer top={`${headerHeight}px`}>
-                {displayMap} 
-            </StickyContainer>
+          <StickyContainer top={`${headerHeight}px`}>
+            {displayMap}
+          </StickyContainer>
         </CCol>
-    </CRow>
+      </CRow>
       {isAnalyticsModalOpen && (
-        <StationAnalyticsModal
+        <StationAnalyticsDetailsModal
           isOpen={isAnalyticsModalOpen}
           onClose={() => setIsAnalyticsModalOpen(false)}
           stationId={selectedStationId}

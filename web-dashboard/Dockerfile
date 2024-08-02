@@ -1,11 +1,11 @@
-FROM node:lts-alpine as development
+FROM node:lts-alpine AS development
 WORKDIR /app
 COPY package*.json .
 RUN npm ci
 COPY . .
 CMD ["npm", "start"]
 
-FROM development as build
+FROM development AS build
 RUN npm run build
 
 FROM nginx:stable-alpine

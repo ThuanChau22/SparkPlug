@@ -1,9 +1,7 @@
 import { useCallback, useState, useEffect, useMemo, createRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { GooeyCircleLoader } from "react-loaders-kit";
 import {
   CButton,
-  CContainer,
   CRow,
   CCol,
   CCard,
@@ -14,15 +12,16 @@ import {
 } from "@coreui/react";
 
 import { stationIcon } from "assets/mapIcons";
+import LoadingIndicator from "components/LoadingIndicator";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
-import StationAddModal from "components/StationAddModal";
-import StationDetailsModal from "components/StationDetailsModal";
 import StationMarker from "components/StationMarker";
 import StickyContainer from "components/StickyContainer";
+import StationAddModal from "components/StationManagement/AddModal";
+import StationDetailsModal from "components/StationManagement/DetailsModal";
 import { selectHeaderHeight } from "redux/header/headerSlice";
 import {
-  stationGetAll,
+  stationGetList,
   stationSetStateSelected,
   stationSetCitySelected,
   stationSetZipCodeSelected,
@@ -33,11 +32,11 @@ import {
   selectCityOptions,
   selectSelectedZipCode,
   selectZipCodeOptions,
-} from "redux/station/stationSlide";
+} from "redux/station/stationSlice";
 
 const StationManagement = () => {
-  const titleRef = createRef();
   const filterRef = createRef();
+
   const headerHeight = useSelector(selectHeaderHeight);
   const stationList = useSelector(selectStationList);
   const stationSelectedState = useSelector(selectSelectedState);
@@ -46,39 +45,34 @@ const StationManagement = () => {
   const stationCityOptions = useSelector(selectCityOptions);
   const stationSelectedZipCode = useSelector(selectSelectedZipCode);
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
-  const [listHeight, setListHeight] = useState(window.innerHeight);
-  const [mapHeight, setMapHeight] = useState(window.innerHeight);
-  const [isMount, setIsMount] = useState(true);
-  const [numberOfStations, setNumberOfStations] = useState(0);
+
   const [loading, setLoading] = useState(false);
+
+  const [mapHeight, setMapHeight] = useState(window.innerHeight);
+  const [setBound, setSetBound] = useState(true);
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedStationId, setSelectedStationId] = useState(null);
+  const [stationId, setStationId] = useState(null);
+
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    const titleHeight = titleRef.current.offsetHeight;
-    setListHeight(window.innerHeight - (headerHeight + titleHeight));
-  }, [headerHeight, titleRef]);
-
-  useEffect(() => {
-    const filterHeight = filterRef.current.offsetHeight;
-    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
-  }, [headerHeight, filterRef]);
-
   const fetchData = useCallback(async () => {
-    setIsMount(false);
-    setNumberOfStations(stationList.length);
-    setLoading(true);
     if (stationList.length === 0) {
-      await dispatch(stationGetAll()).unwrap();
+      setLoading(true);
+      await dispatch(stationGetList()).unwrap();
+      setLoading(false);
     }
-    setLoading(false);
-  }, [stationList, dispatch]);
+  }, [stationList.length, dispatch]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const handleViewStation = (stationId) => {
+    setStationId(stationId);
+    setIsDetailsModalOpen(true);
+  };
 
   const handleFilter = (state, city, zipCode) => {
     const params = [];
@@ -86,16 +80,26 @@ const StationManagement = () => {
     if (city !== "All") params.push(`city=${city}`);
     if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
     const query = params.length > 0 ? `?${params.join("&")}` : "";
-    dispatch(stationGetAll(query));
+    dispatch(stationGetList(query));
     dispatch(stationSetStateSelected(state));
     dispatch(stationSetCitySelected(city));
     dispatch(stationSetZipCodeSelected(zipCode));
   };
 
-  const handleViewStation = (stationId) => {
-    setSelectedStationId(stationId);
-    setIsDetailsModalOpen(true);
-  };
+  useEffect(() => {
+    const filterHeight = filterRef.current.offsetHeight;
+    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
+  }, [headerHeight, filterRef]);
+
+  useEffect(() => {
+    setSetBound(true);
+  }, [stationList.length]);
+
+  useEffect(() => {
+    if (setBound) {
+      setSetBound(false);
+    }
+  }, [setBound]);
 
   const displayMap = useMemo(() => {
     const renderStationMarker = station => (
@@ -111,21 +115,19 @@ const StationManagement = () => {
         <MapContainer
           locations={stationList}
           renderMarker={renderStationMarker}
-          setBound={isMount || numberOfStations !== stationList.length}
+          setBound={setBound}
         />
       </div>
     );
-  }, [stationList, mapHeight, isMount, numberOfStations]);
+  }, [stationList, mapHeight, setBound]);
 
   return (
-    <div>
-    <CCard className="border border-top-0 rounded-0 card">
+    <CCard className="flex-grow-1 border border-top-0 rounded-0 card">
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
-          <CCardBody className="pt-0 card">
+          <CCardBody className="d-flex flex-column h-100 pt-0 card">
             <StickyContainer
-              ref={titleRef}
-              className="py-3 card"
+              className="bg-white py-3 card" // TODO: Change background color
               top={`${headerHeight}px`}
             >
               <CCardTitle className="d-flex flex-row justify-content-between align-items-center card">
@@ -140,19 +142,7 @@ const StationManagement = () => {
               </CCardTitle>
             </StickyContainer>
             {loading
-              ? (
-                <div
-                  className="d-flex align-items-center"
-                  style={{ height: `${listHeight}px` }}
-                >
-                  <CContainer className="d-flex flex-row justify-content-center card">
-                    <GooeyCircleLoader
-                      color={["#f6b93b", "#5e22f0", "#ef5777"]}
-                      loading={true}
-                    />
-                  </CContainer>
-                </div>
-              )
+              ? <LoadingIndicator loading={loading} />
               : (
                 <CListGroup>
                   {stationList.map(({ id, name }) => (
@@ -196,7 +186,7 @@ const StationManagement = () => {
         <StationDetailsModal
           isOpen={isDetailsModalOpen}
           onClose={() => setIsDetailsModalOpen(false)}
-          stationId={selectedStationId}
+          stationId={stationId}
         />
       )}
     </CCard>

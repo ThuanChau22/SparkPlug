@@ -1,42 +1,52 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ms from "ms";
 import { CButton } from "@coreui/react";
 import { EvStation } from '@mui/icons-material';
 
-import StationStatus from "components/StationStatus";
+import AvailabilityStatus from "components/AvailabilityStatus";
 import {
-  evseStateUpsertById,
-  selectEvseById,
-} from "redux/evse/evseSlice";
+  evseStatusStateUpsertById,
+  selectEvseStatusById,
+} from "redux/evse/evseStatusSlice";
 
-const EvseMonitorDetails = ({ stationId, evseId, remoteStart, remoteStop }) => {
-  const id = { stationId, evseId };
-  const evse = useSelector((state) => selectEvseById(state, id));
+const StationMonitorEvseListItem = ({ stationId, evseId, remoteStart, remoteStop }) => {
+  const evseStatus = useSelector((state) => selectEvseStatusById(state, {
+    stationId,
+    evseId,
+  }));
+
   const meterTimeout = useRef(0)
-  const [meterValue, setMeterValue] = useState(evse.meterValue || 0);
+
+  const [meterValue, setMeterValue] = useState(evseStatus?.meterValue || 0);
+
+  const isDisabled = useMemo(()=>{
+    return !["Available", "Occupied"].includes(evseStatus?.status);
+  },[evseStatus]);
+
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (evse.meterValue) {
-      setMeterValue(evse.meterValue);
+    if (evseStatus?.meterValue) {
+      setMeterValue(evseStatus.meterValue);
       clearTimeout(meterTimeout.current);
       meterTimeout.current = setTimeout(() => {
         setMeterValue(0);
-        dispatch(evseStateUpsertById({
-          station_id: evse.station_id,
-          evse_id: evse.evse_id,
+        dispatch(evseStatusStateUpsertById({
+          station_id: evseStatus.station_id,
+          evse_id: evseStatus.evse_id,
           meterValue: 0,
         }));
       }, ms("5s"));
     }
-  }, [evse, meterTimeout, dispatch]);
+  }, [evseStatus, meterTimeout, dispatch]);
+
   return (
     <div className="d-flex justify-content-between">
       <p className="text-secondary my-auto">
         <span>EVSE ID: {evseId} - </span>
         <span className="fw-medium">
-          <StationStatus status={evse.status} />
+          <AvailabilityStatus status={evseStatus?.status} />
         </span>
       </p>
       <div className="d-flex align-items-center">
@@ -49,7 +59,7 @@ const EvseMonitorDetails = ({ stationId, evseId, remoteStart, remoteStop }) => {
           variant="outline"
           color="success"
           onClick={() => remoteStart(stationId, evseId)}
-          disabled={evse.status === "Unavailable"}
+          disabled={isDisabled}
         >
           Remote Start
         </CButton>
@@ -57,7 +67,7 @@ const EvseMonitorDetails = ({ stationId, evseId, remoteStart, remoteStop }) => {
           variant="outline"
           color="info"
           onClick={() => remoteStop(stationId, evseId)}
-          disabled={evse.status === "Unavailable"}
+          disabled={isDisabled}
         >
           Remote Stop
         </CButton>
@@ -66,4 +76,4 @@ const EvseMonitorDetails = ({ stationId, evseId, remoteStart, remoteStop }) => {
   );
 };
 
-export default EvseMonitorDetails;
+export default StationMonitorEvseListItem;

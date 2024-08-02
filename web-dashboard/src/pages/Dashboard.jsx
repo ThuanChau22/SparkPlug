@@ -74,7 +74,7 @@ import { useSelector } from "react-redux";
 
 import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
-import { selectStationById } from "redux/station/stationSlide";
+import { selectStationById } from "redux/station/stationSlice";
 
 
 Chart.register(ArcElement, Tooltip, Legend);

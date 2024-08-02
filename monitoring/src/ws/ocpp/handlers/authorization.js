@@ -5,7 +5,7 @@ import { clients } from "../server.js";
 
 const authorizeWithRFID = async (client, idToken) => {
   const response = { idTokenInfo: { status: "Invalid" } };
-  if (await User.getByRFID(idToken.idToken)) {
+  if (await User.hasRFID(idToken.idToken)) {
     const { idTokenToTransactionId } = clients.get(client.identity);
     const hashedIdToken = cryptoJs.SHA256(JSON.stringify(idToken)).toString();
     if (idTokenToTransactionId.has(hashedIdToken)) {

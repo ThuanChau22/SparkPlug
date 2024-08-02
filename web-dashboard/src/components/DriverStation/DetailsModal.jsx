@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { GooeyCircleLoader } from "react-loaders-kit";
 import { CChart } from "@coreui/react-chartjs";
 import {
-  CContainer,
   CForm,
   CFormInput,
   CFormSelect,
@@ -15,14 +13,17 @@ import {
   CModalBody,
 } from "@coreui/react";
 
+import LoadingIndicator from "components/LoadingIndicator";
 import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
-import { selectStationById } from "redux/station/stationSlide";
+import { selectStationById } from "redux/station/stationSlice";
 
-const DriverStationModal = ({ isOpen, onClose, stationId }) => {
+const DriverStationDetailsModal = ({ isOpen, onClose, stationId }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
+
   const station = useSelector((state) => selectStationById(state, stationId));
   const token = useSelector(selectAuthAccessToken);
+
   const [analyticsData, setAnalyticsData] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -117,17 +118,11 @@ const DriverStationModal = ({ isOpen, onClose, stationId }) => {
             <CChart type="bar" data={analyticsData.peak_time} />
           )
           : (
-            <CContainer className="d-flex flex-row justify-content-center">
-              <GooeyCircleLoader
-                className="mx-auto"
-                color={["#f6b93b", "#5e22f0", "#ef5777"]}
-                loading={true}
-              />
-            </CContainer>
+            <LoadingIndicator />
           )}
       </CModalBody>
     </CModal>
   );
 };
 
-export default DriverStationModal;
+export default DriverStationDetailsModal;

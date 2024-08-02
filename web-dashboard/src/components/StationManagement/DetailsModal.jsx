@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -8,32 +8,62 @@ import {
   CModalBody,
   CForm,
   CFormInput,
+  CFormSelect,
 } from "@coreui/react";
 
+import EvseManagement from "components/StationManagement/EvseManagement";
+import LoadingIndicator from "components/LoadingIndicator";
 import {
-  selectAuthUserId,
   selectAuthRoleIsStaff,
-  selectAuthRoleIsOwner,
 } from "redux/auth/authSlice";
 import {
-  siteUpdateById,
-  siteDeleteById,
-  selectSiteById,
-} from "redux/site/siteSlide";
+  siteGetList,
+  selectSiteIds,
+} from "redux/site/siteSlice";
+import {
+  stationGetById,
+  stationUpdateById,
+  stationDeleteById,
+  selectStationById,
+} from "redux/station/stationSlice";
 
-const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
-  const userId = useSelector(selectAuthUserId);
+const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
-  const authIsOwner = useSelector(selectAuthRoleIsOwner);
-  const site = useSelector((state) => selectSiteById(state, siteId));
+  const siteIds = useSelector(selectSiteIds);
+  const station = useSelector((state) => selectStationById(state, stationId));
+
+  const [loading, setLoading] = useState(false);
+
+  const [siteOptions, setSiteOptions] = useState([]);
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
+
   const dispatch = useDispatch();
+
+  const fetchData = useCallback(async () => {
+    if (!station) {
+      setLoading(true);
+      await dispatch(stationGetById(stationId)).unwrap();
+      setLoading(false);
+    }
+  }, [stationId, station, dispatch]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (siteIds.length === 0) {
+      dispatch(siteGetList());
+    } else {
+      setSiteOptions(siteIds);
+    }
+  }, [siteIds, dispatch]);
 
   const InfoModal = () => (
     <>
       <div className="d-flex justify-content-between">
-        <small className="text-secondary ps-3 my-auto">Site ID: {site.id}</small>
+        <small className="text-secondary ps-3 my-auto">Station ID: {station.id}</small>
         <div>
           <CButton
             className="me-2"
@@ -53,17 +83,19 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
           </CButton>
         </div>
       </div>
-      <CModalBody className="pt-1">
-        {authIsAdmin && <p>Owner ID: {site.owner_id}</p>}
+      <CModalBody className="pb-0">
+        {authIsAdmin && <p>Owner ID: {station.owner_id}</p>}
+        <p>Site ID: {station.site_id}</p>
+        <p>Site Name: {station.site_name}</p>
         <p>
           <span>Address: </span>
-          <span>{site.street_address}, </span>
-          <span>{site.city}, </span>
-          <span>{site.state} </span>
-          <span>{site.zip_code}, </span>
-          <span>{site.country}</span>
+          <span>{station.street_address}, </span>
+          <span>{station.city}, </span>
+          <span>{station.state} </span>
+          <span>{station.zip_code}, </span>
+          <span>{station.country}</span>
         </p>
-        <p>Coordinate: {site.latitude}, {site.longitude}</p>
+        <p>Coordinate: {station.latitude}, {station.longitude}</p>
       </CModalBody>
     </>
   );
@@ -71,29 +103,19 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
   const EditModal = () => {
     const initialFormData = {
       name: "",
-      ownerId: "",
+      siteId: "",
       latitude: "",
       longitude: "",
-      streetAddress: "",
-      city: "",
-      state: "",
-      zipCode: "",
-      country: "",
     };
     const [formData, setFormData] = useState(initialFormData);
 
     useEffect(() => {
-      if (site) {
+      if (station) {
         setFormData({
-          name: site.name,
-          ownerId: site.owner_id,
-          latitude: site.latitude,
-          longitude: site.longitude,
-          streetAddress: site.street_address,
-          city: site.city,
-          state: site.state,
-          zipCode: site.zip_code,
-          country: site.country,
+          name: station.name,
+          siteId: station.site_id,
+          latitude: station.latitude,
+          longitude: station.longitude,
         });
       }
     }, []);
@@ -106,52 +128,45 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
     const handleSave = () => {
       const data = {
         ...formData,
-        id: site.id,
+        id: station.id,
       };
-      if (authIsOwner) {
-        data.ownerId = userId;
-      }
       if (!data.name
-        || !data.ownerId
+        || !data.siteId
         || !data.latitude
-        || !data.longitude
-        || !data.streetAddress
-        || !data.city
-        || !data.state
-        || !data.zipCode
-        || !data.country) {
+        || !data.longitude) {
         return;
       }
-      dispatch(siteUpdateById(data));
+      dispatch(stationUpdateById(data));
       setIsEdit(false);
     };
 
     return (
       <CModalBody>
         <CForm>
-          <label htmlFor="siteName">Name</label>
+          <label htmlFor="stationName">Station Name</label>
           <CFormInput
             className="mb-3 shadow-none"
-            id="siteName"
+            id="stationName"
             name="name"
             type="text"
             placeholder="Name"
             value={formData.name}
             onChange={handleInputChange}
           />
-          {authIsAdmin &&
-            <>
-              <label htmlFor="ownerId">Owner ID</label>
-              <CFormInput
-                className="mb-3 shadow-none"
-                id="ownerId"
-                name="ownerId"
-                type="text"
-                placeholder="Owner ID"
-                onChange={handleInputChange}
-                value={formData.ownerId}
-              />
-            </>}
+          <label htmlFor="siteId">Site ID</label>
+          <CFormSelect
+            className="mb-3 shadow-none"
+            id="siteId"
+            name="siteId"
+            onChange={handleInputChange}
+            value={formData.siteId}
+            options={[
+              { label: "Select Site ID", value: "" },
+              ...siteOptions.map((id) => (
+                { label: id, value: id }
+              )),
+            ]}
+          />
           <label htmlFor="latitude">Latitude</label>
           <CFormInput
             className="mb-3 shadow-none"
@@ -165,62 +180,12 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
           <label htmlFor="longitude">Longitude</label>
           <CFormInput
             className="mb-3 shadow-none"
-            name="longitude"
             id="longitude"
+            name="longitude"
             type="text"
             placeholder="Longitude"
             onChange={handleInputChange}
             value={formData.longitude}
-          />
-          <label htmlFor="streetAddress">Street Address</label>
-          <CFormInput
-            className="mb-3 shadow-none"
-            id="streetAddress"
-            name="streetAddress"
-            type="text"
-            placeholder="Street Address"
-            onChange={handleInputChange}
-            value={formData.streetAddress}
-          />
-          <label htmlFor="city">City</label>
-          <CFormInput
-            className="mb-3 shadow-none"
-            id="city"
-            name="city"
-            type="text"
-            placeholder="City"
-            onChange={handleInputChange}
-            value={formData.city}
-          />
-          <label htmlFor="state">State</label>
-          <CFormInput
-            className="mb-3 shadow-none"
-            id="state"
-            name="state"
-            type="text"
-            placeholder="State"
-            onChange={handleInputChange}
-            value={formData.state}
-          />
-          <label htmlFor="zipCode">Zip Code</label>
-          <CFormInput
-            className="mb-3 shadow-none"
-            id="zipCode"
-            name="zipCode"
-            type="text"
-            placeholder="Zip Code"
-            onChange={handleInputChange}
-            value={formData.zipCode}
-          />
-          <label htmlFor="country">Country</label>
-          <CFormInput
-            className="mb-3 shadow-none"
-            id="country"
-            name="country"
-            type="text"
-            placeholder="Country"
-            onChange={handleInputChange}
-            value={formData.country}
           />
           <CButton
             variant="outline"
@@ -247,8 +212,8 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
     const [inputName, setInputName] = useState("");
 
     useEffect(() => {
-      if (site) {
-        setName(site.name);
+      if (station) {
+        setName(station.name);
       }
     }, []);
 
@@ -256,16 +221,17 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
       if (name !== inputName) {
         return;
       }
-      dispatch(siteDeleteById(site.id));
+      dispatch(stationDeleteById(station.id));
       onClose();
     };
 
     return (
       <CModalBody>
         <CForm>
-          <label htmlFor="siteName">Type "{name}" to delete site</label>
+          <label htmlFor="stationName">Type "{name}" to delete station</label>
           <CFormInput
             className="mb-3 shadow-none"
+            id="stationName"
             type="text"
             name="name"
             placeholder="Confirmation"
@@ -303,16 +269,27 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
       onClose={onClose}
     >
       <CModalHeader className="mb-2">
-        <CModalTitle>{site.name}</CModalTitle>
+        {!loading &&
+          <CModalTitle>
+            {station.name}
+          </CModalTitle>
+        }
       </CModalHeader>
-      {isEdit
-        ? <EditModal />
-        : isDelete
-          ? <DeleteModal />
-          : <InfoModal />
+      {loading
+        ? <LoadingIndicator loading={loading} />
+        : isEdit
+          ? <EditModal />
+          : isDelete
+            ? <DeleteModal />
+            : (
+              <>
+                <InfoModal />
+                <EvseManagement stationId={stationId} />
+              </>
+            )
       }
-    </CModal>
+    </CModal >
   );
 };
 
-export default SiteDetailsModal;
+export default StationDetailsModal;

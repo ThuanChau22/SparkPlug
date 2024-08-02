@@ -1,13 +1,19 @@
 import User from "../repositories/UserRepository.js";
+import utils from "../utils.js";
 
 export const getUsers = async (req, res) => {
   try {
-    const filter = req.query;
-    const select = "id, email, name, status, created_at, updated_at";
-    const users = await User.getUsers({ filter, select });
-    res.status(200).json(users);
+    const { limit, cursor, ...filter } = req.query;
+    const select = { password: 0 };
+    const sort = { created_at: 1, id: 1 };
+    const options = { filter, select, sort, limit, cursor };
+    const data = await User.getUsers(options);
+    res.status(200).json({
+      users: data.users,
+      cursor: data.cursor,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return utils.handleError(res, error);
   }
 };
 
@@ -15,11 +21,11 @@ export const getUserById = async (req, res) => {
   try {
     const user = await User.getUserById(req.params.id);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      throw { code: 404, message: "User not found" };
     }
     res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return utils.handleError(res, error);
   }
 };
 
@@ -27,25 +33,30 @@ export const updateUserById = async (req, res) => {
   try {
     const currentUser = await User.getUserById(req.params.id);
     if (!currentUser) {
-      return res.status(404).json({ message: "User not found" });
+      throw { code: 404, message: "User not found" };
     }
-    const userData = { ...currentUser, ...req.body };
+    const { password, ...remain } = req.body;
+    const userData = { id: req.params.id, ...remain };
     if (!await User.updateUserById(userData)) {
-      return res.status(400).json({ message: "Update failed" });
+      throw { code: 400, message: "User not updated" };
     }
     res.status(200).json(await User.getUserById(userData.id));
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return utils.handleError(res, error);
   }
 };
 
 export const deleteUserById = async (req, res) => {
   try {
+    const currentUser = await User.getUserById(req.params.id);
+    if (!currentUser) {
+      throw { code: 404, message: "User not found" };
+    }
     if (!await User.deleteUserById(req.params.id)) {
-      return res.status(404).json({ message: "User not found" });
+      throw { code: 400, message: "User not deleted" };
     }
     res.status(204).json({});
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return utils.handleError(res, error);
   }
 };
