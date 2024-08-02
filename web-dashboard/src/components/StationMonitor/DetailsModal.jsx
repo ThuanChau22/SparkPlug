@@ -23,6 +23,10 @@ import {
   selectStationStatusById,
 } from "redux/station/stationSlice";
 import {
+  stationEventStateSetById,
+  stationEventStateClear,
+} from "redux/station/stationEventSlice";
+import {
   evseStatusStateUpsertById,
 } from "redux/evse/evseStatusSlice"
 
@@ -35,8 +39,6 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
   const stationStatus = useSelector((state) => selectStationStatusById(state, stationId));
 
   const [loading, setLoading] = useState(false);
-
-  const [eventMessages, setEventMessages] = useState([]);
 
   const {
     readyState,
@@ -79,7 +81,7 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
   useEffect(() => {
     const { action, payload } = lastJsonMessage || {};
     if (action === "WatchAllEvent" && payload.stationId) {
-      setEventMessages((state) => ([...state, payload]));
+      dispatch(stationEventStateSetById(payload));
       const meterValue = payload.payload?.meterValue;
       if (payload.event === "TransactionEvent" && meterValue) {
         const [meter] = meterValue;
@@ -92,6 +94,8 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
       }
     }
   }, [lastJsonMessage, dispatch]);
+
+  useEffect(() => () => dispatch(stationEventStateClear()), [dispatch]);
 
   const remoteStart = (stationId, evseId) => {
     if (readyState === ReadyState.OPEN) {
@@ -149,8 +153,6 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
               />
               <StationMonitorEventList
                 stationId={stationId}
-                eventMessages={eventMessages}
-                setEventMessages={setEventMessages}
               />
             </CModalBody>
           </>
