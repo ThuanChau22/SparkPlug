@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -10,12 +10,14 @@ import {
   CFormInput,
 } from "@coreui/react";
 
+import LoadingIndicator from "components/LoadingIndicator";
 import {
   selectAuthUserId,
   selectAuthRoleIsStaff,
   selectAuthRoleIsOwner,
 } from "redux/auth/authSlice";
 import {
+  siteGetById,
   siteUpdateById,
   siteDeleteById,
   selectSiteById,
@@ -27,10 +29,24 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
   const site = useSelector((state) => selectSiteById(state, siteId));
 
+  const [loading, setLoading] = useState(false);
+
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
-  
+
   const dispatch = useDispatch();
+
+  const fetchData = useCallback(async () => {
+    if (!site) {
+      setLoading(true);
+      await dispatch(siteGetById(siteId)).unwrap();
+      setLoading(false);
+    }
+  }, [siteId, site, dispatch]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const InfoModal = () => (
     <>
@@ -305,13 +321,19 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
       onClose={onClose}
     >
       <CModalHeader className="mb-2">
-        <CModalTitle>{site.name}</CModalTitle>
+        {!loading &&
+          <CModalTitle>
+            {site.name}
+          </CModalTitle>
+        }
       </CModalHeader>
-      {isEdit
-        ? <EditModal />
-        : isDelete
-          ? <DeleteModal />
-          : <InfoModal />
+      {loading
+        ? <LoadingIndicator loading={loading} />
+        : isEdit
+          ? <EditModal />
+          : isDelete
+            ? <DeleteModal />
+            : <InfoModal />
       }
     </CModal>
   );

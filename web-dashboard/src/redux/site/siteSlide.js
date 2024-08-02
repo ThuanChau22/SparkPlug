@@ -162,6 +162,7 @@ export const siteDeleteById = createAsyncThunk(
 export const selectSite = (state) => state[siteSlice.name];
 
 const siteSelectors = siteEntityAdapter.getSelectors(selectSite);
+export const selectSiteIds = siteSelectors.selectIds;
 export const selectSiteList = siteSelectors.selectAll;
 export const selectSiteById = siteSelectors.selectById;
 

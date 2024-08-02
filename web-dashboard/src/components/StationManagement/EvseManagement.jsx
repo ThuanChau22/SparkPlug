@@ -11,15 +11,11 @@ import LoadingIndicator from "components/LoadingIndicator";
 import EvseAdd from "components/StationManagement/EvseAdd";
 import EvseDetails from "components/StationManagement/EvseDetails";
 import {
-  selectStationById,
-} from "redux/station/stationSlide";
-import {
   evseGetByStation,
   selectEvseByStation,
 } from "redux/evse/evseSlice";
 
 const EvseManagement = ({ stationId }) => {
-  const station = useSelector((state) => selectStationById(state, stationId));
   const evseList = useSelector((state) => selectEvseByStation(state, stationId));
 
   const [loading, setLoading] = useState(false);
@@ -29,10 +25,10 @@ const EvseManagement = ({ stationId }) => {
   const fetchData = useCallback(async () => {
     if (evseList.length === 0) {
       setLoading(true);
-      await dispatch(evseGetByStation(station.id)).unwrap();
+      await dispatch(evseGetByStation(stationId)).unwrap();
       setLoading(false);
     }
-  }, [station, evseList, dispatch]);
+  }, [stationId, evseList, dispatch]);
 
   useEffect(() => {
     fetchData();

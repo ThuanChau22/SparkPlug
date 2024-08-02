@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -12,14 +12,16 @@ import {
 } from "@coreui/react";
 
 import EvseManagement from "components/StationManagement/EvseManagement";
+import LoadingIndicator from "components/LoadingIndicator";
 import {
   selectAuthRoleIsStaff,
 } from "redux/auth/authSlice";
 import {
   siteGetList,
-  selectSiteList,
+  selectSiteIds,
 } from "redux/site/siteSlide";
 import {
+  stationGetById,
   stationUpdateById,
   stationDeleteById,
   selectStationById,
@@ -27,8 +29,10 @@ import {
 
 const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
-  const siteList = useSelector(selectSiteList);
+  const siteIds = useSelector(selectSiteIds);
   const station = useSelector((state) => selectStationById(state, stationId));
+
+  const [loading, setLoading] = useState(false);
 
   const [siteOptions, setSiteOptions] = useState([]);
   const [isEdit, setIsEdit] = useState(false);
@@ -36,15 +40,25 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
 
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    if (siteList.length === 0) {
-      dispatch(siteGetList());
+  const fetchData = useCallback(async () => {
+    if (!station) {
+      setLoading(true);
+      await dispatch(stationGetById(stationId)).unwrap();
+      setLoading(false);
     }
-  }, [siteList, dispatch]);
+  }, [stationId, station, dispatch]);
 
   useEffect(() => {
-    setSiteOptions(siteList.map(site => site.id));
-  }, [siteList]);
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (siteIds.length === 0) {
+      dispatch(siteGetList());
+    } else {
+      setSiteOptions(siteIds);
+    }
+  }, [siteIds, dispatch]);
 
   const InfoModal = () => (
     <>
@@ -255,16 +269,24 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
       onClose={onClose}
     >
       <CModalHeader className="mb-2">
-        <CModalTitle>{station.name}</CModalTitle>
+        {!loading &&
+          <CModalTitle>
+            {station.name}
+          </CModalTitle>
+        }
       </CModalHeader>
-      {isEdit
-        ? <EditModal />
-        : isDelete
-          ? <DeleteModal />
-          : <>
-            <InfoModal />
-            <EvseManagement stationId={stationId} />
-          </>
+      {loading
+        ? <LoadingIndicator loading={loading} />
+        : isEdit
+          ? <EditModal />
+          : isDelete
+            ? <DeleteModal />
+            : (
+              <>
+                <InfoModal />
+                <EvseManagement stationId={stationId} />
+              </>
+            )
       }
     </CModal >
   );

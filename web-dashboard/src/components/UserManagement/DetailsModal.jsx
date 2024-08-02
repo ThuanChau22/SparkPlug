@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -11,7 +11,9 @@ import {
   CFormSelect,
 } from "@coreui/react";
 
+import LoadingIndicator from "components/LoadingIndicator";
 import {
+  userGetById,
   userUpdateById,
   userDeleteById,
   selectUserById,
@@ -22,10 +24,24 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
   const user = useSelector((state) => selectUserById(state, userId));
   const userRole = useSelector((state) => selectUserRoleById(state, userId));
 
+  const [loading, setLoading] = useState(false);
+
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
 
   const dispatch = useDispatch();
+
+  const fetchData = useCallback(async () => {
+    if (!user) {
+      setLoading(true);
+      await dispatch(userGetById(userId)).unwrap();
+      setLoading(false);
+    }
+  }, [userId, user, dispatch]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const InfoModal = () => (
     <>
@@ -215,13 +231,19 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
       onClose={onClose}
     >
       <CModalHeader className="mb-2">
-        <CModalTitle>{user.name}</CModalTitle>
+        {!loading &&
+          <CModalTitle>
+            {user.name}
+          </CModalTitle>
+        }
       </CModalHeader>
-      {isEdit
-        ? <EditModal />
-        : isDelete
-          ? <DeleteModal />
-          : <InfoModal />
+      {loading
+        ? <LoadingIndicator loading={loading} />
+        : isEdit
+          ? <EditModal />
+          : isDelete
+            ? <DeleteModal />
+            : <InfoModal />
       }
     </CModal>
   );
