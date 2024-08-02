@@ -15,7 +15,7 @@ import {
   selectAuthRoleIsStaff,
   selectAuthRoleIsOwner,
 } from "redux/auth/authSlice";
-import { siteAdd } from "redux/site/siteSlide";
+import { siteAdd } from "redux/site/siteSlice";
 
 const SiteAddModal = ({ isOpen, onClose }) => {
   const userId = useSelector(selectAuthUserId);

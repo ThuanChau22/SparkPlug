@@ -21,7 +21,7 @@ import {
   stationGetById,
   selectStationById,
   selectStationStatusById,
-} from "redux/station/stationSlide";
+} from "redux/station/stationSlice";
 import {
   evseStatusStateUpsertById,
 } from "redux/evse/evseStatusSlice"

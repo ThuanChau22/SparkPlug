@@ -34,7 +34,7 @@ import {
   selectCityOptions,
   selectSelectedZipCode,
   selectZipCodeOptions,
-} from "redux/station/stationSlide";
+} from "redux/station/stationSlice";
 
 const AIPredictedLocation = () => {
   const titleRef = createRef();

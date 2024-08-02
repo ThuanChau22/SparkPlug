@@ -19,13 +19,13 @@ import {
 import {
   siteGetList,
   selectSiteIds,
-} from "redux/site/siteSlide";
+} from "redux/site/siteSlice";
 import {
   stationGetById,
   stationUpdateById,
   stationDeleteById,
   selectStationById,
-} from "redux/station/stationSlide";
+} from "redux/station/stationSlice";
 
 const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);

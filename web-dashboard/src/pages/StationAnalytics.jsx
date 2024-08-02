@@ -30,7 +30,7 @@ import {
   selectCityOptions,
   selectSelectedZipCode,
   selectZipCodeOptions,
-} from "redux/station/stationSlide";
+} from "redux/station/stationSlice";
 
 const StationAnalytics = () => {
   const filterRef = createRef();

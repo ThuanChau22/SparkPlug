@@ -21,7 +21,7 @@ import {
   siteUpdateById,
   siteDeleteById,
   selectSiteById,
-} from "redux/site/siteSlide";
+} from "redux/site/siteSlice";
 
 const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
   const userId = useSelector(selectAuthUserId);

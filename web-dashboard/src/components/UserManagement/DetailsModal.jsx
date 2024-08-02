@@ -18,7 +18,7 @@ import {
   userDeleteById,
   selectUserById,
   selectUserRoleById,
-} from "redux/user/userSlide";
+} from "redux/user/userSlice";
 
 const UserDetailsModal = ({ isOpen, onClose, userId }) => {
   const user = useSelector((state) => selectUserById(state, userId));

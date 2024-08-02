@@ -7,7 +7,7 @@ import {
   stationGetById,
   selectStationById,
   selectStationStatusById,
-} from "redux/station/stationSlide";
+} from "redux/station/stationSlice";
 
 const StationMonitorListItem = ({ stationId }) => {
   const station = useSelector((state) => selectStationById(state, stationId));

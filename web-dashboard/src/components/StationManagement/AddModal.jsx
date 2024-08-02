@@ -14,8 +14,8 @@ import {
 import {
   siteGetList,
   selectSiteIds,
-} from "redux/site/siteSlide";
-import { stationAdd } from "redux/station/stationSlide";
+} from "redux/site/siteSlice";
+import { stationAdd } from "redux/station/stationSlice";
 
 const StationAddModal = ({ isOpen, onClose }) => {
   const siteIds = useSelector(selectSiteIds);

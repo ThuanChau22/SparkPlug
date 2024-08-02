@@ -16,7 +16,7 @@ import {
 import LoadingIndicator from "components/LoadingIndicator";
 import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
-import { selectStationById } from "redux/station/stationSlide";
+import { selectStationById } from "redux/station/stationSlice";
 
 const DriverStationDetailsModal = ({ isOpen, onClose, stationId }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;

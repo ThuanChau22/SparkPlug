@@ -31,7 +31,7 @@ import {
   selectCityOptions,
   selectSelectedZipCode,
   selectZipCodeOptions,
-} from "redux/site/siteSlide";
+} from "redux/site/siteSlice";
 
 const SiteAnalytics = () => {
   const titleRef = createRef();

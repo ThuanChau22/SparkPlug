@@ -16,7 +16,7 @@ import {
   userGetList,
   selectUserList,
   selectUserCursor,
-} from "redux/user/userSlide";
+} from "redux/user/userSlice";
 
 const UserManagement = () => {
   const userLoadLimit = 100;
