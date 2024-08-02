@@ -185,12 +185,12 @@ const StationMonitor = () => {
   ), [stationList, mapHeight, setBound]);
 
   return (
-    <CCard className="flex-grow-1 border border-top-0 rounded-0">
+    <CCard className="flex-grow-1 border border-top-0 rounded-0 card">
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
-          <CCardBody className="d-flex flex-column h-100 pt-0">
+          <CCardBody className="d-flex flex-column h-100 pt-0 card">
             <StickyContainer
-              className="bg-white py-3"
+              className="bg-white py-3 card" // TODO: Change background color
               top={`${headerHeight}px`}
             >
               <CCardTitle>
@@ -204,7 +204,7 @@ const StationMonitor = () => {
                   {stationList.map(({ id }) => (
                     <CListGroupItem
                       key={id}
-                      className="d-flex justify-content-between align-items-center py-3"
+                      className="d-flex justify-content-between align-items-center py-3 card"
                       component="button"
                       onClick={() => handleViewStation(id)}
                     >

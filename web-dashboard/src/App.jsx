@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   useNavigate,
@@ -21,6 +21,7 @@ import {
   selectAuthSecureStorage,
 } from "redux/auth/authSlice";
 import routes from "routes";
+import './scss/style.scss'; // 确保路径正确
 
 const App = () => {
   const authenticated = useSelector(selectAuthAuthenticated);
@@ -32,6 +33,8 @@ const App = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
     if (token) {
@@ -103,17 +106,25 @@ const App = () => {
     }
   }, [authIsAdmin, authIsOwner, authIsDriver, location, navigate]);
 
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+  };
+
+  useEffect(() => {
+    document.body.className = theme;
+  }, [theme]);
+
   return (
-    <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
+    <div className="bg-light min-vh-100 d-flex flex-row align-items-center"> // TODO: Change background color
       {!authenticated
         ? <LoadingIndicator loading={!authenticated} />
         : (
           <>
             <Sidebar />
-            <div className="bg-light min-vh-100 d-flex flex-column wrapper">
-              <Header />
+            <div className=`min-vh-100 d-flex flex-column wrapper ${theme}`>
+              <Header theme={theme} toggleTheme={toggleTheme} />
               <div className="body d-flex flex-column flex-grow-1">
-                <Outlet />
+                <Outlet context={{ theme, toggleTheme }} />
               </div>
               <Footer />
             </div>

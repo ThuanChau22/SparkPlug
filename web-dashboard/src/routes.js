@@ -66,7 +66,7 @@ const routes = {
     name: "Stations",
     path: "/stations",
     defaultPath: Stations.Management.path,
-    Components: Stations,
+    Components: Stations,   
   },
   Sites: {
     name: "Sites",

@@ -78,10 +78,10 @@ const UserManagement = () => {
 
   return (
     <CCard className="flex-grow-1 border border-top-0 rounded-0">
-      <CCardBody className="d-flex flex-column h-100 pt-0">
+      <CCardBody className="d-flex flex-column h-100 pt-0 card">
         <StickyContainer
           ref={titleRef}
-          className="bg-white py-3"
+          className="py-3"
           top={`${headerHeight}px`}
         >
           <CCardTitle>
@@ -96,7 +96,7 @@ const UserManagement = () => {
                 {userList.map(({ id, name, email, status }) => (
                   <CListGroupItem
                     key={id}
-                    className="align-items-center py-3"
+                    className="align-items-center py-3 card"
                     component="button"
                     onClick={() => handleViewUser(id)}
                   >

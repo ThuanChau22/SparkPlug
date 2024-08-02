@@ -69,14 +69,8 @@ import avatar4 from '../assets/default-avatar.jpg'
 import avatar5 from '../assets/default-avatar.jpg'
 import avatar6 from '../assets/default-avatar.jpg'
 
-import WidgetsBrand from '../components/WidgetsBrand.jsx'
-import WidgetsDropdown from '../components/WidgetsDropdown.jsx'
-import MainChart from '../components/MainChart.jsx'
-
-//---------------------------------------------
 import { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { GooeyCircleLoader } from "react-loaders-kit";
 
 import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
@@ -86,8 +80,6 @@ import { selectStationById } from "redux/station/stationSlice";
 Chart.register(ArcElement, Tooltip, Legend);
 
 const Dashboard = () => {
-  //===============================================================
-//const StationAnalyticsModal = ({ isOpen, onClose, stationId }) => 
   const stationId = 1392;
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
   const station = useSelector((state) => selectStationById(state, stationId));
@@ -865,7 +857,7 @@ const Dashboard = () => {
   ]
 
   return (
-    <div style={{ backgroundColor: 'black', color: 'white' }}>
+    <div>
       <CRow
             xs={{ cols: 1, gutter: 4 }}
             sm={{ cols: 2 }}
