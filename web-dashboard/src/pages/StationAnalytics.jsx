@@ -53,11 +53,11 @@ const StationAnalytics = () => {
   const dispatch = useDispatch();
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
     if (stationList.length === 0) {
+      setLoading(true);
       await dispatch(stationGetList()).unwrap();
+      setLoading(false);
     }
-    setLoading(false);
   }, [stationList, dispatch]);
 
   useEffect(() => {

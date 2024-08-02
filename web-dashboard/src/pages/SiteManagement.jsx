@@ -61,11 +61,11 @@ const SiteManagement = () => {
   const fetchData = useCallback(async () => {
     setIsMount(false);
     setNumberOfSites(siteList.length);
-    setLoading(true);
     if (siteList.length === 0) {
+      setLoading(true);
       await dispatch(siteGetList()).unwrap();
+      setLoading(false);
     }
-    setLoading(false);
   }, [siteList, dispatch]);
 
   useEffect(() => {

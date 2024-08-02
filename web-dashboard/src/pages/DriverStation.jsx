@@ -86,11 +86,11 @@ const DriverStation = () => {
   const fetchData = useCallback(async () => {
     setIsMount(false);
     setNumberOfStations(stationList.length);
-    setLoading(true);
     if (stationList.length === 0) {
+      setLoading(true);
       await dispatch(stationGetList()).unwrap();
+      setLoading(false);
     }
-    setLoading(false);
   }, [stationList, dispatch]);
 
   useEffect(() => {

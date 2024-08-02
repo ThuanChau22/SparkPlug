@@ -27,11 +27,11 @@ const EvseManagement = ({ stationId }) => {
   const dispatch = useDispatch();
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
     if (evseList.length === 0) {
+      setLoading(true);
       await dispatch(evseGetByStation(station.id)).unwrap();
+      setLoading(false);
     }
-    setLoading(false);
   }, [station, evseList, dispatch]);
 
   useEffect(() => {

@@ -36,13 +36,13 @@ const UserManagement = () => {
   const dispatch = useDispatch();
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
     if (userList.length === 0) {
+      setLoading(true);
       await dispatch(userGetList({
         limit: userLoadLimit
       })).unwrap();
+      setLoading(false);
     }
-    setLoading(false);
   }, [userList, dispatch]);
 
   useEffect(() => {

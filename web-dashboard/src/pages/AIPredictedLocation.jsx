@@ -53,24 +53,24 @@ const AIPredictedLocation = () => {
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [selectedStationId, setSelectedStation] = useState(null);
   const dispatch = useDispatch();
-  
+
 
   const [newStations, setNewStations] = useState([]);
 
 
   // New stations needed
-  const [apiData, setApiData] = useState({stations: [], summary: {new_stations: 0, new_stations_ids: []}});
+  const [apiData, setApiData] = useState({ stations: [], summary: { new_stations: 0, new_stations_ids: [] } });
 
 
 
   const [zipCodeInput, setZipCodeInput] = useState('');
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
     if (stationList.length === 0) {
+      setLoading(true);
       await dispatch(stationGetList()).unwrap();
+      setLoading(false);
     }
-    setLoading(false);
   }, [stationList, dispatch]);
 
   useEffect(() => {
@@ -90,17 +90,17 @@ const AIPredictedLocation = () => {
   }, [dispatch]);
 
   const handleSearch = async () => {
-      const zipCode = parseInt(zipCodeInput, 10);
-      const url = `${process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT}/ai_planning/${zipCode}`;
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
-        setApiData(data); // Set the existing stations
-        // Hypothetical code to set new stations, adjust as per your actual data structure
-        setNewStations(data.new_stations); 
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-      }
+    const zipCode = parseInt(zipCodeInput, 10);
+    const url = `${process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT}/ai_planning/${zipCode}`;
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      setApiData(data); // Set the existing stations
+      // Hypothetical code to set new stations, adjust as per your actual data structure
+      setNewStations(data.new_stations);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+    }
   };
 
   const displayMap = useMemo(() => {
@@ -166,11 +166,11 @@ const AIPredictedLocation = () => {
       </CRow>
       <CRow className="justify-content-center">
         <CCol md={6} lg={7}>
-            <StickyContainer top={`${headerHeight}px`}>
-                {displayMap} 
-            </StickyContainer>
+          <StickyContainer top={`${headerHeight}px`}>
+            {displayMap}
+          </StickyContainer>
         </CCol>
-    </CRow>
+      </CRow>
       {isAnalyticsModalOpen && (
         <StationAnalyticsDetailsModal
           isOpen={isAnalyticsModalOpen}
