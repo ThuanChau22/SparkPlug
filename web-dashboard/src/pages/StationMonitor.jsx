@@ -12,21 +12,20 @@ import {
 } from "@coreui/react";
 import ms from "ms";
 
-import AvailabilityStatus from "components/AvailabilityStatus";
 import LoadingIndicator from "components/LoadingIndicator";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
 import StationStatusMarker from "components/StationStatusMarker";
 import StickyContainer from "components/StickyContainer";
+import StationMonitorListItem from "components/StationMonitor/StationListItem";
 import StationMonitorDetailsModal from "components/StationMonitor/DetailsModal";
 import { selectHeaderHeight } from "redux/header/headerSlice";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
-  stationStateUpdateById,
+  stationGetList,
   stationSetStateSelected,
   stationSetCitySelected,
   stationSetZipCodeSelected,
-  stationGetList,
   selectStationList,
   selectSelectedState,
   selectStateOptions,
@@ -36,11 +35,11 @@ import {
   selectZipCodeOptions,
 } from "redux/station/stationSlide";
 import {
-  evseStateUpsertMany,
-  evseStateUpsertById,
-  evseGetAllStatus,
-  selectEvseList,
-} from "redux/evse/evseSlice";
+  evseStatusStateUpsertMany,
+  evseStatusStateUpsertById,
+  evseStatusGetList,
+  selectEvseStatusIds,
+} from "redux/evse/evseStatusSlice";
 
 const StationMonitor = () => {
   const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
@@ -56,13 +55,12 @@ const StationMonitor = () => {
   const stationCityOptions = useSelector(selectCityOptions);
   const stationSelectedZipCode = useSelector(selectSelectedZipCode);
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
-  const evseList = useSelector(selectEvseList);
+  const evseStatusIds = useSelector(selectEvseStatusIds);
 
   const [loading, setLoading] = useState(false);
 
   const [mapHeight, setMapHeight] = useState(window.innerHeight);
-  const [isMount, setIsMount] = useState(true);
-  const [numberOfStations, setNumberOfStations] = useState(0);
+  const [setBound, setSetBound] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [stationId, setStationId] = useState(null);
@@ -84,31 +82,26 @@ const StationMonitor = () => {
 
   const dispatch = useDispatch();
 
-  const fetchData = useCallback(async () => {
-    setIsMount(false);
-    setNumberOfStations(stationList.length);
-    setLoading(true);
+  const fetchStationData = useCallback(async () => {
     if (stationList.length === 0) {
+      setLoading(true);
       await dispatch(stationGetList()).unwrap();
+      setLoading(false);
     }
-    setLoading(false);
-  }, [stationList, dispatch]);
+  }, [stationList.length, dispatch]);
+
+  const fetchEvseStatusData = useCallback(async () => {
+    if (evseStatusIds.length === 0) {
+      setLoading(true);
+      await dispatch(evseStatusGetList()).unwrap();
+      setLoading(false);
+    }
+  }, [evseStatusIds.length, dispatch]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  useEffect(() => {
-    const isStatusLoaded = (stations) => {
-      for (const { evseStatusLoaded } of stations) {
-        if (!evseStatusLoaded) return false;
-      }
-      return true;
-    };
-    if (!isStatusLoaded(stationList)) {
-      dispatch(evseGetAllStatus());
-    }
-  }, [stationList, dispatch]);
+    fetchStationData();
+    fetchEvseStatusData();
+  }, [fetchStationData, fetchEvseStatusData]);
 
   useEffect(() => {
     const isStationLoaded = stationList.length > 0;
@@ -126,42 +119,22 @@ const StationMonitor = () => {
     const { action, payload } = lastJsonMessage || {};
     if (action === "WatchStatusEvent" && payload.stationId) {
       const { stationId, payload: { evseId, connectorStatus } } = payload;
-      const station = {
-        id: stationId,
-        status: connectorStatus,
-      };
       if (evseId) {
-        dispatch(evseStateUpsertById({
+        dispatch(evseStatusStateUpsertById({
           station_id: stationId,
           evse_id: evseId,
           status: connectorStatus,
         }));
-        const statuses = evseList
-          .filter(({ station_id, evse_id }) => {
-            return station_id === stationId && evse_id !== evseId;
-          }).reduce((object, { status }) => {
-            return { ...object, [status]: (object[status] || 0) + 1 };
-          }, {});
-        const count = statuses[connectorStatus] + 1;
-        statuses[connectorStatus] = count || 1;
-        if (statuses.Available) {
-          station.status = "Available";
-        } else if (statuses.Occupied) {
-          station.status = "Occupied";
-        } else if (statuses.Reserved) {
-          station.status = "Reserved";
-        } else if (statuses.Faulted) {
-          station.status = "Faulted";
-        }
       } else {
-        const evses = evseList
+        dispatch(evseStatusStateUpsertMany(evseStatusIds
           .filter(({ station_id }) => station_id === stationId)
-          .map((evse) => ({ ...evse, status: connectorStatus }));
-        dispatch(evseStateUpsertMany(evses));
+          .map(({ station_id, evse_id }) => ({
+            station_id, evse_id,
+            status: connectorStatus,
+          }))));
       }
-      dispatch(stationStateUpdateById(station));
     }
-  }, [lastJsonMessage, evseList, dispatch]);
+  }, [lastJsonMessage, evseStatusIds, dispatch]);
 
   const handleViewStation = (stationId) => {
     setStationId(stationId);
@@ -185,24 +158,31 @@ const StationMonitor = () => {
     setMapHeight(window.innerHeight - (headerHeight + filterHeight));
   }, [headerHeight, filterRef]);
 
-  const displayMap = useMemo(() => {
-    const renderStationMarker = (station) => (
-      <StationStatusMarker
-        key={station.id}
-        station={station}
-        onMarkerClick={() => handleViewStation(station.id)}
+  useEffect(() => {
+    setSetBound(true);
+  }, [stationList.length]);
+
+  useEffect(() => {
+    if (setBound) {
+      setSetBound(false);
+    }
+  }, [setBound]);
+
+  const displayMap = useMemo(() => (
+    <div style={{ height: `${mapHeight}px` }}>
+      <MapContainer
+        locations={stationList}
+        renderMarker={({ id }) => (
+          <StationStatusMarker
+            key={id}
+            stationId={id}
+            onClick={() => handleViewStation(id)}
+          />
+        )}
+        setBound={setBound}
       />
-    );
-    return (
-      <div style={{ height: `${mapHeight}px` }}>
-        <MapContainer
-          locations={stationList}
-          renderMarker={renderStationMarker}
-          setBound={isMount || numberOfStations !== stationList.length}
-        />
-      </div>
-    );
-  }, [stationList, mapHeight, isMount, numberOfStations]);
+    </div>
+  ), [stationList, mapHeight, setBound]);
 
   return (
     <CCard className="flex-grow-1 border border-top-0 rounded-0">
@@ -221,18 +201,14 @@ const StationMonitor = () => {
               ? <LoadingIndicator loading={loading} />
               : (
                 <CListGroup>
-                  {stationList.map(({ id, name, status }) => (
+                  {stationList.map(({ id }) => (
                     <CListGroupItem
                       key={id}
                       className="d-flex justify-content-between align-items-center py-3"
                       component="button"
                       onClick={() => handleViewStation(id)}
                     >
-                      <div>
-                        <small className="w-100 text-secondary">ID: {id}</small>
-                        <p className="mb-0">{name}</p>
-                      </div>
-                      <AvailabilityStatus status={status} />
+                      <StationMonitorListItem stationId={id} />
                     </CListGroupItem>
                   ))}
                 </CListGroup>

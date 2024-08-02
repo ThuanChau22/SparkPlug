@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import ms from "ms";
@@ -10,6 +10,7 @@ import {
 } from "@coreui/react";
 
 import AvailabilityStatus from "components/AvailabilityStatus";
+import LoadingIndicator from "components/LoadingIndicator";
 import StationMonitorEventList from "components/StationMonitor/EventList";
 import StationMonitorEvseList from "components/StationMonitor/EvseList";
 import {
@@ -17,11 +18,13 @@ import {
   selectAuthAccessToken,
 } from "redux/auth/authSlice";
 import {
+  stationGetById,
   selectStationById,
+  selectStationStatusById,
 } from "redux/station/stationSlide";
 import {
-  evseStateUpsertById,
-} from "redux/evse/evseSlice";
+  evseStatusStateUpsertById,
+} from "redux/evse/evseStatusSlice"
 
 const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
   const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
@@ -29,6 +32,9 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const token = useSelector(selectAuthAccessToken);
   const station = useSelector((state) => selectStationById(state, stationId));
+  const stationStatus = useSelector((state) => selectStationStatusById(state, stationId));
+
+  const [loading, setLoading] = useState(false);
 
   const [eventMessages, setEventMessages] = useState([]);
 
@@ -49,14 +55,26 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
 
   const dispatch = useDispatch();
 
+  const fetchData = useCallback(async () => {
+    if (!station) {
+      setLoading(true);
+      await dispatch(stationGetById(stationId)).unwrap();
+      setLoading(false);
+    }
+  }, [stationId, station, dispatch]);
+
   useEffect(() => {
-    if (station && readyState === ReadyState.OPEN) {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
         action: "WatchAllEvent",
-        payload: { stationId: station.id },
+        payload: { stationId },
       });
     }
-  }, [station, readyState, sendJsonMessage]);
+  }, [stationId, readyState, sendJsonMessage]);
 
   useEffect(() => {
     const { action, payload } = lastJsonMessage || {};
@@ -66,7 +84,7 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
       if (payload.event === "TransactionEvent" && meterValue) {
         const [meter] = meterValue;
         const [sample] = meter.sampledValue;
-        dispatch(evseStateUpsertById({
+        dispatch(evseStatusStateUpsertById({
           station_id: payload.stationId,
           evse_id: payload.payload.evse.id,
           meterValue: sample.value,
@@ -104,29 +122,39 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
     >
       <CModalHeader className="mb-2">
         <CModalTitle>
-          {station.name} - <AvailabilityStatus status={station.status} />
+          {!loading && (
+            <>
+              {station.name} - <AvailabilityStatus status={stationStatus} />
+            </>
+          )}
         </CModalTitle>
       </CModalHeader>
-      <p className="ps-3 mb-0">
-        <span className="text-secondary" >Station ID: {station.id}</span>
-        {authIsAdmin && (
-          <span className="text-secondary float-end pe-3">
-            Owner ID: {station.owner_id}
-          </span>
+      {loading
+        ? <LoadingIndicator loading={loading} />
+        : (
+          <>
+            <p className="ps-3 mb-0">
+              <span className="text-secondary" >Station ID: {station.id}</span>
+              {authIsAdmin && (
+                <span className="text-secondary float-end pe-3">
+                  Owner ID: {station.owner_id}
+                </span>
+              )}
+            </p>
+            <CModalBody>
+              <StationMonitorEvseList
+                stationId={stationId}
+                remoteStart={remoteStart}
+                remoteStop={remoteStop}
+              />
+              <StationMonitorEventList
+                stationId={stationId}
+                eventMessages={eventMessages}
+                setEventMessages={setEventMessages}
+              />
+            </CModalBody>
+          </>
         )}
-      </p>
-      <CModalBody>
-        <StationMonitorEvseList
-          stationId={stationId}
-          remoteStart={remoteStart}
-          remoteStop={remoteStop}
-        />
-        <StationMonitorEventList
-          stationId={stationId}
-          eventMessages={eventMessages}
-          setEventMessages={setEventMessages}
-        />
-      </CModalBody>
     </CModal>
   );
 };

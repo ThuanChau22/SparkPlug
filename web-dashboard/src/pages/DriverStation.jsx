@@ -17,11 +17,11 @@ import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
 import StationStatusMarker from "components/StationStatusMarker";
 import StickyContainer from "components/StickyContainer";
+import DriverStationListItem from "components/DriverStation/StationListItem";
 import DriverStationDetailsModal from "components/DriverStation/DetailsModal";
 import { selectHeaderHeight } from "redux/header/headerSlice";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
-  stationStateUpdateById,
   stationSetStateSelected,
   stationSetCitySelected,
   stationSetZipCodeSelected,
@@ -35,10 +35,11 @@ import {
   selectZipCodeOptions,
 } from "redux/station/stationSlide";
 import {
-  evseStateUpsertById,
-  evseGetAllStatus,
-  selectEvseList,
-} from "redux/evse/evseSlice";
+  evseStatusStateUpsertMany,
+  evseStatusStateUpsertById,
+  evseStatusGetList,
+  selectEvseStatusIds,
+} from "redux/evse/evseStatusSlice";
 
 const DriverStation = () => {
   const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
@@ -54,7 +55,7 @@ const DriverStation = () => {
   const stationCityOptions = useSelector(selectCityOptions);
   const stationSelectedZipCode = useSelector(selectSelectedZipCode);
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
-  const evseList = useSelector(selectEvseList);
+  const evseStatusIds = useSelector(selectEvseStatusIds);
 
   const [loading, setLoading] = useState(false);
 
@@ -62,8 +63,7 @@ const DriverStation = () => {
   const [stationId, setStationId] = useState(null);
 
   const [mapHeight, setMapHeight] = useState(window.innerHeight);
-  const [isMount, setIsMount] = useState(true);
-  const [numberOfStations, setNumberOfStations] = useState(0);
+  const [setBound, setSetBound] = useState(true);
   const [isCenter, setIsCenter] = useState(true);
 
   const {
@@ -84,30 +84,25 @@ const DriverStation = () => {
   const dispatch = useDispatch();
 
   const fetchData = useCallback(async () => {
-    setIsMount(false);
-    setNumberOfStations(stationList.length);
     if (stationList.length === 0) {
       setLoading(true);
       await dispatch(stationGetList()).unwrap();
       setLoading(false);
     }
-  }, [stationList, dispatch]);
+  }, [stationList.length, dispatch]);
+
+  const fetchEvseStatusData = useCallback(async () => {
+    if (evseStatusIds.length === 0) {
+      setLoading(true);
+      await dispatch(evseStatusGetList()).unwrap();
+      setLoading(false);
+    }
+  }, [evseStatusIds.length, dispatch]);
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
-
-  useEffect(() => {
-    const isStatusLoaded = (stations) => {
-      for (const { evseStatusLoaded } of stations) {
-        if (!evseStatusLoaded) return false;
-      }
-      return true;
-    };
-    if (!isStatusLoaded(stationList)) {
-      dispatch(evseGetAllStatus());
-    }
-  }, [stationList, dispatch]);
+    fetchEvseStatusData();
+  }, [fetchData, fetchEvseStatusData]);
 
   useEffect(() => {
     const isStationLoaded = stationList.length > 0;
@@ -125,39 +120,22 @@ const DriverStation = () => {
     const { action, payload } = lastJsonMessage || {};
     if (action === "WatchStatusEvent" && payload.stationId) {
       const { stationId, payload: { evseId, connectorStatus } } = payload;
-      const station = {
-        id: stationId,
-        status: connectorStatus,
-      };
       if (evseId) {
-        dispatch(evseStateUpsertById({
+        dispatch(evseStatusStateUpsertById({
           station_id: stationId,
           evse_id: evseId,
           status: connectorStatus,
         }));
-        const evses = evseList.filter(({ station_id, evse_id }) => {
-          return station_id === stationId && evse_id !== evseId;
-        });
-        const statuses = evses.reduce((object, { status }) => {
-          const count = object[status] + 1;
-          object[status] = count || 1;
-          return object;
-        }, {});
-        const count = statuses[connectorStatus] + 1;
-        statuses[connectorStatus] = count || 1;
-        if (statuses.Available) {
-          station.status = "Available";
-        } else if (statuses.Occupied) {
-          station.status = "Occupied";
-        } else if (statuses.Reserved) {
-          station.status = "Reserved";
-        } else if (statuses.Faulted) {
-          station.status = "Faulted";
-        }
+      } else {
+        dispatch(evseStatusStateUpsertMany(evseStatusIds
+          .filter(({ station_id }) => station_id === stationId)
+          .map(({ station_id, evse_id }) => ({
+            station_id, evse_id,
+            status: connectorStatus,
+          }))));
       }
-      dispatch(stationStateUpdateById(station));
     }
-  }, [lastJsonMessage, evseList, dispatch]);
+  }, [lastJsonMessage, evseStatusIds, dispatch]);
 
   const handleViewStation = (stationId) => {
     setStationId(stationId);
@@ -182,12 +160,22 @@ const DriverStation = () => {
     setMapHeight(window.innerHeight - (headerHeight + filterHeight));
   }, [headerHeight, filterRef]);
 
+  useEffect(() => {
+    setSetBound(true);
+  }, [stationList.length]);
+
+  useEffect(() => {
+    if (setBound) {
+      setSetBound(false);
+    }
+  }, [setBound]);
+
   const displayMap = useMemo(() => {
-    const renderStationMarker = (station) => (
+    const renderStationMarker = ({ id }) => (
       <StationStatusMarker
-        key={station.id}
-        station={station}
-        onMarkerClick={() => handleViewStation(station.id)}
+        key={id}
+        stationId={id}
+        onClick={() => handleViewStation(id)}
       />
     );
     return (
@@ -195,13 +183,13 @@ const DriverStation = () => {
         <MapContainer
           locations={stationList}
           renderMarker={renderStationMarker}
-          setBound={isMount || numberOfStations !== stationList.length}
+          setBound={setBound}
           locate={true}
           center={isCenter}
         />
       </div>
     );
-  }, [stationList, mapHeight, isMount, numberOfStations, isCenter]);
+  }, [stationList, mapHeight, setBound, isCenter]);
 
   return (
     <CCard className="flex-grow-1 border border-top-0 rounded-0">
@@ -220,28 +208,14 @@ const DriverStation = () => {
               ? <LoadingIndicator loading={loading} />
               : (
                 <CListGroup>
-                  {stationList.map(({ id, name, status }) => (
+                  {stationList.map(({ id }) => (
                     <CListGroupItem
                       key={id}
                       className="d-flex justify-content-between align-items-center py-3"
                       component="button"
                       onClick={() => handleViewStation(id)}
                     >
-                      <div>
-                        <small className="w-100 text-secondary">ID: {id}</small>
-                        <p className="mb-0">{name}</p>
-                      </div>
-                      <div className={
-                        status === "Available"
-                          ? "text-success"
-                          : status === "Occupied"
-                            ? "text-warning"
-                            : status === "Unavailable"
-                              ? "text-secondary"
-                              : "text-danger"
-                      }>
-                        {status}
-                      </div>
+                      <DriverStationListItem stationId={id} />
                     </CListGroupItem>
                   ))}
                 </CListGroup>

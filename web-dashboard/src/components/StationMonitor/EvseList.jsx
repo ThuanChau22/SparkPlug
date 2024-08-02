@@ -13,15 +13,20 @@ import {
   evseGetByStation,
   selectEvseByStation,
 } from "redux/evse/evseSlice";
+import {
+  evseStatusGetByStation,
+  selectEvseStatusByStation,
+} from "redux/evse/evseStatusSlice";
 
 const StationMonitorEvseList = ({ stationId, remoteStart, remoteStop }) => {
   const evseList = useSelector((state) => selectEvseByStation(state, stationId));
+  const evseStatusList = useSelector((state) => selectEvseStatusByStation(state, stationId));
 
   const [loading, setLoading] = useState(false);
 
   const dispatch = useDispatch();
 
-  const fetchData = useCallback(async () => {
+  const fetchEvseData = useCallback(async () => {
     if (evseList.length === 0) {
       setLoading(true);
       await dispatch(evseGetByStation(stationId)).unwrap();
@@ -29,9 +34,18 @@ const StationMonitorEvseList = ({ stationId, remoteStart, remoteStop }) => {
     }
   }, [stationId, evseList.length, dispatch]);
 
+  const fetchEvseStatusData = useCallback(async () => {
+    if (evseStatusList.length === 0) {
+      setLoading(true);
+      await dispatch(evseStatusGetByStation(stationId)).unwrap();
+      setLoading(false);
+    }
+  }, [stationId, evseStatusList.length, dispatch]);
+
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchEvseData();
+    fetchEvseStatusData();
+  }, [fetchEvseData, fetchEvseStatusData]);
 
   return (
     <CCard

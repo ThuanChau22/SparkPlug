@@ -2,8 +2,12 @@ import {
   createSlice,
   createAsyncThunk,
   createEntityAdapter,
+  createSelector,
 } from "@reduxjs/toolkit";
 
+import {
+  selectEvseStatusByStation
+} from "redux/evse/evseStatusSlice";
 import {
   apiInstance,
   tokenConfig,
@@ -32,10 +36,6 @@ export const stationSlice = createSlice({
     },
     stationStateSetById(state, { payload }) {
       stationEntityAdapter.setOne(state, payload);
-    },
-    stationStateUpdateMany(state, { payload }) {
-      const mapper = ({ id, ...changes }) => ({ id, changes });
-      stationEntityAdapter.updateMany(state, payload.map(mapper));
     },
     stationStateUpdateById(state, { payload }) {
       const { id, ...changes } = payload;
@@ -70,7 +70,6 @@ export const stationSlice = createSlice({
 export const {
   stationStateSetMany,
   stationStateSetById,
-  stationStateUpdateMany,
   stationStateUpdateById,
   stationStateDeleteById,
   stationSetStateSelected,
@@ -159,6 +158,27 @@ export const selectStation = (state) => state[stationSlice.name];
 const stationSelectors = stationEntityAdapter.getSelectors(selectStation);
 export const selectStationList = stationSelectors.selectAll;
 export const selectStationById = stationSelectors.selectById;
+
+export const selectStationStatusById = createSelector(
+  [selectEvseStatusByStation],
+  (evses) => {
+    const statuses = evses.reduce((object, { status }) => {
+      return { ...object, [status]: object[status] || true };
+    }, {});
+    for (const status of [
+      "Available",
+      "Occupied",
+      "Reserved",
+      "Faulted",
+      "Unavailable",
+    ]) {
+      if (statuses[status]) {
+        return status
+      }
+    }
+    return "Unknown";
+  },
+);
 
 const filterSelectors = locationFilterAdapter.getSelectors(selectStation);
 export const selectSelectedState = filterSelectors.selectSelectedState;

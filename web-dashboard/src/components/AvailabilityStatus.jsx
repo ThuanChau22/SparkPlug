@@ -11,7 +11,7 @@ const AvailabilityStatus = ({ status }) => {
               ? "text-danger"
               : "text-secondary"
     }>
-      {status}
+      {status || "Unknown"}
     </span>
   );
 };
