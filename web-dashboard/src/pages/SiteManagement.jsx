@@ -49,8 +49,7 @@ const SiteManagement = () => {
   const [loading, setLoading] = useState(false);
 
   const [mapHeight, setMapHeight] = useState(window.innerHeight);
-  const [isMount, setIsMount] = useState(true);
-  const [numberOfStations, setNumberOfSites] = useState(0);
+  const [setBound, setSetBound] = useState(true);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -59,14 +58,12 @@ const SiteManagement = () => {
   const dispatch = useDispatch();
 
   const fetchData = useCallback(async () => {
-    setIsMount(false);
-    setNumberOfSites(siteList.length);
     if (siteList.length === 0) {
       setLoading(true);
       await dispatch(siteGetList()).unwrap();
       setLoading(false);
     }
-  }, [siteList, dispatch]);
+  }, [siteList.length, dispatch]);
 
   useEffect(() => {
     fetchData();
@@ -94,6 +91,16 @@ const SiteManagement = () => {
     setMapHeight(window.innerHeight - (headerHeight + filterHeight));
   }, [headerHeight, filterRef]);
 
+  useEffect(() => {
+    setSetBound(true);
+  }, [siteList.length]);
+
+  useEffect(() => {
+    if (setBound) {
+      setSetBound(false);
+    }
+  }, [setBound]);
+
   const displayMap = useMemo(() => {
     const renderSiteMarker = (site) => (
       <SiteMarker
@@ -108,11 +115,11 @@ const SiteManagement = () => {
         <MapContainer
           locations={siteList}
           renderMarker={renderSiteMarker}
-          setBound={isMount || numberOfStations !== siteList.length}
+          setBound={setBound}
         />
       </div>
     );
-  }, [siteList, mapHeight, isMount, numberOfStations]);
+  }, [siteList, mapHeight, setBound]);
 
   return (
     <CCard className="flex-grow-1 border border-top-0 rounded-0">

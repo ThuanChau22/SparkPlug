@@ -13,12 +13,12 @@ import {
 
 import {
   siteGetList,
-  selectSiteList,
+  selectSiteIds,
 } from "redux/site/siteSlide";
 import { stationAdd } from "redux/station/stationSlide";
 
 const StationAddModal = ({ isOpen, onClose }) => {
-  const siteList = useSelector(selectSiteList);
+  const siteIds = useSelector(selectSiteIds);
 
   const initialFormData = {
     name: "",
@@ -33,14 +33,12 @@ const StationAddModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (siteList.length === 0) {
+    if (siteIds.length === 0) {
       dispatch(siteGetList());
+    } else {
+      setSiteOptions(siteIds);
     }
-  }, [siteList, dispatch]);
-
-  useEffect(() => {
-    setSiteOptions(siteList.map(site => site.id));
-  }, [siteList]);
+  }, [siteIds, dispatch]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

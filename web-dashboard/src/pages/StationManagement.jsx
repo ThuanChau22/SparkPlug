@@ -49,8 +49,7 @@ const StationManagement = () => {
   const [loading, setLoading] = useState(false);
 
   const [mapHeight, setMapHeight] = useState(window.innerHeight);
-  const [isMount, setIsMount] = useState(true);
-  const [numberOfStations, setNumberOfStations] = useState(0);
+  const [setBound, setSetBound] = useState(true);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -59,14 +58,12 @@ const StationManagement = () => {
   const dispatch = useDispatch();
 
   const fetchData = useCallback(async () => {
-    setIsMount(false);
-    setNumberOfStations(stationList.length);
     if (stationList.length === 0) {
       setLoading(true);
       await dispatch(stationGetList()).unwrap();
       setLoading(false);
     }
-  }, [stationList, dispatch]);
+  }, [stationList.length, dispatch]);
 
   useEffect(() => {
     fetchData();
@@ -94,6 +91,16 @@ const StationManagement = () => {
     setMapHeight(window.innerHeight - (headerHeight + filterHeight));
   }, [headerHeight, filterRef]);
 
+  useEffect(() => {
+    setSetBound(true);
+  }, [stationList.length]);
+
+  useEffect(() => {
+    if (setBound) {
+      setSetBound(false);
+    }
+  }, [setBound]);
+
   const displayMap = useMemo(() => {
     const renderStationMarker = station => (
       <StationMarker
@@ -108,11 +115,11 @@ const StationManagement = () => {
         <MapContainer
           locations={stationList}
           renderMarker={renderStationMarker}
-          setBound={isMount || numberOfStations !== stationList.length}
+          setBound={setBound}
         />
       </div>
     );
-  }, [stationList, mapHeight, isMount, numberOfStations]);
+  }, [stationList, mapHeight, setBound]);
 
   return (
     <CCard className="flex-grow-1 border border-top-0 rounded-0">

@@ -58,7 +58,7 @@ const StationAnalytics = () => {
       await dispatch(stationGetList()).unwrap();
       setLoading(false);
     }
-  }, [stationList, dispatch]);
+  }, [stationList.length, dispatch]);
 
   useEffect(() => {
     fetchData();

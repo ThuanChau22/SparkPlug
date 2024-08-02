@@ -43,7 +43,7 @@ const UserManagement = () => {
       })).unwrap();
       setLoading(false);
     }
-  }, [userList, dispatch]);
+  }, [userList.length, dispatch]);
 
   useEffect(() => {
     fetchData();

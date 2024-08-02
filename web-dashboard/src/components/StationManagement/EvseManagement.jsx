@@ -28,7 +28,7 @@ const EvseManagement = ({ stationId }) => {
       await dispatch(evseGetByStation(stationId)).unwrap();
       setLoading(false);
     }
-  }, [stationId, evseList, dispatch]);
+  }, [stationId, evseList.length, dispatch]);
 
   useEffect(() => {
     fetchData();

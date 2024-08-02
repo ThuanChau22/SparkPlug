@@ -11,8 +11,7 @@ import {
 } from "redux/evse/evseSlice";
 
 const StationMonitorEvseListItem = ({ stationId, evseId, remoteStart, remoteStop }) => {
-  const id = { stationId, evseId };
-  const evse = useSelector((state) => selectEvseById(state, id));
+  const evse = useSelector((state) => selectEvseById(state, { stationId, evseId }));
 
   const meterTimeout = useRef(0)
 
