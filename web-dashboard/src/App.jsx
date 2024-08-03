@@ -21,7 +21,7 @@ import {
   selectAuthSecureStorage,
 } from "redux/auth/authSlice";
 import routes from "routes";
-import './scss/style.scss'; // 确保路径正确
+import "scss/style.scss";
 
 const App = () => {
   const authenticated = useSelector(selectAuthAuthenticated);

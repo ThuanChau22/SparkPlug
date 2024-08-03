@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useMemo, createRef } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -11,45 +11,22 @@ import {
   CListGroupItem,
 } from "@coreui/react";
 
-import { stationIcon } from "assets/mapIcons";
 import LoadingIndicator from "components/LoadingIndicator";
-import LocationFilter from "components/LocationFilter";
-import MapContainer from "components/MapContainer";
-import StationMarker from "components/StationMarker";
 import StickyContainer from "components/StickyContainer";
 import StationAddModal from "components/StationManagement/AddModal";
 import StationDetailsModal from "components/StationManagement/DetailsModal";
+import StationMapView from "components/StationManagement/MapView";
 import { selectHeaderHeight } from "redux/header/headerSlice";
 import {
   stationGetList,
-  stationSetStateSelected,
-  stationSetCitySelected,
-  stationSetZipCodeSelected,
   selectStationList,
-  selectSelectedState,
-  selectStateOptions,
-  selectSelectedCity,
-  selectCityOptions,
-  selectSelectedZipCode,
-  selectZipCodeOptions,
 } from "redux/station/stationSlice";
 
 const StationManagement = () => {
-  const filterRef = createRef();
-
   const headerHeight = useSelector(selectHeaderHeight);
   const stationList = useSelector(selectStationList);
-  const stationSelectedState = useSelector(selectSelectedState);
-  const stationStateOptions = useSelector(selectStateOptions);
-  const stationSelectedCity = useSelector(selectSelectedCity);
-  const stationCityOptions = useSelector(selectCityOptions);
-  const stationSelectedZipCode = useSelector(selectSelectedZipCode);
-  const stationZipCodeOptions = useSelector(selectZipCodeOptions);
 
   const [loading, setLoading] = useState(false);
-
-  const [mapHeight, setMapHeight] = useState(window.innerHeight);
-  const [setBound, setSetBound] = useState(true);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -73,53 +50,6 @@ const StationManagement = () => {
     setStationId(stationId);
     setIsDetailsModalOpen(true);
   };
-
-  const handleFilter = (state, city, zipCode) => {
-    const params = [];
-    if (state !== "All") params.push(`state=${state}`);
-    if (city !== "All") params.push(`city=${city}`);
-    if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
-    const query = params.length > 0 ? `?${params.join("&")}` : "";
-    dispatch(stationGetList(query));
-    dispatch(stationSetStateSelected(state));
-    dispatch(stationSetCitySelected(city));
-    dispatch(stationSetZipCodeSelected(zipCode));
-  };
-
-  useEffect(() => {
-    const filterHeight = filterRef.current.offsetHeight;
-    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
-  }, [headerHeight, filterRef]);
-
-  useEffect(() => {
-    setSetBound(true);
-  }, [stationList.length]);
-
-  useEffect(() => {
-    if (setBound) {
-      setSetBound(false);
-    }
-  }, [setBound]);
-
-  const displayMap = useMemo(() => {
-    const renderStationMarker = station => (
-      <StationMarker
-        key={station.id}
-        station={station}
-        icon={stationIcon}
-        onMarkerClick={() => handleViewStation(station.id)}
-      />
-    );
-    return (
-      <div style={{ height: `${mapHeight}px` }}>
-        <MapContainer
-          locations={stationList}
-          renderMarker={renderStationMarker}
-          setBound={setBound}
-        />
-      </div>
-    );
-  }, [stationList, mapHeight, setBound]);
 
   return (
     <CCard className="flex-grow-1 border border-top-0 rounded-0 card">
@@ -161,19 +91,7 @@ const StationManagement = () => {
           </CCardBody>
         </CCol>
         <CCol md={6} lg={7}>
-          <StickyContainer top={`${headerHeight}px`}>
-            <LocationFilter
-              ref={filterRef}
-              selectedState={stationSelectedState}
-              states={stationStateOptions}
-              selectedCity={stationSelectedCity}
-              cities={stationCityOptions}
-              selectedZipCode={stationSelectedZipCode}
-              zipCodes={stationZipCodeOptions}
-              onChange={handleFilter}
-            />
-            {displayMap}
-          </StickyContainer>
+          <StationMapView handleViewStation={handleViewStation} />
         </CCol>
       </CRow>
       {isAddModalOpen && (

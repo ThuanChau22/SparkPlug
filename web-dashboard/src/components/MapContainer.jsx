@@ -16,25 +16,32 @@ const MapContainer = ({
   renderMarker,
   setBound = true,
   locate = false,
-  center = false
+  center = false,
 }) => {
-
   const MapContent = () => {
     const [position, setPosition] = useState(null);
+    const [isCenter, setIsCenter] = useState(center);
     const map = useMapEvents({
       locationfound({ latlng }) {
         setPosition(latlng);
-        if (center) {
+        if (isCenter) {
           map.flyTo(latlng, 14);
+          console.log("Fly");
+
+          setIsCenter(false);
         }
       },
     });
 
     useEffect(() => {
-      if (locate) {
+      console.log({ isCenter });
+
+      if (locate && isCenter) {
+        console.log("Locate");
+
         map.locate();
       }
-    }, [map]);
+    }, [map, isCenter]);
 
     useEffect(() => {
       if (setBound && locations && locations.length > 0) {

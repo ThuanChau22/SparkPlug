@@ -128,7 +128,9 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
         <CModalTitle>
           {!loading && (
             <>
-              {station.name} - <AvailabilityStatus status={stationStatus} />
+              {station.name} - <span>
+                <AvailabilityStatus status={stationStatus} />
+              </span>
             </>
           )}
         </CModalTitle>

@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useMemo, createRef } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -11,45 +11,22 @@ import {
   CListGroupItem,
 } from "@coreui/react";
 
-import { siteIcon } from "assets/mapIcons";
 import LoadingIndicator from "components/LoadingIndicator";
-import LocationFilter from "components/LocationFilter";
-import MapContainer from "components/MapContainer";
-import SiteMarker from "components/SiteMarker";
 import StickyContainer from "components/StickyContainer";
 import SiteAddModal from "components/SiteManagement/AddModal";
 import SiteDetailsModal from "components/SiteManagement/DetailsModal";
+import SiteMapView from "components/SiteManagement/MapView";
 import { selectHeaderHeight } from "redux/header/headerSlice";
 import {
   siteGetList,
-  siteSetStateSelected,
-  siteSetCitySelected,
-  siteSetZipCodeSelected,
   selectSiteList,
-  selectSelectedState,
-  selectStateOptions,
-  selectSelectedCity,
-  selectCityOptions,
-  selectSelectedZipCode,
-  selectZipCodeOptions,
 } from "redux/site/siteSlice";
 
 const SiteManagement = () => {
-  const filterRef = createRef();
-
   const headerHeight = useSelector(selectHeaderHeight);
   const siteList = useSelector(selectSiteList);
-  const siteSelectedState = useSelector(selectSelectedState);
-  const siteStateOptions = useSelector(selectStateOptions);
-  const siteSelectedCity = useSelector(selectSelectedCity);
-  const siteCityOptions = useSelector(selectCityOptions);
-  const siteSelectedZipCode = useSelector(selectSelectedZipCode);
-  const siteZipCodeOptions = useSelector(selectZipCodeOptions);
 
   const [loading, setLoading] = useState(false);
-
-  const [mapHeight, setMapHeight] = useState(window.innerHeight);
-  const [setBound, setSetBound] = useState(true);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -73,53 +50,6 @@ const SiteManagement = () => {
     setSiteId(siteId);
     setIsDetailsModalOpen(true);
   };
-
-  const handleFilter = (state, city, zipCode) => {
-    const params = [];
-    if (state !== "All") params.push(`state=${state}`);
-    if (city !== "All") params.push(`city=${city}`);
-    if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
-    const query = params.length > 0 ? `?${params.join("&")}` : "";
-    dispatch(siteGetList(query));
-    dispatch(siteSetStateSelected(state));
-    dispatch(siteSetCitySelected(city));
-    dispatch(siteSetZipCodeSelected(zipCode));
-  };
-
-  useEffect(() => {
-    const filterHeight = filterRef.current.offsetHeight;
-    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
-  }, [headerHeight, filterRef]);
-
-  useEffect(() => {
-    setSetBound(true);
-  }, [siteList.length]);
-
-  useEffect(() => {
-    if (setBound) {
-      setSetBound(false);
-    }
-  }, [setBound]);
-
-  const displayMap = useMemo(() => {
-    const renderSiteMarker = (site) => (
-      <SiteMarker
-        key={site.id}
-        site={site}
-        icon={siteIcon}
-        onSiteClick={handleViewSite}
-      />
-    );
-    return (
-      <div style={{ height: `${mapHeight}px` }}>
-        <MapContainer
-          locations={siteList}
-          renderMarker={renderSiteMarker}
-          setBound={setBound}
-        />
-      </div>
-    );
-  }, [siteList, mapHeight, setBound]);
 
   return (
     <CCard className="flex-grow-1 border border-top-0 rounded-0 card">
@@ -162,19 +92,7 @@ const SiteManagement = () => {
           </CCardBody>
         </CCol>
         <CCol md={6} lg={7}>
-          <StickyContainer top={`${headerHeight}px`}>
-            <LocationFilter
-              ref={filterRef}
-              selectedState={siteSelectedState}
-              states={siteStateOptions}
-              selectedCity={siteSelectedCity}
-              cities={siteCityOptions}
-              selectedZipCode={siteSelectedZipCode}
-              zipCodes={siteZipCodeOptions}
-              onChange={handleFilter}
-            />
-            {displayMap}
-          </StickyContainer>
+          <SiteMapView handleViewSite={handleViewSite} />
         </CCol>
       </CRow>
       {isAddModalOpen &&

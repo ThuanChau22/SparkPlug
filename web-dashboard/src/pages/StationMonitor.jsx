@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useMemo, createRef } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import {
@@ -13,26 +13,15 @@ import {
 import ms from "ms";
 
 import LoadingIndicator from "components/LoadingIndicator";
-import LocationFilter from "components/LocationFilter";
-import MapContainer from "components/MapContainer";
-import StationStatusMarker from "components/StationStatusMarker";
 import StickyContainer from "components/StickyContainer";
 import StationMonitorListItem from "components/StationMonitor/StationListItem";
 import StationMonitorDetailsModal from "components/StationMonitor/DetailsModal";
+import StationMonitorMapView from "components/StationMonitor/MapView";
 import { selectHeaderHeight } from "redux/header/headerSlice";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   stationGetList,
-  stationSetStateSelected,
-  stationSetCitySelected,
-  stationSetZipCodeSelected,
   selectStationList,
-  selectSelectedState,
-  selectStateOptions,
-  selectSelectedCity,
-  selectCityOptions,
-  selectSelectedZipCode,
-  selectZipCodeOptions,
 } from "redux/station/stationSlice";
 import {
   evseStatusStateUpsertMany,
@@ -44,23 +33,13 @@ import {
 const StationMonitor = () => {
   const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
 
-  const filterRef = createRef();
-
   const headerHeight = useSelector(selectHeaderHeight);
+
   const token = useSelector(selectAuthAccessToken);
   const stationList = useSelector(selectStationList);
-  const stationSelectedState = useSelector(selectSelectedState);
-  const stationStateOptions = useSelector(selectStateOptions);
-  const stationSelectedCity = useSelector(selectSelectedCity);
-  const stationCityOptions = useSelector(selectCityOptions);
-  const stationSelectedZipCode = useSelector(selectSelectedZipCode);
-  const stationZipCodeOptions = useSelector(selectZipCodeOptions);
   const evseStatusIds = useSelector(selectEvseStatusIds);
 
   const [loading, setLoading] = useState(false);
-
-  const [mapHeight, setMapHeight] = useState(window.innerHeight);
-  const [setBound, setSetBound] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [stationId, setStationId] = useState(null);
@@ -141,49 +120,6 @@ const StationMonitor = () => {
     setIsModalOpen(true);
   };
 
-  const handleFilter = (state, city, zipCode) => {
-    const params = [];
-    if (state !== "All") params.push(`state=${state}`);
-    if (city !== "All") params.push(`city=${city}`);
-    if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
-    const query = params.length > 0 ? `?${params.join("&")}` : "";
-    dispatch(stationGetList(query));
-    dispatch(stationSetStateSelected(state));
-    dispatch(stationSetCitySelected(city));
-    dispatch(stationSetZipCodeSelected(zipCode));
-  };
-
-  useEffect(() => {
-    const filterHeight = filterRef.current.offsetHeight;
-    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
-  }, [headerHeight, filterRef]);
-
-  useEffect(() => {
-    setSetBound(true);
-  }, [stationList.length]);
-
-  useEffect(() => {
-    if (setBound) {
-      setSetBound(false);
-    }
-  }, [setBound]);
-
-  const displayMap = useMemo(() => (
-    <div style={{ height: `${mapHeight}px` }}>
-      <MapContainer
-        locations={stationList}
-        renderMarker={({ id }) => (
-          <StationStatusMarker
-            key={id}
-            stationId={id}
-            onClick={() => handleViewStation(id)}
-          />
-        )}
-        setBound={setBound}
-      />
-    </div>
-  ), [stationList, mapHeight, setBound]);
-
   return (
     <CCard className="flex-grow-1 border border-top-0 rounded-0 card">
       <CRow xs={{ gutterX: 0 }}>
@@ -204,7 +140,7 @@ const StationMonitor = () => {
                   {stationList.map(({ id }) => (
                     <CListGroupItem
                       key={id}
-                      className="d-flex justify-content-between align-items-center py-3 card"
+                      className="d-flex flex-row justify-content-between align-items-center py-3 card"
                       component="button"
                       onClick={() => handleViewStation(id)}
                     >
@@ -216,19 +152,7 @@ const StationMonitor = () => {
           </CCardBody>
         </CCol>
         <CCol md={6} lg={7}>
-          <StickyContainer top={`${headerHeight}px`}>
-            <LocationFilter
-              ref={filterRef}
-              selectedState={stationSelectedState}
-              states={stationStateOptions}
-              selectedCity={stationSelectedCity}
-              cities={stationCityOptions}
-              selectedZipCode={stationSelectedZipCode}
-              zipCodes={stationZipCodeOptions}
-              onChange={handleFilter}
-            />
-            {displayMap}
-          </StickyContainer>
+          <StationMonitorMapView handleViewStation={handleViewStation} />
         </CCol>
       </CRow>
       {isModalOpen && (

@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useMemo, createRef } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CRow,
@@ -10,43 +10,23 @@ import {
   CListGroupItem,
 } from "@coreui/react";
 
-import { stationIcon } from "assets/mapIcons";
 import LoadingIndicator from "components/LoadingIndicator";
-import LocationFilter from "components/LocationFilter";
-import MapContainer from "components/MapContainer";
-import StationMarker from "components/StationMarker";
 import StickyContainer from "components/StickyContainer";
 import StationAnalyticsDetailsModal from "components/StationAnalytics/DetailsModal";
+import StationAnalyticsMapView from "components/StationAnalytics/MapView";
 import { selectHeaderHeight } from "redux/header/headerSlice";
 import {
   stationGetList,
-  stationSetStateSelected,
-  stationSetCitySelected,
-  stationSetZipCodeSelected,
   selectStationList,
-  selectSelectedState,
-  selectStateOptions,
-  selectSelectedCity,
-  selectCityOptions,
-  selectSelectedZipCode,
-  selectZipCodeOptions,
 } from "redux/station/stationSlice";
 
 const StationAnalytics = () => {
-  const filterRef = createRef();
-
   const headerHeight = useSelector(selectHeaderHeight);
+
   const stationList = useSelector(selectStationList);
-  const stationSelectedState = useSelector(selectSelectedState);
-  const stationStateOptions = useSelector(selectStateOptions);
-  const stationSelectedCity = useSelector(selectSelectedCity);
-  const stationCityOptions = useSelector(selectCityOptions);
-  const stationSelectedZipCode = useSelector(selectSelectedZipCode);
-  const stationZipCodeOptions = useSelector(selectZipCodeOptions);
 
   const [loading, setLoading] = useState(false);
 
-  const [mapHeight, setMapHeight] = useState(window.innerHeight);
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [stationId, setStationId] = useState(null);
 
@@ -68,42 +48,6 @@ const StationAnalytics = () => {
     setStationId(stationId);
     setIsAnalyticsModalOpen(true);
   };
-
-  const handleFilter = (state, city, zipCode) => {
-    const params = [];
-    if (state !== "All") params.push(`state=${state}`);
-    if (city !== "All") params.push(`city=${city}`);
-    if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
-    const query = params.length > 0 ? `?${params.join("&")}` : "";
-    dispatch(stationGetList(query));
-    dispatch(stationSetStateSelected(state));
-    dispatch(stationSetCitySelected(city));
-    dispatch(stationSetZipCodeSelected(zipCode));
-  };
-
-  useEffect(() => {
-    const filterHeight = filterRef.current.offsetHeight;
-    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
-  }, [headerHeight, filterRef]);
-
-  const displayMap = useMemo(() => {
-    const renderStationMarker = station => (
-      <StationMarker
-        key={station.id}
-        station={station}
-        icon={stationIcon}
-        onMarkerClick={() => handleViewStation(station.id)}
-      />
-    );
-    return (
-      <div style={{ height: `${mapHeight}px` }}>
-        <MapContainer
-          locations={stationList}
-          renderMarker={renderStationMarker}
-        />
-      </div>
-    );
-  }, [stationList, mapHeight]);
 
   return (
     <CCard className="flex-grow-1 border border-top-0 rounded-0 card">
@@ -138,19 +82,7 @@ const StationAnalytics = () => {
           </CCardBody>
         </CCol>
         <CCol md={6} lg={7}>
-          <StickyContainer top={`${headerHeight}px`}>
-            <LocationFilter
-              ref={filterRef}
-              selectedState={stationSelectedState}
-              states={stationStateOptions}
-              selectedCity={stationSelectedCity}
-              cities={stationCityOptions}
-              selectedZipCode={stationSelectedZipCode}
-              zipCodes={stationZipCodeOptions}
-              onChange={handleFilter}
-            />
-            {displayMap}
-          </StickyContainer>
+          <StationAnalyticsMapView handleViewStation={handleViewStation} />
         </CCol>
       </CRow>
       {isAnalyticsModalOpen && (

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -43,6 +43,11 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
     fetchData();
   }, [fetchData]);
 
+  const userRoleFormatted = useMemo(() => userRole.reduce((s, role) => {
+    role = role.charAt(0).toUpperCase() + role.slice(1);
+    return s ? `${s}, ${role}` : role;
+  }, ""), [userRole]);
+
   const InfoModal = () => (
     <>
       <div className="d-flex justify-content-between">
@@ -80,12 +85,7 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
         </span>
         </p>
         <p>
-          Role: {
-            userRole.reduce((s, role) => {
-              role = role.charAt(0).toUpperCase() + role.slice(1);
-              return s ? `${s}, ${role}` : role;
-            }, "")
-          }
+          Role: {userRoleFormatted}
         </p>
         <p>Registered on: {new Date(user.created_at).toLocaleString("en-US")}</p>
       </CModalBody>

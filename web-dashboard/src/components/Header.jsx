@@ -13,6 +13,7 @@ import {
   NavLink,
 } from "react-router-dom";
 import {
+  CButton,
   CContainer,
   CHeader,
   CHeaderBrand,
@@ -21,11 +22,10 @@ import {
   CHeaderToggler,
   CNavLink,
   CNavItem,
-  CButton,
 } from "@coreui/react";
 import { cilMenu } from "@coreui/icons";
 import CIcon from "@coreui/icons-react";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // Import FontAwesomeIcon
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
 
 import logoBrand from "assets/logo-brand";
@@ -109,7 +109,7 @@ const Header = ({ theme, toggleTheme }) => {
         </CHeaderNav>
         <CHeaderNav>
           <CButton onClick={toggleTheme} className="btn btn-light">
-              <FontAwesomeIcon icon={theme === 'light' ? faMoon : faSun} /> {/* Toggle icon */}
+              <FontAwesomeIcon icon={theme === 'light' ? faMoon : faSun} />
           </CButton>
         </CHeaderNav>
       </CContainer>
