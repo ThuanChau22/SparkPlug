@@ -7,9 +7,9 @@ import {
   clearHeader,
   handleError,
 } from "redux/api";
-import { siteStateClear } from "redux/site/siteSlide";
-import { stationStateClear } from "redux/station/stationSlide";
-import { userStateClear } from "redux/user/userSlide";
+import { siteStateClear } from "redux/site/siteSlice";
+import { stationStateClear } from "redux/station/stationSlice";
+import { userStateClear } from "redux/user/userSlice";
 
 const AuthAPI = process.env.REACT_APP_AUTH_API_ENDPOINT;
 

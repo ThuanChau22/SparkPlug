@@ -12,13 +12,14 @@ import {
 } from "@coreui/react";
 
 import {
-  siteGetAll,
-  selectSiteList,
-} from "redux/site/siteSlide";
-import { stationAdd } from "redux/station/stationSlide";
+  siteGetList,
+  selectSiteIds,
+} from "redux/site/siteSlice";
+import { stationAdd } from "redux/station/stationSlice";
 
 const StationAddModal = ({ isOpen, onClose }) => {
-  const siteList = useSelector(selectSiteList);
+  const siteIds = useSelector(selectSiteIds);
+
   const initialFormData = {
     name: "",
     siteId: "",
@@ -26,18 +27,18 @@ const StationAddModal = ({ isOpen, onClose }) => {
     longitude: "",
   };
   const [formData, setFormData] = useState(initialFormData);
+
   const [siteOptions, setSiteOptions] = useState([]);
+
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (siteList.length === 0) {
-      dispatch(siteGetAll());
+    if (siteIds.length === 0) {
+      dispatch(siteGetList());
+    } else {
+      setSiteOptions(siteIds);
     }
-  }, [siteList, dispatch]);
-
-  useEffect(() => {
-    setSiteOptions(siteList.map(site => site.id));
-  }, [siteList]);
+  }, [siteIds, dispatch]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

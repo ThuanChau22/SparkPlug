@@ -1,18 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { GooeyCircleLoader } from "react-loaders-kit";
 import {
   useNavigate,
   useLocation,
   Outlet,
 } from "react-router-dom";
-import {
-  CContainer,
-} from "@coreui/react";
 
 import Header from "components/Header";
 import Sidebar from "components/Sidebar";
 import Footer from "components/Footer";
+import LoadingIndicator from "components/LoadingIndicator";
 import {
   authStateSet,
   authStateClear,
@@ -24,6 +21,7 @@ import {
   selectAuthSecureStorage,
 } from "redux/auth/authSlice";
 import routes from "routes";
+import "scss/style.scss";
 
 const App = () => {
   const authenticated = useSelector(selectAuthAuthenticated);
@@ -35,6 +33,8 @@ const App = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
     if (token) {
@@ -86,7 +86,6 @@ const App = () => {
       if (authIsOwner) {
         restricted.add(routes.Users.path);
       }
-      restricted.add(routes.Driver.Components.AIPredictedLocation.path)
     }
     if (authIsDriver) {
       restricted.add(routes.Dashboard.path);
@@ -107,30 +106,33 @@ const App = () => {
     }
   }, [authIsAdmin, authIsOwner, authIsDriver, location, navigate]);
 
-  return (authenticated
-    ? (
-      <>
-        <Sidebar />
-        <div className="bg-light min-vh-100 d-flex flex-column wrapper">
-          <Header />
-          <div className="body flex-grow-1">
-            <Outlet />
-          </div>
-          <Footer />
-        </div>
-      </>
-    )
-    : (
-      <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
-        <CContainer className="d-flex flex-row justify-content-center">
-          <GooeyCircleLoader
-            className="mx-auto"
-            color={["#f6b93b", "#5e22f0", "#ef5777"]}
-            loading={true}
-          />
-        </CContainer>
-      </div>
-    )
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+  };
+
+  useEffect(() => {
+    document.body.className = theme;
+  }, [theme]);
+
+  // TODO: Change background color
+  return (
+    <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
+      {!authenticated
+        ? <LoadingIndicator loading={!authenticated} />
+        : (
+          <>
+            <Sidebar />
+            <div className={`min-vh-100 d-flex flex-column wrapper ${theme}`}>
+              <Header theme={theme} toggleTheme={toggleTheme} />
+              <div className="body d-flex flex-column flex-grow-1">
+                <Outlet context={{ theme, toggleTheme }} />
+              </div>
+              <Footer />
+            </div>
+          </>
+        )
+      }
+    </div >
   );
 };
 

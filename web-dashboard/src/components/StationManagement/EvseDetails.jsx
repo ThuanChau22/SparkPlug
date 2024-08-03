@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -7,18 +7,41 @@ import {
   CFormSelect,
 } from "@coreui/react";
 
+import LoadingIndicator from "components/LoadingIndicator";
 import {
+  evseGetById,
   evseUpdateById,
   evseDeleteById,
   selectEvseById,
 } from "redux/evse/evseSlice";
 
 const EvseDetails = ({ stationId, evseId }) => {
-  const id = { stationId, evseId };
-  const evse = useSelector((state) => selectEvseById(state, id));
+  const evse = useSelector((state) => selectEvseById(state, {
+    stationId,
+    evseId,
+  }));
+
+  const [loading, setLoading] = useState(false);
+
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
+
   const dispatch = useDispatch();
+
+  const fetchData = useCallback(async () => {
+    if (!evse) {
+      setLoading(true);
+      await dispatch(evseGetById({
+        stationId,
+        evseId,
+      })).unwrap();
+      setLoading(false);
+    }
+  }, [stationId, evseId, evse, dispatch]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const Info = () => {
     const { evse_id, charge_level, connector_type, price } = evse;
@@ -80,7 +103,8 @@ const EvseDetails = ({ stationId, evseId }) => {
 
     const handleSave = () => {
       const data = {
-        ...id,
+        stationId,
+        evseId,
         ...formData,
       };
       if (!data.chargeLevel
@@ -156,7 +180,10 @@ const EvseDetails = ({ stationId, evseId }) => {
       if (input !== confirmation) {
         return;
       }
-      dispatch(evseDeleteById(id));
+      dispatch(evseDeleteById({
+        stationId,
+        evseId,
+      }));
     };
 
     return (
@@ -192,15 +219,13 @@ const EvseDetails = ({ stationId, evseId }) => {
     );
   };
 
-  return (
-    <>
-      {isEdit
-        ? <Edit />
-        : isDelete
-          ? <Delete />
-          : <Info />
-      }
-    </>
+  return (loading
+    ? <LoadingIndicator loading={loading} />
+    : isEdit
+      ? <Edit />
+      : isDelete
+        ? <Delete />
+        : <Info />
   );
 };
 

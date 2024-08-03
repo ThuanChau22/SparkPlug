@@ -2,8 +2,12 @@ import {
   createSlice,
   createAsyncThunk,
   createEntityAdapter,
+  createSelector,
 } from "@reduxjs/toolkit";
 
+import {
+  Roles as UserRoles
+} from "redux/auth/authSlice";
 import {
   apiInstance,
   tokenConfig,
@@ -14,16 +18,20 @@ const UserAPI = process.env.REACT_APP_USER_API_ENDPOINT;
 
 const userEntityAdapter = createEntityAdapter();
 
-const initialState = userEntityAdapter.getInitialState();
+const initialState = userEntityAdapter.getInitialState({
+  cursor: {
+    next: "",
+  },
+});
 
 export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    userStateGetAll(state, { payload }) {
-      userEntityAdapter.setAll(state, payload);
+    userStateSetMany(state, { payload }) {
+      userEntityAdapter.setMany(state, payload);
     },
-    userStateGetById(state, { payload }) {
+    userStateSetById(state, { payload }) {
       userEntityAdapter.setOne(state, payload);
     },
     userStateUpdateById(state, { payload }) {
@@ -33,6 +41,9 @@ export const userSlice = createSlice({
     userStateDeleteById(state, { payload }) {
       userEntityAdapter.removeOne(state, payload);
     },
+    userStateSetCursor(state, { payload }) {
+      state.cursor = payload;
+    },
     userStateClear(_) {
       return initialState;
     },
@@ -40,20 +51,32 @@ export const userSlice = createSlice({
 });
 
 export const {
-  userStateGetAll,
-  userStateGetById,
+  userStateSetMany,
+  userStateSetById,
   userStateUpdateById,
   userStateDeleteById,
+  userStateSetCursor,
   userStateClear,
 } = userSlice.actions;
 
-export const userGetAll = createAsyncThunk(
-  `${userSlice.name}/getAll`,
-  async (_, { dispatch, getState }) => {
+export const userGetList = createAsyncThunk(
+  `${userSlice.name}/getList`,
+  async (query = {}, { dispatch, getState }) => {
     try {
+      const { email, name, staff, owner, driver, cursor, limit } = query;
+      const params = [
+        email ? `email=${email}` : "",
+        name ? `name=${name}` : "",
+        staff ? `staff=${staff}` : "",
+        owner ? `owner=${owner}` : "",
+        driver ? `driver=${driver}` : "",
+        cursor ? `cursor=${cursor}` : "",
+        limit ? `limit=${limit > 0 ? limit : ""}` : "",
+      ].filter((s) => s).reduce((p, s) => `${p}${p === "" ? "?" : "&"}${s}`, "");
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.get(`${UserAPI}/`, config);
-      dispatch(userStateGetAll(data));
+      const { data } = await apiInstance.get(`${UserAPI}${params}`, config);
+      dispatch(userStateSetMany(data.users));
+      dispatch(userStateSetCursor(data.cursor));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -66,7 +89,7 @@ export const userGetById = createAsyncThunk(
     try {
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(`${UserAPI}/${userId}`, config);
-      dispatch(userStateGetById(data));
+      dispatch(userStateSetById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -105,5 +128,12 @@ export const selectUser = (state) => state[userSlice.name];
 const userSelectors = userEntityAdapter.getSelectors(selectUser);
 export const selectUserList = userSelectors.selectAll;
 export const selectUserById = userSelectors.selectById;
+
+export const selectUserRoleById = createSelector(
+  [selectUserById],
+  (user) => Object.values(UserRoles).filter((role) => user[role]),
+);
+
+export const selectUserCursor = (state) => selectUser(state).cursor;
 
 export default userSlice.reducer;

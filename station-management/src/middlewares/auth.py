@@ -10,7 +10,7 @@ def require_permission(*allowed_roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            request.auth = {"role": "all"}
+            request.auth = {"role": "anonymous"}
             if "Authorization" in request.headers:
                 _, token = request.headers["Authorization"].split(" ")
                 body = {"token": token}
@@ -24,7 +24,7 @@ def require_permission(*allowed_roles):
                     "user_id": data["id"],
                     "role": data["role"],
                 }
-            elif "all" not in allowed_roles:
+            elif "anonymous" not in allowed_roles:
                 return {"message": "Missing token"}, 401
 
             return f(*args, **kwargs)

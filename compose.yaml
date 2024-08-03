@@ -97,7 +97,6 @@ services:
       GEOIP_LICENSE_KEY: ${STATION_GEOIP_LICENSE_KEY}
     depends_on:
       - user-management
-      - sql-db-service
     develop:
       watch:
         - action: sync
