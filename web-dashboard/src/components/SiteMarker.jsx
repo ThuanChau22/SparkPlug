@@ -1,19 +1,20 @@
-import { Marker, Tooltip } from "react-leaflet";
+import { siteIcon } from "assets/mapIcons";
+import MapMarker from "components/MapMarker";
 
-const SiteMarker = ({ site, icon, onSiteClick }) => {
-  const formattedAddress = `${site.street_address}, ${site.city}, ${site.state} ${site.zip_code}`;
-
+const SiteMarker = ({ site, onClick }) => {
+  const {
+    name, latitude, longitude,
+    street_address, city, state, zip_code, country,
+  } = site;
   return (
-    <Marker
-      icon={icon}
-      position={[site.latitude, site.longitude]}
-      eventHandlers={{ click: () => onSiteClick(site.id) }}
+    <MapMarker
+      icon={siteIcon}
+      position={[latitude, longitude]}
+      onClick={onClick}
     >
-      <Tooltip direction="top" offset={[0, -20]} opacity={1} permanent={false}>
-        <div>{site.name}</div>
-        <div>{formattedAddress}</div>
-      </Tooltip>
-    </Marker>
+      <div>{name}</div>
+      <div>{`${street_address}, ${city}, ${state} ${zip_code}, ${country}`}</div>
+    </MapMarker>
   );
 };
 

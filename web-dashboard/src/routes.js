@@ -3,16 +3,17 @@ import AccountProfile from "pages/AccountProfile";
 import AccountSettings from "pages/AccountSetting";
 import Login from "pages/Login";
 import Register from "pages/Register";
+import Unauthorized from "pages/Unauthorized";
+import NotFound from "pages/NotFound";
 import Dashboard from "pages/Dashboard";
-import SiteManagement from "pages/SiteManagement";
 import StationManagement from "pages/StationManagement";
 import StationMonitor from "pages/StationMonitor";
 import StationAnalytics from "pages/StationAnalytics";
+import SiteManagement from "pages/SiteManagement";
 import UserManagement from "pages/UserManagement";
+import AIPredictedLocation from "pages/AIPredictedLocation";
 import DriverDashboard from "pages/DriverDashboard";
-import DriverStations from "pages/DriverStation";
-import Unauthorized from "pages/Unauthorized";
-import NotFound from "pages/NotFound";
+import DriverStation from "pages/DriverStation";
 
 const Stations = {
   Management: {
@@ -41,7 +42,7 @@ const Driver = {
   Stations: {
     name: "Stations",
     path: "/driver/stations",
-    element: <DriverStations />
+    element: <DriverStation />
   },
 };
 
@@ -56,11 +57,16 @@ const routes = {
     path: "/dashboard",
     element: <Dashboard />,
   },
+  AIPredictedLocation: {
+    name: "AIPredictedLocation",
+    path: "/aipredictedlocation",
+    element: <AIPredictedLocation />,
+  },
   Stations: {
     name: "Stations",
     path: "/stations",
     defaultPath: Stations.Management.path,
-    Components: Stations,
+    Components: Stations,   
   },
   Sites: {
     name: "Sites",

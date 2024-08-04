@@ -20,15 +20,45 @@ services:
     environment:
       PORT: ${USER_PORT}
 
-  site-station-analytics:
-    image: ${CONTAINER_REGISTRY}/site-station-analytics
-    container_name: sparkplug-site-station-analytics
+  sql-db-service:
+    image: ${CONTAINER_REGISTRY}/sql-db-service
+    container_name: sparkplug-sql-db-service
     build:
-      context: ./site-station-analytics
+      context: ./sql-db-service
+    ports:
+      - ${SQL_SERVICE_PORT}:${SQL_SERVICE_PORT}
+    environment:
+      PORT: ${SQL_SERVICE_PORT}
+
+  mongo-db-service:
+    image: ${CONTAINER_REGISTRY}/mongo-db-service
+    container_name: sparkplug-mongo-db-service
+    build:
+      context: ./mongo-db-service
+    ports:
+      - ${MONGO_SERVICE_PORT}:${MONGO_SERVICE_PORT}
+    environment:
+      PORT: ${MONGO_SERVICE_PORT}
+
+  station-management:
+    image: ${CONTAINER_REGISTRY}/station-management
+    container_name: sparkplug-station-management
+    build:
+      context: ./station-management
     ports:
       - ${STATION_PORT}:${STATION_PORT}
     environment:
       PORT: ${STATION_PORT}
+
+  analytics:
+    image: ${CONTAINER_REGISTRY}/analytics
+    container_name: sparkplug-analytics
+    build:
+      context: ./analytics
+    ports:
+      - ${ANALYTICS_PORT}:${ANALYTICS_PORT}
+    environment:
+      PORT: ${ANALYTICS_PORT}
 
   monitoring:
     image: ${CONTAINER_REGISTRY}/monitoring
@@ -60,43 +90,3 @@ services:
       - ${SIMULATOR_SERVER_PORT}:${SIMULATOR_SERVER_PORT}
     environment:
       PORT: ${SIMULATOR_SERVER_PORT}
-  
-  sql-db-service:
-    image: ${CONTAINER_REGISTRY}/sql-db-service
-    container_name: sparkplug-sql-db-service
-    build:
-      context: ./sql-db-service
-    ports:
-      - ${SQL_SERVICE_PORT}:${SQL_SERVICE_PORT}
-    environment:
-      PORT: ${SQL_SERVICE_PORT}
-
-  mongo-db-service:
-    image: ${CONTAINER_REGISTRY}/mongo-db-service
-    container_name: sparkplug-mongo-db-service
-    build:
-      context: ./mongo-db-service
-    ports:
-      - ${MONGO_SERVICE_PORT}:${MONGO_SERVICE_PORT}
-    environment:
-      PORT: ${MONGO_SERVICE_PORT}
-
-  station-management-service:
-    image: ${CONTAINER_REGISTRY}/station-management-service
-    container_name: sparkplug-station-management-service
-    build:
-      context: ./station-management-service
-    ports:
-      - ${STATION_MANAGEMENT_PORT}:${STATION_MANAGEMENT_PORT}
-    environment:
-      PORT: ${STATION_MANAGEMENT_PORT}
-  
-  station-analytics-service:
-    image: ${CONTAINER_REGISTRY}/station-analytics-service
-    container_name: sparkplug-station-analytics-service
-    build:
-      context: ./station-analytics-service
-    ports:
-      - ${STATION_ANALYTICS_PORT}:${STATION_ANALYTICS_PORT}
-    environment:
-      PORT: ${STATION_ANALYTICS_PORT}

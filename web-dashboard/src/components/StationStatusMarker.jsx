@@ -1,24 +1,29 @@
-import { Marker, Tooltip } from "react-leaflet";
+import { useSelector } from "react-redux";
 
-import { createStationIcon } from "assets/mapIcons";
+import { stationStatusIcon } from "assets/mapIcons";
+import { selectStationStatusById } from "redux/station/stationSlice";
 
-const DriverStationMarker = ({ station, onMarkerClick }) => {
-  const { name, price, status, latitude, longitude } = station;
-  const { street_address, city, state, zip_code } = station;
+import MapMarker from "components/MapMarker";
+
+const StationStatusMarker = ({ station, onClick }) => {
+  const stationStatus = useSelector((state) => selectStationStatusById(state, station.id));
+
+  const {
+    name, latitude, longitude,
+    street_address, city, state, zip_code, country,
+  } = station;
+
   return (
-    <Marker
+    <MapMarker
+      icon={stationStatusIcon(stationStatus)}
       position={[latitude, longitude]}
-      icon={createStationIcon(status)}
-      eventHandlers={{ click: () => onMarkerClick(station) }}
+      onClick={onClick}
     >
-      <Tooltip direction="top" offset={[0, -20]} opacity={1} permanent={false}>
-        <div>{`Station: ${name}`}</div>
-        <div>{`Price: ${price}`}</div>
-        <div>{`Status: ${status}`}</div>
-        <div>{`${street_address}, ${city}, ${state} ${zip_code}`}</div>
-      </Tooltip>
-    </Marker>
+      <div>{`Station: ${name}`}</div>
+      <div>{`Status: ${stationStatus}`}</div>
+      <div>{`${street_address}, ${city}, ${state} ${zip_code}, ${country}`}</div>
+    </MapMarker>
   );
 };
 
-export default DriverStationMarker;
+export default StationStatusMarker;

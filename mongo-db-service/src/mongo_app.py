@@ -99,7 +99,7 @@ def insert_transaction(transaction):
     :param transaction: The transaction to be inserted.
     :return: The ID of the inserted transaction.
     """
-    collection = db['transactions']
+    collection = db['charging_sessions']
     result = collection.insert_one(transaction)
     return str(result.inserted_id)
 
@@ -138,7 +138,7 @@ def fetch_transactions(query_in):
 
     print(f"New Query: {query_out}", file=sys.stderr)
 
-    transactions = db.transactions.find(query_out)
+    transactions = db.charging_sessions.find(query_out)
     transactions_list = list(transactions)
     for transaction in transactions_list:
         transaction["_id"] = str(transaction["_id"])
@@ -155,6 +155,8 @@ def insert_evse_status_update(data):
 
     evse_status_update_formatted = {
         "evse_id": int(data["evse_id"]),
+        "station_id": int(data["station_id"]),
+        "evse_number": int(data["evse_number"]),
         "updates": [
             {
                 # Use the provided timestamp or the current time if it's not provided
@@ -167,6 +169,8 @@ def insert_evse_status_update(data):
     # Update the document with the given evse_id, or create it if it doesn't exist
     result = db.evse_status.update_one(
         {"evse_id": evse_status_update_formatted["evse_id"]},
+        {"station_id": evse_status_update_formatted["station_id"]},
+        {"evse_number": evse_status_update_formatted["evse_number"]},
         {"$push": {"updates": {"$each": evse_status_update_formatted["updates"]}}},
         upsert=True
     )
@@ -190,6 +194,11 @@ def fetch_evse_status(query_in):
         # Convert the evse_id parameter to a list of integers
         evse_ids = [int(id) for id in query_in["evse_id"].split(",")]
         query_out["evse_id"] = {"$in": evse_ids}
+    
+    if "station_id" in query_in:
+        # Convert the station_id parameter to a list of integers
+        station_ids = [int(id) for id in query_in["station_id"].split(",")]
+        query_out["station_id"] = {"$in": station_ids}
 
     print(f"New Query: {query_out}", file=sys.stderr)
 
@@ -294,6 +303,29 @@ def post_evse_status(user=None):
     result = insert_evse_status_update(data)
 
     return {"message": "EVSE status updated successfully", "id": result}, 200
+
+@app.route("/api/mongo/new_stations/<int:zip_code>", methods=["GET"])
+def get_new_stations(zip_code, user=None):
+    
+    # Get stations summary
+    summary = db.new_stations_summary.find_one({"zip_code": zip_code}) 
+    summary['_id'] = str(summary['_id'])
+
+    print(summary, file=sys.stderr)
+
+    # Get stations details
+    stations = list(db.new_stations_details.find({"zip_code": zip_code}))  # Convert cursor to list
+    for station in stations:
+        station['_id'] = str(station['_id'])
+        print(station, file=sys.stderr)
+
+    # Combine summary and stations in one response
+    response = {
+        "summary": summary,
+        "stations": stations
+    }
+
+    return response
 
 # Run the app
 if __name__ == "__main__":

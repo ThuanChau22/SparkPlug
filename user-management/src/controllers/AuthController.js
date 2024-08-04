@@ -2,33 +2,39 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 import { JWT_SECRET } from "../config.js";
-import userRepository, { Role } from "../repositories/UserRepository.js";
+import User from "../repositories/UserRepository.js";
+import utils from "../utils.js";
 
+const saltRounds = 12;
 const tokenLimit = "15d";
 
 export const signup = async (req, res) => {
   try {
-    const { email, password, name, role = Role.Driver } = req.body;
-    const assignedRole = role === Role.Staff ? Role.Driver : role;
+    const { Role: { Staff, Driver } } = User;
+    const { email, password, name, role = Driver } = req.body;
+    const assignedRole = role === Staff ? Driver : role;
     let user;
     try {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const userId = await userRepository.createUser({ email, hashedPassword, name });
-      user = await userRepository.getUserById(userId);
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      const params = { email, hashedPassword, name, role: assignedRole };
+      const userId = await User.createUser(params);
+      user = await User.getUserById(userId);
     } catch (error) {
       if (error.errno === 1062) {
-        user = await userRepository.getUserByEmail(email);
-        if (!await bcrypt.compare(password, user.password)) {
-          return res.status(401).json({ message: "Invalid credentials" });
+        const filter = { email };
+        const { users: [existedUser] } = await User.getUsers({ filter });
+        if (!await bcrypt.compare(password, existedUser.password)) {
+          throw { code: 401, message: "Invalid credentials" };
         }
-        if (await userRepository.getUserByIdAndRole(user.id, assignedRole)) {
-          return res.status(409).json({ message: "User already existed" });
+        if (existedUser[assignedRole] !== 0) {
+          throw { code: 409, message: "User already existed" };
         }
+        await User.addRole(existedUser.id, assignedRole);
+        user = existedUser;
       } else {
         throw error;
       }
     }
-    await userRepository.addRole(user.id, assignedRole);
     const token = jwt.sign({
       id: user.id,
       email: user.email,
@@ -36,16 +42,20 @@ export const signup = async (req, res) => {
     }, JWT_SECRET, { expiresIn: tokenLimit });
     res.status(201).json({ token });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return utils.handleError(res, error);
   }
 };
 
 export const login = async (req, res) => {
   try {
-    const { email, password, role = Role.Driver } = req.body;
-    const user = await userRepository.getUserByEmailAndRole(email, role);
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    const { email, password, role = User.Role.Driver } = req.body;
+    const filter = { email, [role]: 1 };
+    const { users: [user] } = await User.getUsers({ filter });
+    if (!user
+      || !Object.values(User.Role).includes(role)
+      || !(await bcrypt.compare(password, user.password))
+    ) {
+      throw { code: 401, message: "Invalid credentials" };
     }
     const token = jwt.sign({
       id: user.id,
@@ -54,7 +64,7 @@ export const login = async (req, res) => {
     }, JWT_SECRET, { expiresIn: tokenLimit });
     res.status(201).json({ token });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return utils.handleError(res, error);
   }
 };
 
@@ -62,16 +72,16 @@ export const verify = async (req, res) => {
   try {
     const { token } = req.body;
     if (!token) {
-      return res.status(401).json({ message: "Missing token" });
+      throw { code: 401, message: "Missing token" };
     }
     return res.status(200).json({ ...jwt.verify(token, JWT_SECRET) });
   } catch (error) {
     if (error.name === "JsonWebTokenError") {
-      return res.status(401).json({ message: "Invalid token" });
+      error = { code: 401, message: "Invalid token" };
     }
-    if(error.name === "TokenExpiredError") {
-      return res.status(401).json({ message: "Expired token" });
+    if (error.name === "TokenExpiredError") {
+      error = { code: 401, message: "Expired token" };
     }
-    res.status(500).json({ message: error.message });
+    return utils.handleError(res, error);
   }
 };

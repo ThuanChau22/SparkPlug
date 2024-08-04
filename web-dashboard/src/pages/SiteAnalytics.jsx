@@ -20,7 +20,7 @@ import SiteMarker from "components/SiteMarker";
 import StickyContainer from "components/StickyContainer";
 import { selectHeaderHeight } from "redux/header/headerSlice";
 import {
-  siteGetAll,
+  siteGetList,
   siteSetStateSelected,
   siteSetCitySelected,
   siteSetZipCodeSelected,
@@ -31,7 +31,7 @@ import {
   selectCityOptions,
   selectSelectedZipCode,
   selectZipCodeOptions,
-} from "redux/site/siteSlide";
+} from "redux/site/siteSlice";
 
 const SiteAnalytics = () => {
   const titleRef = createRef();
@@ -64,7 +64,7 @@ const SiteAnalytics = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     if (siteList.length === 0) {
-      await dispatch(siteGetAll()).unwrap();
+      await dispatch(siteGetList()).unwrap();
     }
     setLoading(false);
   }, [siteList, dispatch]);
@@ -77,9 +77,9 @@ const SiteAnalytics = () => {
     const params = [];
     if (state !== "All") params.push(`state=${state}`);
     if (city !== "All") params.push(`city=${city}`);
-    if (zipCode !== "All") params.push(`zip=${zipCode}`);
+    if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
     const query = params.length > 0 ? `?${params.join("&")}` : "";
-    dispatch(siteGetAll(query));
+    dispatch(siteGetList(query));
     dispatch(siteSetStateSelected(state));
     dispatch(siteSetCitySelected(city));
     dispatch(siteSetZipCodeSelected(zipCode));

@@ -1,3 +1,4 @@
+import { ConnectionStringParser } from "connection-string-parser";
 import dotenv from "dotenv";
 import dotenvExpand from "dotenv-expand";
 import mysql2 from "mysql2/promise.js";
@@ -11,24 +12,22 @@ export const {
   WEB_DOMAIN,
   AUTH_API_ENDPOINT,
   STATION_API_ENDPOINT,
-  MYSQL_HOST,
-  MYSQL_PORT,
-  MYSQL_USER,
-  MYSQL_PASS,
-  MYSQL_DATABASE,
-  MONGODB_URL,
+  MYSQL_URI,
+  MONGODB_URI,
 } = process.env;
 
+const parser = new ConnectionStringParser({ scheme: "mysql" });
+const mysqlCredential = parser.parse(MYSQL_URI);
 export const mysql = mysql2.createPool({
-  host: MYSQL_HOST,
-  port: MYSQL_PORT,
-  user: MYSQL_USER,
-  password: MYSQL_PASS,
-  database: MYSQL_DATABASE,
+  host: mysqlCredential.hosts[0].host,
+  port: mysqlCredential.hosts[0].port,
+  user: mysqlCredential.username,
+  password: mysqlCredential.password,
+  database: mysqlCredential.endpoint,
 });
 
 export const connectMongoDB = async () => {
-  await mongoose.connect(MONGODB_URL, { maxPoolSize: 250 });
+  await mongoose.connect(MONGODB_URI, { maxPoolSize: 250 });
 };
 
 export const setGracefulShutdown = (httpServer, wsServers = []) => {

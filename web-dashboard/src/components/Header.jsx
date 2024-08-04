@@ -13,6 +13,7 @@ import {
   NavLink,
 } from "react-router-dom";
 import {
+  CButton,
   CContainer,
   CHeader,
   CHeaderBrand,
@@ -24,6 +25,8 @@ import {
 } from "@coreui/react";
 import { cilMenu } from "@coreui/icons";
 import CIcon from "@coreui/icons-react";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
 
 import logoBrand from "assets/logo-brand";
 import Breadcrumb from "components/Breadcrumb";
@@ -37,9 +40,9 @@ import {
   sidebarSetShow,
 } from "redux/sidebar/sidebarSlice";
 import routes from "routes";
-import '../scss/style.scss'
+import '../scss/style.scss';
 
-const Header = () => {
+const Header = ({ theme, toggleTheme }) => {
   const sidebarShow = useSelector(selectSidebarShow);
   const [components, setComponents] = useState([]);
   const ref = useRef(0);
@@ -49,7 +52,6 @@ const Header = () => {
   const handleResize = useCallback(() => {
     dispatch(headerSetHeight(ref.current.offsetHeight));
   }, [dispatch]);
-
 
   useEffect(() => {
     handleResize();
@@ -78,9 +80,11 @@ const Header = () => {
       }
     }
   }, [location, dispatch]);
+
+  const navItemStyle = theme === 'dark' ? { color: 'white' } : {};
+
   return (
-    
-    <CHeader position="sticky" ref={ref}>
+    <CHeader style={navItemStyle} position="sticky" ref={ref} className={theme}>
       <CContainer fluid>
         <CHeaderToggler
           className="ps-1"
@@ -93,8 +97,8 @@ const Header = () => {
         </CHeaderBrand>
         <CHeaderNav className="d-none d-md-flex me-auto">
           {components && components.map(({ name, path }, index) => (
-            <CNavItem key={index}>
-              <CNavLink to={path} component={NavLink}>
+            <CNavItem key={index} style={navItemStyle}>
+              <CNavLink to={path} component={NavLink} style={navItemStyle}>
                 {name}
               </CNavLink>
             </CNavItem>
@@ -103,15 +107,19 @@ const Header = () => {
         <CHeaderNav>
           <HeaderDropdown />
         </CHeaderNav>
+        <CHeaderNav>
+          <CButton onClick={toggleTheme} className="btn btn-light">
+              <FontAwesomeIcon icon={theme === 'light' ? faMoon : faSun} />
+          </CButton>
+        </CHeaderNav>
       </CContainer>
       <CHeaderDivider />
       <CContainer fluid>
         <Breadcrumb />
-      </CContainer>  
+      </CContainer>
     </CHeader>
-
-    
-  )
+  );
 };
 
-export default Header
+export default Header;
+

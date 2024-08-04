@@ -21,6 +21,13 @@ export const stationIcon = L.icon({
   popupAnchor: [0, -80],
 });
 
+export const newStationIcon = L.icon({
+  iconUrl: greenStationIconUrl,
+  iconSize: [80, 80],
+  iconAnchor: [40, 80],
+  popupAnchor: [0, -80],
+});
+
 export const siteIcon = L.icon({
   iconUrl: siteIconUrl,
   iconSize: [80, 80],
@@ -28,8 +35,7 @@ export const siteIcon = L.icon({
   popupAnchor: [0, -80],
 });
 
-// Dynamically create station icons based on status
-export const createStationIcon = (status) => {
+export const stationStatusIcon = (status) => {
   let iconUrl;
   switch (status) {
     case "Available":
@@ -45,9 +51,8 @@ export const createStationIcon = (status) => {
       iconUrl = redStationIconUrl;
       break;
     default:
-      iconUrl = stationIconUrl; // Default icon
+      iconUrl = grayStationIconUrl
   }
-
   return L.icon({
     iconUrl: iconUrl,
     iconSize: [80, 80],

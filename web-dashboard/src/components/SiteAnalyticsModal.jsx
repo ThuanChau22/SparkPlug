@@ -17,7 +17,7 @@ import {
 
 import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
-import { selectSiteById } from "redux/site/siteSlide";
+import { selectSiteById } from "redux/site/siteSlice";
 
 const SiteAnalyticsModal = ({ isOpen, onClose, siteId }) => {
   const SiteAnalyticsAPI = process.env.REACT_APP_ANALYTICS_SITE_API_ENDPOINT;
@@ -63,6 +63,7 @@ const SiteAnalyticsModal = ({ isOpen, onClose, siteId }) => {
     <CModal
       size="xl"
       alignment="center"
+      backdrop="static"
       visible={isOpen}
       onClose={onClose}
       scrollable
