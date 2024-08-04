@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, createRef } from "react";
+import { createRef, useCallback, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CCard,
@@ -6,8 +6,11 @@ import {
   CCardBody,
   CListGroup,
   CListGroupItem,
+  CRow,
+  CCol,
 } from "@coreui/react";
 
+import ActiveStatus from "components/ActiveStatus";
 import LoadingIndicator from "components/LoadingIndicator";
 import StickyContainer from "components/StickyContainer";
 import UserDetailsModal from "components/UserManagement/DetailsModal";
@@ -104,20 +107,21 @@ const UserManagement = () => {
                       <small className="w-100 text-secondary">ID: {id}</small>
                       <span>Status</span>
                     </p>
-                    <p className="d-flex justify-content-between mb-0">
-                      <span>Name: {name}</span>
-                      <span>Email: {email}</span>
-                      <span
-                        className={
-                          status === "active"
-                            ? "text-success"
-                            : status === "terminated"
-                              ? "text-danger"
-                              : "text-warning"
-                        }>
-                        {status}
-                      </span>
-                    </p>
+                    <CRow>
+                      <CCol>
+                        <CRow>
+                          <CCol xs={12} sm={6} className="pe-0">
+                            Name: {name}
+                          </CCol>
+                          <CCol xs={12} sm={6} className="pe-0">
+                            Email: {email}
+                          </CCol>
+                        </CRow>
+                      </CCol>
+                      <CCol xs="auto" sm={3} className="ps-0 text-end">
+                        <ActiveStatus status={status} />
+                      </CCol>
+                    </CRow>
                   </CListGroupItem>
                 ))}
               </CListGroup>
