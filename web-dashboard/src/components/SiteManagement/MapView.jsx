@@ -1,7 +1,6 @@
-import { useState, useEffect, createRef } from "react";
+import { useState, useEffect, useMemo, createRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { siteIcon } from "assets/mapIcons";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
 import SiteMarker from "components/SiteMarker";
@@ -35,15 +34,8 @@ const SiteMapView = ({ handleViewSite }) => {
   const siteZipCodeOptions = useSelector(selectZipCodeOptions);
 
   const [mapHeight, setMapHeight] = useState(window.innerHeight);
-  const [setBound, setSetBound] = useState(true);
 
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    if (siteList.length === 0) {
-      dispatch(siteGetList());
-    }
-  }, [siteList.length, dispatch]);
 
   useEffect(() => {
     const filterHeight = filterRef.current.offsetHeight;
@@ -51,14 +43,14 @@ const SiteMapView = ({ handleViewSite }) => {
   }, [headerHeight, filterRef]);
 
   useEffect(() => {
-    setSetBound(true);
-  }, [siteList.length]);
-
-  useEffect(() => {
-    if (setBound) {
-      setSetBound(false);
+    if (siteList.length === 0) {
+      dispatch(siteGetList());
     }
-  }, [setBound]);
+  }, [siteList.length, dispatch]);
+
+  const positions = useMemo(() => siteList.map((site) => {
+    return [site.latitude, site.longitude];
+  }), [siteList]);
 
   const handleFilter = (state, city, zipCode) => {
     const params = [];
@@ -85,18 +77,15 @@ const SiteMapView = ({ handleViewSite }) => {
         onChange={handleFilter}
       />
       <div style={{ height: `${mapHeight}px` }}>
-        <MapContainer
-          locations={siteList}
-          renderMarker={({ id }) => (
+        <MapContainer positions={positions}>
+          {siteList.map((site) => (
             <SiteMarker
-              key={id}
-              siteId={id}
-              icon={siteIcon}
-              onClick={() => handleViewSite(id)}
+              key={site.id}
+              site={site}
+              onClick={() => handleViewSite(site.id)}
             />
-          )}
-          setBound={setBound}
-        />
+          ))}
+        </MapContainer>
       </div>
     </StickyContainer>
   );

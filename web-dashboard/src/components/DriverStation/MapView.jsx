@@ -1,4 +1,4 @@
-import { useState, useEffect, createRef } from "react";
+import { useState, useEffect, useMemo, createRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import LocationFilter from "components/LocationFilter";
@@ -34,7 +34,6 @@ const DriverStationMapView = ({ handleViewStation }) => {
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
 
   const [mapHeight, setMapHeight] = useState(window.innerHeight);
-  const [isCenter, setIsCenter] = useState(true);
 
   const dispatch = useDispatch();
 
@@ -42,6 +41,16 @@ const DriverStationMapView = ({ handleViewStation }) => {
     const filterHeight = filterRef.current.offsetHeight;
     setMapHeight(window.innerHeight - (headerHeight + filterHeight));
   }, [headerHeight, filterRef]);
+
+  useEffect(() => {
+    if (stationList.length === 0) {
+      dispatch(stationGetList());
+    }
+  }, [stationList.length, dispatch]);
+
+  const positions = useMemo(() => stationList.map((station) => {
+    return [station.latitude, station.longitude];
+  }), [stationList]);
 
   const handleFilter = (state, city, zipCode) => {
     const params = [];
@@ -53,7 +62,6 @@ const DriverStationMapView = ({ handleViewStation }) => {
     dispatch(stationSetStateSelected(state));
     dispatch(stationSetCitySelected(city));
     dispatch(stationSetZipCodeSelected(zipCode));
-    setIsCenter(false);
   };
 
   return (
@@ -69,18 +77,15 @@ const DriverStationMapView = ({ handleViewStation }) => {
         onChange={handleFilter}
       />
       <div style={{ height: `${mapHeight}px` }}>
-        <MapContainer
-          locations={stationList}
-          renderMarker={({ id }) => (
+        <MapContainer positions={positions} locate={true} >
+          {stationList.map((station) => (
             <StationStatusMarker
-              key={id}
-              stationId={id}
-              onClick={() => handleViewStation(id)}
+              key={station.id}
+              station={station}
+              onClick={() => handleViewStation(station.id)}
             />
-          )}
-          locate={true}
-          center={isCenter}
-        />
+          ))}
+        </MapContainer>
       </div>
     </StickyContainer>
   );

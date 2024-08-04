@@ -1,4 +1,4 @@
-import { useState, useEffect, createRef } from "react";
+import { useState, useEffect, useMemo, createRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import LocationFilter from "components/LocationFilter";
@@ -38,15 +38,19 @@ const StationMonitorMapView = ({ handleViewStation }) => {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    const filterHeight = filterRef.current.offsetHeight;
+    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
+  }, [headerHeight, filterRef]);
+
+  useEffect(() => {
     if (stationList.length === 0) {
       dispatch(stationGetList());
     }
   }, [stationList.length, dispatch]);
 
-  useEffect(() => {
-    const filterHeight = filterRef.current.offsetHeight;
-    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
-  }, [headerHeight, filterRef]);
+  const positions = useMemo(() => stationList.map((station) => {
+    return [station.latitude, station.longitude];
+  }), [stationList]);
 
   const handleFilter = (state, city, zipCode) => {
     const params = [];
@@ -73,16 +77,15 @@ const StationMonitorMapView = ({ handleViewStation }) => {
         onChange={handleFilter}
       />
       <div style={{ height: `${mapHeight}px` }}>
-        <MapContainer
-          locations={stationList}
-          renderMarker={({ id }) => (
+        <MapContainer positions={positions}>
+          {stationList.map((station) => (
             <StationStatusMarker
-              key={id}
-              stationId={id}
-              onClick={() => handleViewStation(id)}
+              key={station.id}
+              station={station}
+              onClick={() => handleViewStation(station.id)}
             />
-          )}
-        />
+          ))}
+        </MapContainer>
       </div>
     </StickyContainer>
   );
