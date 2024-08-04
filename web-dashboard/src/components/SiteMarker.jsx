@@ -1,32 +1,20 @@
-import { useMemo } from "react";
-import { useSelector } from "react-redux";
-import { Marker, Tooltip } from "react-leaflet";
+import { siteIcon } from "assets/mapIcons";
+import MapMarker from "components/MapMarker";
 
-import { selectSiteById } from "redux/site/siteSlice";
-
-const SiteMarker = ({ siteId, icon, onClick }) => {
-  const site = useSelector((state) => selectSiteById(state, siteId));
+const SiteMarker = ({ site, onClick }) => {
   const {
-    name,
-    latitude,
-    longitude,
-    street_address,
-    city,
-    state,
-    zip_code,
-    country,
-  } = useMemo(() => site, [site]);
+    name, latitude, longitude,
+    street_address, city, state, zip_code, country,
+  } = site;
   return (
-    <Marker
-      icon={icon}
+    <MapMarker
+      icon={siteIcon}
       position={[latitude, longitude]}
-      eventHandlers={{ click: onClick }}
+      onClick={onClick}
     >
-      <Tooltip direction="top" offset={[0, -20]} opacity={1} permanent={false}>
-        <div>{name}</div>
-        <div>{`${street_address}, ${city}, ${state} ${zip_code}, ${country}`}</div>
-      </Tooltip>
-    </Marker>
+      <div>{name}</div>
+      <div>{`${street_address}, ${city}, ${state} ${zip_code}, ${country}`}</div>
+    </MapMarker>
   );
 };
 

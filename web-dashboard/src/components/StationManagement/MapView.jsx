@@ -1,7 +1,6 @@
-import { useState, useEffect, createRef } from "react";
+import { useState, useEffect, useMemo, createRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { stationIcon } from "assets/mapIcons";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
 import StationMarker from "components/StationMarker";
@@ -35,15 +34,8 @@ const StationMapView = ({ handleViewStation }) => {
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
 
   const [mapHeight, setMapHeight] = useState(window.innerHeight);
-  const [setBound, setSetBound] = useState(true);
 
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    if (stationList.length === 0) {
-      dispatch(stationGetList());
-    }
-  }, [stationList.length, dispatch]);
 
   useEffect(() => {
     const filterHeight = filterRef.current.offsetHeight;
@@ -51,14 +43,14 @@ const StationMapView = ({ handleViewStation }) => {
   }, [headerHeight, filterRef]);
 
   useEffect(() => {
-    setSetBound(true);
-  }, [stationList.length]);
-
-  useEffect(() => {
-    if (setBound) {
-      setSetBound(false);
+    if (stationList.length === 0) {
+      dispatch(stationGetList());
     }
-  }, [setBound]);
+  }, [stationList.length, dispatch]);
+
+  const positions = useMemo(() => stationList.map((station) => {
+    return [station.latitude, station.longitude];
+  }), [stationList]);
 
   const handleFilter = (state, city, zipCode) => {
     const params = [];
@@ -85,18 +77,15 @@ const StationMapView = ({ handleViewStation }) => {
         onChange={handleFilter}
       />
       <div style={{ height: `${mapHeight}px` }}>
-        <MapContainer
-          locations={stationList}
-          renderMarker={({ id }) => (
+        <MapContainer positions={positions}>
+          {stationList.map((station) => (
             <StationMarker
-              key={id}
-              stationId={id}
-              icon={stationIcon}
-              onClick={() => handleViewStation(id)}
+              key={station.id}
+              station={station}
+              onClick={() => handleViewStation(station.id)}
             />
-          )}
-          setBound={setBound}
-        />
+          ))}
+        </MapContainer>
       </div>
     </StickyContainer>
   );
