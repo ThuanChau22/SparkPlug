@@ -9,7 +9,6 @@ import {
   CModalBody,
 } from "@coreui/react";
 
-import AvailabilityStatus from "components/AvailabilityStatus";
 import LoadingIndicator from "components/LoadingIndicator";
 import StationMonitorEventList from "components/StationMonitor/EventList";
 import StationMonitorEvseList from "components/StationMonitor/EvseList";
@@ -20,7 +19,6 @@ import {
 import {
   stationGetById,
   selectStationById,
-  selectStationStatusById,
 } from "redux/station/stationSlice";
 import {
   stationEventStateSetById,
@@ -36,7 +34,6 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const token = useSelector(selectAuthAccessToken);
   const station = useSelector((state) => selectStationById(state, stationId));
-  const stationStatus = useSelector((state) => selectStationStatusById(state, stationId));
 
   const [loading, setLoading] = useState(false);
 
@@ -125,15 +122,7 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
       scrollable
     >
       <CModalHeader className="mb-2">
-        <CModalTitle>
-          {!loading && (
-            <>
-              {station.name} - <span>
-                <AvailabilityStatus status={stationStatus} />
-              </span>
-            </>
-          )}
-        </CModalTitle>
+        <CModalTitle>{!loading && station.name}</CModalTitle>
       </CModalHeader>
       {loading
         ? <LoadingIndicator loading={loading} />

@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, createRef } from "react";
+import { useCallback, useState, useEffect, useMemo, createRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import LoadingIndicator from "components/LoadingIndicator";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
 import SiteMarker from "components/SiteMarker";
@@ -33,20 +34,28 @@ const SiteMapView = ({ handleViewSite }) => {
   const siteSelectedZipCode = useSelector(selectSelectedZipCode);
   const siteZipCodeOptions = useSelector(selectZipCodeOptions);
 
+  const [loading, setLoading] = useState(false);
+
   const [mapHeight, setMapHeight] = useState(window.innerHeight);
 
   const dispatch = useDispatch();
+
+  const fetchData = useCallback(async () => {
+    if (siteList.length === 0) {
+      setLoading(true);
+      await dispatch(siteGetList()).unwrap();
+      setLoading(false);
+    }
+  }, [siteList.length, dispatch]);
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData]);
 
   useEffect(() => {
     const filterHeight = filterRef.current.offsetHeight;
     setMapHeight(window.innerHeight - (headerHeight + filterHeight));
   }, [headerHeight, filterRef]);
-
-  useEffect(() => {
-    if (siteList.length === 0) {
-      dispatch(siteGetList());
-    }
-  }, [siteList.length, dispatch]);
 
   const positions = useMemo(() => siteList.map((site) => {
     return [site.latitude, site.longitude];
@@ -77,15 +86,21 @@ const SiteMapView = ({ handleViewSite }) => {
         onChange={handleFilter}
       />
       <div style={{ height: `${mapHeight}px` }}>
-        <MapContainer positions={positions}>
-          {siteList.map((site) => (
-            <SiteMarker
-              key={site.id}
-              site={site}
-              onClick={() => handleViewSite(site.id)}
-            />
-          ))}
-        </MapContainer>
+        {loading
+          ? <LoadingIndicator loading={loading} />
+          : (
+            <MapContainer positions={positions}>
+              {siteList.map((site) => (
+                <SiteMarker
+                  key={site.id}
+                  site={site}
+                  onClick={() => handleViewSite(site.id)}
+                />
+              ))}
+            </MapContainer>
+          )
+        }
+
       </div>
     </StickyContainer>
   );
