@@ -99,4 +99,10 @@ body.dark {
   outline: none;
 }
 
+// :root {
+//   --map-tiles-filter: brightness(0.6) invert(1) contrast(3) hue-rotate(180deg) brightness(0.5);
+// }
 
+// .dark .map-tiles {
+//   filter:var(--map-tiles-filter, none);
+// }
