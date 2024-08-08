@@ -76,9 +76,9 @@ services:
     build:
       context: ./ml-service
     ports:
-      - ${AI_SERVICES_PORT}:${AI_SERVICES_PORT}
+      - ${ML_SERVICE_PORT}:${ML_SERVICE_PORT}
     environment:
-      PORT: ${AI_SERVICES_PORT}
+      PORT: ${ML_SERVICE_PORT}
 
   simulator-client:
     image: ${CONTAINER_REGISTRY}/simulator-client

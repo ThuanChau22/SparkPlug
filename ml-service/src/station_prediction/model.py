@@ -25,6 +25,9 @@ class StationPredictionModel:
         charging_sessions_df = pd.DataFrame(charging_sessions).rename(
             columns={"energy_consumed_kwh": "energy_consumed"}
         )
+        charging_sessions_df["charging_time"] = pd.to_timedelta(
+            charging_sessions_df["charging_time"]
+        ).dt.total_seconds()
 
         stations = get_stations_by_zip_code(zip_code)
         stations_df = pd.DataFrame(stations)
@@ -44,6 +47,7 @@ class StationPredictionModel:
         longitude_max = stations_df["longitude"].max()
         latitude_mean = stations_df["latitude"].mean()
         longitude_mean = stations_df["longitude"].mean()
+        charging_time_mean = charging_sessions_df["charging_time"].mean()
         energy_consumed_sum = charging_sessions_df["energy_consumed"].sum()
         estimated_new_stations = int(
             np.ceil(energy_consumed_sum / 50000)
@@ -60,7 +64,7 @@ class StationPredictionModel:
                     latitude_mean,
                     longitude_mean,
                 )
-                demand += model.predict([[dist, 0]])[0]
+                demand += model.predict([[dist, charging_time_mean]])[0]
             return -demand
 
         # Constraint to ensure minimum distance between stations
@@ -82,6 +86,7 @@ class StationPredictionModel:
         if estimated_new_stations > 0:
             # Initial guess for station locations
             x0 = []
+            np.random.seed(10)
             for _ in range(estimated_new_stations):
                 latitude = np.random.uniform(latitude_min, latitude_max)
                 longitude = np.random.uniform(longitude_min, longitude_max)
