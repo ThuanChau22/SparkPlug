@@ -81,22 +81,5 @@ body.dark {
   color: #ffffff;
 }
 
-.theme-toggle {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  z-index: 1000;
-}
-
-.theme-toggle .btn {
-  background-color: transparent;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.theme-toggle .btn:focus {
-  outline: none;
-}
 
 

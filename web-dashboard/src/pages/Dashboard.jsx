@@ -1,40 +1,16 @@
 import React from 'react'
 import classNames from 'classnames'
 import '../scss/style.scss'
-import { CChartPie } from '@coreui/react-chartjs';
-import { CChartDoughnut } from '@coreui/react-chartjs';
-import { cilArrowBottom, cilArrowTop, cilOptions } from '@coreui/icons'
-import { CChart } from '@coreui/react-chartjs';
-import { Pie } from 'react-chartjs-2';
 import {
   CRow,
   CCol,
-  CDropdown,
-  CDropdownMenu,
-  CDropdownItem,
-  CDropdownToggle,
   CWidgetStatsA,
 } from '@coreui/react'
 import { getStyle } from '@coreui/utils'
 import { CChartBar, CChartLine } from '@coreui/react-chartjs'
 import {
-  CAvatar,
-  CButton,
-  CButtonGroup,
-  CCard,
-  CCardBody,
-  CCardFooter,
-  CCardHeader,
   CProgress,
-  CTable,
-  CTableBody,
-  CTableDataCell,
-  CTableHead,
-  CTableHeaderCell,
-  CTableRow,
-  CContainer,
 } from '@coreui/react'
-import CIcon from '@coreui/icons-react'
 import {
   cibCcAmex,
   cibCcApplePay,
@@ -52,15 +28,9 @@ import {
   cifPl,
   cifUs,
   cibTwitter,
-  cilCloudDownload,
-  cilPeople,
   cilUser,
   cilUserFemale,
 } from '@coreui/icons'
-
-import { Bar, Line, Doughnut } from 'react-chartjs-2';
-import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
-
 
 import avatar1 from '../assets/default-avatar.jpg'
 import avatar2 from '../assets/default-avatar.jpg'
@@ -74,17 +44,12 @@ import { useSelector } from "react-redux";
 
 import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
-import { selectStationById } from "redux/station/stationSlice";
 
-
-Chart.register(ArcElement, Tooltip, Legend);
 
 const Dashboard = () => {
   const stationId = 1392;
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
-  const station = useSelector((state) => selectStationById(state, stationId));
   const token = useSelector(selectAuthAccessToken);
-  const [analyticsData, setAnalyticsData] = useState(null);
   const [dashboardData, setDashboardData] = useState([]);
   const [EVSEStatus, setEVSEStatus] = useState([]);
 
