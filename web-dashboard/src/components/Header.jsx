@@ -25,32 +25,34 @@ import {
 } from "@coreui/react";
 import { cilMenu } from "@coreui/icons";
 import CIcon from "@coreui/icons-react";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSun, faMoon } from "@fortawesome/free-solid-svg-icons";
 
 import logoBrand from "assets/logo-brand";
 import Breadcrumb from "components/Breadcrumb";
 import HeaderDropdown from "components/HeaderDropdown";
 import {
-  headerSetActive,
-  headerSetHeight,
-} from "redux/header/headerSlice";
-import {
-  selectSidebarShow,
-  sidebarSetShow,
-} from "redux/sidebar/sidebarSlice";
+  selectLayoutSidebarShow,
+  layoutSetHeaderActive,
+  layoutSetHeaderHeight,
+  layoutSetSidebarShow,
+} from "redux/layout/layoutSlice";
 import routes from "routes";
-import '../scss/style.scss';
+import "scss/style.scss";
 
 const Header = ({ theme, toggleTheme }) => {
-  const sidebarShow = useSelector(selectSidebarShow);
+  const headerRef = useRef({});
+
+  const sidebarShow = useSelector(selectLayoutSidebarShow);
+
   const [components, setComponents] = useState([]);
-  const ref = useRef(0);
+
   const location = useLocation();
+
   const dispatch = useDispatch();
 
   const handleResize = useCallback(() => {
-    dispatch(headerSetHeight(ref.current.offsetHeight));
+    dispatch(layoutSetHeaderHeight(headerRef.current.offsetHeight));
   }, [dispatch]);
 
   useEffect(() => {
@@ -73,7 +75,7 @@ const Header = ({ theme, toggleTheme }) => {
           setComponents(Object.values(Components));
           for (const { name, path } of Object.values(Components)) {
             if (path === `/${resource}/${component}`) {
-              dispatch(headerSetActive(name));
+              dispatch(layoutSetHeaderActive(name));
             }
           }
         }
@@ -81,14 +83,19 @@ const Header = ({ theme, toggleTheme }) => {
     }
   }, [location, dispatch]);
 
-  const navItemStyle = theme === 'dark' ? { color: 'white' } : {};
+  const navItemStyle = theme === "dark" ? { color: "white" } : {};
 
   return (
-    <CHeader style={navItemStyle} position="sticky" ref={ref} className={theme}>
+    <CHeader
+      ref={headerRef}
+      style={navItemStyle}
+      position="sticky"
+      className={theme}
+    >
       <CContainer fluid>
         <CHeaderToggler
           className="ps-1"
-          onClick={() => dispatch(sidebarSetShow(!sidebarShow))}
+          onClick={() => dispatch(layoutSetSidebarShow(!sidebarShow))}
         >
           <CIcon icon={cilMenu} size="lg" />
         </CHeaderToggler>
@@ -109,7 +116,7 @@ const Header = ({ theme, toggleTheme }) => {
         </CHeaderNav>
         <CHeaderNav>
           <CButton onClick={toggleTheme} className="btn btn-light">
-              <FontAwesomeIcon icon={theme === 'light' ? faMoon : faSun} />
+            <FontAwesomeIcon icon={theme === "light" ? faMoon : faSun} />
           </CButton>
         </CHeaderNav>
       </CContainer>

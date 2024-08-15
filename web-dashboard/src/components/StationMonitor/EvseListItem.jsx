@@ -16,7 +16,7 @@ const StationMonitorEvseListItem = ({ stationId, evseId, remoteStart, remoteStop
     evseId,
   }));
 
-  const meterTimeout = useRef(0)
+  const meterTimeout = useRef({})
 
   const [meterValue, setMeterValue] = useState(evseStatus?.meterValue || 0);
 

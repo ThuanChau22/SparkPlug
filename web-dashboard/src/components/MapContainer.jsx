@@ -8,8 +8,8 @@ import MapContent from "components/MapContent";
 
 const MapContainer = ({ positions = [], locate = false, children }) => (
   <Map
-    center={[35, -115]}
-    zoom={6}
+    center={[35, -120]}
+    zoom={7}
     style={{ height: "100%", width: "100%" }}
     placeholder={<noscript>You need to enable JavaScript to see this map.</noscript>}
   >

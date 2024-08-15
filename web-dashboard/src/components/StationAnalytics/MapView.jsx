@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useMemo, createRef } from "react";
+import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import LoadingIndicator from "components/LoadingIndicator";
@@ -6,7 +6,7 @@ import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
 import StationMarker from "components/StationMarker";
 import StickyContainer from "components/StickyContainer";
-import { selectHeaderHeight } from "redux/header/headerSlice";
+import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
   stationGetList,
   stationSetStateSelected,
@@ -22,9 +22,9 @@ import {
 } from "redux/station/stationSlice";
 
 const StationAnalyticsMapView = ({ handleViewStation }) => {
-  const filterRef = createRef();
+  const filterRef = useRef({});
 
-  const headerHeight = useSelector(selectHeaderHeight);
+  const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const stationList = useSelector(selectStationList);
   const stationSelectedState = useSelector(selectSelectedState);
@@ -75,16 +75,18 @@ const StationAnalyticsMapView = ({ handleViewStation }) => {
 
   return (
     <StickyContainer top={`${headerHeight}px`}>
-      <LocationFilter
-        ref={filterRef}
-        selectedState={stationSelectedState}
-        states={stationStateOptions}
-        selectedCity={stationSelectedCity}
-        cities={stationCityOptions}
-        selectedZipCode={stationSelectedZipCode}
-        zipCodes={stationZipCodeOptions}
-        onChange={handleFilter}
-      />
+      <StickyContainer top={`${headerHeight}px`}>
+        <LocationFilter
+          ref={filterRef}
+          selectedState={stationSelectedState}
+          states={stationStateOptions}
+          selectedCity={stationSelectedCity}
+          cities={stationCityOptions}
+          selectedZipCode={stationSelectedZipCode}
+          zipCodes={stationZipCodeOptions}
+          onChange={handleFilter}
+        />
+      </StickyContainer>
       <div style={{ height: `${mapHeight}px` }}>
         {loading
           ? <LoadingIndicator loading={loading} />
