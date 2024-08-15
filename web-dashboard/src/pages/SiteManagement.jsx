@@ -16,14 +16,14 @@ import StickyContainer from "components/StickyContainer";
 import SiteAddModal from "components/SiteManagement/AddModal";
 import SiteDetailsModal from "components/SiteManagement/DetailsModal";
 import SiteMapView from "components/SiteManagement/MapView";
-import { selectHeaderHeight } from "redux/header/headerSlice";
+import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
   siteGetList,
   selectSiteList,
 } from "redux/site/siteSlice";
 
 const SiteManagement = () => {
-  const headerHeight = useSelector(selectHeaderHeight);
+  const headerHeight = useSelector(selectLayoutHeaderHeight);
   const siteList = useSelector(selectSiteList);
 
   const [loading, setLoading] = useState(false);

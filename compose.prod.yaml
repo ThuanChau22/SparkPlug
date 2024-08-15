@@ -70,6 +70,16 @@ services:
     environment:
       PORT: ${MONITORING_PORT}
 
+  ml-service:
+    image: ${CONTAINER_REGISTRY}/ml-service
+    container_name: sparkplug-ml-service
+    build:
+      context: ./ml-service
+    ports:
+      - ${ML_SERVICE_PORT}:${ML_SERVICE_PORT}
+    environment:
+      PORT: ${ML_SERVICE_PORT}
+
   simulator-client:
     image: ${CONTAINER_REGISTRY}/simulator-client
     container_name: sparkplug-simulator-client

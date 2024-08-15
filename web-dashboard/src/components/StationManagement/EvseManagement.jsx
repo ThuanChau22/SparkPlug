@@ -37,20 +37,29 @@ const EvseManagement = ({ stationId }) => {
   return (
     <CCard
       className="border-0 rounded-top-0 overflow-y-auto"
-      style={{ maxHeight: window.innerHeight * 0.5 }}
+      style={{
+        minHeight: window.innerHeight * 0.15,
+        maxHeight: window.innerHeight * 0.5,
+      }}
     >
-      <CCardBody className="py-2">
+      <CCardBody className="d-flex flex-column py-2">
         {loading
           ? <LoadingIndicator loading={loading} />
-          : (
-            <CListGroup className={evseList.length > 0 ? "mb-2" : ""}>
-              {evseList.map(({ station_id, evse_id }) => (
-                <CListGroupItem key={`${station_id},${evse_id}`}>
-                  <EvseDetails stationId={station_id} evseId={evse_id} />
-                </CListGroupItem>
-              ))}
-            </CListGroup>
-          )
+          : evseList.length > 0
+            ? (
+              <CListGroup className={evseList.length > 0 ? "mb-2" : ""}>
+                {evseList.map(({ station_id, evse_id }) => (
+                  <CListGroupItem key={`${station_id},${evse_id}`}>
+                    <EvseDetails stationId={station_id} evseId={evse_id} />
+                  </CListGroupItem>
+                ))}
+              </CListGroup>
+            )
+            : (
+              <div className="d-flex flex-grow-1 justify-content-center align-items-center">
+                <span className="text-secondary">Station has no EVSE unit</span>
+              </div>
+            )
         }
         <EvseAdd stationId={stationId} />
       </CCardBody>

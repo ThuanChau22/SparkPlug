@@ -94,7 +94,7 @@ const App = () => {
       restricted.add(routes.Stations.Components.Analytics.path);
       restricted.add(routes.Sites.path);
       restricted.add(routes.Users.path);
-      restricted.add(routes.AIPredictedLocation.path);
+      restricted.add(routes.StationPrediction.path);
     }
     let path = location.pathname;
     if (path.charAt(path.length - 1) === "/") {

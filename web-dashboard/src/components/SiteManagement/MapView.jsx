@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo, createRef } from "react";
+import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import LoadingIndicator from "components/LoadingIndicator";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
 import SiteMarker from "components/SiteMarker";
 import StickyContainer from "components/StickyContainer";
-import { selectHeaderHeight } from "redux/header/headerSlice";
+import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
   siteGetList,
   siteSetStateSelected,
@@ -21,9 +22,9 @@ import {
 } from "redux/site/siteSlice";
 
 const SiteMapView = ({ handleViewSite }) => {
-  const filterRef = createRef();
+  const filterRef = useRef({});
 
-  const headerHeight = useSelector(selectHeaderHeight);
+  const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const siteList = useSelector(selectSiteList);
   const siteSelectedState = useSelector(selectSelectedState);
@@ -33,20 +34,28 @@ const SiteMapView = ({ handleViewSite }) => {
   const siteSelectedZipCode = useSelector(selectSelectedZipCode);
   const siteZipCodeOptions = useSelector(selectZipCodeOptions);
 
+  const [loading, setLoading] = useState(false);
+
   const [mapHeight, setMapHeight] = useState(window.innerHeight);
 
   const dispatch = useDispatch();
+
+  const fetchData = useCallback(async () => {
+    if (siteList.length === 0) {
+      setLoading(true);
+      await dispatch(siteGetList()).unwrap();
+      setLoading(false);
+    }
+  }, [siteList.length, dispatch]);
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData]);
 
   useEffect(() => {
     const filterHeight = filterRef.current.offsetHeight;
     setMapHeight(window.innerHeight - (headerHeight + filterHeight));
   }, [headerHeight, filterRef]);
-
-  useEffect(() => {
-    if (siteList.length === 0) {
-      dispatch(siteGetList());
-    }
-  }, [siteList.length, dispatch]);
 
   const positions = useMemo(() => siteList.map((site) => {
     return [site.latitude, site.longitude];
@@ -66,26 +75,33 @@ const SiteMapView = ({ handleViewSite }) => {
 
   return (
     <StickyContainer top={`${headerHeight}px`}>
-      <LocationFilter
-        ref={filterRef}
-        selectedState={siteSelectedState}
-        states={siteStateOptions}
-        selectedCity={siteSelectedCity}
-        cities={siteCityOptions}
-        selectedZipCode={siteSelectedZipCode}
-        zipCodes={siteZipCodeOptions}
-        onChange={handleFilter}
-      />
+      <StickyContainer top={`${headerHeight}px`}>
+        <LocationFilter
+          ref={filterRef}
+          selectedState={siteSelectedState}
+          states={siteStateOptions}
+          selectedCity={siteSelectedCity}
+          cities={siteCityOptions}
+          selectedZipCode={siteSelectedZipCode}
+          zipCodes={siteZipCodeOptions}
+          onChange={handleFilter}
+        />
+      </StickyContainer>
       <div style={{ height: `${mapHeight}px` }}>
-        <MapContainer positions={positions}>
-          {siteList.map((site) => (
-            <SiteMarker
-              key={site.id}
-              site={site}
-              onClick={() => handleViewSite(site.id)}
-            />
-          ))}
-        </MapContainer>
+        {loading
+          ? <LoadingIndicator loading={loading} />
+          : (
+            <MapContainer positions={positions}>
+              {siteList.map((site) => (
+                <SiteMarker
+                  key={site.id}
+                  site={site}
+                  onClick={() => handleViewSite(site.id)}
+                />
+              ))}
+            </MapContainer>
+          )
+        }
       </div>
     </StickyContainer>
   );

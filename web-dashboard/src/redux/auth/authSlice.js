@@ -9,6 +9,8 @@ import {
 } from "redux/api";
 import { siteStateClear } from "redux/site/siteSlice";
 import { stationStateClear } from "redux/station/stationSlice";
+import { evseStateClear } from "redux/evse/evseSlice";
+import { evseStatusStateClear } from "redux/evse/evseStatusSlice";
 import { userStateClear } from "redux/user/userSlice";
 
 const AuthAPI = process.env.REACT_APP_AUTH_API_ENDPOINT;
@@ -84,6 +86,8 @@ export const authLogout = createAsyncThunk(
       dispatch(authStateClear());
       dispatch(siteStateClear());
       dispatch(stationStateClear());
+      dispatch(evseStateClear());
+      dispatch(evseStatusStateClear());
       dispatch(userStateClear());
       clearHeader();
     } catch (error) {

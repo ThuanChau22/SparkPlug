@@ -17,7 +17,7 @@ import StickyContainer from "components/StickyContainer";
 import StationMonitorListItem from "components/StationMonitor/StationListItem";
 import StationMonitorDetailsModal from "components/StationMonitor/DetailsModal";
 import StationMonitorMapView from "components/StationMonitor/MapView";
-import { selectHeaderHeight } from "redux/header/headerSlice";
+import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   stationGetList,
@@ -33,7 +33,7 @@ import {
 const StationMonitor = () => {
   const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
 
-  const headerHeight = useSelector(selectHeaderHeight);
+  const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const token = useSelector(selectAuthAccessToken);
   const stationList = useSelector(selectStationList);

@@ -5,15 +5,13 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymysql import MySQLError
 from functools import wraps
-from urllib.parse import urljoin
 
 # Internal Modules
-from config import (
-    PORT,
+from src.config import (
     WEB_DOMAIN,
     AUTH_API_ENDPOINT,
-    mysql_pool,
-    mongo_connection,
+    mysql,
+    mongo,
 )
 
 
@@ -104,7 +102,7 @@ def fetch_station_data(query_params):
     if conditions:
         conditions = " WHERE" + conditions
 
-    sql_connection = mysql_pool.connection()
+    sql_connection = mysql.connection()
     with sql_connection.cursor() as cursor:
         cursor.execute(query + conditions)
         data = cursor.fetchall()
@@ -148,7 +146,7 @@ def fetch_transactions_data(
     print(f"MongoDB Query: {query}")
 
     # Query the MongoDB transactions collection
-    transactions = mongo_connection.transactions.find(query)
+    transactions = mongo.transactions.find(query)
 
     # Convert the results to a list and format
     transactions_list = list(transactions)
@@ -428,7 +426,7 @@ def get_transactions(user):
         query["transaction_date"] = {"$gte": start_ms, "$lte": end_ms}
 
         # Query the MongoDB transactions collection
-        transactions = mongo_connection.transactions.find(query)
+        transactions = mongo.transactions.find(query)
 
         # Convert the results to a list
         transactions_list = list(transactions)
@@ -491,7 +489,7 @@ def get_sites(user):
     if conditions:
         conditions = " WHERE" + conditions
 
-    sql_connection = mysql_pool.connection()
+    sql_connection = mysql.connection()
     with sql_connection.cursor() as cursor:
         cursor.execute(query + conditions)
         data = cursor.fetchall()
@@ -507,7 +505,7 @@ def get_one_site(user, site_id):
     if user["role"] == "owner":
         query += f" AND owner_id={user['user_id']}"
 
-    sql_connection = mysql_pool.connection()
+    sql_connection = mysql.connection()
     with sql_connection.cursor() as cursor:
         cursor.execute(query)
         data = cursor.fetchone()
@@ -529,7 +527,7 @@ def add_site(user):
     if user["role"] == "owner":
         owner_id = user["user_id"]
 
-    sql_connection = mysql_pool.connection()
+    sql_connection = mysql.connection()
     try:
         with sql_connection.cursor() as cursor:
             query = f"INSERT INTO Site (owner_id, latitude, longitude, name, street_address, zip_code) VALUES ({owner_id}, '{latitude}', '{longitude}', '{name}', '{street_address}', '{zip_code}')"
@@ -547,7 +545,7 @@ def add_site(user):
 @app.route("/api/sites/<site_id>", methods=["DELETE"])
 @require_permission("owner", "staff")
 def delete_site(user, site_id):
-    sql_connection = mysql_pool.connection()
+    sql_connection = mysql.connection()
     try:
         with sql_connection.cursor() as cursor:
             # Prepare the SQL query to delete the site with the given ID
@@ -590,7 +588,7 @@ def update_site(user, site_id):
         return jsonify({"message": "No data provided for update"}), 400
 
     # Establish a connection to the MySQL database
-    sql_connection = mysql_pool.connection()
+    sql_connection = mysql.connection()
     try:
         with sql_connection.cursor() as cursor:
             # Construct the SQL query dynamically based on the provided data
@@ -657,7 +655,7 @@ def get_one_station(user, station_id):
     if user["role"] == "owner":
         query += f" AND owner_id={user['user_id']}"
 
-    sql_connection = mysql_pool.connection()
+    sql_connection = mysql.connection()
     with sql_connection.cursor() as cursor:
         cursor.execute(query)
         data = cursor.fetchone()
@@ -679,7 +677,7 @@ def add_station(user):
     if user["role"] == "owner":
         owner_id = user["user_id"]
 
-    sql_connection = mysql_pool.connection()
+    sql_connection = mysql.connection()
     try:
         with sql_connection.cursor() as cursor:
             query = "INSERT INTO Station (name, charge_level, connector_type, latitude, longitude, site_id) VALUES (%s, %s, %s, %s, %s, %s)"
@@ -711,7 +709,7 @@ def update_station(user, station_id):
         return jsonify({"message": "No data provided for update"}), 400
 
     # Establish a connection to the MySQL database
-    sql_connection = mysql_pool.connection()
+    sql_connection = mysql.connection()
     try:
         with sql_connection.cursor() as cursor:
             # Construct the SQL query dynamically based on the provided data
@@ -746,7 +744,7 @@ def update_station(user, station_id):
 @app.route("/api/stations/<station_id>", methods=["DELETE"])
 @require_permission("owner", "staff")
 def delete_station(user, station_id):
-    sql_connection = mysql_pool.connection()
+    sql_connection = mysql.connection()
     try:
         with sql_connection.cursor() as cursor:
             # Prepare the SQL query to delete the station with the given ID
@@ -830,5 +828,8 @@ def site_analytics(user, site_id):
     return aggregate_charts(site_id, start_date, end_date, charge_level)
 
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=PORT, debug=True)
+# Handle path not found
+@app.errorhandler(404)
+def path_not_found(_):
+    message = f"The requested path {request.path} was not found on server."
+    return {"message": message}, 404

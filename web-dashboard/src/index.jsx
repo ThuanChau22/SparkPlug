@@ -88,8 +88,8 @@ const router = createBrowserRouter([
               element: routes.Settings.element,
             },
             {
-              path: routes.AIPredictedLocation.path,
-              element: routes.AIPredictedLocation.element,
+              path: routes.StationPrediction.path,
+              element: routes.StationPrediction.element,
             },
           ],
       },
