@@ -123,8 +123,8 @@ const Sidebar = () => {
       }
       newNavigation.push({
         component: CNavItem,
-        name: routes.AIPredictedLocation.name,
-        to: routes.AIPredictedLocation.path,
+        name: routes.StationPrediction.name,
+        to: routes.StationPrediction.path,
         icon: <StarOutlined className="nav-icon" />,
       });
     }
