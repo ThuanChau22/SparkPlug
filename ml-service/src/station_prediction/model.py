@@ -109,8 +109,8 @@ class StationPredictionModel:
                 latitude, longitude = result.x[i], result.x[i + 1]
                 locations.append(
                     {
-                        "latitude": latitude,
-                        "longitude": longitude,
+                        "latitude": round(latitude, 6),
+                        "longitude": round(longitude, 6),
                     }
                 )
 
