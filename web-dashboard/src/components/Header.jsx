@@ -98,7 +98,7 @@ const Header = ({ theme, toggleTheme }) => {
         <CHeaderNav className="d-none d-md-flex me-auto">
           {components && components.map(({ name, path }, index) => (
             <CNavItem key={index} style={navItemStyle}>
-              <CNavLink to={path} component={NavLink} style={navItemStyle}>
+              <CNavLink to={path} as={NavLink} style={navItemStyle}>
                 {name}
               </CNavLink>
             </CNavItem>

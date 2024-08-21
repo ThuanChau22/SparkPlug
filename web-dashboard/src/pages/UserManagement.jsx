@@ -100,7 +100,7 @@ const UserManagement = () => {
                   <CListGroupItem
                     key={id}
                     className="align-items-center py-3 card"
-                    component="button"
+                    as="button"
                     onClick={() => handleViewUser(id)}
                   >
                     <p className="d-flex justify-content-between mb-0">

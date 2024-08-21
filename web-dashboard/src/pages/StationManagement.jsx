@@ -79,7 +79,7 @@ const StationManagement = () => {
                     <CListGroupItem
                       key={id}
                       className="py-3 card"
-                      component="button"
+                      as="button"
                       onClick={() => handleViewStation(id)}
                     >
                       <small className="w-100 text-secondary">ID: {id}</small>

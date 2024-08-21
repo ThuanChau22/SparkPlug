@@ -1,16 +1,6 @@
-import {
-  useEffect,
-  useState,
-  useCallback,
-} from "react";
-import {
-  useSelector,
-  useDispatch,
-} from "react-redux";
-import {
-  NavLink,
-  useLocation,
-} from "react-router-dom";
+import React, { useEffect, useState, useCallback } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   CNavItem,
   CNavGroup,
@@ -36,9 +26,7 @@ import {
   selectAuthRoleIsOwner,
   selectAuthRoleIsDriver,
 } from "redux/auth/authSlice";
-import {
-  selectHeaderActive,
-} from "redux/header/headerSlice";
+import { selectHeaderActive } from "redux/header/headerSlice";
 import {
   selectSidebarShow,
   selectSidebarFold,
@@ -46,6 +34,7 @@ import {
   sidebarSetFold,
   sidebarSetMobile,
 } from "redux/sidebar/sidebarSlice";
+import 'scss/style.scss';
 
 const Sidebar = () => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
@@ -81,50 +70,50 @@ const Sidebar = () => {
     const newNavigation = [];
     if (authIsAdmin || authIsOwner) {
       newNavigation.push({
-        component: CNavItem,
+        as: CNavItem,
         name: routes.Dashboard.name,
         to: routes.Dashboard.path,
         icon: <BarChartOutlined className="nav-icon" />,
       });
       newNavigation.push({
-        component: CNavGroup,
+        as: CNavGroup,
         name: routes.Stations.name,
         to: routes.Stations.Components[headerActive]?.path || routes.Stations.defaultPath,
         icon: <EvStationOutlined className="nav-icon" />,
         items: [
           {
-            component: CNavItem,
+            as: CNavItem,
             name: routes.Stations.Components.Management.name,
             to: routes.Stations.Components.Management.path,
           },
           {
-            component: CNavItem,
+            as: CNavItem,
             name: routes.Stations.Components.Monitor.name,
             to: routes.Stations.Components.Monitor.path,
           },
           {
-            component: CNavItem,
+            as: CNavItem,
             name: routes.Stations.Components.Analytics.name,
             to: routes.Stations.Components.Analytics.path,
           },
         ],
       });
       newNavigation.push({
-        component: CNavItem,
+        as: CNavItem,
         name: routes.Sites.name,
         to: routes.Sites.path,
         icon: <AccountTreeOutlined className="nav-icon" />,
       });
       if (authIsAdmin) {
         newNavigation.push({
-          component: CNavItem,
+          as: CNavItem,
           name: routes.Users.name,
           to: routes.Users.path,
           icon: <PeopleOutlined className="nav-icon" />,
         });
       }
       newNavigation.push({
-        component: CNavItem,
+        as: CNavItem,
         name: routes.AIPredictedLocation.name,
         to: routes.AIPredictedLocation.path,
         icon: <StarOutlined className="nav-icon" />,
@@ -132,13 +121,13 @@ const Sidebar = () => {
     }
     if (authIsDriver) {
       newNavigation.push({
-        component: CNavItem,
+        as: CNavItem,
         name: routes.Driver.Components.Dashboard.name,
         to: routes.Driver.Components.Dashboard.path,
         icon: <BarChartOutlined className="nav-icon" />,
       });
       newNavigation.push({
-        component: CNavItem,
+        as: CNavItem,
         name: routes.Driver.Components.Stations.name,
         to: routes.Driver.Components.Stations.path,
         icon: <EvStationOutlined className="nav-icon" />,
@@ -148,7 +137,9 @@ const Sidebar = () => {
   }, [authIsAdmin, authIsOwner, authIsDriver, headerActive]);
 
   const SidebarNav = ({ items }) => {
-    const NavGroup = ({ component: Component, name, icon, to, items, ...rest }, index) => (
+    const location = useLocation();
+  
+    const NavGroup = ({ as: Component, name, icon, to, items, ...rest }, index) => (
       <Component
         key={index}
         idx={String(index)}
@@ -166,24 +157,23 @@ const Sidebar = () => {
         ))}
       </Component>
     );
-    const NavItem = ({ component: Component, name, icon, ...rest }, index) => (
-      <Component
-        key={index}
-        {...(rest.to &&
-          !rest.items && {
-          component: NavLink,
-        })}
-        {...rest}
-      >
-        {icon && icon}
-        {name && name}
-      </Component>
+  
+    const NavItem = ({ as: Component, name, icon, to, ...rest }, index) => {
+    
+      return (
+        <NavLink key={index} to={to} {...rest} className="nav-item">
+          <div className="nav-content">
+            {icon && <span className="nav-icon">{icon}</span>}
+            {name && <span className="nav-name">{name}</span>}
+          </div>
+        </NavLink>
+      );
+    };
+    
+  
+    return items?.map((item, index) =>
+      item.items ? NavGroup(item, index) : NavItem(item, index)
     );
-    return (
-      items && items.map((item, index) => (
-        item.items ? NavGroup(item, index) : NavItem(item, index)
-      ))
-    )
   };
 
   return (

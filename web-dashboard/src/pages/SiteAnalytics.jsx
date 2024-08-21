@@ -143,7 +143,7 @@ const SiteAnalytics = () => {
                     <CListGroupItem
                       key={id}
                       className="py-3"
-                      component="button"
+                      as="button"
                       onClick={() => handleViewSite(id)}
                     >
                       <small className="w-100 text-secondary">ID: {id}</small>

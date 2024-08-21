@@ -34,11 +34,11 @@ const HeaderDropdown = () => {
       </CDropdownToggle>
       <CDropdownMenu className="pt-0" placement="bottom-end">
         <CDropdownHeader className="bg-light fw-semibold py-2">Account</CDropdownHeader>
-        <CDropdownItem to={routes.Profile.path} component={NavLink}>
+        <CDropdownItem to={routes.Profile.path} as={NavLink}>
           <CIcon icon={cilUser} className="me-2" />
           {routes.Profile.name}
         </CDropdownItem>
-        <CDropdownItem to={routes.Settings.path} component={NavLink}>
+        <CDropdownItem to={routes.Settings.path} as={NavLink}>
           <CIcon icon={cilSettings} className="me-2" />
           {routes.Settings.name}
         </CDropdownItem>

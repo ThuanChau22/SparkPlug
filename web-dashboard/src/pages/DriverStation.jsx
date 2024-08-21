@@ -140,7 +140,7 @@ const DriverStation = () => {
                     <CListGroupItem
                       key={id}
                       className="d-flex flex-row justify-content-between align-items-center py-3"
-                      component="button"
+                      as="button"
                       onClick={() => handleViewStation(id)}
                     >
                       <DriverStationListItem stationId={id} />
