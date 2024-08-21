@@ -13,17 +13,28 @@ import {
   NavLink,
 } from "react-router-dom";
 import {
-  CButton,
   CContainer,
+  CDropdown,
+  CDropdownItem,
+  CDropdownMenu,
+  CDropdownToggle,
   CHeader,
-  CHeaderBrand,
-  CHeaderDivider,
   CHeaderNav,
   CHeaderToggler,
   CNavLink,
   CNavItem,
+  useColorModes,
+  CHeaderBrand,
+  CHeaderDivider,
+  CButton,
 } from "@coreui/react";
-import { cilMenu } from "@coreui/icons";
+import {
+  cilContrast,
+  cilMenu,
+  cilMoon,
+  cilSun,
+} from '@coreui/icons'
+
 import CIcon from "@coreui/icons-react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
@@ -42,7 +53,8 @@ import {
 import routes from "routes";
 import '../scss/style.scss';
 
-const Header = ({ theme, toggleTheme }) => {
+const Header = () => {
+  const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
   const sidebarShow = useSelector(selectSidebarShow);
   const [components, setComponents] = useState([]);
   const ref = useRef(0);
@@ -81,10 +93,9 @@ const Header = ({ theme, toggleTheme }) => {
     }
   }, [location, dispatch]);
 
-  const navItemStyle = theme === 'dark' ? { color: 'white' } : {};
 
   return (
-    <CHeader style={navItemStyle} position="sticky" ref={ref} className={theme}>
+    <CHeader position="sticky" ref={ref}>
       <CContainer fluid>
         <CHeaderToggler
           className="ps-1"
@@ -97,8 +108,8 @@ const Header = ({ theme, toggleTheme }) => {
         </CHeaderBrand>
         <CHeaderNav className="d-none d-md-flex me-auto">
           {components && components.map(({ name, path }, index) => (
-            <CNavItem key={index} style={navItemStyle}>
-              <CNavLink to={path} as={NavLink} style={navItemStyle}>
+            <CNavItem key={index}>
+              <CNavLink to={path} as={NavLink}>
                 {name}
               </CNavLink>
             </CNavItem>
@@ -108,9 +119,46 @@ const Header = ({ theme, toggleTheme }) => {
           <HeaderDropdown />
         </CHeaderNav>
         <CHeaderNav>
-          <CButton onClick={toggleTheme} className="btn btn-light">
-              <FontAwesomeIcon icon={theme === 'light' ? faMoon : faSun} />
-          </CButton>
+          <CDropdown variant="nav-item" placement="bottom-end">
+            <CDropdownToggle caret={false}>
+              {colorMode === 'dark' ? (
+                <CIcon icon={cilMoon} size="lg" />
+              ) : colorMode === 'auto' ? (
+                <CIcon icon={cilContrast} size="lg" />
+              ) : (
+                <CIcon icon={cilSun} size="lg" />
+              )}
+            </CDropdownToggle>
+            <CDropdownMenu>
+              <CDropdownItem
+                active={colorMode === 'light'}
+                className="d-flex align-items-center"
+                as="button"
+                type="button"
+                onClick={() => setColorMode('light')}
+              >
+                <CIcon className="me-2" icon={cilSun} size="lg" /> Light
+              </CDropdownItem>
+              <CDropdownItem
+                active={colorMode === 'dark'}
+                className="d-flex align-items-center"
+                as="button"
+                type="button"
+                onClick={() => setColorMode('dark')}
+              >
+                <CIcon className="me-2" icon={cilMoon} size="lg" /> Dark
+              </CDropdownItem>
+              <CDropdownItem
+                active={colorMode === 'auto'}
+                className="d-flex align-items-center"
+                as="button"
+                type="button"
+                onClick={() => setColorMode('auto')}
+              >
+                <CIcon className="me-2" icon={cilContrast} size="lg" /> Auto
+              </CDropdownItem>
+            </CDropdownMenu>
+          </CDropdown>
         </CHeaderNav>
       </CContainer>
       <CHeaderDivider />

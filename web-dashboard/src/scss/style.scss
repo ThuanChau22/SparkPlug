@@ -60,27 +60,6 @@
   margin-top: 40px;
 }
 
-/* src/scss/style.scss */
-body.light {
-  background-color: white;
-  color: black;
-}
-
-body.dark {
-  background-color: rgb(66, 62, 62);
-  color: white;
-}
-
-.light .card {
-  background-color: #ffffff;
-  color: #000000;
-}
-
-.dark .card {
-  background-color: rgb(66, 62, 62);
-  color: #ffffff;
-}
-
 .nav-item {
   display: flex;
   align-items: center;
