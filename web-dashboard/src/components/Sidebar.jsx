@@ -79,22 +79,26 @@ const Sidebar = () => {
         as: CNavGroup,
         name: routes.Stations.name,
         to: routes.Stations.Components[headerActive]?.path || routes.Stations.defaultPath,
+        className: "centered-nav-item",
         icon: <EvStationOutlined className="nav-icon" />,
         items: [
           {
             as: CNavItem,
             name: routes.Stations.Components.Management.name,
             to: routes.Stations.Components.Management.path,
+            className: "centered-nav-item",
           },
           {
             as: CNavItem,
             name: routes.Stations.Components.Monitor.name,
             to: routes.Stations.Components.Monitor.path,
+            className: "centered-nav-item",
           },
           {
             as: CNavItem,
             name: routes.Stations.Components.Analytics.name,
             to: routes.Stations.Components.Analytics.path,
+            className: "centered-nav-item",
           },
         ],
       });

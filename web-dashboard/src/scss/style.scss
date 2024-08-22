@@ -80,4 +80,19 @@
   font-size: 14px; /* Adjust font size */
 }
 
+.centered-nav-item {
+  .nav-content {
+    display: flex;
+    align-items: center;
+    padding-left: 20px; /* Adjust this value to move the text to the right */
+    text-align: left;
 
+    .nav-icon {
+      margin-right: 5px; /* Optional: Space between the icon and the text */
+    }
+
+    .nav-name {
+      margin-left: 10px; /* Further adjust the text position relative to the icon */
+    }
+  }
+}
