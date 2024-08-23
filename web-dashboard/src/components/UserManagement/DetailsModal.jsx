@@ -11,9 +11,11 @@ import {
   CFormSelect,
 } from "@coreui/react";
 
+import FormInput from "components/FormInput";
 import LoadingIndicator from "components/LoadingIndicator";
 import UserActiveStatus from "components/UserManagement/ActiveStatus";
 import {
+  UserStatus,
   userGetById,
   userUpdateById,
   userDeleteById,
@@ -84,6 +86,7 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
   const EditModal = () => {
     const initialInput = { name: "", status: "" };
     const [input, setInput] = useState(initialInput);
+    const [validated, setValidated] = useState(false);
 
     useEffect(() => {
       if (user) {
@@ -94,13 +97,14 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
       }
     }, []);
 
-    const handleInputChanged = ({ target }) => {
+    const handleInputChange = ({ target }) => {
       const { name, value } = target;
       setInput({ ...input, [name]: value });
     };
 
     const handleSave = () => {
       if (!input.name || !input.status) {
+        setValidated(true);
         return;
       }
       const userData = {
@@ -114,29 +118,30 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
 
     return (
       <CModalBody>
-        <CForm>
-          <label htmlFor="userName">Name</label>
-          <CFormInput
-            className="mb-3 shadow-none"
-            id="userName"
+        <CForm noValidate validated={validated}>
+          <FormInput
+            InputForm={CFormInput}
+            label="Name"
             name="name"
             type="text"
             placeholder="Name"
             value={input.name}
-            onChange={handleInputChanged}
+            onChange={handleInputChange}
+            feedbackInvalid="Please provide username"
+            required
           />
-          <label htmlFor="userStatus">Status</label>
-          <CFormSelect
-            className="mb-3 shadow-none"
-            id="userStatus"
+          <FormInput
+            InputForm={CFormSelect}
+            label="Status"
             name="status"
             options={[
-              { label: "Active", value: "active" },
-              { label: "Blocked", value: "blocked" },
-              { label: "Terminated", value: "terminated" },
+              ...Object.entries(UserStatus)
+                .map(([label, value]) => ({ label, value }))
             ]}
             value={input.status}
-            onChange={handleInputChanged}
+            onChange={handleInputChange}
+            feedbackInvalid="Please select a status"
+            required
           />
           <CButton
             variant="outline"

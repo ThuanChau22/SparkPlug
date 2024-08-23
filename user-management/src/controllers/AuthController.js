@@ -23,11 +23,11 @@ export const signup = async (req, res) => {
       if (error.errno === 1062) {
         const filter = { email };
         const { users: [existedUser] } = await User.getUsers({ filter });
+        if (existedUser[assignedRole]) {
+          throw { code: 409, message: "User already existed" };
+        }
         if (!await bcrypt.compare(password, existedUser.password)) {
           throw { code: 401, message: "Invalid credentials" };
-        }
-        if (existedUser[assignedRole] !== 0) {
-          throw { code: 409, message: "User already existed" };
         }
         await User.addRole(existedUser.id, assignedRole);
         user = existedUser;
