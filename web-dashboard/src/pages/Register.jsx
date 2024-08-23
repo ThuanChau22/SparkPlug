@@ -13,15 +13,19 @@ import {
   CForm,
   CFormInput,
   CFormSelect,
-  CInputGroup,
-  CInputGroupText,
   CRow,
 } from "@coreui/react";
-import CIcon from "@coreui/icons-react";
-import { cilGroup, cilLockLocked, cilUser } from "@coreui/icons";
-
 import {
-  Roles,
+  LockOutlined,
+  EmailOutlined,
+  PersonOutlined,
+  PeopleOutlined,
+} from '@mui/icons-material';
+
+import ErrorToast from "components/ErrorToast";
+import FormInput from "components/FormInput";
+import {
+  AuthRoles,
   authSignup,
   authStateSet,
   selectAuthAuthenticated,
@@ -39,6 +43,7 @@ const Register = () => {
     password: "",
     role: "",
   });
+  const [validated, setValidated] = useState(false);
   useEffect(() => {
     if (token) {
       dispatch(authStateSet({ token }));
@@ -49,82 +54,77 @@ const Register = () => {
       navigate("/", { replace: true });
     }
   }, [authenticated, navigate]);
-  const handleInputChanged = ({ target }) => {
+  const handleInputChange = ({ target }) => {
     const { name, value } = target;
     setInput({ ...input, [name]: value });
   };
   const handleSubmit = () => {
     const { name, email, password, role } = input;
-    if (!role) {
+    if (!name || !email || !password || !role) {
+      setValidated(true);
       return;
     }
     dispatch(authSignup({ name, email, password, role }));
   };
   return (
     <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
+      <ErrorToast />
       <CContainer>
         <CRow className="justify-content-center">
           <CCol md={9} lg={7} xl={6}>
             <CCard className="mx-4">
               <CCardBody className="p-4">
-                <CForm>
+                <CForm noValidate validated={validated}>
                   <h1>Register</h1>
                   <p className="text-medium-emphasis">Create your account</p>
-                  <CInputGroup className="mb-3">
-                    <CInputGroupText>
-                      <CIcon icon={cilUser} />
-                    </CInputGroupText>
-                    <CFormInput
-                      className="shadow-none"
-                      placeholder="Username"
-                      autoComplete="username"
-                      name="name"
-                      value={input.name}
-                      onChange={handleInputChanged}
-                    />
-                  </CInputGroup>
-                  <CInputGroup className="mb-3">
-                    <CInputGroupText>@</CInputGroupText>
-                    <CFormInput
-                      className="shadow-none"
-                      placeholder="Email"
-                      autoComplete="email"
-                      name="email"
-                      value={input.email}
-                      onChange={handleInputChanged}
-                    />
-                  </CInputGroup>
-                  <CInputGroup className="mb-3">
-                    <CInputGroupText>
-                      <CIcon icon={cilLockLocked} />
-                    </CInputGroupText>
-                    <CFormInput
-                      className="shadow-none"
-                      type="password"
-                      placeholder="Password"
-                      autoComplete="new-password"
-                      name="password"
-                      value={input.password}
-                      onChange={handleInputChanged}
-                    />
-                  </CInputGroup>
-                  <CInputGroup className="mb-4">
-                    <CInputGroupText>
-                      <CIcon icon={cilGroup} />
-                    </CInputGroupText>
-                    <CFormSelect
-                      className="shadow-none"
-                      options={[
-                        { label: "Select Role" },
-                        ...Object.entries(Roles)
-                          .filter(([_, value]) => value !== Roles.Staff)
-                          .map(([label, value]) => ({ label, value })),
-                      ]}
-                      name="role"
-                      value={input.role}
-                      onChange={handleInputChanged}
-                    />
-                  </CInputGroup>
+                  <FormInput
+                    Icon={PersonOutlined}
+                    InputForm={CFormInput}
+                    name="name"
+                    type="text"
+                    placeholder="Username"
+                    value={input.name}
+                    feedbackInvalid="Please provide username"
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <FormInput
+                    Icon={EmailOutlined}
+                    InputForm={CFormInput}
+                    name="email"
+                    type="text"
+                    placeholder="Email"
+                    value={input.email}
+                    onChange={handleInputChange}
+                    feedbackInvalid="Please provide email"
+                    required
+                  />
+                  <FormInput
+                    Icon={LockOutlined}
+                    InputForm={CFormInput}
+                    name="password"
+                    placeholder="Password"
+                    type="password"
+                    value={input.password}
+                    onChange={handleInputChange}
+                    feedbackInvalid="Please provide password"
+                    required
+                  />
+                  <FormInput
+                    Icon={PeopleOutlined}
+                    InputForm={CFormSelect}
+                    name="role"
+                    options={[
+                      { label: "Select Role", value: "", disabled: true },
+                      ...Object.entries(AuthRoles)
+                        .filter(([_, value]) => value !== AuthRoles.Staff)
+                        .map(([label, value]) => ({ label, value })),
+                    ]}
+                    value={input.role}
+                    onChange={handleInputChange}
+                    feedbackInvalid="Please select a role"
+                    required
+                  />
                   <div className="d-grid">
                     <CButton
                       color="success"

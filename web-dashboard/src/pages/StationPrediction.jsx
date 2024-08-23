@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   CCard,
   CCardBody,
   CInputGroup,
   CInputGroupText,
   CFormInput,
-  CButton
+  CButton,
 } from "@coreui/react";
 
 import { newStationIcon } from "assets/mapIcons";
@@ -15,7 +15,10 @@ import MapContainer from "components/MapContainer";
 import MapMarker from "components/MapMarker";
 import StationMarker from "components/StationMarker";
 import StickyContainer from "components/StickyContainer";
-import { apiInstance } from "redux/api";
+import {
+  apiInstance,
+  handleError,
+} from "redux/api";
 import {
   selectLayoutHeaderHeight,
   selectLayoutFooterHeight,
@@ -40,6 +43,8 @@ const StationPrediction = () => {
   const [input, setInput] = useState("");
   const [existedStationList, setExistedStationList] = useState([]);
   const [newStationList, setNewStationList] = useState([]);
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const filterHeight = inputRef.current.offsetHeight;
@@ -70,7 +75,7 @@ const StationPrediction = () => {
       setExistedStationList(existedStations);
       setNewStationList(newStations);
     } catch (error) {
-      console.log(error);
+      handleError({ error, dispatch });
     }
     setLoading(false);
   };
@@ -96,6 +101,7 @@ const StationPrediction = () => {
               className="border-start-0 border-end-0 border-dark rounded-0"
               color="dark"
               onClick={handleSubmit}
+              disabled={!input}
             >
               Predict
             </CButton>

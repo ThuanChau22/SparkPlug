@@ -32,7 +32,7 @@ export const clearHeader = () => {
 
 // Handle error
 export const handleError = ({ error, dispatch }) => {
-  const { response, message, clientMessage } = error;
+  const { response, message } = error;
   const { status, statusText, data } = response || {};
   if (status === 401) {
     dispatch(authStateClear());
@@ -41,7 +41,7 @@ export const handleError = ({ error, dispatch }) => {
   const errorData = {
     status: status,
     name: data?.name || statusText || "",
-    message: clientMessage || data?.message || message,
+    message: data?.message || message,
   };
   if (!errorData.message) {
     errorData.message = "An unknown error occurred"

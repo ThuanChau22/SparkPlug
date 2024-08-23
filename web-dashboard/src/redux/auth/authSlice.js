@@ -15,7 +15,7 @@ import { userStateClear } from "redux/user/userSlice";
 
 const AuthAPI = process.env.REACT_APP_AUTH_API_ENDPOINT;
 
-export const Roles = {
+export const AuthRoles = {
   Staff: "staff",
   Owner: "owner",
   Driver: "driver",
@@ -102,11 +102,11 @@ export const selectAuthAuthenticated = (state) => selectAuth(state).authenticate
 
 export const selectAuthUserId = (state) => selectAuth(state).userId;
 
-export const selectAuthRoleIsStaff = (state) => selectAuth(state).role === Roles.Staff;
+export const selectAuthRoleIsStaff = (state) => selectAuth(state).role === AuthRoles.Staff;
 
-export const selectAuthRoleIsOwner = (state) => selectAuth(state).role === Roles.Owner;
+export const selectAuthRoleIsOwner = (state) => selectAuth(state).role === AuthRoles.Owner;
 
-export const selectAuthRoleIsDriver = (state) => selectAuth(state).role === Roles.Driver;
+export const selectAuthRoleIsDriver = (state) => selectAuth(state).role === AuthRoles.Driver;
 
 export const selectAuthAccessToken = (state) => selectAuth(state).accessToken;
 

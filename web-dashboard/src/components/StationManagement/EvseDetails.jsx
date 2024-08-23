@@ -7,6 +7,7 @@ import {
   CFormSelect,
 } from "@coreui/react";
 
+import FormInput from "components/FormInput";
 import LoadingIndicator from "components/LoadingIndicator";
 import {
   evseGetById,
@@ -85,13 +86,14 @@ const EvseDetails = ({ stationId, evseId }) => {
       price: "",
     };
     const [formData, setFormData] = useState(initialFormData);
+    const [validated, setValidated] = useState(false);
 
     useEffect(() => {
       if (evse) {
         setFormData({
           chargeLevel: evse.charge_level,
           connectorType: evse.connector_type,
-          price: evse.price,
+          price: evse.price.toString(),
         });
       }
     }, []);
@@ -109,7 +111,9 @@ const EvseDetails = ({ stationId, evseId }) => {
       };
       if (!data.chargeLevel
         || !data.connectorType
-        || !data.price) {
+        || !data.price
+      ) {
+        setValidated(true);
         return;
       }
       dispatch(evseUpdateById(data));
@@ -117,41 +121,44 @@ const EvseDetails = ({ stationId, evseId }) => {
     };
 
     return (
-      <CForm>
-        <label htmlFor="chargeLevel">Charge Level</label>
-        <CFormSelect
-          className="mb-3 shadow-none"
-          id="chargeLevel"
+      <CForm noValidate validated={validated}>
+        <FormInput
+          InputForm={CFormSelect}
+          label="Charge Level"
           name="chargeLevel"
-          value={formData.chargeLevel}
-          onChange={handleInputChange}
           options={[
-            { label: "Select Charge Level", value: "" },
+            { label: "Select Charge Level", value: "", disabled: true },
             { label: "Level 1", value: "Level 1" },
             { label: "Level 2", value: "Level 2" },
             { label: "Level 3", value: "Level 3" },
           ]}
+          value={formData.chargeLevel}
+          onChange={handleInputChange}
+          feedbackInvalid="Please provide charge level"
+          required
         />
-        <label htmlFor="connectorType">Connector Type</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="connectorType"
+        <FormInput
+          InputForm={CFormInput}
+          label="Connector Type"
           name="connectorType"
           type="text"
           placeholder="Connector Type"
           value={formData.connectorType}
           onChange={handleInputChange}
+          feedbackInvalid="Please provide connector type"
+          required
         />
-        <label htmlFor="price">Price</label>
-        <CFormInput
-          className="mb-3 shadow-none"
-          id="price"
+        <FormInput
+          InputForm={CFormInput}
+          label="Price"
           name="price"
           type="number"
           min="0"
           placeholder="Price"
           value={formData.price}
           onChange={handleInputChange}
+          feedbackInvalid="Please provide price"
+          required
         />
         <CButton
           variant="outline"

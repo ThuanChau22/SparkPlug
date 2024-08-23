@@ -10,9 +10,9 @@ import {
   CCol,
 } from "@coreui/react";
 
-import ActiveStatus from "components/ActiveStatus";
 import LoadingIndicator from "components/LoadingIndicator";
 import StickyContainer from "components/StickyContainer";
+import UserActiveStatus from "components/UserManagement/ActiveStatus";
 import UserDetailsModal from "components/UserManagement/DetailsModal";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
@@ -119,7 +119,7 @@ const UserManagement = () => {
                         </CRow>
                       </CCol>
                       <CCol xs="auto" sm={3} className="ps-0 text-end">
-                        <ActiveStatus status={status} />
+                        <UserActiveStatus status={status} />
                       </CCol>
                     </CRow>
                   </CListGroupItem>

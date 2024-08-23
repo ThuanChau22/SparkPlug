@@ -10,6 +10,7 @@ import {
   CFormInput,
 } from "@coreui/react";
 
+import FormInput from "components/FormInput";
 import {
   selectAuthUserId,
   selectAuthRoleIsStaff,
@@ -34,6 +35,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
     country: "",
   };
   const [formData, setFormData] = useState(initialFormData);
+  const [validated, setValidated] = useState(false);
 
   const dispatch = useDispatch();
 
@@ -55,7 +57,9 @@ const SiteAddModal = ({ isOpen, onClose }) => {
       || !data.city
       || !data.state
       || !data.zipCode
-      || !data.country) {
+      || !data.country
+    ) {
+      setValidated(true);
       return;
     }
     dispatch(siteAdd(data));
@@ -78,78 +82,97 @@ const SiteAddModal = ({ isOpen, onClose }) => {
         <CModalTitle>Add New Site</CModalTitle>
       </CModalHeader>
       <CModalBody>
-        <CForm>
-          <CFormInput
-            className="mb-3 shadow-none"
-            type="text"
+        <CForm noValidate validated={validated}>
+          <FormInput
+            InputForm={CFormInput}
             name="name"
+            type="text"
             placeholder="Name"
-            onChange={handleInputChange}
             value={formData.name}
+            onChange={handleInputChange}
+            feedbackInvalid="Please provide site name"
+            required
           />
           {authIsAdmin &&
-            <CFormInput
-              className="mb-3 shadow-none"
-              type="text"
+            <FormInput
+              InputForm={CFormInput}
               name="ownerId"
+              type="text"
               placeholder="Owner ID"
-              onChange={handleInputChange}
               value={formData.ownerId}
+              onChange={handleInputChange}
+              feedbackInvalid="Please provide owner ID"
+              required
             />}
-          <CFormInput
-            className="mb-3 shadow-none"
-            type="text"
+          <FormInput
+            InputForm={CFormInput}
             name="latitude"
+            type="text"
             placeholder="Latitude"
-            onChange={handleInputChange}
             value={formData.latitude}
+            onChange={handleInputChange}
+            feedbackInvalid="Please provide site latitude"
+            required
           />
-          <CFormInput
-            className="mb-3 shadow-none"
-            type="text"
+          <FormInput
+            InputForm={CFormInput}
             name="longitude"
+            type="text"
             placeholder="Longitude"
+            value={formData.longitude}
             onChange={handleInputChange}
-            value={formData.longitude} />
-          <CFormInput
-            className="mb-3 shadow-none"
-            type="text"
+            feedbackInvalid="Please provide site longitude"
+            required
+          />
+          <FormInput
+            InputForm={CFormInput}
             name="streetAddress"
+            type="text"
             placeholder="Street Address"
-            onChange={handleInputChange}
             value={formData.streetAddress}
+            onChange={handleInputChange}
+            feedbackInvalid="Please provide street address"
+            required
           />
-          <CFormInput
-            className="mb-3 shadow-none"
-            type="text"
+          <FormInput
+            InputForm={CFormInput}
             name="city"
+            type="text"
             placeholder="City"
-            onChange={handleInputChange}
             value={formData.city}
+            onChange={handleInputChange}
+            feedbackInvalid="Please provide city name"
+            required
           />
-          <CFormInput
-            className="mb-3 shadow-none"
-            type="text"
+          <FormInput
+            InputForm={CFormInput}
             name="state"
+            type="text"
             placeholder="State"
-            onChange={handleInputChange}
             value={formData.state}
+            onChange={handleInputChange}
+            feedbackInvalid="Please provide state name"
+            required
           />
-          <CFormInput
-            className="mb-3 shadow-none"
-            type="text"
+          <FormInput
+            InputForm={CFormInput}
             name="zipCode"
-            placeholder="Zip Code"
-            onChange={handleInputChange}
-            value={formData.zipCode}
-          />
-          <CFormInput
-            className="mb-3 shadow-none"
             type="text"
-            name="country"
-            placeholder="Country"
+            placeholder="Zip Code"
+            value={formData.zipCode}
             onChange={handleInputChange}
+            feedbackInvalid="Please provide zip code"
+            required
+          />
+          <FormInput
+            InputForm={CFormInput}
+            name="country"
+            type="text"
+            placeholder="Country"
             value={formData.country}
+            onChange={handleInputChange}
+            feedbackInvalid="Please provide country"
+            required
           />
           <div className="text-center">
             <CButton
