@@ -20,6 +20,7 @@ import {
 import CIcon from "@coreui/icons-react";
 import { cilGroup, cilLockLocked, cilUser } from "@coreui/icons";
 
+import ErrorToast from "components/ErrorToast";
 import {
   Roles,
   authSignup,
@@ -62,6 +63,7 @@ const Register = () => {
   };
   return (
     <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
+      <ErrorToast />
       <CContainer>
         <CRow className="justify-content-center">
           <CCol md={9} lg={7} xl={6}>
