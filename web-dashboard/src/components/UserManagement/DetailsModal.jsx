@@ -12,6 +12,7 @@ import {
 } from "@coreui/react";
 
 import LoadingIndicator from "components/LoadingIndicator";
+import UserActiveStatus from "components/UserManagement/ActiveStatus";
 import {
   userGetById,
   userUpdateById,
@@ -73,20 +74,8 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
       </div>
       <CModalBody>
         <p>Email: {user.email}</p>
-        <p>Status: <span
-          className={
-            user.status === "active"
-              ? "text-success"
-              : user.status === "terminated"
-                ? "text-danger"
-                : "text-warning"
-          }>
-          {user.status}
-        </span>
-        </p>
-        <p>
-          Role: {userRoleFormatted}
-        </p>
+        <p>Status: <UserActiveStatus status={user.status} /></p>
+        <p>Role: {userRoleFormatted}</p>
         <p>Registered on: {new Date(user.created_at).toLocaleString("en-US")}</p>
       </CModalBody>
     </>
@@ -142,9 +131,9 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
             id="userStatus"
             name="status"
             options={[
-              { label: "active", value: "active" },
-              { label: "blocked", value: "blocked" },
-              { label: "terminated", value: "terminated" },
+              { label: "Active", value: "active" },
+              { label: "Blocked", value: "blocked" },
+              { label: "Terminated", value: "terminated" },
             ]}
             value={input.status}
             onChange={handleInputChanged}
