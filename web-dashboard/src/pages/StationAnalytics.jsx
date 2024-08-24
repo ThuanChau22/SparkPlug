@@ -50,12 +50,12 @@ const StationAnalytics = () => {
   };
 
   return (
-    <CCard className="flex-grow-1 border border-top-0 rounded-0 card">
+    <CCard className="flex-grow-1 border border-top-0 rounded-0">
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
-          <CCardBody className="d-flex flex-column h-100 pt-0 card">
+          <CCardBody className="d-flex flex-column h-100 pt-0">
             <StickyContainer
-              className="bg-white py-3 card" // TODO: Change background color
+              className="bg-white py-3" // TODO: Change background color
               top={`${headerHeight}px`}
             >
               <CCardTitle>
@@ -69,7 +69,7 @@ const StationAnalytics = () => {
                   {stationList.map(({ id, name }) => (
                     <CListGroupItem
                       key={id}
-                      className="py-3 card"
+                      className="py-3"
                       as="button"
                       onClick={() => handleViewStation(id)}
                     >

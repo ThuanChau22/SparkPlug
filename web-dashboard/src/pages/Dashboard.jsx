@@ -5,6 +5,7 @@ import {
   CRow,
   CCol,
   CWidgetStatsA,
+  CCard,
 } from '@coreui/react'
 import { getStyle } from '@coreui/utils'
 import { CChartBar, CChartLine } from '@coreui/react-chartjs'
@@ -822,7 +823,7 @@ const Dashboard = () => {
   ]
 
   return (
-    <div>
+    <CCard className="flex-grow-1 border border-top-0 rounded-0">
       <CRow
             xs={{ cols: 1, gutter: 4 }}
             sm={{ cols: 2 }}
@@ -849,7 +850,6 @@ const Dashboard = () => {
       <CRow className="custom-row-spacing">
         <CCol xs={6}>
           <CWidgetStatsA
-            color="dark"
             value={
               <>
                 Sessions{' '}
@@ -898,7 +898,7 @@ const Dashboard = () => {
         </CCol>  
         <CCol xs={6}>
           <CWidgetStatsA
-            color="dark"
+            
             value={
               <>
                 Revenue{' '}
@@ -962,7 +962,7 @@ const Dashboard = () => {
       <CRow className="custom-row-spacing">
         <CCol xs={6}>
           <CWidgetStatsA
-            color="dark"
+            
             value={
               <>
                 Engery/Consumption{' '}
@@ -1011,7 +1011,7 @@ const Dashboard = () => {
         </CCol>  
         <CCol xs={6}>
         <CWidgetStatsA
-      color="dark"
+      
       value={
         <>
           Peak/Off-peak Time{' '}
@@ -1078,7 +1078,7 @@ const Dashboard = () => {
       <CRow className="custom-row-spacing">
         <CCol xs={6}>
           <CWidgetStatsA
-            color="dark"
+            
             value={
               <>
                 Slow/Fast Charger{' '}
@@ -1148,7 +1148,7 @@ const Dashboard = () => {
       <CRow className="custom-row-spacing">
         <CCol xs={6}>
         <CWidgetStatsA
-            color="dark"
+            
             value={
               <>
                 Driver{' '}
@@ -1208,7 +1208,7 @@ const Dashboard = () => {
         </CCol>
         <CCol xs={6}>
         <CWidgetStatsA
-            color="dark"
+            
             value={
               <>
                 Owner{' '}
@@ -1281,7 +1281,7 @@ const Dashboard = () => {
       <CRow className="custom-row-spacing">
         <CCol xs={6}>
         <CWidgetStatsA
-            color="dark"
+            
             value={
               <>
                 Station{' '}
@@ -1339,7 +1339,7 @@ const Dashboard = () => {
         </CCol>
       </CRow>
     
-    </div>
+      </CCard>
   )
 }
 

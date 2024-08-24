@@ -26,7 +26,6 @@ import {
   useColorModes,
   CHeaderBrand,
   CHeaderDivider,
-  CButton,
 } from "@coreui/react";
 import {
   cilContrast,
@@ -34,11 +33,7 @@ import {
   cilMoon,
   cilSun,
 } from '@coreui/icons'
-
 import CIcon from "@coreui/icons-react";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
-
 import logoBrand from "assets/logo-brand";
 import Breadcrumb from "components/Breadcrumb";
 import HeaderDropdown from "components/HeaderDropdown";
