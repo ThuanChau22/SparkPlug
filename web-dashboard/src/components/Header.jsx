@@ -124,7 +124,7 @@ const Header = () => {
                 <CIcon icon={cilSun} size="lg" />
               )}
             </CDropdownToggle>
-            <CDropdownMenu>
+            <CDropdownMenu style={{ zIndex: 1050 }}>
               <CDropdownItem
                 active={colorMode === 'light'}
                 className="d-flex align-items-center"
