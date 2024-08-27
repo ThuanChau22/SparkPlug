@@ -90,7 +90,7 @@ const Header = () => {
 
 
   return (
-    <CHeader position="sticky" ref={ref} style={{ zIndex: 1100 }}>
+    <CHeader position="sticky" ref={ref} style={{ zIndex: 1000 }}>
       <CContainer fluid>
         <CHeaderToggler
           className="ps-1"
@@ -115,7 +115,7 @@ const Header = () => {
         </CHeaderNav>
         <CHeaderNav>
           <CDropdown variant="nav-item" placement="bottom-end" style={{ position: 'relative', zIndex: 1100 }}>
-            <CDropdownToggle caret={false}  style={{ zIndex: 1101 }}>
+            <CDropdownToggle caret={false}  style={{ zIndex: 1200 }}>
               {colorMode === 'dark' ? (
                 <CIcon icon={cilMoon} size="lg" />
               ) : colorMode === 'auto' ? (
@@ -124,36 +124,36 @@ const Header = () => {
                 <CIcon icon={cilSun} size="lg" />
               )}
             </CDropdownToggle>
-            <CDropdownMenu style={{ zIndex: 1100 }}>
+            <CDropdownMenu style={{ zIndex: 1200 }}>
               <CDropdownItem
                 active={colorMode === 'light'}
                 className="d-flex align-items-center"
                 as="button"
                 type="button"
-                style={{ zIndex: 1100 }}
+                style={{ zIndex: 1200 }}
                 onClick={() => setColorMode('light')}
               >
-                <CIcon className="me-2" style={{ zIndex: 1100 }} icon={cilSun} size="lg" /> Light
+                <CIcon className="me-2" style={{ zIndex: 1200 }} icon={cilSun} size="lg" /> Light
               </CDropdownItem>
               <CDropdownItem
                 active={colorMode === 'dark'}
                 className="d-flex align-items-center"
                 as="button"
                 type="button"
-                style={{ zIndex: 1100 }}
+                style={{ zIndex: 1200 }}
                 onClick={() => setColorMode('dark')}
               >
-                <CIcon className="me-2" style={{ zIndex: 1100 }} icon={cilMoon} size="lg" /> Dark
+                <CIcon className="me-2" style={{ zIndex: 1200 }} icon={cilMoon} size="lg" /> Dark
               </CDropdownItem>
               <CDropdownItem
                 active={colorMode === 'auto'}
                 className="d-flex align-items-center"
                 as="button"
                 type="button"
-                style={{ zIndex: 1100 }}
+                style={{ zIndex: 1200 }}
                 onClick={() => setColorMode('auto')}
               >
-                <CIcon className="me-2" style={{ zIndex: 1100 }} icon={cilContrast} size="lg" /> Auto
+                <CIcon className="me-2" style={{ zIndex: 1200 }} icon={cilContrast} size="lg" /> Auto
               </CDropdownItem>
             </CDropdownMenu>
           </CDropdown>

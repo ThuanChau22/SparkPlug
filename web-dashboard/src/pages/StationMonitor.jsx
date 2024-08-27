@@ -151,7 +151,7 @@ const StationMonitor = () => {
               )}
           </CCardBody>
         </CCol>
-        <CCol md={6} lg={7}>
+        <CCol md={6} lg={7} style={{ position: 'relative', zIndex: 500 }}>
           <StationMonitorMapView handleViewStation={handleViewStation} />
         </CCol>
       </CRow>

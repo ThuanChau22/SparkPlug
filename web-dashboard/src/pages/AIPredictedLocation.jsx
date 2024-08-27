@@ -165,7 +165,7 @@ const AIPredictedLocation = () => {
         </CCol>
       </CRow>
       <CRow className="justify-content-center">
-        <CCol md={6} lg={7}>
+        <CCol md={6} lg={7} style={{ position: 'relative', zIndex: 500 }}>
           <StickyContainer top={`${headerHeight}px`}>
             {displayMap}
           </StickyContainer>
