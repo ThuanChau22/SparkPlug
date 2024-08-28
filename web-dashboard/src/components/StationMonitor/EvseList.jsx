@@ -50,25 +50,34 @@ const StationMonitorEvseList = ({ stationId, remoteStart, remoteStop }) => {
   return (
     <CCard
       className="border-0 rounded-top-0 overflow-y-auto"
-      style={{ maxHeight: window.innerHeight * 0.3 }}
+      style={{
+        minHeight: window.innerHeight * 0.1,
+        maxHeight: window.innerHeight * 0.3,
+      }}
     >
-      <CCardBody className="p-0">
+      <CCardBody className="d-flex flex-column p-0">
         {loading
           ? <LoadingIndicator loading={loading} />
-          : (
-            <CListGroup className={evseList.length > 0 ? "mb-2" : ""}>
-              {evseList.map(({ station_id, evse_id }) => (
-                <CListGroupItem key={`${station_id},${evse_id}`}>
-                  <MonitorEvseListItem
-                    stationId={station_id}
-                    evseId={evse_id}
-                    remoteStart={remoteStart}
-                    remoteStop={remoteStop}
-                  />
-                </CListGroupItem>
-              ))}
-            </CListGroup>
-          )
+          : evseList.length > 0
+            ? (
+              <CListGroup className={evseList.length > 0 ? "mb-2" : ""}>
+                {evseList.map(({ station_id, evse_id }) => (
+                  <CListGroupItem key={`${station_id},${evse_id}`}>
+                    <MonitorEvseListItem
+                      stationId={station_id}
+                      evseId={evse_id}
+                      remoteStart={remoteStart}
+                      remoteStop={remoteStop}
+                    />
+                  </CListGroupItem>
+                ))}
+              </CListGroup>
+            )
+            : (
+              <div className="d-flex flex-grow-1 justify-content-center align-items-center">
+                <span className="text-secondary">Station has no EVSE unit</span>
+              </div>
+            )
         }
       </CCardBody>
     </CCard>

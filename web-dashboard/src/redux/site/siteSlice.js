@@ -15,7 +15,9 @@ import {
 
 const SiteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
 
-const siteEntityAdapter = createEntityAdapter();
+const siteEntityAdapter = createEntityAdapter({
+  sortComparer: (a, b) => a.id - b.id,
+});
 const locationFilterAdapter = createLocationFilterAdapter();
 
 const initialState = {

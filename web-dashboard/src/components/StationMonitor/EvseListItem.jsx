@@ -16,13 +16,13 @@ const StationMonitorEvseListItem = ({ stationId, evseId, remoteStart, remoteStop
     evseId,
   }));
 
-  const meterTimeout = useRef(0)
+  const meterTimeout = useRef({})
 
   const [meterValue, setMeterValue] = useState(evseStatus?.meterValue || 0);
 
-  const isDisabled = useMemo(()=>{
+  const isDisabled = useMemo(() => {
     return !["Available", "Occupied"].includes(evseStatus?.status);
-  },[evseStatus]);
+  }, [evseStatus]);
 
   const dispatch = useDispatch();
 

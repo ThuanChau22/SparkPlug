@@ -6,15 +6,19 @@ import {
 } from "@reduxjs/toolkit";
 
 import {
-  Roles as UserRoles
-} from "redux/auth/authSlice";
-import {
   apiInstance,
   tokenConfig,
   handleError,
 } from "redux/api";
+import { AuthRoles } from "redux/auth/authSlice";
 
 const UserAPI = process.env.REACT_APP_USER_API_ENDPOINT;
+
+export const UserStatus = {
+  Active: "active",
+  Blocked: "blocked",
+  Terminated: "terminated",
+};
 
 const userEntityAdapter = createEntityAdapter();
 
@@ -131,7 +135,7 @@ export const selectUserById = userSelectors.selectById;
 
 export const selectUserRoleById = createSelector(
   [selectUserById],
-  (user) => Object.values(UserRoles).filter((role) => user[role]),
+  (user) => Object.values(AuthRoles).filter((role) => user[role]),
 );
 
 export const selectUserCursor = (state) => selectUser(state).cursor;

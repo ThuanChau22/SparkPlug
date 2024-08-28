@@ -14,6 +14,7 @@ services:
       REACT_APP_STATION_STATUS_API_ENDPOINT: ${WEB_DASHBOARD_STATION_STATUS_API}
       REACT_APP_STATION_EVENT_API_ENDPOINT: ${WEB_DASHBOARD_STATION_EVENT_API}
       REACT_APP_STATION_EVENT_WS_ENDPOINT: ${WEB_DASHBOARD_STATION_EVENT_WS}
+      REACT_APP_STATION_PREDICTION_ENDPOINT: ${WEB_DASHBOARD_STATION_PREDICTION_API}
       REACT_APP_SECURE_LOCAL_STORAGE_PREFIX: ${WEB_DASHBOARD_SECURE_LOCAL_STORAGE_PREFIX}
       REACT_APP_SECURE_LOCAL_STORAGE_HASH_KEY: ${WEB_DASHBOARD_SECURE_LOCAL_STORAGE_HASH_KEY}
     depends_on:
@@ -150,6 +151,29 @@ services:
           target: /app
         - action: rebuild
           path: ./monitoring/package.json
+
+  ml-service:
+    extends:
+      file: compose.prod.yaml
+      service: ml-service
+    build:
+      target: development
+    environment:
+      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
+      AUTH_API_ENDPOINT: ${ML_SERVICE_AUTH_API_ENDPOINT}
+      STATION_API_ENDPOINT: ${ML_SERVICE_STATION_API_ENDPOINT}
+      MONGODB_URI: ${MONGODB_URI}
+      STATION_PREDICTION_MODEL_PATH: ${ML_SERVICE_STATION_PREDICTION_MODEL_PATH}
+    depends_on:
+      - user-management
+      - station-management
+    develop:
+      watch:
+        - action: sync
+          path: ./ml-service
+          target: /app
+        - action: rebuild
+          path: ./ml-service/requirements.txt
 
   simulator-client:
     extends:

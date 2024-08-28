@@ -34,30 +34,34 @@ import {
   cilSun,
 } from '@coreui/icons'
 import CIcon from "@coreui/icons-react";
+
 import logoBrand from "assets/logo-brand";
 import Breadcrumb from "components/Breadcrumb";
 import HeaderDropdown from "components/HeaderDropdown";
 import {
-  headerSetActive,
-  headerSetHeight,
-} from "redux/header/headerSlice";
-import {
-  selectSidebarShow,
-  sidebarSetShow,
-} from "redux/sidebar/sidebarSlice";
+  selectLayoutSidebarShow,
+  layoutSetHeaderActive,
+  layoutSetHeaderHeight,
+  layoutSetSidebarShow,
+} from "redux/layout/layoutSlice";
 import routes from "routes";
-import '../scss/style.scss';
+import "scss/style.scss";
 
 const Header = () => {
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
-  const sidebarShow = useSelector(selectSidebarShow);
+
+  const headerRef = useRef({});
+
+  const sidebarShow = useSelector(selectLayoutSidebarShow);
+
   const [components, setComponents] = useState([]);
-  const ref = useRef(0);
+
   const location = useLocation();
+
   const dispatch = useDispatch();
 
   const handleResize = useCallback(() => {
-    dispatch(headerSetHeight(ref.current.offsetHeight));
+    dispatch(layoutSetHeaderHeight(headerRef.current.offsetHeight));
   }, [dispatch]);
 
   useEffect(() => {
@@ -80,7 +84,7 @@ const Header = () => {
           setComponents(Object.values(Components));
           for (const { name, path } of Object.values(Components)) {
             if (path === `/${resource}/${component}`) {
-              dispatch(headerSetActive(name));
+              dispatch(layoutSetHeaderActive(name));
             }
           }
         }
@@ -88,13 +92,16 @@ const Header = () => {
     }
   }, [location, dispatch]);
 
-
   return (
-    <CHeader position="sticky" ref={ref} style={{ zIndex: 1000 }}>
+    <CHeader
+      ref={headerRef}
+      position="sticky"
+      style={{ zIndex: 1000 }}
+    >
       <CContainer fluid>
         <CHeaderToggler
           className="ps-1"
-          onClick={() => dispatch(sidebarSetShow(!sidebarShow))}
+          onClick={() => dispatch(layoutSetSidebarShow(!sidebarShow))}
         >
           <CIcon icon={cilMenu} size="lg" />
         </CHeaderToggler>
@@ -115,7 +122,7 @@ const Header = () => {
         </CHeaderNav>
         <CHeaderNav>
           <CDropdown variant="nav-item" placement="bottom-end" style={{ position: 'relative', zIndex: 1100 }}>
-            <CDropdownToggle caret={false}  style={{ zIndex: 1200 }}>
+            <CDropdownToggle caret={false} style={{ zIndex: 1200 }}>
               {colorMode === 'dark' ? (
                 <CIcon icon={cilMoon} size="lg" />
               ) : colorMode === 'auto' ? (
@@ -157,13 +164,13 @@ const Header = () => {
               </CDropdownItem>
             </CDropdownMenu>
           </CDropdown>
-        </CHeaderNav>
-      </CContainer>
+        </CHeaderNav >
+      </CContainer >
       <CHeaderDivider />
       <CContainer fluid>
         <Breadcrumb />
       </CContainer>
-    </CHeader>
+    </CHeader >
   );
 };
 

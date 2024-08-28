@@ -11,6 +11,7 @@ import {
   CFormSelect,
 } from "@coreui/react";
 
+import FormInput from "components/FormInput";
 import {
   siteGetList,
   selectSiteIds,
@@ -27,6 +28,7 @@ const StationAddModal = ({ isOpen, onClose }) => {
     longitude: "",
   };
   const [formData, setFormData] = useState(initialFormData);
+  const [validated, setValidated] = useState(false);
 
   const [siteOptions, setSiteOptions] = useState([]);
 
@@ -49,7 +51,9 @@ const StationAddModal = ({ isOpen, onClose }) => {
     if (!formData.name
       || !formData.siteId
       || !formData.latitude
-      || !formData.longitude) {
+      || !formData.longitude
+    ) {
+      setValidated(true);
       return;
     }
     dispatch(stationAdd(formData));
@@ -72,42 +76,50 @@ const StationAddModal = ({ isOpen, onClose }) => {
         <CModalTitle>Add New Station</CModalTitle>
       </CModalHeader>
       <CModalBody>
-        <CForm>
-          <CFormInput
-            className="mb-3 shadow-none"
-            type="text"
+        <CForm noValidate validated={validated}>
+          <FormInput
+            InputForm={CFormInput}
             name="name"
+            type="text"
             placeholder="Name"
-            onChange={handleInputChange}
             value={formData.name}
-          />
-          <CFormSelect
-            className="mb-3 shadow-none"
-            name="siteId"
             onChange={handleInputChange}
-            value={formData.siteId}
+            feedbackInvalid="Please provide station name"
+            required
+          />
+          <FormInput
+            InputForm={CFormSelect}
+            name="siteId"
             options={[
-              { label: "Select Site ID", value: "" },
+              { label: "Select Site ID", value: "", disabled: true },
               ...siteOptions.map((id) => (
                 { label: id, value: id }
               )),
             ]}
+            value={formData.siteId}
+            onChange={handleInputChange}
+            feedbackInvalid="Please select a site ID"
+            required
           />
-          <CFormInput
-            className="mb-3 shadow-none"
-            type="text"
+          <FormInput
+            InputForm={CFormInput}
             name="latitude"
-            placeholder="Latitude"
-            onChange={handleInputChange}
-            value={formData.latitude}
-          />
-          <CFormInput
-            className="mb-3 shadow-none"
             type="text"
-            name="longitude"
-            placeholder="Longitude"
+            placeholder="Latitude"
+            value={formData.latitude}
             onChange={handleInputChange}
+            feedbackInvalid="Please provide station latitude"
+            required
+          />
+          <FormInput
+            InputForm={CFormInput}
+            name="longitude"
+            type="text"
+            placeholder="Longitude"
             value={formData.longitude}
+            onChange={handleInputChange}
+            feedbackInvalid="Please provide station longitude"
+            required
           />
           <CButton
             className="w-100"

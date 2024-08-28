@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { CChart } from "@coreui/react-chartjs";
 import {
   CForm,
@@ -15,18 +15,33 @@ import {
 import LoadingIndicator from "components/LoadingIndicator";
 import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
-import { selectStationById } from "redux/station/stationSlice";
+import {
+  stationGetById,
+  selectStationById,
+} from "redux/station/stationSlice";
 
 const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
 
   const station = useSelector((state) => selectStationById(state, stationId));
   const token = useSelector(selectAuthAccessToken);
+
+  const [loading, setLoading] = useState(false);
   
   const [analyticsData, setAnalyticsData] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [chargeLevel, setChargeLevel] = useState("All");
+
+  const dispatch = useDispatch();
+
+  const fetchStationData = useCallback(async () => {
+    if (!station) {
+      setLoading(true);
+      await dispatch(stationGetById(stationId)).unwrap();
+      setLoading(false);
+    }
+  }, [stationId, station, dispatch]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -39,7 +54,7 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
     return [month, day, year].join("/");
   };
 
-  const fetchData = useCallback(async () => {
+  const fetchAnalyticsData = useCallback(async () => {
     try {
       const base = `${StationAnalyticsAPI}/${stationId}`;//get endpoint
       const params = [];
@@ -56,8 +71,9 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
   }, [StationAnalyticsAPI, stationId, token, startDate, endDate, chargeLevel]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchStationData();
+    fetchAnalyticsData();
+  }, [fetchStationData, fetchAnalyticsData]);
 
   return (
     <CModal
@@ -69,9 +85,8 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
       scrollable
     >
       <CModalHeader>
-        <CModalTitle>{station.name}</CModalTitle>
+        <CModalTitle>{!loading && station.name}</CModalTitle>
       </CModalHeader>
-      <p className="ps-3" >Site ID: {station.id}</p>
       <CForm className="d-flex align-item-center">
         <CInputGroup>
           <CInputGroupText className="bg-secondary text-white rounded-0">

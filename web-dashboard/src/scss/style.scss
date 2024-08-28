@@ -17,9 +17,9 @@
 }
 
 .custom-col {
-  padding: 0 10px;  // 根据需要调整
-  flex: 1 0 20%;    // 每个列尝试占用 20% 的宽度
-  max-width: 20%;   // 最大宽度也设置为 20%
+  padding: 0 10px;
+  flex: 1 0 20%;
+  max-width: 20%;
 }
 
 :root {
@@ -59,7 +59,8 @@
   display: flex;
   align-items: center;
   padding: 10px;
-  text-decoration: none; /* Adjust as per your needs */
+  text-decoration: none;
+  /* Adjust as per your needs */
 }
 
 .nav-content {
@@ -68,43 +69,64 @@
 }
 
 .nav-icon {
-  margin-right: 10px; /* Adjust spacing between icon and text */
+  margin-right: 10px;
+  /* Adjust spacing between icon and text */
 }
 
 .nav-name {
-  font-size: 14px; /* Adjust font size */
+  font-size: 14px;
+  /* Adjust font size */
 }
 
 .centered-nav-item {
   .nav-content {
     display: flex;
     align-items: center;
-    padding-left: 20px; /* Adjust this value to move the text to the right */
+    padding-left: 20px;
+    /* Adjust this value to move the text to the right */
     text-align: left;
 
     .nav-icon {
-      margin-right: 5px; /* Optional: Space between the icon and the text */
+      margin-right: 5px;
+      /* Optional: Space between the icon and the text */
     }
 
     .nav-name {
-      margin-left: 10px; /* Further adjust the text position relative to the icon */
+      margin-left: 10px;
+      /* Further adjust the text position relative to the icon */
     }
   }
 }
 
 .c-sidebar-brand {
   display: flex;
-  justify-content: center;  /* Center content horizontally */
-  align-items: center;      /* Center content vertically */
-  flex-direction: column;   /* Stack the logos vertically if both are displayed */
-  width: 100%;              /* Ensure the brand section takes the full width */
-  height: 100%;             /* Ensure it occupies the full height of the sidebar brand area */
-  padding: 10px 0;          /* Optional: Adjust padding as needed */
-  margin-top: 50px;         /* Adjust this value to move the entire brand section lower */
+  justify-content: center;
+  /* Center content horizontally */
+  align-items: center;
+  /* Center content vertically */
+  flex-direction: column;
+  /* Stack the logos vertically if both are displayed */
+  width: 100%;
+  /* Ensure the brand section takes the full width */
+  height: 100%;
+  /* Ensure it occupies the full height of the sidebar brand area */
+  padding: 10px 0;
+  /* Optional: Adjust padding as needed */
+  margin-top: 50px;
+  /* Adjust this value to move the entire brand section lower */
 }
 
-
-.sidebar-brand-full, .sidebar-brand-narrow {
+.sidebar-brand-full,
+.sidebar-brand-narrow {
   display: block;
-  margin: 0 auto;           /* Center logos horizontally */
+  margin: 0 auto;
+  /* Center logos horizontally */
 }
+
+// :root {
+//   --map-tiles-filter: brightness(0.6) invert(1) contrast(3) hue-rotate(180deg) brightness(0.5);
+// }
+
+// .dark .map-tiles {
+//   filter:var(--map-tiles-filter, none);
+// }

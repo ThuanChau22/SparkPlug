@@ -23,6 +23,7 @@ def require_permission(*allowed_roles):
                 request.auth = {
                     "user_id": data["id"],
                     "role": data["role"],
+                    "token": token,
                 }
             elif "anonymous" not in allowed_roles:
                 return {"message": "Missing token"}, 401

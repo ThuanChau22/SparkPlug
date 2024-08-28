@@ -14,14 +14,14 @@ import LoadingIndicator from "components/LoadingIndicator";
 import StickyContainer from "components/StickyContainer";
 import StationAnalyticsDetailsModal from "components/StationAnalytics/DetailsModal";
 import StationAnalyticsMapView from "components/StationAnalytics/MapView";
-import { selectHeaderHeight } from "redux/header/headerSlice";
+import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
   stationGetList,
   selectStationList,
 } from "redux/station/stationSlice";
 
 const StationAnalytics = () => {
-  const headerHeight = useSelector(selectHeaderHeight);
+  const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const stationList = useSelector(selectStationList);
 

@@ -9,9 +9,9 @@ import Dashboard from "pages/Dashboard";
 import StationManagement from "pages/StationManagement";
 import StationMonitor from "pages/StationMonitor";
 import StationAnalytics from "pages/StationAnalytics";
+import StationPrediction from "pages/StationPrediction";
 import SiteManagement from "pages/SiteManagement";
 import UserManagement from "pages/UserManagement";
-import AIPredictedLocation from "pages/AIPredictedLocation";
 import DriverDashboard from "pages/DriverDashboard";
 import DriverStation from "pages/DriverStation";
 
@@ -57,10 +57,10 @@ const routes = {
     path: "/dashboard",
     element: <Dashboard />,
   },
-  AIPredictedLocation: {
-    name: "AIPredictedLocation",
-    path: "/aipredictedlocation",
-    element: <AIPredictedLocation />,
+  StationPrediction: {
+    name: "Station Prediction",
+    path: "/station-prediction",
+    element: <StationPrediction />,
   },
   Stations: {
     name: "Stations",

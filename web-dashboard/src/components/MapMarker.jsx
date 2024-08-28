@@ -6,7 +6,7 @@ const MapMarker = ({ icon, position, onClick, children }) => (
     position={position}
     eventHandlers={onClick ? { click: onClick } : {}}
   >
-    <Tooltip direction="top" offset={[0, -20]} opacity={1} permanent={false}>
+    <Tooltip direction="top" offset={[0, -30]} opacity={1} permanent={false}>
       {children}
     </Tooltip>
   </Marker>

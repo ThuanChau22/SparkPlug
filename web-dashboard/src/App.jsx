@@ -9,7 +9,9 @@ import {
 import Header from "components/Header";
 import Sidebar from "components/Sidebar";
 import Footer from "components/Footer";
+import ErrorToast from "components/ErrorToast";
 import LoadingIndicator from "components/LoadingIndicator";
+import { clearHeader } from "redux/api";
 import {
   authStateSet,
   authStateClear,
@@ -34,7 +36,7 @@ const App = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState("light");
 
   useEffect(() => {
     if (token) {
@@ -45,6 +47,7 @@ const App = () => {
   useEffect(() => {
     if (authenticated && expiredTime <= Date.now()) {
       dispatch(authStateClear());
+      clearHeader();
     }
   }, [authenticated, expiredTime, dispatch]);
 
@@ -94,7 +97,7 @@ const App = () => {
       restricted.add(routes.Stations.Components.Analytics.path);
       restricted.add(routes.Sites.path);
       restricted.add(routes.Users.path);
-      restricted.add(routes.AIPredictedLocation.path);
+      restricted.add(routes.StationPrediction.path);
     }
     let path = location.pathname;
     if (path.charAt(path.length - 1) === "/") {
@@ -117,6 +120,7 @@ const App = () => {
   // TODO: Change background color
   return (
     <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
+      <ErrorToast />
       {!authenticated
         ? <LoadingIndicator loading={!authenticated} />
         : (
@@ -132,7 +136,7 @@ const App = () => {
           </>
         )
       }
-    </div >
+    </div>
   );
 };
 

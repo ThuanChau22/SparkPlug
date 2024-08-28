@@ -1,4 +1,4 @@
-import { createRef, useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CCard,
@@ -10,11 +10,11 @@ import {
   CCol,
 } from "@coreui/react";
 
-import ActiveStatus from "components/ActiveStatus";
 import LoadingIndicator from "components/LoadingIndicator";
 import StickyContainer from "components/StickyContainer";
+import UserActiveStatus from "components/UserManagement/ActiveStatus";
 import UserDetailsModal from "components/UserManagement/DetailsModal";
-import { selectHeaderHeight } from "redux/header/headerSlice";
+import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
   userGetList,
   selectUserList,
@@ -23,10 +23,10 @@ import {
 
 const UserManagement = () => {
   const userLoadLimit = 100;
-  const titleRef = createRef();
-  const listRef = createRef();
+  const titleRef = useRef({});
+  const listRef = useRef({});
 
-  const headerHeight = useSelector(selectHeaderHeight);
+  const headerHeight = useSelector(selectLayoutHeaderHeight);
   const userList = useSelector(selectUserList);
   const userCursor = useSelector(selectUserCursor);
 
@@ -119,7 +119,7 @@ const UserManagement = () => {
                         </CRow>
                       </CCol>
                       <CCol xs="auto" sm={3} className="ps-0 text-end">
-                        <ActiveStatus status={status} />
+                        <UserActiveStatus status={status} />
                       </CCol>
                     </CRow>
                   </CListGroupItem>

@@ -26,33 +26,32 @@ import {
   selectAuthRoleIsOwner,
   selectAuthRoleIsDriver,
 } from "redux/auth/authSlice";
-import { selectHeaderActive } from "redux/header/headerSlice";
 import {
-  selectSidebarShow,
-  selectSidebarFold,
-  sidebarSetShow,
-  sidebarSetFold,
-  sidebarSetMobile,
-} from "redux/sidebar/sidebarSlice";
-import 'scss/style.scss';
+  selectLayoutHeaderActive,
+  selectLayoutSidebarShow,
+  selectLayoutSidebarFold,
+  layoutSetMobile,
+  layoutSetSidebarShow,
+  layoutSetSidebarFold,
+} from "redux/layout/layoutSlice";
 
 const Sidebar = () => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
   const authIsDriver = useSelector(selectAuthRoleIsDriver);
-  const headerActive = useSelector(selectHeaderActive);
-  const sidebarFold = useSelector(selectSidebarFold);
-  const sidebarShow = useSelector(selectSidebarShow);
+  const headerActive = useSelector(selectLayoutHeaderActive);
+  const sidebarFold = useSelector(selectLayoutSidebarFold);
+  const sidebarShow = useSelector(selectLayoutSidebarShow);
   const [navigation, setNavigation] = useState([]);
   const location = useLocation();
   const dispatch = useDispatch();
 
   const handleResize = useCallback(() => {
     const medium = "only screen and (min-width: 768px)";
-    dispatch(sidebarSetMobile(!window.matchMedia(medium).matches));
+    dispatch(layoutSetMobile(!window.matchMedia(medium).matches));
     const extraLarge = "only screen and (min-width: 1200px)";
     if (!window.matchMedia(extraLarge).matches) {
-      dispatch(sidebarSetFold(true));
+      dispatch(layoutSetSidebarFold(true));
     }
   }, [dispatch]);
 
@@ -118,8 +117,8 @@ const Sidebar = () => {
       }
       newNavigation.push({
         as: CNavItem,
-        name: routes.AIPredictedLocation.name,
-        to: routes.AIPredictedLocation.path,
+        name: routes.StationPrediction.name,
+        to: routes.StationPrediction.path,
         icon: <StarOutlined className="nav-icon" />,
       });
     }
@@ -186,7 +185,7 @@ const Sidebar = () => {
       unfoldable={sidebarFold}
       visible={sidebarShow}
       onVisibleChange={(visible) => {
-        dispatch(sidebarSetShow(visible))
+        dispatch(layoutSetSidebarShow(visible))
       }}
     >
       <CSidebarBrand className="d-none d-md-flex">
@@ -198,7 +197,7 @@ const Sidebar = () => {
       </CSidebarNav>
       <CSidebarToggler
         className="d-none d-xl-flex"
-        onClick={() => dispatch(sidebarSetFold(!sidebarFold))}
+        onClick={() => dispatch(layoutSetSidebarFold(!sidebarFold))}
       />
     </CSidebar>
   )

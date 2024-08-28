@@ -17,7 +17,7 @@ import StickyContainer from "components/StickyContainer";
 import DriverStationListItem from "components/DriverStation/StationListItem";
 import DriverStationMapView from "components/DriverStation/MapView";
 import DriverStationDetailsModal from "components/DriverStation/DetailsModal";
-import { selectHeaderHeight } from "redux/header/headerSlice";
+import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   stationGetList,
@@ -33,7 +33,7 @@ import {
 const DriverStation = () => {
   const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
 
-  const headerHeight = useSelector(selectHeaderHeight);
+  const headerHeight = useSelector(selectLayoutHeaderHeight);
   const token = useSelector(selectAuthAccessToken);
   const stationList = useSelector(selectStationList);
   const evseStatusIds = useSelector(selectEvseStatusIds);
