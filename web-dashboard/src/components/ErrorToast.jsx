@@ -20,7 +20,7 @@ const ErrorToast = () => {
   useEffect(() => {
     if (errorMessage) {
       setToast(
-        <CToast className="border border-danger text-danger mb-2" visible={true}>
+        <CToast className="border border-danger text-danger mt-3 mb-0">
           <div className="d-flex">
             <CToastBody className="p-2">
               {errorMessage}

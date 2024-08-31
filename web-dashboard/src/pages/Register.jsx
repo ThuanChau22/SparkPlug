@@ -67,7 +67,7 @@ const Register = () => {
     dispatch(authSignup({ name, email, password, role }));
   };
   return (
-    <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
+    <div className="min-vh-100 d-flex flex-row align-items-center">
       <ErrorToast />
       <CContainer>
         <CRow className="justify-content-center">

@@ -1,6 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+export const ThemeModes = {
+  Auto: "auto",
+  Light: "light",
+  Dark: "dark",
+};
+
 const initialState = {
+  theme: ThemeModes.Auto,
   mobile: false,
   headerActive: "",
   headerHeight: 0,
@@ -13,6 +20,9 @@ export const layoutSlice = createSlice({
   name: "layout",
   initialState,
   reducers: {
+    layoutSetTheme(state, { payload }) {
+      state.theme = payload;
+    },
     layoutSetMobile(state, { payload }) {
       state.mobile = payload;
     },
@@ -38,6 +48,7 @@ export const layoutSlice = createSlice({
 });
 
 export const {
+  layoutSetTheme,
   layoutSetMobile,
   layoutSetHeaderActive,
   layoutSetHeaderHeight,
@@ -48,6 +59,15 @@ export const {
 } = layoutSlice.actions;
 
 export const selectLayout = (state) => state[layoutSlice.name];
+
+export const selectLayoutTheme = (state) => selectLayout(state).theme;
+
+export const selectLayoutThemeColor = (state) => {
+  const { theme } = selectLayout(state);
+  if (theme !== ThemeModes.Auto) return theme;
+  const isPreferDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return isPreferDark ? ThemeModes.Dark : ThemeModes.Light;
+};
 
 export const selectLayoutMobile = (state) => selectLayout(state).mobile;
 

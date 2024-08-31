@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CRow,
@@ -14,13 +14,18 @@ import LoadingIndicator from "components/LoadingIndicator";
 import StickyContainer from "components/StickyContainer";
 import StationAnalyticsDetailsModal from "components/StationAnalytics/DetailsModal";
 import StationAnalyticsMapView from "components/StationAnalytics/MapView";
-import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
+import {
+  ThemeModes,
+  selectLayoutThemeColor,
+  selectLayoutHeaderHeight,
+} from "redux/layout/layoutSlice";
 import {
   stationGetList,
   selectStationList,
 } from "redux/station/stationSlice";
 
 const StationAnalytics = () => {
+  const themeColor = useSelector(selectLayoutThemeColor);
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const stationList = useSelector(selectStationList);
@@ -49,13 +54,19 @@ const StationAnalytics = () => {
     setIsAnalyticsModalOpen(true);
   };
 
+  const backgroundColor = useMemo(() => (
+    themeColor === ThemeModes.Light
+      ? "bg-white"
+      : "bg-dark"
+  ), [themeColor]);
+
   return (
     <CCard className="flex-grow-1 border border-top-0 rounded-0">
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
           <CCardBody className="d-flex flex-column h-100 pt-0">
             <StickyContainer
-              className="py-3" // TODO: Change background color
+              className={`py-4 ${backgroundColor}`}
               top={`${headerHeight}px`}
             >
               <CCardTitle>
@@ -81,7 +92,7 @@ const StationAnalytics = () => {
               )}
           </CCardBody>
         </CCol>
-        <CCol md={6} lg={7} style={{ position: 'relative', zIndex: 500 }}>
+        <CCol md={6} lg={7}>
           <StationAnalyticsMapView handleViewStation={handleViewStation} />
         </CCol>
       </CRow>

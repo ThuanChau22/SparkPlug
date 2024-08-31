@@ -2,10 +2,13 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  CNavItem,
   CNavGroup,
+  CNavItem,
+  CNavLink,
   CSidebar,
   CSidebarBrand,
+  CSidebarFooter,
+  CSidebarHeader,
   CSidebarNav,
   CSidebarToggler,
 } from "@coreui/react";
@@ -69,54 +72,53 @@ const Sidebar = () => {
     const newNavigation = [];
     if (authIsAdmin || authIsOwner) {
       newNavigation.push({
-        as: CNavItem,
+        component: CNavItem,
         name: routes.Dashboard.name,
         to: routes.Dashboard.path,
         icon: <BarChartOutlined className="nav-icon" />,
       });
       newNavigation.push({
-        as: CNavGroup,
+        component: CNavGroup,
         name: routes.Stations.name,
         to: routes.Stations.Components[headerActive]?.path || routes.Stations.defaultPath,
-        className: "centered-nav-item",
         icon: <EvStationOutlined className="nav-icon" />,
         items: [
           {
-            as: CNavItem,
+            component: CNavItem,
             name: routes.Stations.Components.Management.name,
             to: routes.Stations.Components.Management.path,
-            className: "centered-nav-item",
+
           },
           {
-            as: CNavItem,
+            component: CNavItem,
             name: routes.Stations.Components.Monitor.name,
             to: routes.Stations.Components.Monitor.path,
-            className: "centered-nav-item",
+
           },
           {
-            as: CNavItem,
+            component: CNavItem,
             name: routes.Stations.Components.Analytics.name,
             to: routes.Stations.Components.Analytics.path,
-            className: "centered-nav-item",
+
           },
         ],
       });
       newNavigation.push({
-        as: CNavItem,
+        component: CNavItem,
         name: routes.Sites.name,
         to: routes.Sites.path,
         icon: <AccountTreeOutlined className="nav-icon" />,
       });
       if (authIsAdmin) {
         newNavigation.push({
-          as: CNavItem,
+          component: CNavItem,
           name: routes.Users.name,
           to: routes.Users.path,
           icon: <PeopleOutlined className="nav-icon" />,
         });
       }
       newNavigation.push({
-        as: CNavItem,
+        component: CNavItem,
         name: routes.StationPrediction.name,
         to: routes.StationPrediction.path,
         icon: <StarOutlined className="nav-icon" />,
@@ -124,13 +126,13 @@ const Sidebar = () => {
     }
     if (authIsDriver) {
       newNavigation.push({
-        as: CNavItem,
+        component: CNavItem,
         name: routes.Driver.Components.Dashboard.name,
         to: routes.Driver.Components.Dashboard.path,
         icon: <BarChartOutlined className="nav-icon" />,
       });
       newNavigation.push({
-        as: CNavItem,
+        component: CNavItem,
         name: routes.Driver.Components.Stations.name,
         to: routes.Driver.Components.Stations.path,
         icon: <EvStationOutlined className="nav-icon" />,
@@ -140,12 +142,17 @@ const Sidebar = () => {
   }, [authIsAdmin, authIsOwner, authIsDriver, headerActive]);
 
   const SidebarNav = ({ items }) => {
-    const location = useLocation();
-  
-    const NavGroup = ({ as: Component, name, icon, to, items, ...rest }, index) => (
+    const NavItem = ({ component: Component, name, icon, ...rest }, index) => (
+      <Component key={index}>
+        <CNavLink {...(rest.to && { as: NavLink })} {...rest}>
+          {icon && icon}
+          {name && name}
+        </CNavLink>
+      </Component>
+    );
+    const NavGroup = ({ component: Component, name, icon, to, items, ...rest }, index) => (
       <Component
         key={index}
-        idx={String(index)}
         visible={location.pathname.startsWith(to)}
         toggler={(
           <>
@@ -160,27 +167,20 @@ const Sidebar = () => {
         ))}
       </Component>
     );
-  
-    const NavItem = ({ as: Component, name, icon, to, ...rest }, index) => {
-    
-      return (
-        <NavLink key={index} to={to} {...rest} className="nav-item">
-          <div className="nav-content">
-            {icon && <span className="nav-icon">{icon}</span>}
-            {name && <span className="nav-name">{name}</span>}
-          </div>
-        </NavLink>
-      );
-    };
-    
-  
-    return items?.map((item, index) =>
-      item.items ? NavGroup(item, index) : NavItem(item, index)
+    return (
+      <CSidebarNav>
+        {items && items.map((item, index) => (
+          item.items
+            ? NavGroup(item, index)
+            : NavItem(item, index)
+        ))}
+      </CSidebarNav>
     );
   };
 
   return (
     <CSidebar
+      className="border-end"
       position="fixed"
       unfoldable={sidebarFold}
       visible={sidebarShow}
@@ -188,17 +188,20 @@ const Sidebar = () => {
         dispatch(layoutSetSidebarShow(visible))
       }}
     >
-      <CSidebarBrand className="d-none d-md-flex">
-        <CIcon className="sidebar-brand-full" icon={logoBrand} height={35} />
-        <CIcon className="sidebar-brand-narrow" icon={logo} height={35} />
-      </CSidebarBrand>
-      <CSidebarNav>
-        <SidebarNav items={navigation} />
-      </CSidebarNav>
-      <CSidebarToggler
-        className="d-none d-xl-flex"
-        onClick={() => dispatch(layoutSetSidebarFold(!sidebarFold))}
-      />
+      <CSidebarHeader className="border-bottom justify-content-center">
+        <CSidebarBrand>
+          <CIcon customClassName="sidebar-brand-full" icon={logoBrand} height={32} />
+          <CIcon customClassName="sidebar-brand-narrow" icon={logo} height={32} />
+        </CSidebarBrand>
+      </CSidebarHeader>
+      <SidebarNav items={navigation} />
+      <CSidebarFooter className="border-top d-none d-lg-flex">
+        <CSidebarToggler
+          onClick={() => {
+            dispatch(layoutSetSidebarFold(!sidebarFold))
+          }}
+        />
+      </CSidebarFooter>
     </CSidebar>
   )
 }

@@ -847,7 +847,7 @@ const Dashboard = () => {
           </CCol>
         ))}
       </CRow>
-      <CRow className="custom-row-spacing">
+      <CRow className="m-2">
         <CCol xs={6}>
           <CWidgetStatsA
             value={
@@ -959,7 +959,7 @@ const Dashboard = () => {
           />
         </CCol> 
       </CRow>
-      <CRow className="custom-row-spacing">
+      <CRow className="m-2">
         <CCol xs={6}>
           <CWidgetStatsA
             
@@ -1075,7 +1075,7 @@ const Dashboard = () => {
     />
         </CCol>
       </CRow>
-      <CRow className="custom-row-spacing">
+      <CRow className="m-2">
         <CCol xs={6}>
           <CWidgetStatsA
             
@@ -1145,7 +1145,7 @@ const Dashboard = () => {
           </CRow>*/}
         </CCol>
       </CRow> 
-      <CRow className="custom-row-spacing">
+      <CRow className="m-2">
         <CCol xs={6}>
         <CWidgetStatsA
             
@@ -1278,7 +1278,7 @@ const Dashboard = () => {
           />
         </CCol>
       </CRow>
-      <CRow className="custom-row-spacing">
+      <CRow className="m-2">
         <CCol xs={6}>
         <CWidgetStatsA
             

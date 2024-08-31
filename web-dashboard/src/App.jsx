@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   useNavigate,
   useLocation,
   Outlet,
 } from "react-router-dom";
+import { useColorModes } from "@coreui/react";
 
 import Header from "components/Header";
 import Sidebar from "components/Sidebar";
@@ -22,10 +23,16 @@ import {
   selectAuthExpiredTime,
   selectAuthSecureStorage,
 } from "redux/auth/authSlice";
+import {
+  layoutSetTheme,
+  selectLayoutTheme,
+} from "redux/layout/layoutSlice";
 import routes from "routes";
 import "scss/style.scss";
 
 const App = () => {
+  const { colorMode, setColorMode } = useColorModes("theme");
+  const theme = useSelector(selectLayoutTheme);
   const authenticated = useSelector(selectAuthAuthenticated);
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
@@ -36,7 +43,15 @@ const App = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [theme, setTheme] = useState("light");
+  useEffect(() => {
+    const storedTheme = localStorage.getItem("theme");
+    dispatch(layoutSetTheme(storedTheme || colorMode));
+  }, [colorMode, dispatch]);
+
+  useEffect(() => {
+    setColorMode(theme);
+    localStorage.setItem("theme", theme);
+  }, [theme, setColorMode]);
 
   useEffect(() => {
     if (token) {
@@ -109,27 +124,18 @@ const App = () => {
     }
   }, [authIsAdmin, authIsOwner, authIsDriver, location, navigate]);
 
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
-  };
-
-  useEffect(() => {
-    document.body.className = theme;
-  }, [theme]);
-
-  // TODO: Change background color
   return (
-    <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
+    <div className="min-vh-100 d-flex flex-row align-items-center">
       <ErrorToast />
       {!authenticated
         ? <LoadingIndicator loading={!authenticated} />
         : (
           <>
             <Sidebar />
-            <div className={`min-vh-100 d-flex flex-column wrapper ${theme}`}>
-              <Header theme={theme} toggleTheme={toggleTheme} />
+            <div className={`min-vh-100 d-flex flex-column wrapper`}>
+              <Header />
               <div className="body d-flex flex-column flex-grow-1">
-                <Outlet context={{ theme, toggleTheme }} />
+                <Outlet />
               </div>
               <Footer />
             </div>

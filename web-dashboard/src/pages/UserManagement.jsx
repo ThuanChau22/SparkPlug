@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CCard,
@@ -14,7 +14,11 @@ import LoadingIndicator from "components/LoadingIndicator";
 import StickyContainer from "components/StickyContainer";
 import UserActiveStatus from "components/UserManagement/ActiveStatus";
 import UserDetailsModal from "components/UserManagement/DetailsModal";
-import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
+import { 
+  ThemeModes,
+  selectLayoutThemeColor,
+  selectLayoutHeaderHeight,
+ } from "redux/layout/layoutSlice";
 import {
   userGetList,
   selectUserList,
@@ -26,6 +30,7 @@ const UserManagement = () => {
   const titleRef = useRef({});
   const listRef = useRef({});
 
+  const themeColor = useSelector(selectLayoutThemeColor);
   const headerHeight = useSelector(selectLayoutHeaderHeight);
   const userList = useSelector(selectUserList);
   const userCursor = useSelector(selectUserCursor);
@@ -79,12 +84,18 @@ const UserManagement = () => {
     setIsDetailsModalOpen(true);
   };
 
+  const backgroundColor = useMemo(() => (
+    themeColor === ThemeModes.Light
+      ? "bg-white"
+      : "bg-dark"
+  ), [themeColor]);
+
   return (
     <CCard className="flex-grow-1 border border-top-0 rounded-0">
       <CCardBody className="d-flex flex-column h-100 pt-0 border border-0">
         <StickyContainer
           ref={titleRef}
-          className="py-3"
+          className={`py-4 ${backgroundColor}`}
           top={`${headerHeight}px`}
         >
           <CCardTitle>
