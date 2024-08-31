@@ -1,40 +1,17 @@
 import React from 'react'
 import classNames from 'classnames'
 import '../scss/style.scss'
-import { CChartPie } from '@coreui/react-chartjs';
-import { CChartDoughnut } from '@coreui/react-chartjs';
-import { cilArrowBottom, cilArrowTop, cilOptions } from '@coreui/icons'
-import { CChart } from '@coreui/react-chartjs';
-import { Pie } from 'react-chartjs-2';
 import {
   CRow,
   CCol,
-  CDropdown,
-  CDropdownMenu,
-  CDropdownItem,
-  CDropdownToggle,
   CWidgetStatsA,
+  CCard,
 } from '@coreui/react'
 import { getStyle } from '@coreui/utils'
 import { CChartBar, CChartLine } from '@coreui/react-chartjs'
 import {
-  CAvatar,
-  CButton,
-  CButtonGroup,
-  CCard,
-  CCardBody,
-  CCardFooter,
-  CCardHeader,
   CProgress,
-  CTable,
-  CTableBody,
-  CTableDataCell,
-  CTableHead,
-  CTableHeaderCell,
-  CTableRow,
-  CContainer,
 } from '@coreui/react'
-import CIcon from '@coreui/icons-react'
 import {
   cibCcAmex,
   cibCcApplePay,
@@ -52,15 +29,9 @@ import {
   cifPl,
   cifUs,
   cibTwitter,
-  cilCloudDownload,
-  cilPeople,
   cilUser,
   cilUserFemale,
 } from '@coreui/icons'
-
-import { Bar, Line, Doughnut } from 'react-chartjs-2';
-import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
-
 
 import avatar1 from '../assets/default-avatar.jpg'
 import avatar2 from '../assets/default-avatar.jpg'
@@ -74,17 +45,12 @@ import { useSelector } from "react-redux";
 
 import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
-import { selectStationById } from "redux/station/stationSlice";
 
-
-Chart.register(ArcElement, Tooltip, Legend);
 
 const Dashboard = () => {
   const stationId = 1392;
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
-  const station = useSelector((state) => selectStationById(state, stationId));
   const token = useSelector(selectAuthAccessToken);
-  const [analyticsData, setAnalyticsData] = useState(null);
   const [dashboardData, setDashboardData] = useState([]);
   const [EVSEStatus, setEVSEStatus] = useState([]);
 
@@ -857,7 +823,7 @@ const Dashboard = () => {
   ]
 
   return (
-    <div>
+    <CCard className="flex-grow-1 border border-top-0 rounded-0">
       <CRow
             xs={{ cols: 1, gutter: 4 }}
             sm={{ cols: 2 }}
@@ -881,10 +847,9 @@ const Dashboard = () => {
           </CCol>
         ))}
       </CRow>
-      <CRow className="custom-row-spacing">
+      <CRow className="m-2">
         <CCol xs={6}>
           <CWidgetStatsA
-            color="dark"
             value={
               <>
                 Sessions{' '}
@@ -933,7 +898,7 @@ const Dashboard = () => {
         </CCol>  
         <CCol xs={6}>
           <CWidgetStatsA
-            color="dark"
+            
             value={
               <>
                 Revenue{' '}
@@ -994,10 +959,10 @@ const Dashboard = () => {
           />
         </CCol> 
       </CRow>
-      <CRow className="custom-row-spacing">
+      <CRow className="m-2">
         <CCol xs={6}>
           <CWidgetStatsA
-            color="dark"
+            
             value={
               <>
                 Engery/Consumption{' '}
@@ -1046,7 +1011,7 @@ const Dashboard = () => {
         </CCol>  
         <CCol xs={6}>
         <CWidgetStatsA
-      color="dark"
+      
       value={
         <>
           Peak/Off-peak Time{' '}
@@ -1110,10 +1075,10 @@ const Dashboard = () => {
     />
         </CCol>
       </CRow>
-      <CRow className="custom-row-spacing">
+      <CRow className="m-2">
         <CCol xs={6}>
           <CWidgetStatsA
-            color="dark"
+            
             value={
               <>
                 Slow/Fast Charger{' '}
@@ -1180,10 +1145,10 @@ const Dashboard = () => {
           </CRow>*/}
         </CCol>
       </CRow> 
-      <CRow className="custom-row-spacing">
+      <CRow className="m-2">
         <CCol xs={6}>
         <CWidgetStatsA
-            color="dark"
+            
             value={
               <>
                 Driver{' '}
@@ -1243,7 +1208,7 @@ const Dashboard = () => {
         </CCol>
         <CCol xs={6}>
         <CWidgetStatsA
-            color="dark"
+            
             value={
               <>
                 Owner{' '}
@@ -1313,10 +1278,10 @@ const Dashboard = () => {
           />
         </CCol>
       </CRow>
-      <CRow className="custom-row-spacing">
+      <CRow className="m-2">
         <CCol xs={6}>
         <CWidgetStatsA
-            color="dark"
+            
             value={
               <>
                 Station{' '}
@@ -1374,7 +1339,7 @@ const Dashboard = () => {
         </CCol>
       </CRow>
     
-    </div>
+      </CCard>
   )
 }
 

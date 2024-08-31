@@ -2,7 +2,7 @@
 
 @import "variables";
 
-@import "layout";
+@import "theme";
 
 .form-control:focus,
 .form-select:focus {
@@ -16,93 +16,32 @@
   box-shadow: none;
 }
 
-.custom-col {
-  padding: 0 10px;  // 根据需要调整
-  flex: 1 0 20%;    // 每个列尝试占用 20% 的宽度
-  max-width: 20%;   // 最大宽度也设置为 20%
-}
+// (CoreUI Bug) Undone
+// .sidebar-narrow-unfoldable:not(.sidebar-end) ~ * {
+//   --cui-sidebar-occupy-start: 4rem !important;
+// }
+.sidebar {
+  &.hide:not(.sidebar-end)~* {
+    --cui-sidebar-occupy-start: 0 !important;
+  }
 
-:root {
-  --background-light: #fff;
-  --background-dark: #333;
-  --text-light: #333;
-  --text-dark: #fff;
-}
-
-.header-black {
-  background-color: rgb(66, 62, 62);
-  color: white; /* Optional: If you want to change the text color as well */
-}
-
-.header.light {
-  background-color: var(--background-light);
-  color: var(--text-light);
-}
-
-.header.dark {
-  background-color: var(--background-dark);
-  color: var(--text-dark);
-}
-
-.c-row {
-  display: flex;
-}
-
-.c-col {
-  display: flex;
-  flex-direction: column;
-}
-
-.custom-row-spacing {
-  margin-bottom: 72px;
-  margin-left: 20px;
-  margin-right: 20px;
-  margin-top: 40px;
-}
-
-/* src/scss/style.scss */
-body.light {
-  background-color: white;
-  color: black;
-}
-
-body.dark {
-  background-color: rgb(66, 62, 62);
-  color: white;
-}
-
-.light .card {
-  background-color: #ffffff;
-  color: #000000;
-}
-
-.dark .card {
-  background-color: rgb(66, 62, 62);
-  color: #ffffff;
-}
-
-.theme-toggle {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  z-index: 1000;
-}
-
-.theme-toggle .btn {
-  background-color: transparent;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.theme-toggle .btn:focus {
-  outline: none;
+  @media (max-width: 991.98px) {
+    &:not(.sidebar-end)~* {
+      --cui-sidebar-occupy-start: 0 !important;
+    }
+  }
 }
 
 // :root {
 //   --map-tiles-filter: brightness(0.6) invert(1) contrast(3) hue-rotate(180deg) brightness(0.5);
 // }
 
-// .dark .map-tiles {
-//   filter:var(--map-tiles-filter, none);
+// @media (prefers-color-scheme: dark) {
+//   .map-tiles {
+//     filter: var(--map-tiles-filter, none);
+//   }
+// }
+
+// .map-tiles.dark {
+//   filter: var(--map-tiles-filter, none);
 // }

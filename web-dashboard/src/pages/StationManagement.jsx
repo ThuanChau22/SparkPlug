@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -16,13 +16,18 @@ import StickyContainer from "components/StickyContainer";
 import StationAddModal from "components/StationManagement/AddModal";
 import StationDetailsModal from "components/StationManagement/DetailsModal";
 import StationMapView from "components/StationManagement/MapView";
-import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
+import {
+  ThemeModes,
+  selectLayoutThemeColor,
+  selectLayoutHeaderHeight,
+} from "redux/layout/layoutSlice";
 import {
   stationGetList,
   selectStationList,
 } from "redux/station/stationSlice";
 
 const StationManagement = () => {
+  const themeColor = useSelector(selectLayoutThemeColor);
   const headerHeight = useSelector(selectLayoutHeaderHeight);
   const stationList = useSelector(selectStationList);
 
@@ -51,16 +56,22 @@ const StationManagement = () => {
     setIsDetailsModalOpen(true);
   };
 
+  const backgroundColor = useMemo(() => (
+    themeColor === ThemeModes.Light
+      ? "bg-white"
+      : "bg-dark"
+  ), [themeColor]);
+
   return (
-    <CCard className="flex-grow-1 border border-top-0 rounded-0 card">
+    <CCard className="flex-grow-1 border border-top-0 rounded-0">
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
-          <CCardBody className="d-flex flex-column h-100 pt-0 card">
+          <CCardBody className="d-flex flex-column h-100 pt-0">
             <StickyContainer
-              className="bg-white py-3 card" // TODO: Change background color
+              className={`py-3 ${backgroundColor}`}
               top={`${headerHeight}px`}
             >
-              <CCardTitle className="d-flex flex-row justify-content-between align-items-center card">
+              <CCardTitle className="d-flex flex-row justify-content-between align-items-center">
                 Stations Management
                 <CButton
                   variant="outline"
@@ -78,8 +89,8 @@ const StationManagement = () => {
                   {stationList.map(({ id, name }) => (
                     <CListGroupItem
                       key={id}
-                      className="py-3 card"
-                      component="button"
+                      className="py-3"
+                      as="button"
                       onClick={() => handleViewStation(id)}
                     >
                       <small className="w-100 text-secondary">ID: {id}</small>

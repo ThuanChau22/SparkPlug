@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import {
@@ -17,7 +17,11 @@ import StickyContainer from "components/StickyContainer";
 import StationMonitorListItem from "components/StationMonitor/StationListItem";
 import StationMonitorDetailsModal from "components/StationMonitor/DetailsModal";
 import StationMonitorMapView from "components/StationMonitor/MapView";
-import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
+import { 
+  ThemeModes,
+  selectLayoutThemeColor,
+  selectLayoutHeaderHeight,
+ } from "redux/layout/layoutSlice";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   stationGetList,
@@ -33,6 +37,7 @@ import {
 const StationMonitor = () => {
   const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
 
+  const themeColor = useSelector(selectLayoutThemeColor);
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const token = useSelector(selectAuthAccessToken);
@@ -120,13 +125,19 @@ const StationMonitor = () => {
     setIsModalOpen(true);
   };
 
+  const backgroundColor = useMemo(() => (
+    themeColor === ThemeModes.Light
+      ? "bg-white"
+      : "bg-dark"
+  ), [themeColor]);
+
   return (
-    <CCard className="flex-grow-1 border border-top-0 rounded-0 card">
+    <CCard className="flex-grow-1 border border-top-0 rounded-0">
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
-          <CCardBody className="d-flex flex-column h-100 pt-0 card">
+          <CCardBody className="d-flex flex-column h-100 pt-0">
             <StickyContainer
-              className="bg-white py-3 card" // TODO: Change background color
+              className={`py-4 ${backgroundColor}`}
               top={`${headerHeight}px`}
             >
               <CCardTitle>
@@ -140,8 +151,8 @@ const StationMonitor = () => {
                   {stationList.map(({ id }) => (
                     <CListGroupItem
                       key={id}
-                      className="d-flex flex-row justify-content-between align-items-center py-3 card"
-                      component="button"
+                      className="d-flex flex-row justify-content-between align-items-center py-3"
+                      as="button"
                       onClick={() => handleViewStation(id)}
                     >
                       <StationMonitorListItem stationId={id} />

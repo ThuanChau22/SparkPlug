@@ -13,20 +13,19 @@ import {
   NavLink,
 } from "react-router-dom";
 import {
-  CButton,
   CContainer,
   CHeader,
-  CHeaderBrand,
-  CHeaderDivider,
   CHeaderNav,
   CHeaderToggler,
+  CNav,
   CNavLink,
   CNavItem,
+  CHeaderBrand,
 } from "@coreui/react";
-import { cilMenu } from "@coreui/icons";
+import {
+  cilMenu,
+} from "@coreui/icons"
 import CIcon from "@coreui/icons-react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSun, faMoon } from "@fortawesome/free-solid-svg-icons";
 
 import logoBrand from "assets/logo-brand";
 import Breadcrumb from "components/Breadcrumb";
@@ -40,7 +39,7 @@ import {
 import routes from "routes";
 import "scss/style.scss";
 
-const Header = ({ theme, toggleTheme }) => {
+const Header = () => {
   const headerRef = useRef({});
 
   const sidebarShow = useSelector(selectLayoutSidebarShow);
@@ -83,16 +82,13 @@ const Header = ({ theme, toggleTheme }) => {
     }
   }, [location, dispatch]);
 
-  const navItemStyle = theme === "dark" ? { color: "white" } : {};
-
   return (
     <CHeader
       ref={headerRef}
-      style={navItemStyle}
       position="sticky"
-      className={theme}
+      className="p-0"
     >
-      <CContainer fluid>
+      <CContainer className="border-bottom" fluid>
         <CHeaderToggler
           className="ps-1"
           onClick={() => dispatch(layoutSetSidebarShow(!sidebarShow))}
@@ -100,31 +96,27 @@ const Header = ({ theme, toggleTheme }) => {
           <CIcon icon={cilMenu} size="lg" />
         </CHeaderToggler>
         <CHeaderBrand className="d-md-none mx-auto">
-          <CIcon icon={logoBrand} height={20} alt="Logo" />
+          <CIcon icon={logoBrand} height={30} alt="Logo" />
         </CHeaderBrand>
-        <CHeaderNav className="d-none d-md-flex me-auto">
-          {components && components.map(({ name, path }, index) => (
-            <CNavItem key={index} style={navItemStyle}>
-              <CNavLink to={path} component={NavLink} style={navItemStyle}>
-                {name}
-              </CNavLink>
-            </CNavItem>
-          ))}
+        <CHeaderNav className="d-none d-md-flex me-auto" >
+          <CNav layout="fill">
+            {components && components.map(({ name, path }, index) => (
+              <CNavItem key={index}>
+                <CNavLink to={path} as={NavLink}>
+                  {name}
+                </CNavLink>
+              </CNavItem>
+            ))}
+          </CNav>
         </CHeaderNav>
-        <CHeaderNav>
+        <CHeaderNav className="d-flex align-items-center">
           <HeaderDropdown />
         </CHeaderNav>
-        <CHeaderNav>
-          <CButton onClick={toggleTheme} className="btn btn-light">
-            <FontAwesomeIcon icon={theme === "light" ? faMoon : faSun} />
-          </CButton>
-        </CHeaderNav>
-      </CContainer>
-      <CHeaderDivider />
+      </CContainer >
       <CContainer fluid>
         <Breadcrumb />
       </CContainer>
-    </CHeader>
+    </CHeader >
   );
 };
 

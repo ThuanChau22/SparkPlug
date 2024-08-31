@@ -1,21 +1,14 @@
+import React, { useEffect, useState, useCallback } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { NavLink, useLocation } from "react-router-dom";
 import {
-  useEffect,
-  useState,
-  useCallback,
-} from "react";
-import {
-  useSelector,
-  useDispatch,
-} from "react-redux";
-import {
-  NavLink,
-  useLocation,
-} from "react-router-dom";
-import {
-  CNavItem,
   CNavGroup,
+  CNavItem,
+  CNavLink,
   CSidebar,
   CSidebarBrand,
+  CSidebarFooter,
+  CSidebarHeader,
   CSidebarNav,
   CSidebarToggler,
 } from "@coreui/react";
@@ -94,16 +87,19 @@ const Sidebar = () => {
             component: CNavItem,
             name: routes.Stations.Components.Management.name,
             to: routes.Stations.Components.Management.path,
+
           },
           {
             component: CNavItem,
             name: routes.Stations.Components.Monitor.name,
             to: routes.Stations.Components.Monitor.path,
+
           },
           {
             component: CNavItem,
             name: routes.Stations.Components.Analytics.name,
             to: routes.Stations.Components.Analytics.path,
+
           },
         ],
       });
@@ -146,10 +142,17 @@ const Sidebar = () => {
   }, [authIsAdmin, authIsOwner, authIsDriver, headerActive]);
 
   const SidebarNav = ({ items }) => {
+    const NavItem = ({ component: Component, name, icon, ...rest }, index) => (
+      <Component key={index}>
+        <CNavLink {...(rest.to && { as: NavLink })} {...rest}>
+          {icon && icon}
+          {name && name}
+        </CNavLink>
+      </Component>
+    );
     const NavGroup = ({ component: Component, name, icon, to, items, ...rest }, index) => (
       <Component
         key={index}
-        idx={String(index)}
         visible={location.pathname.startsWith(to)}
         toggler={(
           <>
@@ -164,28 +167,20 @@ const Sidebar = () => {
         ))}
       </Component>
     );
-    const NavItem = ({ component: Component, name, icon, ...rest }, index) => (
-      <Component
-        key={index}
-        {...(rest.to &&
-          !rest.items && {
-          component: NavLink,
-        })}
-        {...rest}
-      >
-        {icon && icon}
-        {name && name}
-      </Component>
-    );
     return (
-      items && items.map((item, index) => (
-        item.items ? NavGroup(item, index) : NavItem(item, index)
-      ))
-    )
+      <CSidebarNav>
+        {items && items.map((item, index) => (
+          item.items
+            ? NavGroup(item, index)
+            : NavItem(item, index)
+        ))}
+      </CSidebarNav>
+    );
   };
 
   return (
     <CSidebar
+      className="border-end"
       position="fixed"
       unfoldable={sidebarFold}
       visible={sidebarShow}
@@ -193,17 +188,20 @@ const Sidebar = () => {
         dispatch(layoutSetSidebarShow(visible))
       }}
     >
-      <CSidebarBrand className="d-none d-md-flex">
-        <CIcon className="sidebar-brand-full" icon={logoBrand} height={35} />
-        <CIcon className="sidebar-brand-narrow" icon={logo} height={35} />
-      </CSidebarBrand>
-      <CSidebarNav>
-        <SidebarNav items={navigation} />
-      </CSidebarNav>
-      <CSidebarToggler
-        className="d-none d-xl-flex"
-        onClick={() => dispatch(layoutSetSidebarFold(!sidebarFold))}
-      />
+      <CSidebarHeader className="border-bottom justify-content-center">
+        <CSidebarBrand>
+          <CIcon customClassName="sidebar-brand-full" icon={logoBrand} height={32} />
+          <CIcon customClassName="sidebar-brand-narrow" icon={logo} height={32} />
+        </CSidebarBrand>
+      </CSidebarHeader>
+      <SidebarNav items={navigation} />
+      <CSidebarFooter className="border-top d-none d-lg-flex">
+        <CSidebarToggler
+          onClick={() => {
+            dispatch(layoutSetSidebarFold(!sidebarFold))
+          }}
+        />
+      </CSidebarFooter>
     </CSidebar>
   )
 }
