@@ -1,10 +1,11 @@
+import axios from "axios";
 import ms from "ms";
 import WebSocket, { WebSocketServer } from "ws";
 
+import { STATION_API_ENDPOINT } from "../../config.js";
 import Connector from "../../model/connector.js";
 import EVSE from "../../model/evse.js";
 import Station from "../../model/station.js";
-import { Station as StationRepository } from "../../repository/station.js";
 import handler, { Action } from "./handler.js";
 
 const webSocketServer = () => {
@@ -66,29 +67,16 @@ server.on("connection", async (ws, req) => {
   try {
     const { params: { id } } = req;
     if (!stations.has(id)) {
-      const station = await StationRepository.getById(id);
-      if (!station) {
+      const { data } = await axios.get(`${STATION_API_ENDPOINT}/${id}/evses`);
+      if (data.length === 0) {
         throw { code: 404, message: `Station ${id} not found` };
       }
-      const evsesTemp = [
-        {
-          power: 3500.0,
-          connector_type: station.connector_type,
-        },
-        {
-          power: 3500.0,
-          connector_type: station.connector_type,
-        },
-        {
-          power: 3500.0,
-          connector_type: station.connector_type,
-        },
-      ];
-      const evses = evsesTemp.map((evse, index) => {
+      const evses = data.map((evse) => {
         const connectors = evse.connector_type.split(" ").map((type, index) => {
           return new Connector({ id: index + 1, connectorType: type });
         });
-        const newEVSE = new EVSE({ id: index + 1, power: evse.power, connectors });
+        const power = evse.power || 3500.0;
+        const newEVSE = new EVSE({ id: evse.evse_id, power, connectors });
         newEVSE.onAuthorize((evse, { isAuthorized }) => {
           const response = handler.authorize({ evseId: evse.id, isAuthorized });
           stations.get(id)?.sockets.forEach((socket) => {

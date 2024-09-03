@@ -1,21 +1,14 @@
+import React, { useEffect, useState, useCallback } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { NavLink, useLocation } from "react-router-dom";
 import {
-  useEffect,
-  useState,
-  useCallback,
-} from "react";
-import {
-  useSelector,
-  useDispatch,
-} from "react-redux";
-import {
-  NavLink,
-  useLocation,
-} from "react-router-dom";
-import {
-  CNavItem,
   CNavGroup,
+  CNavItem,
+  CNavLink,
   CSidebar,
   CSidebarBrand,
+  CSidebarFooter,
+  CSidebarHeader,
   CSidebarNav,
   CSidebarToggler,
 } from "@coreui/react";
@@ -25,6 +18,7 @@ import {
   BarChartOutlined,
   EvStationOutlined,
   PeopleOutlined,
+  StarOutlined,
 } from '@mui/icons-material';
 
 import logo from "assets/logo";
@@ -36,33 +30,31 @@ import {
   selectAuthRoleIsDriver,
 } from "redux/auth/authSlice";
 import {
-  selectHeaderActive,
-} from "redux/header/headerSlice";
-import {
-  selectSidebarShow,
-  selectSidebarFold,
-  sidebarSetShow,
-  sidebarSetFold,
-  sidebarSetMobile,
-} from "redux/sidebar/sidebarSlice";
+  selectLayoutHeaderActive,
+  selectLayoutSidebarShow,
+  selectLayoutSidebarFold,
+  layoutSetMobile,
+  layoutSetSidebarShow,
+  layoutSetSidebarFold,
+} from "redux/layout/layoutSlice";
 
 const Sidebar = () => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
   const authIsDriver = useSelector(selectAuthRoleIsDriver);
-  const headerActive = useSelector(selectHeaderActive);
-  const sidebarFold = useSelector(selectSidebarFold);
-  const sidebarShow = useSelector(selectSidebarShow);
+  const headerActive = useSelector(selectLayoutHeaderActive);
+  const sidebarFold = useSelector(selectLayoutSidebarFold);
+  const sidebarShow = useSelector(selectLayoutSidebarShow);
   const [navigation, setNavigation] = useState([]);
   const location = useLocation();
   const dispatch = useDispatch();
 
   const handleResize = useCallback(() => {
     const medium = "only screen and (min-width: 768px)";
-    dispatch(sidebarSetMobile(!window.matchMedia(medium).matches));
+    dispatch(layoutSetMobile(!window.matchMedia(medium).matches));
     const extraLarge = "only screen and (min-width: 1200px)";
     if (!window.matchMedia(extraLarge).matches) {
-      dispatch(sidebarSetFold(true));
+      dispatch(layoutSetSidebarFold(true));
     }
   }, [dispatch]);
 
@@ -95,16 +87,19 @@ const Sidebar = () => {
             component: CNavItem,
             name: routes.Stations.Components.Management.name,
             to: routes.Stations.Components.Management.path,
+
           },
           {
             component: CNavItem,
             name: routes.Stations.Components.Monitor.name,
             to: routes.Stations.Components.Monitor.path,
+
           },
           {
             component: CNavItem,
             name: routes.Stations.Components.Analytics.name,
             to: routes.Stations.Components.Analytics.path,
+
           },
         ],
       });
@@ -122,6 +117,12 @@ const Sidebar = () => {
           icon: <PeopleOutlined className="nav-icon" />,
         });
       }
+      newNavigation.push({
+        component: CNavItem,
+        name: routes.StationPrediction.name,
+        to: routes.StationPrediction.path,
+        icon: <StarOutlined className="nav-icon" />,
+      });
     }
     if (authIsDriver) {
       newNavigation.push({
@@ -141,10 +142,17 @@ const Sidebar = () => {
   }, [authIsAdmin, authIsOwner, authIsDriver, headerActive]);
 
   const SidebarNav = ({ items }) => {
+    const NavItem = ({ component: Component, name, icon, ...rest }, index) => (
+      <Component key={index}>
+        <CNavLink {...(rest.to && { as: NavLink })} {...rest}>
+          {icon && icon}
+          {name && name}
+        </CNavLink>
+      </Component>
+    );
     const NavGroup = ({ component: Component, name, icon, to, items, ...rest }, index) => (
       <Component
         key={index}
-        idx={String(index)}
         visible={location.pathname.startsWith(to)}
         toggler={(
           <>
@@ -159,46 +167,41 @@ const Sidebar = () => {
         ))}
       </Component>
     );
-    const NavItem = ({ component: Component, name, icon, ...rest }, index) => (
-      <Component
-        key={index}
-        {...(rest.to &&
-          !rest.items && {
-          component: NavLink,
-        })}
-        {...rest}
-      >
-        {icon && icon}
-        {name && name}
-      </Component>
-    );
     return (
-      items && items.map((item, index) => (
-        item.items ? NavGroup(item, index) : NavItem(item, index)
-      ))
-    )
+      <CSidebarNav>
+        {items && items.map((item, index) => (
+          item.items
+            ? NavGroup(item, index)
+            : NavItem(item, index)
+        ))}
+      </CSidebarNav>
+    );
   };
 
   return (
     <CSidebar
+      className="border-end"
       position="fixed"
       unfoldable={sidebarFold}
       visible={sidebarShow}
       onVisibleChange={(visible) => {
-        dispatch(sidebarSetShow(visible))
+        dispatch(layoutSetSidebarShow(visible))
       }}
     >
-      <CSidebarBrand className="d-none d-md-flex">
-        <CIcon className="sidebar-brand-full" icon={logoBrand} height={35} />
-        <CIcon className="sidebar-brand-narrow" icon={logo} height={35} />
-      </CSidebarBrand>
-      <CSidebarNav>
-        <SidebarNav items={navigation} />
-      </CSidebarNav>
-      <CSidebarToggler
-        className="d-none d-xl-flex"
-        onClick={() => dispatch(sidebarSetFold(!sidebarFold))}
-      />
+      <CSidebarHeader className="border-bottom justify-content-center">
+        <CSidebarBrand>
+          <CIcon customClassName="sidebar-brand-full" icon={logoBrand} height={32} />
+          <CIcon customClassName="sidebar-brand-narrow" icon={logo} height={32} />
+        </CSidebarBrand>
+      </CSidebarHeader>
+      <SidebarNav items={navigation} />
+      <CSidebarFooter className="border-top d-none d-lg-flex">
+        <CSidebarToggler
+          onClick={() => {
+            dispatch(layoutSetSidebarFold(!sidebarFold))
+          }}
+        />
+      </CSidebarFooter>
     </CSidebar>
   )
 }

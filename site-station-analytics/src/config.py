@@ -22,7 +22,7 @@ MONGODB_URL = os.environ["MONGODB_URL"]
 AUTH_API_ENDPOINT = os.environ["AUTH_API_ENDPOINT"]
 
 # MySQL Configuration
-mysql_pool = PooledDB(
+mysql = PooledDB(
     creator=pymysql,
     host=MYSQL_HOST,
     port=int(MYSQL_PORT),
@@ -35,14 +35,4 @@ mysql_pool = PooledDB(
 
 # MongoDB Configuration
 MONGODB_DATABASE = pymongo.uri_parser.parse_uri(MONGODB_URL)["database"]
-# Debug print statement for MONGODB_DATABASE
-'''
-print(f"MONGODB_URL: {MONGODB_URL} MONGODB_DATABASE: {MONGODB_DATABASE} (type: {type(MONGODB_DATABASE)})")
-
-if MONGODB_DATABASE is None:
-    raise ValueError("MONGODB_DATABASE environment variable is not set or parsed correctly")
-if not isinstance(MONGODB_DATABASE, str):
-    raise TypeError("MONGODB_DATABASE must be an instance of str")
-'''
-
-mongo_connection = pymongo.MongoClient(MONGODB_URL)[MONGODB_DATABASE]
+mongo = pymongo.MongoClient(MONGODB_URL)[MONGODB_DATABASE]

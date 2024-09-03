@@ -87,6 +87,10 @@ const router = createBrowserRouter([
               path: routes.Settings.path,
               element: routes.Settings.element,
             },
+            {
+              path: routes.StationPrediction.path,
+              element: routes.StationPrediction.element,
+            },
           ],
       },
     ],

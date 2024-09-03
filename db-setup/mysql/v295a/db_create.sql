@@ -4,7 +4,7 @@ USE group6;
 
 CREATE TABLE User (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    -- user_type VARCHAR(10) NOT NULL,
+    user_type VARCHAR(10) NOT NULL,
     email VARCHAR(50) NOT NULL,
     password VARCHAR(255) NOT NULL,
     name VARCHAR(50) NOT NULL,
@@ -37,8 +37,8 @@ CREATE TABLE Station_Owner (
 CREATE TABLE Site (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     owner_id INT UNSIGNED NOT NULL,
-	latitude VARCHAR(20),
-	longitude VARCHAR(20),
+	latitude DECIMAL(9,6) NOT NULL,
+	longitude DECIMAL(9,6) NOT NULL,
     name VARCHAR(255) NOT NULL,
     street_address VARCHAR(255) NOT NULL,
     zip_code INT NOT NULL,
@@ -63,8 +63,8 @@ CREATE TABLE Station (
     -- connector_type VARCHAR(50) NOT NULL,
     created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    latitude VARCHAR(20),
-	longitude VARCHAR(20),
+    latitude DECIMAL(9,6) NOT NULL,
+	longitude DECIMAL(9,6) NOT NULL,
     site_id INT UNSIGNED,
     CONSTRAINT fk_Station_Site FOREIGN KEY (site_id)
     REFERENCES Site(id) ON DELETE RESTRICT ON UPDATE CASCADE
@@ -83,6 +83,8 @@ CREATE TABLE EVSE (
     charge_level VARCHAR(50) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	latitude DECIMAL(9,6),
+	longitude DECIMAL(9,6),
     KEY idx_station_id (station_id),
     KEY idx_connector_type (connector_type),
     -- KEY idx_status (status),
@@ -124,5 +126,6 @@ FROM Station JOIN Site ON Station.site_id = Site.id;
 CREATE VIEW evses_joined AS
 SELECT Station.id as station_id, Station.name as station_name, Station.latitude, Station.longitude,
 site_id, owner_id, Site.latitude as site_latitude, Site.longitude as site_longitude,
-Site.name as site_name, street_address, zip_code, city, state, country, EVSE.id as evse_id, evse_number, price, charge_level, connector_type 
+Site.name as site_name, street_address, zip_code, city, state, country, 
+EVSE.id as evse_id, evse_number, price, charge_level, connector_type, EVSE.latitude as evse_latitude, EVSE.longitude as evse_longitude
 FROM Station JOIN Site ON Station.site_id = Site.id JOIN EVSE ON Station.id = EVSE.station_id;

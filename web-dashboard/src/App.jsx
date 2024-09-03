@@ -1,18 +1,18 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { GooeyCircleLoader } from "react-loaders-kit";
 import {
   useNavigate,
   useLocation,
   Outlet,
 } from "react-router-dom";
-import {
-  CContainer,
-} from "@coreui/react";
+import { useColorModes } from "@coreui/react";
 
 import Header from "components/Header";
 import Sidebar from "components/Sidebar";
 import Footer from "components/Footer";
+import ErrorToast from "components/ErrorToast";
+import LoadingIndicator from "components/LoadingIndicator";
+import { clearHeader } from "redux/api";
 import {
   authStateSet,
   authStateClear,
@@ -23,9 +23,16 @@ import {
   selectAuthExpiredTime,
   selectAuthSecureStorage,
 } from "redux/auth/authSlice";
+import {
+  layoutSetTheme,
+  selectLayoutTheme,
+} from "redux/layout/layoutSlice";
 import routes from "routes";
+import "scss/style.scss";
 
 const App = () => {
+  const { colorMode, setColorMode } = useColorModes("theme");
+  const theme = useSelector(selectLayoutTheme);
   const authenticated = useSelector(selectAuthAuthenticated);
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
@@ -37,6 +44,16 @@ const App = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    const storedTheme = localStorage.getItem("theme");
+    dispatch(layoutSetTheme(storedTheme || colorMode));
+  }, [colorMode, dispatch]);
+
+  useEffect(() => {
+    setColorMode(theme);
+    localStorage.setItem("theme", theme);
+  }, [theme, setColorMode]);
+
+  useEffect(() => {
     if (token) {
       dispatch(authStateSet({ token }));
     }
@@ -45,6 +62,7 @@ const App = () => {
   useEffect(() => {
     if (authenticated && expiredTime <= Date.now()) {
       dispatch(authStateClear());
+      clearHeader();
     }
   }, [authenticated, expiredTime, dispatch]);
 
@@ -94,6 +112,7 @@ const App = () => {
       restricted.add(routes.Stations.Components.Analytics.path);
       restricted.add(routes.Sites.path);
       restricted.add(routes.Users.path);
+      restricted.add(routes.StationPrediction.path);
     }
     let path = location.pathname;
     if (path.charAt(path.length - 1) === "/") {
@@ -105,30 +124,25 @@ const App = () => {
     }
   }, [authIsAdmin, authIsOwner, authIsDriver, location, navigate]);
 
-  return (authenticated
-    ? (
-      <>
-        <Sidebar />
-        <div className="bg-light min-vh-100 d-flex flex-column wrapper">
-          <Header />
-          <div className="body flex-grow-1">
-            <Outlet />
-          </div>
-          <Footer />
-        </div>
-      </>
-    )
-    : (
-      <div className="bg-light min-vh-100 d-flex flex-row align-items-center">
-        <CContainer className="d-flex flex-row justify-content-center">
-          <GooeyCircleLoader
-            className="mx-auto"
-            color={["#f6b93b", "#5e22f0", "#ef5777"]}
-            loading={true}
-          />
-        </CContainer>
-      </div>
-    )
+  return (
+    <div className="min-vh-100 d-flex flex-row align-items-center">
+      <ErrorToast />
+      {!authenticated
+        ? <LoadingIndicator loading={!authenticated} />
+        : (
+          <>
+            <Sidebar />
+            <div className={`min-vh-100 d-flex flex-column wrapper`}>
+              <Header />
+              <div className="body d-flex flex-column flex-grow-1">
+                <Outlet />
+              </div>
+              <Footer />
+            </div>
+          </>
+        )
+      }
+    </div>
   );
 };
 
