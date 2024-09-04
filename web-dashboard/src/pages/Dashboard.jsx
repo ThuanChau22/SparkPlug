@@ -965,7 +965,7 @@ const Dashboard = () => {
             
             value={
               <>
-                Engery/Consumption{' '}
+                Energy/Consumption{' '}
               </>
             }
             chart={

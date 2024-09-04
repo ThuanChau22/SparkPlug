@@ -59,6 +59,8 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
   const fetchAnalyticsData = useCallback(async () => {
     try {
       const base = `${StationAnalyticsAPI}/charts/${stationId}`;//get endpoint
+      const forecastBase = `${EnergyForecastAPI}/${stationId}`;
+
       const params = [];
       if (startDate) params.push(`start_date=${formatDate(startDate)}`);
       if (endDate) params.push(`end_date=${formatDate(endDate)}`);
@@ -79,7 +81,7 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
   useEffect(() => {
     fetchStationData();
     fetchAnalyticsData();
-  }, [fetchStationData, fetchAnalyticsData]);
+  }, [fetchStationData, fetchAnalyticsData, startDate, endDate, chargeLevel]);
 
   const getEnergyConsumptionChartData = () => {
     if (!forecastData || !forecastData.data) return null;
