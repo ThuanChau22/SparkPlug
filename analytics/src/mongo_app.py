@@ -11,8 +11,8 @@ from .config import (
 class TransactionQueryParams(BaseModel):
     start_date: str | None = Field(default=None, title="The start date of the query in the format MM/DD/YYYY.")
     end_date: str | None = Field(default=None, title="The end date of the query in the format MM/DD/YYYY.")
-    station_id: int | None = Field(default=None, title="The ID of the station.")
-    station_list: list[int] | None = Field(default=None, title="A list of station IDs.")
+    station_id: str | None = Field(default=None, title="The ID of the station.")
+    # station_list: list[int] | None = Field(default=None, title="A list of station IDs.")
     port_number: int | None = Field(default=None, title="The port number of the EVSE.")
     plug_type: str | None = Field(default=None, title="The type of the plug.")
     charge_level: int | None = Field(default=None, title="The charge level of the transaction.")
@@ -88,10 +88,10 @@ def fetch_transactions(query_in):
     """
     query_out = {}
 
-    if "station_list" in query_in:
+    if "station_id" in query_in:
         # Convert the station_id parameter to a list of integers
-        #station_ids = [int(id) for id in query_in["station_list"].split(",")]
-        station_ids = query_in["station_list"]
+        station_ids = [int(id) for id in query_in["station_id"].split(",")]
+        #station_ids = query_in["station_list"]
         query_out["station_id"] = {"$in": station_ids}
     
     if "charge_level" in query_in:

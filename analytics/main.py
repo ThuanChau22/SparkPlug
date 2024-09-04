@@ -38,8 +38,8 @@ class SQLQueryParams(BaseModel):
 class TransactionQueryParams(BaseModel):
     start_date: str | None = Field(default=None, title="The start date of the query in the format MM/DD/YYYY.")
     end_date: str | None = Field(default=None, title="The end date of the query in the format MM/DD/YYYY.")
-    station_id: int | None = Field(default=None, title="The ID of the station.")
-    station_list: list[int] | None = Field(default=None, title="A list of station IDs.")
+    station_id: str | None = Field(default=None, title="The ID of the station.")
+    #station_list: list[int] | None = Field(default=None, title="A list of station IDs.")
     port_number: int | None = Field(default=None, title="The port number of the EVSE.")
     plug_type: str | None = Field(default=None, title="The type of the plug.")
     charge_level: int | None = Field(default=None, title="The charge level of the transaction.")
@@ -83,7 +83,11 @@ def get_transactions(query_in: TransactionQueryParams, user: dict):
         # Get list of station IDs for the owner
         owner_id = user.get("user_id")
         owned_stations = query_stations_list_by_owner(owner_id)
-        query_in["station_list"] = owned_stations
+        # Transform the list of integers into a comma-separated string
+        owned_stations_str = ','.join(map(str, owned_stations))
+        
+        # Assign the string to "station_id"
+        query_in["station_id"] = owned_stations_str
     transactions = fetch_transactions(query_in)
     return transactions
 
@@ -307,7 +311,7 @@ async def get_stations(owner_id: Optional[int] = None, user: dict = require_perm
 async def retrieve_transactions(
     start_date: Optional[str] = None, 
     end_date: Optional[str] = None, 
-    station_id: Optional[int] = None, 
+    station_id: Optional[str] = None, 
     port_number: Optional[int] = None, 
     plug_type: Optional[str] = None,
     charge_level: Optional[int] = None,
@@ -336,7 +340,7 @@ async def retrieve_transactions(
 
 @app.get("/api/stations/analytics/transactions/{station_id}")
 async def retrieve_transactions_by_station(
-    station_id: int,
+    station_id: str,
     start_date: Optional[str] = None, 
     end_date: Optional[str] = None, 
     port_number: Optional[int] = None, 
@@ -363,14 +367,14 @@ async def retrieve_transactions_by_station(
         postal_code=postal
     )
     query_in = query_in.dict(exclude_none=True)
-    query_in["station_list"] = [station_id]
+    #query_in["station_list"] = [station_id]
     return get_transactions(query_in, user)
 
 @app.get("/api/stations/analytics/charts")
 async def generate_charts_from_transactions(
     start_date: Optional[str] = None, 
     end_date: Optional[str] = None, 
-    station_id: Optional[int] = None, 
+    station_id: Optional[str] = None, 
     port_number: Optional[int] = None, 
     plug_type: Optional[str] = None,
     charge_level: Optional[int] = None,
@@ -403,7 +407,7 @@ async def generate_charts_from_transactions(
 
 @app.get("/api/stations/analytics/charts/{station_id}")
 async def generate_charts_by_station(
-    station_id: int,
+    station_id: str,
     start_date: Optional[str] = None, 
     end_date: Optional[str] = None, 
     port_number: Optional[int] = None, 
@@ -430,10 +434,22 @@ async def generate_charts_by_station(
         postal_code=postal
     )
     query_in = query_in.dict(exclude_none=True)
-    query_in["station_list"] = [station_id]
+    #query_in["station_list"] = [station_id]
     transactions = get_transactions(query_in, user)
     # Generate charts from transactions
     if user.get("role") == "driver":
         return generate_peak(transactions)
     return generate_charts(transactions)
     
+@app.get("/api/stations/analytics/evse-status")
+async def retrieve_evse_status(
+    evse_id: Optional[int] = None,
+    station_id: Optional[str] = None,
+    user: dict = require_permission("staff", "owner", "driver")
+    ):
+    query_in = {
+        "evse_id": evse_id,
+        "station_id": station_id
+    }
+    query_in = query_in.dict(exclude_none=True)
+    return fetch_evse_status(query_in)
