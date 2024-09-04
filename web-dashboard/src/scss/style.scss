@@ -16,12 +16,6 @@
   box-shadow: none;
 }
 
-.custom-col {
-  padding: 0 10px;  // 根据需要调整
-  flex: 1 0 20%;    // 每个列尝试占用 20% 的宽度
-  max-width: 20%;   // 最大宽度也设置为 20%
-}
-
 :root {
   --background-light: #fff;
   --background-dark: #333;
@@ -37,15 +31,6 @@
 .header.dark {
   background-color: var(--background-dark);
   color: var(--text-dark);
-}
-
-.c-row {
-  display: flex;
-}
-
-.c-col {
-  display: flex;
-  flex-direction: column;
 }
 
 .custom-row-spacing {
@@ -92,19 +77,11 @@
   }
 }
 
-.c-sidebar-brand {
-  display: flex;
-  justify-content: center;  /* Center content horizontally */
-  align-items: center;      /* Center content vertically */
-  flex-direction: column;   /* Stack the logos vertically if both are displayed */
-  width: 100%;              /* Ensure the brand section takes the full width */
-  height: 100%;             /* Ensure it occupies the full height of the sidebar brand area */
-  padding: 10px 0;          /* Optional: Adjust padding as needed */
-  margin-top: 50px;         /* Adjust this value to move the entire brand section lower */
-}
-
-
 .sidebar-brand-full, .sidebar-brand-narrow {
   display: block;
   margin: 0 auto;           /* Center logos horizontally */
+}
+
+.bg-theme {
+  background-color: var(--cui-tertiary-bg);
 }

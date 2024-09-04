@@ -20,6 +20,7 @@ import {
   selectUserList,
   selectUserCursor,
 } from "redux/user/userSlice";
+import zIndex from "@mui/material/styles/zIndex";
 
 const UserManagement = () => {
   const userLoadLimit = 100;
@@ -84,10 +85,10 @@ const UserManagement = () => {
       <CCardBody className="d-flex flex-column h-100 pt-0 border border-0">
         <StickyContainer
           ref={titleRef}
-          className="py-3"
+          className="py-3 bg-theme"
           top={`${headerHeight}px`}
         >
-          <CCardTitle>
+          <CCardTitle style={{ marginLeft: '20px' }}>
             Users Management
           </CCardTitle>
         </StickyContainer>

@@ -126,10 +126,10 @@ const StationMonitor = () => {
         <CCol md={6} lg={5}>
           <CCardBody className="d-flex flex-column h-100 pt-0">
             <StickyContainer
-              className="py-3" // TODO: Change background color
+              className="py-3 bg-theme" // TODO: Change background color
               top={`${headerHeight}px`}
             >
-              <CCardTitle>
+              <CCardTitle style={{ marginLeft: '20px' }}>
                 Stations Monitor
               </CCardTitle>
             </StickyContainer>
