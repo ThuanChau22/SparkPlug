@@ -15,6 +15,7 @@ dotenv.load_dotenv(dotenv_path=dotenv_path)
 PORT = os.environ["PORT"]
 WEB_DOMAIN = os.environ["WEB_DOMAIN"]
 AUTH_API_ENDPOINT = os.environ["AUTH_API_ENDPOINT"]
+ENERGY_FORECAST_MODEL_PATH = os.environ["ENERGY_FORECAST_MODEL_PATH"]
 
 # MySQL Configuration
 MYSQL_URI = os.environ["MYSQL_URI"]

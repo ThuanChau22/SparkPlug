@@ -133,11 +133,11 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
         {analyticsData
           ? (
             <>
-              <CChart type="line" data={analyticsData.revenue} />
+              <CChart type="bar" data={analyticsData.revenue} />
               <CChart type="bar" data={analyticsData.peak_time} />
-              <CChart type="line" data={analyticsData.utilization_rate} />
+              <CChart type="bar" data={analyticsData.utilization_rate} />
               <CChart type="bar" data={analyticsData.sessions_count} />
-              <CChart type="line" data={analyticsData.energy_consumption} />
+              <CChart type="bar" data={analyticsData.energy_consumption} />
             </>
           )
           : (<LoadingIndicator />)

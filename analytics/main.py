@@ -10,10 +10,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.sql_app import build_query, fetch_data, query_stations_list_by_owner
 from src.mongo_app import fetch_transactions, fetch_evse_status, test_mongo
-from src.utils import sanitize_input
+from src.forecast_app import json_to_df, forecast
 from src.config import (
     WEB_DOMAIN,
     AUTH_API_ENDPOINT,
+    ENERGY_FORECAST_MODEL_PATH,
     mongo_connection as db,
 )
 
@@ -105,8 +106,6 @@ def generate_charts(raw_docs):
     utilization_by_date = defaultdict(float)
     energy_consumption_by_date = defaultdict(float)
     hour_counts = [0] * 24
-
-    # return jsonify(raw_docs[0])
 
     for doc in raw_docs:
         mongo_timestamp = doc["transaction_date"]
@@ -200,8 +199,6 @@ def generate_peak(raw_docs):
     sessions_by_date = defaultdict(int)
     utilization_by_date = defaultdict(float)
     hour_counts = [0] * 24
-
-    # return jsonify(raw_docs[0])
 
     for doc in raw_docs:
         mongo_timestamp = doc["transaction_date"]
@@ -454,3 +451,38 @@ async def retrieve_evse_status(
     }
     query_in = query_in.dict(exclude_none=True)
     return fetch_evse_status(query_in)
+
+@app.get("/api/stations/analytics/energy-forecast")
+async def forecast_energy_consumption(
+    start_date: Optional[str] = None, 
+    end_date: Optional[str] = None, 
+    station_id: Optional[str] = None, 
+    port_number: Optional[int] = None, 
+    plug_type: Optional[str] = None,
+    charge_level: Optional[str] = None,
+    user_id: Optional[int] = None,
+    country: Optional[str] = None,
+    state: Optional[str] = None,
+    city: Optional[str] = None,
+    postal: Optional[int] = None,
+    user: dict = require_permission("staff", "owner", "driver")
+    ):
+    query_in = TransactionQueryParams(
+        start_date=start_date,
+        end_date=end_date,
+        station_id=station_id,
+        port_number=port_number,
+        plug_type=plug_type,
+        charge_level=charge_level,
+        user_id=user_id,
+        country=country,
+        state=state,
+        city=city,
+        postal_code=postal
+    )
+    query_in = query_in.dict(exclude_none=True)
+
+    transactions = get_transactions(query_in, user)
+    #return transactions
+    return forecast(transactions)
+
