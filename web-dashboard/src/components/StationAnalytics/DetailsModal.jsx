@@ -22,6 +22,7 @@ import {
 
 const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
+  const EnergyForecastAPI = process.env.REACT_APP_ENERGY_FORECAST_API_ENDPOINT;
 
   const station = useSelector((state) => selectStationById(state, stationId));
   const token = useSelector(selectAuthAccessToken);
@@ -29,6 +30,7 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
   const [loading, setLoading] = useState(false);
   
   const [analyticsData, setAnalyticsData] = useState(null);
+  const [forecastData, setForecastData] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [chargeLevel, setChargeLevel] = useState("All");
@@ -65,6 +67,10 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
       const headers = { Authorization: `Bearer ${token}` };//get the authori info
       const { data } = await apiInstance.get(`${base}${query}`, { headers });//use get function 
       setAnalyticsData(data);
+
+      const forecastResponse = await apiInstance.get(`${EnergyForecastAPI}/${stationId}`, { headers });
+      setForecastData(forecastResponse.data);
+      console.log("Forecast Data: ", forecastResponse.data);
     } catch (error) {
       console.log(error);
     }
@@ -74,6 +80,40 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
     fetchStationData();
     fetchAnalyticsData();
   }, [fetchStationData, fetchAnalyticsData]);
+
+  const getEnergyConsumptionChartData = () => {
+    if (!forecastData || !forecastData.data) return null;
+  
+    // Assuming forecastData contains both historical and predicted data
+    const combinedData = forecastData.data.map(item => ({
+      date: item.date,
+      energy: item.energy,
+      type: item.type
+    }));
+  
+    // Sort the data by date
+    const sortedData = combinedData.sort((a, b) => new Date(a.date) - new Date(b.date));
+  
+    // Extract labels (dates) and data (energy values)
+    const labels = sortedData.map(item => item.date);
+    const data = sortedData.map(item => item.energy);
+  
+    // Set color based on whether it's historical or predicted
+    const backgroundColors = sortedData.map(item =>
+      item.type === "historical" ? "rgba(75, 192, 192, 0.6)" : "rgba(255, 99, 132, 0.6)"
+    );
+  
+    return {
+      labels, // X-axis labels (dates)
+      datasets: [
+        {
+          label: "Energy Consumption Forecast (kWh)",
+          backgroundColor: backgroundColors, // Dynamic colors based on type
+          data: data  // Combined energy data
+        }
+      ]
+    };
+  };  
 
   return (
     <CModal
@@ -140,6 +180,29 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
               <CChart type="bar" data={analyticsData.energy_consumption} />
             </>
           )
+          : (<LoadingIndicator />)
+        }
+        {forecastData 
+          ? (
+            <>
+              <div style={{ marginTop: "30px" }}>
+                <CChart
+                  type="bar"
+                  data={getEnergyConsumptionChartData()}  // Combined forecast data (historical + predicted)
+                  options={{
+                    scales: {
+                      x: {
+                        stacked: false, // Ensure the datasets are not stacked
+                      },
+                      y: {
+                        stacked: false
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </>
+          ) 
           : (<LoadingIndicator />)
         }
       </CModalBody>

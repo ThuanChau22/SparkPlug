@@ -486,3 +486,37 @@ async def forecast_energy_consumption(
     #return transactions
     return forecast(transactions)
 
+@app.get("/api/stations/analytics/energy-forecast/{station_id}")
+async def forecast_energy_consumption_by_station(
+    station_id: str,
+    start_date: Optional[str] = None, 
+    end_date: Optional[str] = None, 
+    port_number: Optional[int] = None, 
+    plug_type: Optional[str] = None,
+    charge_level: Optional[str] = None,
+    user_id: Optional[int] = None,
+    country: Optional[str] = None,
+    state: Optional[str] = None,
+    city: Optional[str] = None,
+    postal: Optional[int] = None,
+    user: dict = require_permission("staff", "owner", "driver")
+    ):
+    query_in = TransactionQueryParams(
+        start_date=start_date,
+        end_date=end_date,
+        station_id=station_id,
+        port_number=port_number,
+        plug_type=plug_type,
+        charge_level=charge_level,
+        user_id=user_id,
+        country=country,
+        state=state,
+        city=city,
+        postal_code=postal
+    )
+    query_in = query_in.dict(exclude_none=True)
+
+    transactions = get_transactions(query_in, user)
+    #return transactions
+    return forecast(transactions)
+

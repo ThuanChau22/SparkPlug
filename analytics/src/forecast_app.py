@@ -82,8 +82,7 @@ def process_data_for_prediction(json_data):
     df['State'] = label_encoder.fit_transform(df['State'])
 
     # Define features for prediction (assuming the same features as in training)
-    X_new = df[['Charging Time_zscore', 'Start Date_zscore', 'Total Duration_zscore']]  # Features
-    
+    X_new = df[['Charging Time_zscore', 'Start Date_zscore', 'Total Duration_zscore', 'Start Date_ordinal']]  # Features
     return X_new
 
 def load_and_predict(json_data):
@@ -93,21 +92,55 @@ def load_and_predict(json_data):
     # Process the new data to match the format expected by the model
     X_new = process_data_for_prediction(json_data)
 
-    # Use the loaded model to make predictions
+    # Modify 'Start Date_ordinal' to represent future dates
+    last_date_ordinal = X_new['Start Date_ordinal'].max()  # Get the last ordinal value
+    num_predictions = len(X_new)  # Number of predictions to make
+
+    # Replace the existing 'Start Date_ordinal' with future ordinals
+    X_new['Start Date_ordinal'] = [last_date_ordinal + i for i in range(1, num_predictions + 1)]
+
+    # Use the modified 'Start Date_ordinal' for predictions
     y_new_pred = xgb_model_loaded.predict(X_new)
 
     return y_new_pred
 
-def forecast(json_data):
-    # Get the predictions from the model
+def forecast(json_data):    
+    # Process the historical data and extract energy consumption
+    df = json_to_df(json_data)  # Convert to DataFrame
+    
+    # Convert 'Start Date' to datetime format
+    df['Start Date'] = pd.to_datetime(df['Start Date'])
+    
+    historical_dates = df['Start Date'].tolist()  # Extract dates as datetime objects
+    historical_energy = df['Energy Consumed'].tolist()  # Extract historical energy consumption
+
+    # Predict future energy consumption based on future dates
     predictions = load_and_predict(json_data)
+    predicted_energy = predictions.tolist()  # Convert predictions to a list
+
+    # Assume that predictions extend into the future, we need to generate future dates
+    # Use the last historical date to start predicting future dates
+    last_historical_date = historical_dates[-1]
+    prediction_dates = [last_historical_date + pd.Timedelta(days=i) for i in range(1, len(predicted_energy) + 1)]
     
-    # Convert the predictions to a list (if they are not already)
-    predictions_list = predictions.tolist() if hasattr(predictions, 'tolist') else list(predictions)
+    # Prepare the combined data for frontend
+    combined_data = []
     
-    # Prepare the response in a returnable format
-    response = {
-        "predictions": predictions_list
-    }
+    # Historical data
+    for date, energy in zip(historical_dates, historical_energy):
+        combined_data.append({
+            "date": date.strftime('%Y-%m-%d'),
+            "energy": energy,
+            "type": "historical"  # Mark as historical
+        })
     
-    return response
+    # Predicted data
+    for date, energy in zip(prediction_dates, predicted_energy):
+        combined_data.append({
+            "date": date.strftime('%Y-%m-%d'),
+            "energy": energy,
+            "type": "predicted"  # Mark as predicted
+        })
+    
+    # Return combined data as JSON response
+    return {"data": combined_data}
