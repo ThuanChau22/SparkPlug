@@ -304,19 +304,97 @@ async def get_stations(owner_id: Optional[int] = None, user: dict = require_perm
         return {"status": "error", "message": str(e)}
 
 @app.get("/api/stations/analytics/transactions")
-async def retrieve_transactions(query_params: TransactionQueryParams, user: dict = require_permission("staff", "owner", "driver")):
-    query_in = query_params.dict(exclude_none=True)
+async def retrieve_transactions(
+    start_date: Optional[str] = None, 
+    end_date: Optional[str] = None, 
+    station_id: Optional[int] = None, 
+    port_number: Optional[int] = None, 
+    plug_type: Optional[str] = None,
+    charge_level: Optional[int] = None,
+    user_id: Optional[int] = None,
+    country: Optional[str] = None,
+    state: Optional[str] = None,
+    city: Optional[str] = None,
+    postal: Optional[int] = None,
+    user: dict = require_permission("staff", "owner", "driver")
+    ):
+    query_in = TransactionQueryParams(
+        start_date=start_date,
+        end_date=end_date,
+        station_id=station_id,
+        port_number=port_number,
+        plug_type=plug_type,
+        charge_level=charge_level,
+        user_id=user_id,
+        country=country,
+        state=state,
+        city=city,
+        postal_code=postal
+    )
+    query_in = query_in.dict(exclude_none=True)
     return get_transactions(query_in, user)
 
 @app.get("/api/stations/analytics/transactions/{station_id}")
-async def retrieve_transactions_by_station(query_params: TransactionQueryParams, station_id: int, user: dict = require_permission("staff", "owner", "driver")):
-    query_in = query_params.dict(exclude_none=True)
+async def retrieve_transactions_by_station(
+    station_id: int,
+    start_date: Optional[str] = None, 
+    end_date: Optional[str] = None, 
+    port_number: Optional[int] = None, 
+    plug_type: Optional[str] = None,
+    charge_level: Optional[int] = None,
+    user_id: Optional[int] = None,
+    country: Optional[str] = None,
+    state: Optional[str] = None,
+    city: Optional[str] = None,
+    postal: Optional[int] = None,
+    user: dict = require_permission("staff", "owner", "driver")
+    ):
+    query_in = TransactionQueryParams(
+        start_date=start_date,
+        end_date=end_date,
+        station_id=station_id,
+        port_number=port_number,
+        plug_type=plug_type,
+        charge_level=charge_level,
+        user_id=user_id,
+        country=country,
+        state=state,
+        city=city,
+        postal_code=postal
+    )
+    query_in = query_in.dict(exclude_none=True)
     query_in["station_list"] = [station_id]
     return get_transactions(query_in, user)
 
 @app.get("/api/stations/analytics/charts")
-async def generate_charts_from_transactions(query_params: TransactionQueryParams, user: dict = require_permission("staff", "owner", "driver")):
-    query_in = query_params.dict(exclude_none=True)
+async def generate_charts_from_transactions(
+    start_date: Optional[str] = None, 
+    end_date: Optional[str] = None, 
+    station_id: Optional[int] = None, 
+    port_number: Optional[int] = None, 
+    plug_type: Optional[str] = None,
+    charge_level: Optional[int] = None,
+    user_id: Optional[int] = None,
+    country: Optional[str] = None,
+    state: Optional[str] = None,
+    city: Optional[str] = None,
+    postal: Optional[int] = None,
+    user: dict = require_permission("staff", "owner", "driver")
+    ):
+    query_in = TransactionQueryParams(
+        start_date=start_date,
+        end_date=end_date,
+        station_id=station_id,
+        port_number=port_number,
+        plug_type=plug_type,
+        charge_level=charge_level,
+        user_id=user_id,
+        country=country,
+        state=state,
+        city=city,
+        postal_code=postal
+    )
+    query_in = query_in.dict(exclude_none=True)
     transactions = get_transactions(query_in, user)
     # Generate charts from transactions
     if user.get("role") == "driver":
@@ -324,8 +402,34 @@ async def generate_charts_from_transactions(query_params: TransactionQueryParams
     return generate_charts(transactions)
 
 @app.get("/api/stations/analytics/charts/{station_id}")
-async def generate_charts_by_station(query_params: TransactionQueryParams, station_id: int, user: dict = require_permission("staff", "owner", "driver")):
-    query_in = query_params.dict(exclude_none=True)
+async def generate_charts_by_station(
+    station_id: int,
+    start_date: Optional[str] = None, 
+    end_date: Optional[str] = None, 
+    port_number: Optional[int] = None, 
+    plug_type: Optional[str] = None,
+    charge_level: Optional[int] = None,
+    user_id: Optional[int] = None,
+    country: Optional[str] = None,
+    state: Optional[str] = None,
+    city: Optional[str] = None,
+    postal: Optional[int] = None,
+    user: dict = require_permission("staff", "owner", "driver")
+    ):
+    query_in = TransactionQueryParams(
+        start_date=start_date,
+        end_date=end_date,
+        station_id=station_id,
+        port_number=port_number,
+        plug_type=plug_type,
+        charge_level=charge_level,
+        user_id=user_id,
+        country=country,
+        state=state,
+        city=city,
+        postal_code=postal
+    )
+    query_in = query_in.dict(exclude_none=True)
     query_in["station_list"] = [station_id]
     transactions = get_transactions(query_in, user)
     # Generate charts from transactions
