@@ -68,10 +68,10 @@ const StationManagement = () => {
         <CCol md={6} lg={5}>
           <CCardBody className="d-flex flex-column h-100 pt-0">
             <StickyContainer
-              className={`py-3 ${backgroundColor}`}
+              className="py-3 bg-theme" // TODO: Change background color
               top={`${headerHeight}px`}
             >
-              <CCardTitle className="d-flex flex-row justify-content-between align-items-center">
+              <CCardTitle style={{ marginLeft: '20px' }} className="d-flex flex-row justify-content-between align-items-center">
                 Stations Management
                 <CButton
                   variant="outline"

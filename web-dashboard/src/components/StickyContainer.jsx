@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 
-const StickyContainer = forwardRef(({ className = "", top = "", children }, ref) => (
-  <div className={className} style={{ position: "sticky", zIndex: 1010, top }} ref={ref}>
+const StickyContainer = forwardRef(({ className, top, children }, ref) => (
+  <div className={`sticky-top ${className}`} style={{ top, zIndex:900 }} ref={ref}>
     {children}
   </div>
 ));
