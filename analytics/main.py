@@ -42,7 +42,7 @@ class TransactionQueryParams(BaseModel):
     #station_list: list[int] | None = Field(default=None, title="A list of station IDs.")
     port_number: int | None = Field(default=None, title="The port number of the EVSE.")
     plug_type: str | None = Field(default=None, title="The type of the plug.")
-    charge_level: int | None = Field(default=None, title="The charge level of the transaction.")
+    charge_level: str | None = Field(default=None, title="The charge level of the transaction.")
     user_id: int | None = Field(default=None, title="The ID of the user.")
     country: str | None = Field(default=None, title="The country of the station.")
     state: str | None = Field(default=None, title="The state of the station.")
@@ -277,7 +277,7 @@ def test_db():
 def test_build_query():
     params = SQLQueryParams(owner_id=1)
     query = build_query("Station", params)
-    return query'''
+    return query
 
 @app.get("/test-station-list")
 def test_station_list(user: dict = require_permission("staff", "owner", "driver")):
@@ -293,6 +293,7 @@ def test_station_list(user: dict = require_permission("staff", "owner", "driver"
 @app.get("/test-mongo")
 async def test_mongo_db():
     return test_mongo()
+'''
 
 @app.get("/api/stations")
 async def get_stations(owner_id: Optional[int] = None, user: dict = require_permission("staff", "owner", "driver")):
@@ -314,7 +315,7 @@ async def retrieve_transactions(
     station_id: Optional[str] = None, 
     port_number: Optional[int] = None, 
     plug_type: Optional[str] = None,
-    charge_level: Optional[int] = None,
+    charge_level: Optional[str] = None,
     user_id: Optional[int] = None,
     country: Optional[str] = None,
     state: Optional[str] = None,
@@ -345,7 +346,7 @@ async def retrieve_transactions_by_station(
     end_date: Optional[str] = None, 
     port_number: Optional[int] = None, 
     plug_type: Optional[str] = None,
-    charge_level: Optional[int] = None,
+    charge_level: Optional[str] = None,
     user_id: Optional[int] = None,
     country: Optional[str] = None,
     state: Optional[str] = None,
@@ -377,7 +378,7 @@ async def generate_charts_from_transactions(
     station_id: Optional[str] = None, 
     port_number: Optional[int] = None, 
     plug_type: Optional[str] = None,
-    charge_level: Optional[int] = None,
+    charge_level: Optional[str] = None,
     user_id: Optional[int] = None,
     country: Optional[str] = None,
     state: Optional[str] = None,
@@ -412,7 +413,7 @@ async def generate_charts_by_station(
     end_date: Optional[str] = None, 
     port_number: Optional[int] = None, 
     plug_type: Optional[str] = None,
-    charge_level: Optional[int] = None,
+    charge_level: Optional[str] = None,
     user_id: Optional[int] = None,
     country: Optional[str] = None,
     state: Optional[str] = None,

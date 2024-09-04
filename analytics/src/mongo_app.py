@@ -15,7 +15,7 @@ class TransactionQueryParams(BaseModel):
     # station_list: list[int] | None = Field(default=None, title="A list of station IDs.")
     port_number: int | None = Field(default=None, title="The port number of the EVSE.")
     plug_type: str | None = Field(default=None, title="The type of the plug.")
-    charge_level: int | None = Field(default=None, title="The charge level of the transaction.")
+    charge_level: str | None = Field(default=None, title="The charge level of the transaction.")
     user_id: int | None = Field(default=None, title="The ID of the user.")
     country: str | None = Field(default=None, title="The country of the station.")
     state: str | None = Field(default=None, title="The state of the station.")
@@ -95,7 +95,7 @@ def fetch_transactions(query_in):
         query_out["station_id"] = {"$in": station_ids}
     
     if "charge_level" in query_in:
-        charge_level_map = {"1": "Level 1", "2": "Level 2"}
+        charge_level_map = {"1": "Level 1", "2": "Level 2", "3": "Level 3"}
         charge_levels = [
             charge_level_map[level]
             for level in query_in["charge_level"].split()

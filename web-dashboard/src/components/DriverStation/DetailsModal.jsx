@@ -57,7 +57,7 @@ const DriverStationDetailsModal = ({ isOpen, onClose, stationId }) => {
 
   const fetchAnalyticsData = useCallback(async () => {
     try {
-      const base = `${StationAnalyticsAPI}/${stationId}`;
+      const base = `${StationAnalyticsAPI}/charts/${stationId}`;
       const params = [];
       if (startDate) params.push(`start_date=${formatDate(startDate)}`);
       if (endDate) params.push(`end_date=${formatDate(endDate)}`);
