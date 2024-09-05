@@ -47,16 +47,27 @@ import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 
 
+
 const Dashboard = () => {
   const stationId = 1392;
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
+  const StationStatusAPI = process.env.REACT_APP_STATION_STATUS_API_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
   const [dashboardData, setDashboardData] = useState([]);
   const [EVSEStatus, setEVSEStatus] = useState([]);
 
+  
+  const [stationList, setStationList] = useState([]);
+  const [analyticsData, setAnalyticsData] = useState([]);
+
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [chargeLevel, setChargeLevel] = useState("All");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [country, setCountry] = useState("");
+
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -68,6 +79,44 @@ const Dashboard = () => {
     if (day.length < 2) day = "0" + day;
     return [month, day, year].join("/");
   };
+
+  const fetchAnalyticsData = useCallback(async () => {
+    try {
+      const base = `${StationAnalyticsAPI}/charts`;
+      const params = [];
+      if (startDate) params.push(`start_date=${formatDate(startDate)}`);
+      if (endDate) params.push(`end_date=${formatDate(endDate)}`);
+      if (chargeLevel !== "All") params.push(`charge_level=${chargeLevel}`);
+      if (city) params.push(`city=${city}`);
+      if (state) params.push(`state=${state}`);
+      if (postalCode) params.push(`postal_code=${postalCode}`);
+      if (country) params.push(`country=${country}`);
+      const query = params.length > 0 ? `?${params.join("&")}` : "";
+      
+      const headers = { Authorization: `Bearer ${token}` };
+      const { data } = await apiInstance.get(`${base}${query}`, { headers });
+      setAnalyticsData(data);
+    } catch (error) {
+      console.log(error);
+    }
+  }, [StationAnalyticsAPI, startDate, endDate, chargeLevel, city, state, postalCode, country, token]);
+
+  // Handle filter submissions
+  const handleSubmit = () => {
+    fetchAnalyticsData();
+  };
+
+  const fetchStatuses = useCallback(async () => {
+    try {
+      const base = `${StationStatusAPI}/latest`;
+      const headers = { Authorization: `Bearer ${token}` };
+      const { data } = await apiInstance.get(`${base}`, { headers });
+      setEVSEStatus(data);
+      console.log('EVSEStatus', EVSEStatus);
+    } catch (error) {
+      console.log(error);
+    }
+  }, [StationStatusAPI, token]);
 
   const fetchTransactions = useCallback(async () => {
     try {
@@ -85,7 +134,7 @@ const Dashboard = () => {
 
       const status_base = `${StationAnalyticsAPI}/evse_status`;//get endpoint
       const status_response = await apiInstance.get(`${status_base}${query}`, { headers });
-      setEVSEStatus(status_response.data);
+      //setEVSEStatus(status_response.data);
     } catch (error) {
       console.log(error);
     }
@@ -93,40 +142,51 @@ const Dashboard = () => {
 
 
   useEffect(() => {
+    fetchAnalyticsData();
     fetchTransactions();
-  }, [fetchTransactions]);
+    fetchStatuses();
+  }, [fetchTransactions, fetchAnalyticsData, fetchStatuses]);
 
   const countStatuses = (statusData) => {
     const statusCounts = {
-      available: 0,
-      unavailable: 0,
-      in_use: 0
+      Available: 0,
+      Unavailable: 0,
+      Occupied: 0,
+      total: statusData.length,
     };
 
+    /*
     statusData.forEach(evse => {
       const lastUpdate = evse.updates[evse.updates.length - 1];
       if (lastUpdate.new_status in statusCounts) {
         statusCounts[lastUpdate.new_status]++;
       }
     });
+    */
+    statusData.forEach(evse => {
+      const lastUpdate = evse.status;
+      if (lastUpdate in statusCounts) {
+        statusCounts[lastUpdate]++;
+      }
+    })
 
-    return [statusCounts.available, statusCounts.unavailable, statusCounts.in_use];
+    return [statusCounts.Available, statusCounts.Unavailable, statusCounts.Occupied, statusCounts.total];
   };
 
-  const [availableCount, unavailableCount, inUseCount] = countStatuses(EVSEStatus);
-  const outOfServiceCount = EVSEStatus.length - availableCount - unavailableCount - inUseCount;
+  const [availableCount, unavailableCount, inUseCount, totalCount] = countStatuses(EVSEStatus);
+  const outOfServiceCount = totalCount - availableCount - unavailableCount - inUseCount;
 
   const calculatePercentage = (part, total) => {
     return total === 0 ? 0 : ((part / total) * 100).toFixed(1);
   };
 
-  const availablePercentage = calculatePercentage(availableCount, EVSEStatus.length);
-  const unAvailablePercentage = calculatePercentage(unavailableCount, EVSEStatus.length);
-  const inUsePercentage = calculatePercentage(inUseCount, EVSEStatus.length);
-  const outOfServicePercentage = calculatePercentage(outOfServiceCount, EVSEStatus.length);
+  const availablePercentage = calculatePercentage(availableCount, totalCount);
+  const unAvailablePercentage = calculatePercentage(unavailableCount, totalCount);
+  const inUsePercentage = calculatePercentage(inUseCount, totalCount);
+  const outOfServicePercentage = calculatePercentage(outOfServiceCount, totalCount);
 
   const progressExample = [
-    { title: 'Total Chargers', value: EVSEStatus.length, percent: 100, color: 'success' },
+    { title: 'Total Chargers', value: totalCount, percent: 100, color: 'success' },
     { title: 'Available Chargers', value: availableCount, percent: availablePercentage, color: 'info' },
     { title: 'In Use Chargers', value: inUseCount, percent: inUsePercentage, color: 'warning' },
     { title: 'Out of Service Chargers', value: outOfServiceCount, percent: outOfServicePercentage, color: 'danger' },
@@ -286,6 +346,7 @@ const Dashboard = () => {
       peak: { fastCharge: 0, slowCharge: 0, energy: [] },
     };
 
+  
     dashboardData.forEach((transaction) => {
       const date = new Date(transaction.transaction_date);
       const month = date.toLocaleString('default', { month: 'long' });
@@ -331,9 +392,10 @@ const Dashboard = () => {
     const uniqueDriversData = labels.map((label) => uniqueUsersPerMonth[label].size);
     const stationData = labels.map((label) => stationsPerMonth[label].size);
 
+    console.log('401: ', EVSEStatus)
     EVSEStatus.forEach((evse) => {
-      if (evse.updates.length > 0) {
-        const firstUpdate = evse.updates[0];
+      if (true ) {
+        const firstUpdate = evse.created_at;
         const date = new Date(firstUpdate.timestamp);
         const month = date.toLocaleString('default', { month: 'long' });
         const year = date.getFullYear();
@@ -346,7 +408,7 @@ const Dashboard = () => {
         ownersPerMonth[monthYear] += 1;
         evsePerMonth[monthYear].add(evse.id);
       }
-    });
+  });
 
     const evse_labels = Object.keys(ownersPerMonth).sort((a, b) => new Date(a) - new Date(b));
     const ownersData = evse_labels.map((label) => evsePerMonth[label].size);
@@ -355,6 +417,7 @@ const Dashboard = () => {
     // Aggregate energy consumption by month for each category
     const aggregateEnergy = (category) => {
       const energyByMonth = {};
+
       timeCategories[category].energy.forEach((entry) => {
         if (!energyByMonth[entry.monthYear]) {
           energyByMonth[entry.monthYear] = 0;
@@ -485,26 +548,33 @@ const Dashboard = () => {
       let unavailableCount = 0;
       let inUseCount = 0;
       let totalCount = 0;
-
-      data.forEach((evse) => {
-        evse.updates.forEach((update) => {
-          if (update.new_status === 'available') {
-            availableCount += 1;
-          } else if (update.new_status === 'unavailable') {
-            unavailableCount += 1;
-          } else if (update.new_status === 'in_use') {
-            inUseCount += 1;
+    
+      // Check if 'data' is a valid array before calling forEach
+      if (Array.isArray(data)) {
+        data.forEach((evse) => {
+          // Check if 'evse.updates' is a valid array before calling forEach
+          if (Array.isArray(evse.updates)) {
+            evse.updates.forEach((update) => {
+              if (update.new_status === 'available') {
+                availableCount += 1;
+              } else if (update.new_status === 'unavailable') {
+                unavailableCount += 1;
+              } else if (update.new_status === 'in_use') {
+                inUseCount += 1;
+              }
+              totalCount += 1;
+            });
           }
-          totalCount += 1;
         });
-      });
-
-      const availablePercentage = (availableCount / totalCount) * 100;
-      const unavailablePercentage = (unavailableCount / totalCount) * 100;
-      const inUsePercentage = (inUseCount / totalCount) * 100;
-
+      }
+    
+      const availablePercentage = totalCount === 0 ? 0 : (availableCount / totalCount) * 100;
+      const unavailablePercentage = totalCount === 0 ? 0 : (unavailableCount / totalCount) * 100;
+      const inUsePercentage = totalCount === 0 ? 0 : (inUseCount / totalCount) * 100;
+    
       return [availablePercentage, unavailablePercentage, inUsePercentage];
     };
+    
 
     const [availablePercentage, unavailablePercentage, inUsePercentage] = calculateUptime(EVSEStatus);
 
@@ -859,7 +929,7 @@ const Dashboard = () => {
               <CChartBar
                 className="mt-3 mx-3"
                 style={{ height: '120px' }}
-                data={barChartData}
+                data={analyticsData.sessions_count}
                 options={{
                   maintainAspectRatio: false,
                   plugins: {
@@ -909,7 +979,7 @@ const Dashboard = () => {
                 //ref={WidgetsDropdown.widgetChartRef1}
                 className="mt-3 mx-3"
                 style={{ height: '120px' }}
-                data={lineChartData}
+                data={analyticsData.revenue}
                 options={{
                   plugins: {
                     legend: {
@@ -972,7 +1042,7 @@ const Dashboard = () => {
               <CChartBar
                 className="mt-3 mx-3"
                 style={{ height: '120px' }}
-                data={energyChartData}
+                data={analyticsData.energy_consumption}
                 options={{
                   maintainAspectRatio: false,
                   plugins: {
@@ -1018,10 +1088,10 @@ const Dashboard = () => {
         </>
       }
       chart={
-        <CChartLine
+        <CChartBar
           className="mt-3 mx-3"
           style={{ height: '120px' }}
-          data={energyTimeChartData}
+          data={analyticsData.peak_time}
           options={{
             plugins: {
               legend: {
