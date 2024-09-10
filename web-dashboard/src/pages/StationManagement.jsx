@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useMemo } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -17,8 +17,6 @@ import StationAddModal from "components/StationManagement/AddModal";
 import StationDetailsModal from "components/StationManagement/DetailsModal";
 import StationMapView from "components/StationManagement/MapView";
 import {
-  ThemeModes,
-  selectLayoutThemeColor,
   selectLayoutHeaderHeight,
 } from "redux/layout/layoutSlice";
 import {
@@ -27,7 +25,6 @@ import {
 } from "redux/station/stationSlice";
 
 const StationManagement = () => {
-  const themeColor = useSelector(selectLayoutThemeColor);
   const headerHeight = useSelector(selectLayoutHeaderHeight);
   const stationList = useSelector(selectStationList);
 
@@ -56,22 +53,16 @@ const StationManagement = () => {
     setIsDetailsModalOpen(true);
   };
 
-  const backgroundColor = useMemo(() => (
-    themeColor === ThemeModes.Light
-      ? "bg-white"
-      : "bg-dark"
-  ), [themeColor]);
-
   return (
     <CCard className="flex-grow-1 border border-top-0 rounded-0">
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
-          <CCardBody className="d-flex flex-column h-100 pt-0">
-            <StickyContainer
-              className="py-3 bg-theme" // TODO: Change background color
-              top={`${headerHeight}px`}
-            >
-              <CCardTitle style={{ marginLeft: '20px' }} className="d-flex flex-row justify-content-between align-items-center">
+          <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
+            <StickyContainer top={`${headerHeight}px`}>
+              <CCardTitle
+                className="d-flex flex-row justify-content-between align-items-center px-3 py-2 shadow-sm"
+                style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
+              >
                 Stations Management
                 <CButton
                   variant="outline"
@@ -85,7 +76,7 @@ const StationManagement = () => {
             {loading
               ? <LoadingIndicator loading={loading} />
               : (
-                <CListGroup>
+                <CListGroup className="px-3">
                   {stationList.map(({ id, name }) => (
                     <CListGroupItem
                       key={id}

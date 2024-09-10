@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useRef, useMemo } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CCard,
@@ -14,24 +14,20 @@ import LoadingIndicator from "components/LoadingIndicator";
 import StickyContainer from "components/StickyContainer";
 import UserActiveStatus from "components/UserManagement/ActiveStatus";
 import UserDetailsModal from "components/UserManagement/DetailsModal";
-import { 
-  ThemeModes,
-  selectLayoutThemeColor,
+import {
   selectLayoutHeaderHeight,
- } from "redux/layout/layoutSlice";
+} from "redux/layout/layoutSlice";
 import {
   userGetList,
   selectUserList,
   selectUserCursor,
 } from "redux/user/userSlice";
-import zIndex from "@mui/material/styles/zIndex";
 
 const UserManagement = () => {
   const userLoadLimit = 100;
   const titleRef = useRef({});
   const listRef = useRef({});
 
-  const themeColor = useSelector(selectLayoutThemeColor);
   const headerHeight = useSelector(selectLayoutHeaderHeight);
   const userList = useSelector(selectUserList);
   const userCursor = useSelector(selectUserCursor);
@@ -85,21 +81,17 @@ const UserManagement = () => {
     setIsDetailsModalOpen(true);
   };
 
-  const backgroundColor = useMemo(() => (
-    themeColor === ThemeModes.Light
-      ? "bg-white"
-      : "bg-dark"
-  ), [themeColor]);
-
   return (
     <CCard className="flex-grow-1 border border-top-0 rounded-0">
-      <CCardBody className="d-flex flex-column h-100 pt-0 border border-0">
+      <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
         <StickyContainer
           ref={titleRef}
-          className="py-3 bg-theme"
           top={`${headerHeight}px`}
         >
-          <CCardTitle style={{ marginLeft: '20px' }}>
+          <CCardTitle
+            className="p-3 shadow-sm"
+            style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
+          >
             Users Management
           </CCardTitle>
         </StickyContainer>
@@ -107,7 +99,7 @@ const UserManagement = () => {
           ? <LoadingIndicator loading={loading} />
           : (
             <>
-              <CListGroup ref={listRef}>
+              <CListGroup className="px-3" ref={listRef}>
                 {userList.map(({ id, name, email, status }) => (
                   <CListGroupItem
                     key={id}
