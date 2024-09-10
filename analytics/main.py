@@ -1,55 +1,60 @@
 import requests
-from fastapi import FastAPI, Request, HTTPException, Depends
-from typing import Union, Optional
-from datetime import datetime
-
-from pydantic import BaseModel, Field
+import uvicorn
 from collections import defaultdict
-
+from datetime import datetime
+from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from typing import Optional
 
-from src.sql_app import build_query, fetch_data, query_stations_list_by_owner
-from src.mongo_app import fetch_transactions, fetch_evse_status, test_mongo
-from src.forecast_app import json_to_df, forecast
 from src.config import (
+    PORT,
     WEB_DOMAIN,
     AUTH_API_ENDPOINT,
-    ENERGY_FORECAST_MODEL_PATH,
-    mongo_connection as db,
 )
+from src.forecast_app import forecast
+from src.mongo_app import fetch_transactions, fetch_evse_status
+from src.sql_app import build_query, fetch_data, query_stations_list_by_owner
+
 
 app = FastAPI()
 
-origins = [
-    WEB_DOMAIN,
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=[WEB_DOMAIN],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
 # Query Param Models
 class SQLQueryParams(BaseModel):
     owner_id: Optional[int] = Field(default=None, title="The ID of the owner.")
 
+
 class TransactionQueryParams(BaseModel):
-    start_date: str | None = Field(default=None, title="The start date of the query in the format MM/DD/YYYY.")
-    end_date: str | None = Field(default=None, title="The end date of the query in the format MM/DD/YYYY.")
+    start_date: str | None = Field(
+        default=None, title="The start date of the query in the format MM/DD/YYYY."
+    )
+    end_date: str | None = Field(
+        default=None, title="The end date of the query in the format MM/DD/YYYY."
+    )
     station_id: str | None = Field(default=None, title="The ID of the station.")
-    #station_list: list[int] | None = Field(default=None, title="A list of station IDs.")
+    # station_list: list[int] | None = Field(default=None, title="A list of station IDs.")
     port_number: int | None = Field(default=None, title="The port number of the EVSE.")
     plug_type: str | None = Field(default=None, title="The type of the plug.")
-    charge_level: str | None = Field(default=None, title="The charge level of the transaction.")
+    charge_level: str | None = Field(
+        default=None, title="The charge level of the transaction."
+    )
     user_id: int | None = Field(default=None, title="The ID of the user.")
     country: str | None = Field(default=None, title="The country of the station.")
     state: str | None = Field(default=None, title="The state of the station.")
     city: str | None = Field(default=None, title="The city of the station.")
-    postal_code: int | None = Field(default=None, title="The postal code of the station.")
-    
+    postal_code: int | None = Field(
+        default=None, title="The postal code of the station."
+    )
+
 
 # Handle permission
 def get_user_with_permission(request: Request, allowed_roles: tuple):
@@ -61,8 +66,10 @@ def get_user_with_permission(request: Request, allowed_roles: tuple):
         if token_type.lower() != "bearer":
             raise HTTPException(status_code=401, detail="Invalid token type")
     except ValueError:
-        raise HTTPException(status_code=401, detail="Invalid Authorization header format")
-    
+        raise HTTPException(
+            status_code=401, detail="Invalid Authorization header format"
+        )
+
     res = requests.post(f"{AUTH_API_ENDPOINT}/verify", json={"token": token})
     data = res.json()
     if res.status_code != 200:
@@ -74,10 +81,13 @@ def get_user_with_permission(request: Request, allowed_roles: tuple):
         "role": data["role"],
     }
 
+
 def require_permission(*allowed_roles):
     def dependency(request: Request):
         return get_user_with_permission(request, allowed_roles)
+
     return Depends(dependency)
+
 
 def get_transactions(query_in: TransactionQueryParams, user: dict):
     if user.get("role") == "owner":
@@ -85,12 +95,13 @@ def get_transactions(query_in: TransactionQueryParams, user: dict):
         owner_id = user.get("user_id")
         owned_stations = query_stations_list_by_owner(owner_id)
         # Transform the list of integers into a comma-separated string
-        owned_stations_str = ','.join(map(str, owned_stations))
-        
+        owned_stations_str = ",".join(map(str, owned_stations))
+
         # Assign the string to "station_id"
         query_in["station_id"] = owned_stations_str
     transactions = fetch_transactions(query_in)
     return transactions
+
 
 # Charting functions
 def time_string_to_hours(time_str):
@@ -99,6 +110,7 @@ def time_string_to_hours(time_str):
         return hours + minutes / 60 + seconds / 3600
     except ValueError:
         return 0  # Return 0 if the time format is incorrect
+
 
 def generate_charts(raw_docs):
     revenue_by_date = defaultdict(float)
@@ -194,6 +206,7 @@ def generate_charts(raw_docs):
 
     return data_pack
 
+
 def generate_peak(raw_docs):
     revenue_by_date = defaultdict(float)
     sessions_by_date = defaultdict(int)
@@ -233,9 +246,10 @@ def generate_peak(raw_docs):
 
     return data_pack
 
-'''@app.get("/example")
+
+"""@app.get("/example")
 async def example_route(user: dict = require_permission("staff", "owner")):
-    return {"message": "Hello, you have access", "user": user}'''
+    return {"message": "Hello, you have access", "user": user}"""
 
 
 ###########################################################################
@@ -243,7 +257,7 @@ async def example_route(user: dict = require_permission("staff", "owner")):
 ###########################################################################
 
 # Test Routes
-'''@app.get("/")
+"""@app.get("/")
 def read_root():
     return {"Hello": "World"}
 
@@ -290,10 +304,14 @@ def test_station_list(user: dict = require_permission("staff", "owner", "driver"
 @app.get("/test-mongo")
 async def test_mongo_db():
     return test_mongo()
-'''
+"""
+
 
 @app.get("/api/stations")
-async def get_stations(owner_id: Optional[int] = None, user: dict = require_permission("staff", "owner", "driver")):
+async def get_stations(
+    owner_id: Optional[int] = None,
+    user: dict = require_permission("staff", "owner", "driver"),
+):
     owner_id_input = owner_id
     if user.get("role") == "owner":
         owner_id_input = user.get("user_id")
@@ -305,12 +323,13 @@ async def get_stations(owner_id: Optional[int] = None, user: dict = require_perm
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+
 @app.get("/api/stations/analytics/transactions")
 async def retrieve_transactions(
-    start_date: Optional[str] = None, 
-    end_date: Optional[str] = None, 
-    station_id: Optional[str] = None, 
-    port_number: Optional[int] = None, 
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    station_id: Optional[str] = None,
+    port_number: Optional[int] = None,
     plug_type: Optional[str] = None,
     charge_level: Optional[str] = None,
     user_id: Optional[int] = None,
@@ -318,8 +337,8 @@ async def retrieve_transactions(
     state: Optional[str] = None,
     city: Optional[str] = None,
     postal: Optional[int] = None,
-    user: dict = require_permission("staff", "owner", "driver")
-    ):
+    user: dict = require_permission("staff", "owner", "driver"),
+):
     query_in = TransactionQueryParams(
         start_date=start_date,
         end_date=end_date,
@@ -331,17 +350,18 @@ async def retrieve_transactions(
         country=country,
         state=state,
         city=city,
-        postal_code=postal
+        postal_code=postal,
     )
     query_in = query_in.dict(exclude_none=True)
     return get_transactions(query_in, user)
+
 
 @app.get("/api/stations/analytics/transactions/{station_id}")
 async def retrieve_transactions_by_station(
     station_id: str,
-    start_date: Optional[str] = None, 
-    end_date: Optional[str] = None, 
-    port_number: Optional[int] = None, 
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    port_number: Optional[int] = None,
     plug_type: Optional[str] = None,
     charge_level: Optional[str] = None,
     user_id: Optional[int] = None,
@@ -349,8 +369,8 @@ async def retrieve_transactions_by_station(
     state: Optional[str] = None,
     city: Optional[str] = None,
     postal: Optional[int] = None,
-    user: dict = require_permission("staff", "owner", "driver")
-    ):
+    user: dict = require_permission("staff", "owner", "driver"),
+):
     query_in = TransactionQueryParams(
         start_date=start_date,
         end_date=end_date,
@@ -362,18 +382,19 @@ async def retrieve_transactions_by_station(
         country=country,
         state=state,
         city=city,
-        postal_code=postal
+        postal_code=postal,
     )
     query_in = query_in.dict(exclude_none=True)
-    #query_in["station_list"] = [station_id]
+    # query_in["station_list"] = [station_id]
     return get_transactions(query_in, user)
+
 
 @app.get("/api/stations/analytics/charts")
 async def generate_charts_from_transactions(
-    start_date: Optional[str] = None, 
-    end_date: Optional[str] = None, 
-    station_id: Optional[str] = None, 
-    port_number: Optional[int] = None, 
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    station_id: Optional[str] = None,
+    port_number: Optional[int] = None,
     plug_type: Optional[str] = None,
     charge_level: Optional[str] = None,
     user_id: Optional[int] = None,
@@ -381,8 +402,8 @@ async def generate_charts_from_transactions(
     state: Optional[str] = None,
     city: Optional[str] = None,
     postal: Optional[int] = None,
-    user: dict = require_permission("staff", "owner", "driver")
-    ):
+    user: dict = require_permission("staff", "owner", "driver"),
+):
     query_in = TransactionQueryParams(
         start_date=start_date,
         end_date=end_date,
@@ -394,7 +415,7 @@ async def generate_charts_from_transactions(
         country=country,
         state=state,
         city=city,
-        postal_code=postal
+        postal_code=postal,
     )
     query_in = query_in.dict(exclude_none=True)
     transactions = get_transactions(query_in, user)
@@ -402,13 +423,14 @@ async def generate_charts_from_transactions(
     if user.get("role") == "driver":
         return generate_peak(transactions)
     return generate_charts(transactions)
+
 
 @app.get("/api/stations/analytics/charts/{station_id}")
 async def generate_charts_by_station(
     station_id: str,
-    start_date: Optional[str] = None, 
-    end_date: Optional[str] = None, 
-    port_number: Optional[int] = None, 
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    port_number: Optional[int] = None,
     plug_type: Optional[str] = None,
     charge_level: Optional[str] = None,
     user_id: Optional[int] = None,
@@ -416,8 +438,8 @@ async def generate_charts_by_station(
     state: Optional[str] = None,
     city: Optional[str] = None,
     postal: Optional[int] = None,
-    user: dict = require_permission("staff", "owner", "driver")
-    ):
+    user: dict = require_permission("staff", "owner", "driver"),
+):
     query_in = TransactionQueryParams(
         start_date=start_date,
         end_date=end_date,
@@ -429,35 +451,34 @@ async def generate_charts_by_station(
         country=country,
         state=state,
         city=city,
-        postal_code=postal
+        postal_code=postal,
     )
     query_in = query_in.dict(exclude_none=True)
-    #query_in["station_list"] = [station_id]
+    # query_in["station_list"] = [station_id]
     transactions = get_transactions(query_in, user)
     # Generate charts from transactions
     if user.get("role") == "driver":
         return generate_peak(transactions)
     return generate_charts(transactions)
-    
+
+
 @app.get("/api/stations/analytics/evse-status")
 async def retrieve_evse_status(
     evse_id: Optional[int] = None,
     station_id: Optional[str] = None,
-    user: dict = require_permission("staff", "owner", "driver")
-    ):
-    query_in = {
-        "evse_id": evse_id,
-        "station_id": station_id
-    }
+    user: dict = require_permission("staff", "owner", "driver"),
+):
+    query_in = {"evse_id": evse_id, "station_id": station_id}
     query_in = query_in.dict(exclude_none=True)
     return fetch_evse_status(query_in)
 
+
 @app.get("/api/stations/analytics/energy-forecast")
 async def forecast_energy_consumption(
-    start_date: Optional[str] = None, 
-    end_date: Optional[str] = None, 
-    station_id: Optional[str] = None, 
-    port_number: Optional[int] = None, 
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    station_id: Optional[str] = None,
+    port_number: Optional[int] = None,
     plug_type: Optional[str] = None,
     charge_level: Optional[str] = None,
     user_id: Optional[int] = None,
@@ -465,8 +486,8 @@ async def forecast_energy_consumption(
     state: Optional[str] = None,
     city: Optional[str] = None,
     postal: Optional[int] = None,
-    user: dict = require_permission("staff", "owner", "driver")
-    ):
+    user: dict = require_permission("staff", "owner", "driver"),
+):
     query_in = TransactionQueryParams(
         start_date=start_date,
         end_date=end_date,
@@ -478,20 +499,21 @@ async def forecast_energy_consumption(
         country=country,
         state=state,
         city=city,
-        postal_code=postal
+        postal_code=postal,
     )
     query_in = query_in.dict(exclude_none=True)
 
     transactions = get_transactions(query_in, user)
-    #return transactions
+    # return transactions
     return forecast(transactions)
+
 
 @app.get("/api/stations/analytics/energy-forecast/{station_id}")
 async def forecast_energy_consumption_by_station(
     station_id: str,
-    start_date: Optional[str] = None, 
-    end_date: Optional[str] = None, 
-    port_number: Optional[int] = None, 
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    port_number: Optional[int] = None,
     plug_type: Optional[str] = None,
     charge_level: Optional[str] = None,
     user_id: Optional[int] = None,
@@ -499,8 +521,8 @@ async def forecast_energy_consumption_by_station(
     state: Optional[str] = None,
     city: Optional[str] = None,
     postal: Optional[int] = None,
-    user: dict = require_permission("staff", "owner", "driver")
-    ):
+    user: dict = require_permission("staff", "owner", "driver"),
+):
     query_in = TransactionQueryParams(
         start_date=start_date,
         end_date=end_date,
@@ -512,11 +534,14 @@ async def forecast_energy_consumption_by_station(
         country=country,
         state=state,
         city=city,
-        postal_code=postal
+        postal_code=postal,
     )
     query_in = query_in.dict(exclude_none=True)
 
     transactions = get_transactions(query_in, user)
-    #return transactions
+    # return transactions
     return forecast(transactions)
 
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=int(PORT))

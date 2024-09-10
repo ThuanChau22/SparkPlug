@@ -3,8 +3,7 @@ WORKDIR /app
 COPY requirements.txt requirements.txt
 RUN pip3 install --no-cache-dir --upgrade -r requirements.txt
 COPY . .
-CMD ["fastapi", "run", "main.py", "--port", "8004"]
+CMD ["python", "main.py"]
 
 FROM development AS production
-CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "8004"]
-
+CMD ["gunicorn", "-w", "2", "-k", "uvicorn.workers.UvicornWorker", "main:app"]
