@@ -38,13 +38,3 @@ def predict_station_location():
 def path_not_found(_):
     message = f"The requested path {request.path} was not found on server."
     return {"message": message}, 404
-
-# Handle Energy Consumption Prediction
-@app.route("/api/energy-forecast", methods=["POST"])
-@auth.require_permission("staff", "owner")
-def forecast_energy_consumption():
-    try:
-        request_data = request.get_json()
-        return jsonify(request_data), 200
-    except Exception as e:
-        return handle_error(e)
