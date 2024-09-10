@@ -123,7 +123,7 @@ const StationMonitor = () => {
   };
 
   return (
-    <CCard className="flex-grow-1 border border-top-0 rounded-0">
+    <CCard className="flex-grow-1 border border-0 rounded-0">
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
           <CCardBody className="d-flex flex-column h-100 p-0 pb-3">

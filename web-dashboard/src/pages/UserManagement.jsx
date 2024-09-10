@@ -82,7 +82,7 @@ const UserManagement = () => {
   };
 
   return (
-    <CCard className="flex-grow-1 border border-top-0 rounded-0">
+    <CCard className="flex-grow-1 border border-0 rounded-0">
       <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
         <StickyContainer
           ref={titleRef}
