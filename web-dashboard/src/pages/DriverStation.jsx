@@ -120,22 +120,22 @@ const DriverStation = () => {
   };
 
   return (
-    <CCard className="flex-grow-1 border border-top-0 rounded-0">
+    <CCard className="flex-grow-1 border border-0 rounded-0">
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
-          <CCardBody className="d-flex flex-column h-100 pt-0">
-            <StickyContainer
-              className="bg-white py-3"
-              top={`${headerHeight}px`}
-            >
-              <CCardTitle>
+          <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
+            <StickyContainer top={`${headerHeight}px`}>
+              <CCardTitle
+                className="p-3 shadow-sm"
+                style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
+              >
                 Stations
               </CCardTitle>
             </StickyContainer>
             {loading
               ? <LoadingIndicator loading={loading} />
               : (
-                <CListGroup>
+                <CListGroup className="px-3">
                   {stationList.map(({ id }) => (
                     <CListGroupItem
                       key={id}
