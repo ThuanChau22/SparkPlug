@@ -1,26 +1,33 @@
 from datetime import datetime, timedelta
-import sys
-from .utils import sanitize_input
 from pydantic import BaseModel, Field
-from typing import Optional
 
-from .config import (
-    mongo_connection as db,
+from src.config import (
+    mongo as db,
 )
 
+
 class TransactionQueryParams(BaseModel):
-    start_date: str | None = Field(default=None, title="The start date of the query in the format MM/DD/YYYY.")
-    end_date: str | None = Field(default=None, title="The end date of the query in the format MM/DD/YYYY.")
+    start_date: str | None = Field(
+        default=None, title="The start date of the query in the format MM/DD/YYYY."
+    )
+    end_date: str | None = Field(
+        default=None, title="The end date of the query in the format MM/DD/YYYY."
+    )
     station_id: str | None = Field(default=None, title="The ID of the station.")
     # station_list: list[int] | None = Field(default=None, title="A list of station IDs.")
     port_number: int | None = Field(default=None, title="The port number of the EVSE.")
     plug_type: str | None = Field(default=None, title="The type of the plug.")
-    charge_level: str | None = Field(default=None, title="The charge level of the transaction.")
+    charge_level: str | None = Field(
+        default=None, title="The charge level of the transaction."
+    )
     user_id: int | None = Field(default=None, title="The ID of the user.")
     country: str | None = Field(default=None, title="The country of the station.")
     state: str | None = Field(default=None, title="The state of the station.")
     city: str | None = Field(default=None, title="The city of the station.")
-    postal_code: int | None = Field(default=None, title="The postal code of the station.")
+    postal_code: int | None = Field(
+        default=None, title="The postal code of the station."
+    )
+
 
 # DB test
 def test_mongo():
@@ -28,14 +35,15 @@ def test_mongo():
         query_out = {}
         transactions = db.charging_sessions.find(query_out)
         transactions_list = list(transactions)
-        
+
         # Convert ObjectId to string
         for transaction in transactions_list:
             transaction["_id"] = str(transaction["_id"])
-        
+
         return {"status": "success", "data": transactions_list}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
 
 # Date operations
 def date_to_milliseconds(date_str, date_format="%m/%d/%Y"):
@@ -46,6 +54,7 @@ def date_to_milliseconds(date_str, date_format="%m/%d/%Y"):
     except ValueError:
         # Handle the exception if the date_str format is incorrect
         return None
+
 
 def iso_to_milliseconds(iso_date):
     """
@@ -62,6 +71,7 @@ def iso_to_milliseconds(iso_date):
 
     return int(milliseconds)
 
+
 def time_string_to_hours(time_str):
     try:
         hours, minutes, seconds = map(int, time_str.split(":"))
@@ -69,15 +79,17 @@ def time_string_to_hours(time_str):
     except ValueError:
         return 0  # Return 0 if the time format is incorrect
 
+
 def get_current_and_past_date():
     current_date = datetime.now()
     past_date = current_date - timedelta(days=30)
-    
+
     # Format the dates as "MM/DD/YYYY"
     current_date_str = current_date.strftime("%m/%d/%Y")
     past_date_str = past_date.strftime("%m/%d/%Y")
-    
+
     return (current_date_str, past_date_str)
+
 
 # Database actions
 def fetch_transactions(query_in):
@@ -91,9 +103,9 @@ def fetch_transactions(query_in):
     if "station_id" in query_in:
         # Convert the station_id parameter to a list of integers
         station_ids = [int(id) for id in query_in["station_id"].split(",")]
-        #station_ids = query_in["station_list"]
+        # station_ids = query_in["station_list"]
         query_out["station_id"] = {"$in": station_ids}
-    
+
     if "charge_level" in query_in:
         charge_level_map = {"1": "Level 1", "2": "Level 2", "3": "Level 3"}
         charge_levels = [
@@ -111,7 +123,7 @@ def fetch_transactions(query_in):
     if "end_date" not in query_in:
         # query_in["end_date"] = get_current_and_past_date()[0]
         query_in["end_date"] = "12/31/2020"
-    
+
     start_ms = date_to_milliseconds(query_in["start_date"])
     end_ms = date_to_milliseconds(query_in["end_date"])
     query_out["transaction_date"] = {"$gte": start_ms, "$lte": end_ms}
@@ -131,13 +143,13 @@ def fetch_transactions(query_in):
         query_out["port_number"] = int(query_in["port_number"])
     if "user_id" in query_in:
         query_out["user_id"] = int(query_in["user_id"])
-    print(f"New Query: {query_out}", file=sys.stderr)
 
     transactions = db.charging_sessions.find(query_out)
     transactions_list = list(transactions)
     for transaction in transactions_list:
         transaction["_id"] = str(transaction["_id"])
     return transactions_list
+
 
 def fetch_evse_status(query_in):
     """
@@ -151,13 +163,11 @@ def fetch_evse_status(query_in):
         # Convert the evse_id parameter to a list of integers
         evse_ids = [int(id) for id in query_in["evse_id"].split(",")]
         query_out["evse_id"] = {"$in": evse_ids}
-    
+
     if "station_id" in query_in:
         # Convert the station_id parameter to a list of integers
         station_ids = [int(id) for id in query_in["station_id"].split(",")]
         query_out["station_id"] = {"$in": station_ids}
-
-    print(f"New Query: {query_out}", file=sys.stderr)
 
     evse_status_updates = db.evse_status.find(query_out)
     evse_status_list = list(evse_status_updates)

@@ -19,7 +19,6 @@ ENERGY_FORECAST_MODEL_PATH = os.environ["ENERGY_FORECAST_MODEL_PATH"]
 
 # MySQL Configuration
 MYSQL_URI = os.environ["MYSQL_URI"]
-
 mysql_credential = make_url(MYSQL_URI)
 mysql_pool = PooledDB(
     creator=pymysql,
@@ -31,12 +30,8 @@ mysql_pool = PooledDB(
     password=mysql_credential.password,
     database=mysql_credential.database,
 )
+
 # MongoDB Configuration
 MONGODB_URI = os.environ["MONGODB_URI"]
-
 MONGODB_DATABASE = pymongo.uri_parser.parse_uri(MONGODB_URI)["database"]
-
-mongo_connection = pymongo.MongoClient(MONGODB_URI)[MONGODB_DATABASE]
-import sys
-print(f"Connected to MongoDB database: {MONGODB_DATABASE}", file=sys.stderr)
-print(f"Connected to MongoDB database: {MONGODB_URI}", file=sys.stderr)
+mongo = pymongo.MongoClient(MONGODB_URI)[MONGODB_DATABASE]

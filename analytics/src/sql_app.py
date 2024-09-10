@@ -1,10 +1,10 @@
-from .utils import sanitize_input
 from pydantic import BaseModel, Field
 from typing import Optional
 
-from .config import (
+from src.config import (
     mysql_pool,
 )
+from src.utils import sanitize_input
 
 class SQLQueryParams(BaseModel):
     owner_id: Optional[int] = Field(default=None, title="The ID of the owner.")
