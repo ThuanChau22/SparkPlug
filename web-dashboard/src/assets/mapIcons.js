@@ -10,26 +10,32 @@ import redStationIconUrl from "assets/station_pointer_red.png"
 export const userIcon = L.icon({
   iconUrl: userIconUrl,
   iconSize: [60, 60],
-  iconAnchor: [40, 80],
-  popupAnchor: [0, -80],
+  iconAnchor: [30, 60],
+  popupAnchor: [0, -60],
 });
 
 export const stationIcon = L.icon({
   iconUrl: stationIconUrl,
-  iconSize: [80, 80],
-  iconAnchor: [40, 80],
-  popupAnchor: [0, -80],
+  iconSize: [60, 60],
+  iconAnchor: [30, 60],
+  popupAnchor: [0, -60],
+});
+
+export const newStationIcon = L.icon({
+  iconUrl: greenStationIconUrl,
+  iconSize: [60, 60],
+  iconAnchor: [30, 60],
+  popupAnchor: [0, -60],
 });
 
 export const siteIcon = L.icon({
   iconUrl: siteIconUrl,
-  iconSize: [80, 80],
-  iconAnchor: [40, 80],
-  popupAnchor: [0, -80],
+  iconSize: [60, 60],
+  iconAnchor: [30, 60],
+  popupAnchor: [0, -60],
 });
 
-// Dynamically create station icons based on status
-export const createStationIcon = (status) => {
+export const stationStatusIcon = (status) => {
   let iconUrl;
   switch (status) {
     case "Available":
@@ -45,13 +51,12 @@ export const createStationIcon = (status) => {
       iconUrl = redStationIconUrl;
       break;
     default:
-      iconUrl = stationIconUrl; // Default icon
+      iconUrl = grayStationIconUrl
   }
-
   return L.icon({
     iconUrl: iconUrl,
-    iconSize: [80, 80],
-    iconAnchor: [40, 80],
-    popupAnchor: [0, -80],
+    iconSize: [60, 60],
+    iconAnchor: [30, 60],
+    popupAnchor: [0, -60],
   });
 };

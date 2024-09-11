@@ -2,7 +2,7 @@
 
 @import "variables";
 
-@import "layout";
+@import "theme";
 
 .form-control:focus,
 .form-select:focus {
@@ -14,4 +14,38 @@
 .accordion-button:focus {
   outline: none;
   box-shadow: none;
+}
+
+// (CoreUI Bug) Undone
+// .sidebar-narrow-unfoldable:not(.sidebar-end) ~ * {
+//   --cui-sidebar-occupy-start: 4rem !important;
+// }
+.sidebar {
+  &.hide:not(.sidebar-end)~* {
+    --cui-sidebar-occupy-start: 0 !important;
+  }
+
+  @media (max-width: 991.98px) {
+    &:not(.sidebar-end)~* {
+      --cui-sidebar-occupy-start: 0 !important;
+    }
+  }
+}
+
+@if $enable-dark-mode {
+  @include color-mode(dark) {
+    .leaflet-layer {
+      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(180deg) brightness(0.5);
+    }
+
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out {
+      background-color: var(--cui-body-bg);
+      color: var(--cui-body-color);
+    }
+
+    .leaflet-control-attribution {
+      background-color: var(--cui-body-bg) !important;
+    }
+  }
 }

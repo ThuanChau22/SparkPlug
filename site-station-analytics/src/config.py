@@ -22,7 +22,7 @@ MONGODB_URL = os.environ["MONGODB_URL"]
 AUTH_API_ENDPOINT = os.environ["AUTH_API_ENDPOINT"]
 
 # MySQL Configuration
-mysql_pool = PooledDB(
+mysql = PooledDB(
     creator=pymysql,
     host=MYSQL_HOST,
     port=int(MYSQL_PORT),
@@ -35,4 +35,4 @@ mysql_pool = PooledDB(
 
 # MongoDB Configuration
 MONGODB_DATABASE = pymongo.uri_parser.parse_uri(MONGODB_URL)["database"]
-mongo_connection = pymongo.MongoClient(MONGODB_URL)[MONGODB_DATABASE]
+mongo = pymongo.MongoClient(MONGODB_URL)[MONGODB_DATABASE]

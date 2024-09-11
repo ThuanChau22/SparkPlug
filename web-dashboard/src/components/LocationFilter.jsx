@@ -34,51 +34,61 @@ const LocationFilter = forwardRef(({
     onChange("All", "All", "All");
   };
 
+  const FilterFormSelectGroup = ({
+    id,
+    options,
+    value,
+    onChange,
+    children,
+  }) => (
+    <CInputGroup>
+      <CInputGroupText className="border-start-0 border-end-0 border-dark rounded-0 bg-dark text-white">
+        {children}
+      </CInputGroupText>
+      <CFormSelect
+        className="border-start-0 border-end-0 rounded-0 shadow-none"
+        id={id}
+        options={options}
+        value={value}
+        onChange={onChange}
+      />
+    </CInputGroup>
+  );
+
   return (
     <div className="d-none d-lg-flex justify-content-end align-items-center" ref={ref}>
-      <CInputGroup size="sm">
-        <CInputGroupText className="bg-dark text-white rounded-0">
-          State
-        </CInputGroupText>
-        <CFormSelect
-          className="rounded-0 shadow-none"
-          id="state"
-          options={states.map(state => (
-            { label: state, value: state }
-          ))}
-          value={selectedState}
-          onChange={handleStateChange}
-        />
-      </CInputGroup>
-      <CInputGroup size="sm">
-        <CInputGroupText className="bg-dark text-white rounded-0">
-          City
-        </CInputGroupText>
-        <CFormSelect
-          className="rounded-0 shadow-none"
-          options={cities.map(city => (
-            { label: city, value: city }
-          ))}
-          value={selectedCity}
-          onChange={handleCityChange}
-        />
-      </CInputGroup>
-      <CInputGroup size="sm">
-        <CInputGroupText className="bg-dark text-white rounded-0">
-          Zip Code
-        </CInputGroupText>
-        <CFormSelect
-          className="rounded-0 shadow-none"
-          options={zipCodes.map(zipCode => (
-            { label: zipCode, value: zipCode }
-          ))}
-          value={selectedZipCode}
-          onChange={handleZipCodeChange}
-        />
-      </CInputGroup>
+      <FilterFormSelectGroup
+        id="state"
+        options={states.map(state => (
+          { label: state, value: state }
+        ))}
+        value={selectedState}
+        onChange={handleStateChange}
+      >
+        State
+      </FilterFormSelectGroup>
+      <FilterFormSelectGroup
+        id="city"
+        options={cities.map(city => (
+          { label: city, value: city }
+        ))}
+        value={selectedCity}
+        onChange={handleCityChange}
+      >
+        City
+      </FilterFormSelectGroup>
+      <FilterFormSelectGroup
+        id="zipCode"
+        options={zipCodes.map(zipCode => (
+          { label: zipCode, value: zipCode }
+        ))}
+        value={selectedZipCode}
+        onChange={handleZipCodeChange}
+      >
+        Zip Code
+      </FilterFormSelectGroup>
       <CButton
-        size="sm"
-        className="rounded-0 text-white"
+        className="border-start-0 border-end-0 border-dark rounded-0"
         color="dark"
         onClick={handleClearChange}
       >

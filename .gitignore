@@ -10,3 +10,6 @@ node_modules
 .env.production.local
 .env.dev
 .env.prod
+.code-workspace
+venv
+analytics-original

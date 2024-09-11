@@ -1,18 +1,21 @@
-import { Marker, Tooltip } from "react-leaflet";
+import { stationIcon } from "assets/mapIcons";
+import MapMarker from "components/MapMarker";
 
-const StationMarker = ({ station, icon, onMarkerClick }) => {
+const StationMarker = ({ station, onClick }) => {
+  const {
+    name, site_id, latitude, longitude,
+    street_address, city, state, zip_code, country,
+  } = station;
   return (
-    <Marker
-      icon={icon}
-      position={[station.latitude, station.longitude]}
-      eventHandlers={{ click: () => onMarkerClick(station) }}
+    <MapMarker
+      icon={stationIcon}
+      position={[latitude, longitude]}
+      onClick={onClick}
     >
-      <Tooltip direction="top" offset={[0, -20]} opacity={1} permanent={false}>
-        <div>{`Station: ${station.name}`}</div>
-        <div>{`Site ID: ${station.site_id}`}</div>
-        <div>{`Price: ${station.price}`}</div>
-      </Tooltip>
-    </Marker>
+      <div>{`Station: ${name}`}</div>
+      <div>{`Site ID: ${site_id}`}</div>
+      <div>{`${street_address}, ${city}, ${state} ${zip_code}, ${country}`}</div>
+    </MapMarker>
   );
 };
 

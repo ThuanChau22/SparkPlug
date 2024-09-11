@@ -3,16 +3,17 @@ import AccountProfile from "pages/AccountProfile";
 import AccountSettings from "pages/AccountSetting";
 import Login from "pages/Login";
 import Register from "pages/Register";
+import Unauthorized from "pages/Unauthorized";
+import NotFound from "pages/NotFound";
 import Dashboard from "pages/Dashboard";
-import SiteManagement from "pages/SiteManagement";
 import StationManagement from "pages/StationManagement";
 import StationMonitor from "pages/StationMonitor";
 import StationAnalytics from "pages/StationAnalytics";
+import StationPrediction from "pages/StationPrediction";
+import SiteManagement from "pages/SiteManagement";
 import UserManagement from "pages/UserManagement";
 import DriverDashboard from "pages/DriverDashboard";
-import DriverStations from "pages/DriverStation";
-import Unauthorized from "pages/Unauthorized";
-import NotFound from "pages/NotFound";
+import DriverStation from "pages/DriverStation";
 
 const Stations = {
   Management: {
@@ -41,7 +42,7 @@ const Driver = {
   Stations: {
     name: "Stations",
     path: "/driver/stations",
-    element: <DriverStations />
+    element: <DriverStation />
   },
 };
 
@@ -55,6 +56,11 @@ const routes = {
     name: "Dashboard",
     path: "/dashboard",
     element: <Dashboard />,
+  },
+  StationPrediction: {
+    name: "Station Prediction",
+    path: "/station-prediction",
+    element: <StationPrediction />,
   },
   Stations: {
     name: "Stations",

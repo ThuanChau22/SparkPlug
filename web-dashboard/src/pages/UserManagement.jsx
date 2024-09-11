@@ -1,122 +1,147 @@
-import { useCallback, useState, useEffect, createRef } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { GooeyCircleLoader } from "react-loaders-kit";
 import {
-  CContainer,
   CCard,
   CCardTitle,
   CCardBody,
   CListGroup,
   CListGroupItem,
+  CRow,
+  CCol,
 } from "@coreui/react";
 
+import LoadingIndicator from "components/LoadingIndicator";
 import StickyContainer from "components/StickyContainer";
-import { selectHeaderHeight } from "redux/header/headerSlice";
-import UserDetailsModal from "components/UserDetailsModal";
+import UserActiveStatus from "components/UserManagement/ActiveStatus";
+import UserDetailsModal from "components/UserManagement/DetailsModal";
 import {
-  userGetAll,
+  selectLayoutHeaderHeight,
+} from "redux/layout/layoutSlice";
+import {
+  userGetList,
   selectUserList,
-} from "redux/user/userSlide";
+  selectUserCursor,
+} from "redux/user/userSlice";
 
 const UserManagement = () => {
-  const titleRef = createRef();
-  const headerHeight = useSelector(selectHeaderHeight);
+  const userLoadLimit = 100;
+  const titleRef = useRef({});
+  const listRef = useRef({});
+
+  const headerHeight = useSelector(selectLayoutHeaderHeight);
   const userList = useSelector(selectUserList);
-  const [listHeight, setListHeight] = useState(window.innerHeight);
+  const userCursor = useSelector(selectUserCursor);
+
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [userId, setUserId] = useState(null);
+
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    const titleHeight = titleRef.current.offsetHeight;
-    setListHeight(window.innerHeight - (headerHeight + titleHeight));
-  }, [headerHeight, titleRef]);
-
   const fetchData = useCallback(async () => {
-    setLoading(true);
     if (userList.length === 0) {
-      await dispatch(userGetAll()).unwrap();
+      setLoading(true);
+      await dispatch(userGetList({
+        limit: userLoadLimit
+      })).unwrap();
+      setLoading(false);
     }
-    setLoading(false);
-  }, [userList, dispatch]);
+  }, [userList.length, dispatch]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
+  const handleLoadMore = useCallback(async () => {
+    const titleHeight = titleRef.current?.offsetHeight;
+    const listHeight = listRef.current?.offsetHeight;
+    const topHeight = headerHeight + titleHeight;
+    const loadPosition = listHeight - window.innerHeight + topHeight;
+    if (!loadingMore && userCursor.next && window.scrollY >= loadPosition) {
+      setLoadingMore(true);
+      await dispatch(userGetList({
+        limit: userLoadLimit,
+        cursor: userCursor.next,
+      })).unwrap();
+      setLoadingMore(false);
+    }
+  }, [loadingMore, userCursor, headerHeight, titleRef, listRef, dispatch]);
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleLoadMore);
+    return () => {
+      window.removeEventListener("scroll", handleLoadMore);
+    }
+  }, [handleLoadMore]);
+
   const handleViewUser = (userId) => {
-    setSelectedUserId(userId);
+    setUserId(userId);
     setIsDetailsModalOpen(true);
   };
 
   return (
-    <CCard className="border border-top-0 rounded-0">
-      <CCardBody className="pt-0">
+    <CCard className="flex-grow-1 border border-0 rounded-0">
+      <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
         <StickyContainer
           ref={titleRef}
-          className="bg-white py-3"
           top={`${headerHeight}px`}
         >
-          <CCardTitle>
+          <CCardTitle
+            className="p-3 shadow-sm"
+            style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
+          >
             Users Management
           </CCardTitle>
         </StickyContainer>
         {loading
-          ? (
-            <div
-              className="d-flex align-items-center"
-              style={{ height: `${listHeight}px` }}
-            >
-              <CContainer className="d-flex flex-row justify-content-center">
-                <GooeyCircleLoader
-                  color={["#f6b93b", "#5e22f0", "#ef5777"]}
-                  loading={true}
-                />
-              </CContainer>
-            </div>
-          )
+          ? <LoadingIndicator loading={loading} />
           : (
-            <CListGroup>
-              {userList.map(({ id, name, email, status }) => (
-                <CListGroupItem
-                  key={id}
-                  className="align-items-center py-3"
-                  component="button"
-                  onClick={() => handleViewUser(id)}
-                >
-                  <p className="d-flex justify-content-between mb-0">
-                    <small className="w-100 text-secondary">ID: {id}</small>
-                    <span>Status</span>
-                  </p>
-                  <p className="d-flex justify-content-between mb-0">
-                    <span>Name: {name}</span>
-                    <span>Email: {email}</span>
-                    <span
-                      className={
-                        status === "Active"
-                          ? "text-success"
-                          : status === "Blocked"
-                            ? "text-warning"
-                            : "text-danger"
-                      }>
-                      {status}
-                    </span>
-                  </p>
-                </CListGroupItem>
-              ))}
-            </CListGroup>
+            <>
+              <CListGroup className="px-3" ref={listRef}>
+                {userList.map(({ id, name, email, status }) => (
+                  <CListGroupItem
+                    key={id}
+                    className="align-items-center py-3"
+                    as="button"
+                    onClick={() => handleViewUser(id)}
+                  >
+                    <p className="d-flex justify-content-between mb-0">
+                      <small className="w-100 text-secondary">ID: {id}</small>
+                      <span>Status</span>
+                    </p>
+                    <CRow>
+                      <CCol>
+                        <CRow>
+                          <CCol xs={12} sm={6} className="pe-0">
+                            Name: {name}
+                          </CCol>
+                          <CCol xs={12} sm={6} className="pe-0">
+                            Email: {email}
+                          </CCol>
+                        </CRow>
+                      </CCol>
+                      <CCol xs="auto" sm={3} className="ps-0 text-end">
+                        <UserActiveStatus status={status} />
+                      </CCol>
+                    </CRow>
+                  </CListGroupItem>
+                ))}
+              </CListGroup>
+              {loadingMore && (
+                <LoadingIndicator loading={loadingMore} />
+              )}
+            </>
           )}
       </CCardBody>
-      {
-        isDetailsModalOpen && (
-          <UserDetailsModal
-            isOpen={isDetailsModalOpen}
-            onClose={() => setIsDetailsModalOpen(false)}
-            userId={selectedUserId}
-          />
-        )
-      }
+      {isDetailsModalOpen && (
+        <UserDetailsModal
+          isOpen={isDetailsModalOpen}
+          onClose={() => setIsDetailsModalOpen(false)}
+          userId={userId}
+        />
+      )}
     </CCard >
   );
 };

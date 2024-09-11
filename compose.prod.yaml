@@ -20,15 +20,25 @@ services:
     environment:
       PORT: ${USER_PORT}
 
-  site-station-analytics:
-    image: ${CONTAINER_REGISTRY}/site-station-analytics
-    container_name: sparkplug-site-station-analytics
+  station-management:
+    image: ${CONTAINER_REGISTRY}/station-management
+    container_name: sparkplug-station-management
     build:
-      context: ./site-station-analytics
+      context: ./station-management
     ports:
       - ${STATION_PORT}:${STATION_PORT}
     environment:
       PORT: ${STATION_PORT}
+
+  analytics:
+    image: ${CONTAINER_REGISTRY}/analytics
+    container_name: sparkplug-analytics
+    build:
+      context: ./analytics
+    ports:
+      - ${ANALYTICS_PORT}:${ANALYTICS_PORT}
+    environment:
+      PORT: ${ANALYTICS_PORT}
 
   monitoring:
     image: ${CONTAINER_REGISTRY}/monitoring
@@ -39,6 +49,16 @@ services:
       - ${MONITORING_PORT}:${MONITORING_PORT}
     environment:
       PORT: ${MONITORING_PORT}
+
+  ml-service:
+    image: ${CONTAINER_REGISTRY}/ml-service
+    container_name: sparkplug-ml-service
+    build:
+      context: ./ml-service
+    ports:
+      - ${ML_SERVICE_PORT}:${ML_SERVICE_PORT}
+    environment:
+      PORT: ${ML_SERVICE_PORT}
 
   simulator-client:
     image: ${CONTAINER_REGISTRY}/simulator-client
