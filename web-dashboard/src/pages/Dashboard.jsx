@@ -1,62 +1,30 @@
-import React from 'react'
-import classNames from 'classnames'
-import '../scss/style.scss'
+import { useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import {
   CRow,
   CCol,
-  CWidgetStatsA,
   CCard,
-} from '@coreui/react'
-import { getStyle } from '@coreui/utils'
-import { CChartBar, CChartLine } from '@coreui/react-chartjs'
-import {
+  CCardBody,
+  CCardTitle,
   CProgress,
-} from '@coreui/react'
+  CWidgetStatsA,
+} from "@coreui/react";
 import {
-  cibCcAmex,
-  cibCcApplePay,
-  cibCcMastercard,
-  cibCcPaypal,
-  cibCcStripe,
-  cibCcVisa,
-  cibGoogle,
-  cibFacebook,
-  cibLinkedin,
-  cifBr,
-  cifEs,
-  cifFr,
-  cifIn,
-  cifPl,
-  cifUs,
-  cibTwitter,
-  cilUser,
-  cilUserFemale,
-} from '@coreui/icons'
-
-import avatar1 from '../assets/default-avatar.jpg'
-import avatar2 from '../assets/default-avatar.jpg'
-import avatar3 from '../assets/default-avatar.jpg'
-import avatar4 from '../assets/default-avatar.jpg'
-import avatar5 from '../assets/default-avatar.jpg'
-import avatar6 from '../assets/default-avatar.jpg'
-
-import { useCallback, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+  CChartBar,
+  CChartLine,
+} from "@coreui/react-chartjs";
+import { getStyle } from "@coreui/utils";
 
 import { apiInstance } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 
-
-
 const Dashboard = () => {
-  const stationId = 1392;
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
   const StationStatusAPI = process.env.REACT_APP_STATION_STATUS_API_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
   const [dashboardData, setDashboardData] = useState([]);
-  const [EVSEStatus, setEVSEStatus] = useState([]);
+  const [evseStatus, setEvseStatus] = useState([]);
 
-  
   const [stationList, setStationList] = useState([]);
   const [analyticsData, setAnalyticsData] = useState([]);
 
@@ -92,7 +60,7 @@ const Dashboard = () => {
       if (postalCode) params.push(`postal_code=${postalCode}`);
       if (country) params.push(`country=${country}`);
       const query = params.length > 0 ? `?${params.join("&")}` : "";
-      
+
       const headers = { Authorization: `Bearer ${token}` };
       const { data } = await apiInstance.get(`${base}${query}`, { headers });
       setAnalyticsData(data);
@@ -111,8 +79,7 @@ const Dashboard = () => {
       const base = `${StationStatusAPI}/latest`;
       const headers = { Authorization: `Bearer ${token}` };
       const { data } = await apiInstance.get(`${base}`, { headers });
-      setEVSEStatus(data);
-      console.log('EVSEStatus', EVSEStatus);
+      setEvseStatus(data);
     } catch (error) {
       console.log(error);
     }
@@ -131,14 +98,10 @@ const Dashboard = () => {
       const response = await apiInstance.get(`${base}${query}`, { headers });
       const parsedData = response.data;
       setDashboardData(parsedData);
-
-      const status_base = `${StationAnalyticsAPI}/evse_status`;//get endpoint
-      const status_response = await apiInstance.get(`${status_base}${query}`, { headers });
-      //setEVSEStatus(status_response.data);
     } catch (error) {
       console.log(error);
     }
-  }, [StationAnalyticsAPI, stationId, token, startDate, endDate, chargeLevel]);
+  }, [StationAnalyticsAPI, token, startDate, endDate, chargeLevel]);
 
 
   useEffect(() => {
@@ -154,26 +117,16 @@ const Dashboard = () => {
       Occupied: 0,
       total: statusData.length,
     };
-
-    /*
-    statusData.forEach(evse => {
-      const lastUpdate = evse.updates[evse.updates.length - 1];
-      if (lastUpdate.new_status in statusCounts) {
-        statusCounts[lastUpdate.new_status]++;
-      }
-    });
-    */
     statusData.forEach(evse => {
       const lastUpdate = evse.status;
       if (lastUpdate in statusCounts) {
         statusCounts[lastUpdate]++;
       }
     })
-
     return [statusCounts.Available, statusCounts.Unavailable, statusCounts.Occupied, statusCounts.total];
   };
 
-  const [availableCount, unavailableCount, inUseCount, totalCount] = countStatuses(EVSEStatus);
+  const [availableCount, unavailableCount, inUseCount, totalCount] = countStatuses(evseStatus);
   const outOfServiceCount = totalCount - availableCount - unavailableCount - inUseCount;
 
   const calculatePercentage = (part, total) => {
@@ -186,11 +139,11 @@ const Dashboard = () => {
   const outOfServicePercentage = calculatePercentage(outOfServiceCount, totalCount);
 
   const progressExample = [
-    { title: 'Total Chargers', value: totalCount, percent: 100, color: 'success' },
-    { title: 'Available Chargers', value: availableCount, percent: availablePercentage, color: 'info' },
-    { title: 'In Use Chargers', value: inUseCount, percent: inUsePercentage, color: 'warning' },
-    { title: 'Out of Service Chargers', value: outOfServiceCount, percent: outOfServicePercentage, color: 'danger' },
-    { title: 'Unavailable Chargers', value: unavailableCount, percent: unAvailablePercentage, color: 'primary' },
+    { label: "Total", color: "info", count: totalCount, percentage: 100 },
+    { label: "Available", color: "success", count: availableCount, percentage: availablePercentage },
+    { label: "In Use", color: "warning", count: inUseCount, percentage: inUsePercentage },
+    { label: "Out of Service", color: "danger", count: outOfServiceCount, percentage: outOfServicePercentage },
+    { label: "Unavailable", color: "secondary", count: unavailableCount, percentage: unAvailablePercentage },
   ]
 
   const [barChartData, setBarChartData] = useState({
@@ -346,7 +299,7 @@ const Dashboard = () => {
       peak: { fastCharge: 0, slowCharge: 0, energy: [] },
     };
 
-  
+
     dashboardData.forEach((transaction) => {
       const date = new Date(transaction.transaction_date);
       const month = date.toLocaleString('default', { month: 'long' });
@@ -368,7 +321,7 @@ const Dashboard = () => {
 
       // Categorize by time and charge level
       const startDate = new Date(transaction.start_date);
-      
+
       const hours = startDate.getHours();
       let category = '';
       if (hours >= 0 && hours < 12) {
@@ -391,10 +344,8 @@ const Dashboard = () => {
     const energyData = labels.map((label) => energyPerMonth[label]);
     const uniqueDriversData = labels.map((label) => uniqueUsersPerMonth[label].size);
     const stationData = labels.map((label) => stationsPerMonth[label].size);
-
-    console.log('401: ', EVSEStatus)
-    EVSEStatus.forEach((evse) => {
-      if (true ) {
+    evseStatus.forEach((evse) => {
+      if (true) {
         const firstUpdate = evse.created_at;
         const date = new Date(firstUpdate.timestamp);
         const month = date.toLocaleString('default', { month: 'long' });
@@ -408,11 +359,11 @@ const Dashboard = () => {
         ownersPerMonth[monthYear] += 1;
         evsePerMonth[monthYear].add(evse.id);
       }
-  });
+    });
 
     const evse_labels = Object.keys(ownersPerMonth).sort((a, b) => new Date(a) - new Date(b));
     const ownersData = evse_labels.map((label) => evsePerMonth[label].size);
-    
+
 
     // Aggregate energy consumption by month for each category
     const aggregateEnergy = (category) => {
@@ -548,7 +499,7 @@ const Dashboard = () => {
       let unavailableCount = 0;
       let inUseCount = 0;
       let totalCount = 0;
-    
+
       // Check if 'data' is a valid array before calling forEach
       if (Array.isArray(data)) {
         data.forEach((evse) => {
@@ -567,16 +518,16 @@ const Dashboard = () => {
           }
         });
       }
-    
+
       const availablePercentage = totalCount === 0 ? 0 : (availableCount / totalCount) * 100;
       const unavailablePercentage = totalCount === 0 ? 0 : (unavailableCount / totalCount) * 100;
       const inUsePercentage = totalCount === 0 ? 0 : (inUseCount / totalCount) * 100;
-    
+
       return [availablePercentage, unavailablePercentage, inUsePercentage];
     };
-    
 
-    const [availablePercentage, unavailablePercentage, inUsePercentage] = calculateUptime(EVSEStatus);
+
+    const [availablePercentage, unavailablePercentage, inUsePercentage] = calculateUptime(evseStatus);
 
     setDonutData({
       labels: ['Available', 'Unavailable', 'In Use'],
@@ -628,294 +579,28 @@ const Dashboard = () => {
       ],
     });
 
-  }, [dashboardData, EVSEStatus]);
-
-  const progressGroupExample1 = [
-    { title: 'Monday', value1: 34, value2: 78 },
-    { title: 'Tuesday', value1: 56, value2: 94 },
-    { title: 'Wednesday', value1: 12, value2: 67 },
-    { title: 'Thursday', value1: 43, value2: 91 },
-    { title: 'Friday', value1: 22, value2: 73 },
-    { title: 'Saturday', value1: 53, value2: 82 },
-    { title: 'Sunday', value1: 9, value2: 69 },
-  ]
-
-  const progressGroupExample2 = [
-    { title: 'Male', icon: cilUser, value: 53 },
-    { title: 'Female', icon: cilUserFemale, value: 43 },
-  ]
-
-  const progressGroupExample3 = [
-    { title: 'Organic Search', icon: cibGoogle, percent: 56, value: '191,235' },
-    { title: 'Facebook', icon: cibFacebook, percent: 15, value: '51,223' },
-    { title: 'Twitter', icon: cibTwitter, percent: 11, value: '37,564' },
-    { title: 'LinkedIn', icon: cibLinkedin, percent: 8, value: '27,319' },
-  ]
-
-  // Bar Chart (Sessions)
-  const barData = {
-    labels: ["1/6", "2/6", "3/6", "4/6", "5/6", "6/6", "7/6", "8/6", "9/6", "10/6", "11/6", "12/6"],
-    datasets: [
-      {
-        label: 'Sessions',
-        data: [4000, 3000, 2000, 4500, 4700, 3000, 4500, 2000, 3000, 4500, 3000, 4000],
-        backgroundColor: 'rgba(75, 192, 192, 0.5)',
-      },
-      {
-        label: 'Time',
-        data: [2000, 1500, 3000, 2000, 2200, 2800, 2400, 3500, 3200, 2400, 3500, 3200],
-        backgroundColor: 'rgba(0, 123, 255, 0.5)',
-      }
-    ],
-  };
-
-  // Line Chart (Revenue over Time)
-  const lineData = {
-    labels: ["1/6", "2/6", "3/6", "4/6", "5/6", "6/6", "7/6", "8/6", "9/6", "10/6", "11/6", "12/6"],
-    datasets: [
-      {
-        label: 'Revenue',
-        data: [65, 59, 80, 81, 56, 55, 40, 60, 45, 70, 50, 75],
-        fill: false,
-        borderColor: 'rgb(75, 192, 192)',
-        tension: 0.1
-      },
-      {
-        label: 'Time',
-        data: [45, 49, 60, 70, 46, 75, 50, 65, 40, 70, 60, 65],
-        fill: false,
-        borderColor: 'rgb(255, 159, 64)',
-        tension: 0.1
-      }
-    ]
-  };
-
-  const donut_data = {
-    labels: ['Available', 'Unavailable', 'In-Use'],
-    datasets: [
-      {
-        label: 'Uptime Percentage',
-        data: [49.9, 13.4, 36.7],
-        backgroundColor: [
-          'rgba(144, 238, 144, 0.2)', // Light Green
-          'rgba(0, 128, 0, 0.2)',     // Medium Green
-          'rgba(34, 139, 34, 0.2)',   // Dark Green
-          'rgba(0, 100, 0, 0.2)'      // Very Dark Green
-        ],
-        borderColor: [
-          'rgba(144, 238, 144, 1)', // Light Green
-          'rgba(0, 128, 0, 1)',     // Medium Green
-          'rgba(34, 139, 34, 1)',   // Dark Green
-          'rgba(0, 100, 0, 1)'      // Very Dark Green
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
-  
-  const donut_options = {
-    cutout: '50%',  // This makes it a donut chart
-    plugins: {
-      legend: {
-        display: false  // This will hide the legend
-      }
-    }
-  };
-
-  // Define options for charts
-  const options = {
-    scales: {
-      y: {
-        beginAtZero: true
-      }
-    },
-    maintainAspectRatio: false
-  };
-
-  const horizontal_bar_options = {
-    indexAxis: 'y', // This makes the bar chart horizontal
-    elements: {
-      bar: {
-        borderWidth: 2,
-      },
-    },
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'right',
-      },
-      title: {
-        display: true,
-        text: 'Horizontal Bar Chart',
-      },
-    },
-  };
-  
-  const horizontal_bar_data = {
-    labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-    datasets: [
-      {
-        label: '# of Votes',
-        data: [12, 19, 3, 5, 2, 3],
-        borderColor: 'rgb(255, 99, 132)',
-        backgroundColor: 'rgba(255, 99, 132, 0.5)',
-      },
-    ],
-  };
-
-  const pie_data = {
-    labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple'],
-    datasets: [
-      {
-        label: '# of Votes',
-        data: [12, 19, 3, 5, 2],
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.5)',
-          'rgba(54, 162, 235, 0.5)',
-          'rgba(255, 206, 86, 0.5)',
-          'rgba(75, 192, 192, 0.5)',
-          'rgba(153, 102, 255, 0.5)'
-        ],
-        borderColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(153, 102, 255, 1)'
-        ],
-        borderWidth: 1,
-      }
-    ],
-  };
-  
-  const pie_options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: false
-      },
-      tooltip: {
-        mode: 'index',
-        intersect: false,
-      },
-    }
-  };
-
-  const tableExample = [
-    {
-      avatar: { src: avatar1, status: 'success' },
-      user: {
-        name: 'Yiorgos Avraamu',
-        new: true,
-        registered: 'Jan 1, 2023',
-      },
-      country: { name: 'USA', flag: cifUs },
-      usage: {
-        value: 50,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'success',
-      },
-      payment: { name: 'Mastercard', icon: cibCcMastercard },
-      activity: '10 sec ago',
-    },
-    {
-      avatar: { src: avatar2, status: 'danger' },
-      user: {
-        name: 'Avram Tarasios',
-        new: false,
-        registered: 'Jan 1, 2023',
-      },
-      country: { name: 'Brazil', flag: cifBr },
-      usage: {
-        value: 22,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'info',
-      },
-      payment: { name: 'Visa', icon: cibCcVisa },
-      activity: '5 minutes ago',
-    },
-    {
-      avatar: { src: avatar3, status: 'warning' },
-      user: { name: 'Quintin Ed', new: true, registered: 'Jan 1, 2023' },
-      country: { name: 'India', flag: cifIn },
-      usage: {
-        value: 74,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'warning',
-      },
-      payment: { name: 'Stripe', icon: cibCcStripe },
-      activity: '1 hour ago',
-    },
-    {
-      avatar: { src: avatar4, status: 'secondary' },
-      user: { name: 'Enéas Kwadwo', new: true, registered: 'Jan 1, 2023' },
-      country: { name: 'France', flag: cifFr },
-      usage: {
-        value: 98,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'danger',
-      },
-      payment: { name: 'PayPal', icon: cibCcPaypal },
-      activity: 'Last month',
-    },
-    {
-      avatar: { src: avatar5, status: 'success' },
-      user: {
-        name: 'Agapetus Tadeáš',
-        new: true,
-        registered: 'Jan 1, 2023',
-      },
-      country: { name: 'Spain', flag: cifEs },
-      usage: {
-        value: 22,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'primary',
-      },
-      payment: { name: 'Google Wallet', icon: cibCcApplePay },
-      activity: 'Last week',
-    },
-    {
-      avatar: { src: avatar6, status: 'danger' },
-      user: {
-        name: 'Friderik Dávid',
-        new: true,
-        registered: 'Jan 1, 2023',
-      },
-      country: { name: 'Poland', flag: cifPl },
-      usage: {
-        value: 43,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'success',
-      },
-      payment: { name: 'Amex', icon: cibCcAmex },
-      activity: 'Last week',
-    },
-  ]
+  }, [dashboardData, evseStatus]);
 
   return (
-    <CCard className="flex-grow-1 border border-top-0 rounded-0">
-      <CRow
-            xs={{ cols: 1, gutter: 4 }}
-            sm={{ cols: 2 }}
-            lg={{ cols: 4 }}
-            xl={{ cols: 5 }}
-            className="mb-2 text-center"
-            style={{ color: 'white' }} 
-      >
-        {progressExample.map((item, index, items) => (
-          <CCol
-            className={classNames({
-              'd-none d-xl-block': index + 1 === items.length,
-            })}
-            key={index}
-          >
-            <div>{item.title}</div>
-            <div className="fw-semibold text-truncate">
-              {item.value} ({item.percent}%)
-            </div>
-            <CProgress thin className="mt-2" color={item.color} value={item.percent} />
-          </CCol>
-        ))}
+    <CCard className="flex-grow-1 border border-0 rounded-0">
+      <CRow className="m-2">
+        <CCol>
+          <CCard>
+            <CCardBody>
+              <CCardTitle className="fs-4 fw-semibold">
+                Chargers
+              </CCardTitle>
+              <CRow className="mb-2 text-center">
+                {progressExample.map(({ label, color, count, percentage }, index) => (
+                  <CCol key={index}>
+                    <p className="fw-semibold mb-2">{label}: {count} ({percentage}%)</p>
+                    <CProgress thin color={color} value={percentage} />
+                  </CCol>
+                ))}
+              </CRow>
+            </CCardBody>
+          </CCard>
+        </CCol>
       </CRow>
       <CRow className="m-2">
         <CCol xs={6}>
@@ -965,10 +650,10 @@ const Dashboard = () => {
               />
             }
           />
-        </CCol>  
+        </CCol>
         <CCol xs={6}>
           <CWidgetStatsA
-            
+
             value={
               <>
                 Revenue{' '}
@@ -1027,12 +712,12 @@ const Dashboard = () => {
               />
             }
           />
-        </CCol> 
+        </CCol>
       </CRow>
       <CRow className="m-2">
         <CCol xs={6}>
           <CWidgetStatsA
-            
+
             value={
               <>
                 Energy/Consumption{' '}
@@ -1078,77 +763,76 @@ const Dashboard = () => {
               />
             }
           />
-        </CCol>  
+        </CCol>
         <CCol xs={6}>
-        <CWidgetStatsA
-      
-      value={
-        <>
-          Peak/Off-peak Time{' '}
-        </>
-      }
-      chart={
-        <CChartBar
-          className="mt-3 mx-3"
-          style={{ height: '120px' }}
-          data={analyticsData.peak_time}
-          options={{
-            plugins: {
-              legend: {
-                display: false,
-              },
-            },
-            maintainAspectRatio: false,
-            scales: {
-              x: {
-                border: {
-                  display: true,
-                },
-                grid: {
-                  display: true,
-                  drawBorder: true,
-                },
-                ticks: {
-                  display: true,
-                },
-              },
-              y: {
-                min: 0,
-                max: 100,
-                display: true,
-                grid: {
-                  display: true,
-                  drawBorder: true,
-                },
-                ticks: {
-                  display: true,
-                  callback: function(value) {
-                    return value + "%";
+          <CWidgetStatsA
+
+            value={
+              <>
+                Peak/Off-peak Time{' '}
+              </>
+            }
+            chart={
+              <CChartBar
+                className="mt-3 mx-3"
+                style={{ height: '120px' }}
+                data={analyticsData.peak_time}
+                options={{
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
                   },
-                },
-              },
-            },
-            elements: {
-              line: {
-                borderWidth: 2,
-                tension: 0.4,
-              },
-              point: {
-                radius: 0,
-                hitRadius: 10,
-                hoverRadius: 4,
-              },
-            },
-          }}
-        />
-      }
-    />
+                  maintainAspectRatio: false,
+                  scales: {
+                    x: {
+                      border: {
+                        display: true,
+                      },
+                      grid: {
+                        display: true,
+                        drawBorder: true,
+                      },
+                      ticks: {
+                        display: true,
+                      },
+                    },
+                    y: {
+                      min: 0,
+                      max: 100,
+                      display: true,
+                      grid: {
+                        display: true,
+                        drawBorder: true,
+                      },
+                      ticks: {
+                        display: true,
+                        callback: function (value) {
+                          return value + "%";
+                        },
+                      },
+                    },
+                  },
+                  elements: {
+                    line: {
+                      borderWidth: 2,
+                      tension: 0.4,
+                    },
+                    point: {
+                      radius: 0,
+                      hitRadius: 10,
+                      hoverRadius: 4,
+                    },
+                  },
+                }}
+              />
+            }
+          />
         </CCol>
       </CRow>
       <CRow className="m-2">
         <CCol xs={6}>
           <CWidgetStatsA
-            
             value={
               <>
                 Slow/Fast Charger{' '}
@@ -1204,9 +888,9 @@ const Dashboard = () => {
               />
             }
           />
-        </CCol>  
-        <CCol xs={6} className="d-flex justify-content-center align-items-center" style={{ height: '100%'}}>
-         {/* <CRow>Uptime Percentage</CRow>
+        </CCol>
+        <CCol xs={6} className="d-flex justify-content-center align-items-center" style={{ height: '100%' }}>
+          {/* <CRow>Uptime Percentage</CRow>
           <CRow>
             <div style={{ height: '120px', width: '340px', display: 'flex', justifyContent: 'center' }}>
               
@@ -1214,11 +898,11 @@ const Dashboard = () => {
             </div>
           </CRow>*/}
         </CCol>
-      </CRow> 
+      </CRow>
       <CRow className="m-2">
         <CCol xs={6}>
-        <CWidgetStatsA
-            
+          <CWidgetStatsA
+
             value={
               <>
                 Driver{' '}
@@ -1251,7 +935,7 @@ const Dashboard = () => {
                     },
                     y: {
                       min: 0,
-                     // max: 39,
+                      // max: 39,
                       display: true,
                       grid: {
                         display: true,
@@ -1277,8 +961,7 @@ const Dashboard = () => {
           />
         </CCol>
         <CCol xs={6}>
-        <CWidgetStatsA
-            
+          <CWidgetStatsA
             value={
               <>
                 Owner{' '}
@@ -1350,11 +1033,10 @@ const Dashboard = () => {
       </CRow>
       <CRow className="m-2">
         <CCol xs={6}>
-        <CWidgetStatsA
-            
+          <CWidgetStatsA
             value={
               <>
-                Station{' '}
+                Station
               </>
             }
             chart={
@@ -1399,17 +1081,8 @@ const Dashboard = () => {
             }
           />
         </CCol>
-        <CCol xs={6}>
-        {/*<CRow>Station Growth by Region</CRow>
-        <CRow>
-        <div style={{ height: '120px', width: '340px', display: 'flex', justifyContent: 'center' }}>
-          <Pie data={pie_data} options={pie_options} />
-        </div>
-          </CRow>*/}
-        </CCol>
       </CRow>
-    
-      </CCard>
+    </CCard>
   )
 }
 
