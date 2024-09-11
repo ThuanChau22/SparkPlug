@@ -13,7 +13,7 @@ const MapContainer = ({ positions = [], locate = false, children }) => (
     style={{ height: "100%", width: "100%" }}
     placeholder={<noscript>You need to enable JavaScript to see this map.</noscript>}
   >
-    <TileLayer className="map-tiles" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
     <MapContent positions={positions} locate={locate}>{children}</MapContent>
   </Map>
 );

@@ -32,16 +32,20 @@
   }
 }
 
-// :root {
-//   --map-tiles-filter: brightness(0.6) invert(1) contrast(3) hue-rotate(180deg) brightness(0.5);
-// }
+@if $enable-dark-mode {
+  @include color-mode(dark) {
+    .leaflet-layer {
+      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(180deg) brightness(0.5);
+    }
 
-// @media (prefers-color-scheme: dark) {
-//   .map-tiles {
-//     filter: var(--map-tiles-filter, none);
-//   }
-// }
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out {
+      background-color: var(--cui-body-bg);
+      color: var(--cui-body-color);
+    }
 
-// .map-tiles.dark {
-//   filter: var(--map-tiles-filter, none);
-// }
+    .leaflet-control-attribution {
+      background-color: var(--cui-body-bg) !important;
+    }
+  }
+}
