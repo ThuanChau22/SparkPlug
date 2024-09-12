@@ -42,11 +42,11 @@ const LocationFilter = forwardRef(({
     children,
   }) => (
     <CInputGroup>
-      <CInputGroupText className="border-start-0 border-end-0 border-dark rounded-0 bg-dark text-white">
+      <CInputGroupText className="border-0 rounded-0">
         {children}
       </CInputGroupText>
       <CFormSelect
-        className="border-start-0 border-end-0 rounded-0 shadow-none"
+        className="border-0 rounded-0 shadow-none"
         id={id}
         options={options}
         value={value}
@@ -56,7 +56,11 @@ const LocationFilter = forwardRef(({
   );
 
   return (
-    <div className="d-none d-lg-flex justify-content-end align-items-center" ref={ref}>
+    <div
+      className="d-none d-lg-flex justify-content-end align-items-center"
+      style={{ backgroundColor: "var(--cui-body-bg)" }}
+      ref={ref}
+    >
       <FilterFormSelectGroup
         id="state"
         options={states.map(state => (
@@ -88,8 +92,9 @@ const LocationFilter = forwardRef(({
         Zip Code
       </FilterFormSelectGroup>
       <CButton
-        className="border-start-0 border-end-0 border-dark rounded-0"
-        color="dark"
+        className="border-0 rounded-0"
+        variant="outline"
+        color="info"
         onClick={handleClearChange}
       >
         Clear

@@ -32,6 +32,10 @@
   }
 }
 
+.footer {
+  --cui-footer-bg: var(--cui-body-bg);
+}
+
 @if $enable-dark-mode {
   @include color-mode(dark) {
     .leaflet-layer {
