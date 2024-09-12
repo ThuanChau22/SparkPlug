@@ -48,6 +48,12 @@
       color: var(--cui-body-color);
     }
 
+    .leaflet-bar a:hover,
+    .leaflet-bar a:focus,
+    .leaflet-bar a.leaflet-disabled {
+      background-color: var(--cui-tertiary-bg);
+    }
+
     .leaflet-control-attribution {
       background-color: var(--cui-body-bg) !important;
     }
