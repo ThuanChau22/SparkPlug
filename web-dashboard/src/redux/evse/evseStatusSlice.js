@@ -13,6 +13,14 @@ import {
 
 const StationStatusAPI = process.env.REACT_APP_STATION_STATUS_API_ENDPOINT;
 
+export const EvseStatus = {
+  Available: "Available",
+  Occupied: "Occupied",
+  Reserved: "Reserved",
+  Faulted: "Faulted",
+  Unavailable: "Unavailable",
+};
+
 const evseStatusEntityAdapter = createEntityAdapter({
   selectId: ({ station_id, evse_id }) => `${station_id},${evse_id}`,
   sortComparer: (a, b) => {

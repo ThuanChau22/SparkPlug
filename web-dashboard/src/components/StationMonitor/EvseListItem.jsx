@@ -4,7 +4,7 @@ import ms from "ms";
 import { CButton } from "@coreui/react";
 import { EvStation } from '@mui/icons-material';
 
-import AvailabilityStatus from "components/AvailabilityStatus";
+import EvseAvailabilityStatus from "components/EvseAvailabilityStatus";
 import {
   evseStatusStateUpsertById,
   selectEvseStatusById,
@@ -46,7 +46,7 @@ const StationMonitorEvseListItem = ({ stationId, evseId, remoteStart, remoteStop
       <p className="text-secondary my-auto">
         <span>EVSE ID: {evseId} - </span>
         <span className="fw-medium">
-          <AvailabilityStatus status={evseStatus?.status} />
+          <EvseAvailabilityStatus status={evseStatus?.status} />
         </span>
       </p>
       <div className="d-flex align-items-center">
