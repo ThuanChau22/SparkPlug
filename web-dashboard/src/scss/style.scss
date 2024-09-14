@@ -4,15 +4,7 @@
 
 @import "theme";
 
-.form-control:focus,
-.form-select:focus {
-  border-color: var(--cui-gray-200);
-  outline: none;
-  box-shadow: none;
-}
-
 .accordion-button:focus {
-  outline: none;
   box-shadow: none;
 }
 
