@@ -56,6 +56,20 @@ export const {
   evseStateClear,
 } = evseSlice.actions;
 
+export const evseGetList = createAsyncThunk(
+  `${evseSlice.name}/getList`,
+  async (query = "", { dispatch, getState }) => {
+    try {
+      const baseUrl = `${StationAPI}/evses${query}`;
+      const config = await tokenConfig({ dispatch, getState });
+      const { data } = await apiInstance.get(baseUrl, config);
+      dispatch(evseStateSetMany(data));
+    } catch (error) {
+      handleError({ error, dispatch });
+    }
+  }
+);
+
 export const evseGetByStation = createAsyncThunk(
   `${evseSlice.name}/getByStation`,
   async (stationId, { dispatch, getState }) => {
@@ -147,6 +161,17 @@ export const selectEvse = (state) => state[evseSlice.name];
 
 const evseSelectors = evseEntityAdapter.getSelectors(selectEvse);
 export const selectEvseList = evseSelectors.selectAll;
+
+export const selectEvseIds = createSelector(
+  [evseSelectors.selectIds],
+  (evseIds) => evseIds.map((compoundId) => {
+    const [station_id, evse_id] = compoundId.split(",");
+    return {
+      station_id: parseInt(station_id),
+      evse_id: parseInt(evse_id),
+    };
+  }),
+);
 
 export const selectEvseByStation = createSelector(
   [selectEvseList, (_, stationId) => stationId],

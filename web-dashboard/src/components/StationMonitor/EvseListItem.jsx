@@ -5,18 +5,22 @@ import { CButton } from "@coreui/react";
 import { EvStation } from '@mui/icons-material';
 
 import EvseAvailabilityStatus from "components/EvseAvailabilityStatus";
+import useStationEventSocket from "hooks/useStationEventSocket";
 import {
+  EvseStatus,
   evseStatusStateUpsertById,
   selectEvseStatusById,
 } from "redux/evse/evseStatusSlice";
 
-const StationMonitorEvseListItem = ({ stationId, evseId, remoteStart, remoteStop }) => {
+const StationMonitorEvseListItem = ({ stationId, evseId }) => {
   const evseStatus = useSelector((state) => selectEvseStatusById(state, {
     stationId,
     evseId,
   }));
 
-  const meterTimeout = useRef({})
+  const { remoteStart, remoteStop } = useStationEventSocket();
+
+  const meterTimeout = useRef({});
 
   const [meterValue, setMeterValue] = useState(evseStatus?.meterValue || 0);
 
@@ -46,7 +50,9 @@ const StationMonitorEvseListItem = ({ stationId, evseId, remoteStart, remoteStop
       <p className="text-secondary my-auto">
         <span>EVSE ID: {evseId} - </span>
         <span className="fw-medium">
-          <EvseAvailabilityStatus status={evseStatus?.status} />
+          <EvseAvailabilityStatus
+            status={evseStatus?.status || EvseStatus.Unavailable}
+          />
         </span>
       </p>
       <div className="d-flex align-items-center">

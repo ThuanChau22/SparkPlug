@@ -157,6 +157,7 @@ export const selectStation = (state) => state[stationSlice.name];
 
 const stationSelectors = stationEntityAdapter.getSelectors(selectStation);
 export const selectStationList = stationSelectors.selectAll;
+export const selectStationIds = stationSelectors.selectIds;
 export const selectStationById = stationSelectors.selectById;
 
 export const selectStationStatusById = createSelector(

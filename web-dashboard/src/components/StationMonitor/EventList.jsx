@@ -12,6 +12,7 @@ import {
 import LoadingIndicator from "components/LoadingIndicator";
 import {
   stationEventGetById,
+  stationEventStateClear,
   selectStationEventList,
 } from "redux/station/stationEventSlice";
 
@@ -33,6 +34,8 @@ const StationMonitorEventList = ({ stationId }) => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => () => dispatch(stationEventStateClear()), [dispatch]);
 
   return (
     <CCard
