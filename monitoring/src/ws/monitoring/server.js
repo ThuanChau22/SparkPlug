@@ -52,7 +52,7 @@ const webSocketServer = () => {
 /**
  * @typedef {Object} Instance
  * @property {User} user
- * @property {ChangeStream} changeStream
+ * @property {Object.<String, ChangeStream>} changeStream
  */
 /**
  * @type {Map.<WebSocket, Instance>}
@@ -68,7 +68,7 @@ server.on("connection", async (ws, req) => {
 
     console.log(`Connected with user: ${id}`);
 
-    sockets.set(ws, { user: { id, role, ...remain, token } });
+    sockets.set(ws, { user: { id, role, ...remain, token }, changeStream: {} });
 
     // Handle incoming message
     ws.on("message", async (data) => {
@@ -120,7 +120,8 @@ server.on("connection", async (ws, req) => {
 
     // Handle socket on close
     ws.on("close", () => {
-      sockets.get(ws).changeStream?.close();
+      Object.values(sockets.get(ws).changeStream)
+        .forEach((changeStream) => changeStream.close());
       sockets.delete(ws);
       console.log(`Disconnected with user: ${id}`);
     });
