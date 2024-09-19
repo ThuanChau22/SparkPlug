@@ -10,6 +10,11 @@ import {
 } from "@coreui/react";
 
 import LoadingIndicator from "components/LoadingIndicator";
+import useStationEventSocket, { Action } from "hooks/useStationEventSocket";
+import {
+  evseGetList,
+  selectEvseIds,
+} from "redux/evse/evseSlice";
 import {
   EvseStatus,
   evseStatusGetList,
@@ -17,13 +22,31 @@ import {
 } from "redux/evse/evseStatusSlice";
 
 const EvseStatusWidget = ({ className = "" }) => {
+  const evseIds = useSelector(selectEvseIds);
   const evseStatusList = useSelector(selectEvseStatusList);
 
   const [loading, setLoading] = useState(false);
 
+  const stationIds = useMemo(() => (
+    [...new Set(evseIds.map(({ station_id: id }) => id))]
+  ), [evseIds]);
+
+  useStationEventSocket({
+    action: Action.WatchStatusEvent,
+    payload: { stationIds },
+  });
+
   const dispatch = useDispatch();
 
-  const fetchEvseStatus = useCallback(async () => {
+  const fetchEvseData = useCallback(async () => {
+    if (evseIds.length === 0) {
+      setLoading(true);
+      await dispatch(evseGetList()).unwrap();
+      setLoading(false);
+    }
+  }, [evseIds.length, dispatch]);
+
+  const fetchEvseStatusData = useCallback(async () => {
     if (evseStatusList.length === 0) {
       setLoading(true);
       await dispatch(evseStatusGetList()).unwrap();
@@ -32,15 +55,16 @@ const EvseStatusWidget = ({ className = "" }) => {
   }, [evseStatusList.length, dispatch]);
 
   useEffect(() => {
-    fetchEvseStatus();
-  }, [fetchEvseStatus]);
+    fetchEvseData();
+    fetchEvseStatusData();
+  }, [fetchEvseData, fetchEvseStatusData]);
 
   const evseStatusData = useMemo(() => {
     const data = {
       Total: {
         label: "Total",
         color: "info",
-        count: evseStatusList.length,
+        count: evseIds.length,
         percentage: 0,
       },
       [EvseStatus.Available]: {
@@ -69,11 +93,16 @@ const EvseStatusWidget = ({ className = "" }) => {
       },
     };
     // Count of each status
+    let presentCount = 0;
     for (const { status } of evseStatusList) {
       if (data[status]) {
         data[status].count++;
+        presentCount++;
       }
     }
+    const absentCount = data.Total.count - presentCount;
+    data[EvseStatus.Unavailable].count += absentCount;
+
     // Calculate percentage of each status
     for (const item of Object.values(data)) {
       if (data.Total.count !== 0) {
@@ -81,7 +110,7 @@ const EvseStatusWidget = ({ className = "" }) => {
       }
     }
     return data;
-  }, [evseStatusList]);
+  }, [evseIds, evseStatusList]);
 
   return (
     <CCard className={className}>
