@@ -139,7 +139,7 @@ const Dashboard = () => {
 
   return (
     <CCard className="flex-grow-1 border border-0 rounded-0">
-      <EvseStatusWidget className="mx-4 mt-3" />
+      <EvseStatusWidget className="mx-4 mt-3 shadow-sm" />
       <CRow
         className="m-3 mt-0"
         xs={{ cols: 1, gutter: 3 }}

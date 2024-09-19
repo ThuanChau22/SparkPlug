@@ -8,6 +8,7 @@ import LoadingIndicator from "components/LoadingIndicator";
  */
 const ChartWidgetContainer = ({ className = "", style = {}, label, chart }) => (
   <CWidgetStatsA
+    className="shadow-sm"
     value={label}
     chart={
       <div

@@ -100,7 +100,7 @@ const UserManagement = () => {
                 {userList.map(({ id, name, email, status }) => (
                   <CListGroupItem
                     key={id}
-                    className="align-items-center py-3"
+                    className="border rounded py-3 my-1 shadow-sm"
                     as="button"
                     onClick={() => handleViewUser(id)}
                   >

@@ -71,7 +71,7 @@ const StationAnalytics = () => {
                   {stationList.map(({ id, name }) => (
                     <CListGroupItem
                       key={id}
-                      className="py-3"
+                      className="border rounded py-3 my-1 shadow-sm"
                       as="button"
                       onClick={() => handleViewStation(id)}
                     >
