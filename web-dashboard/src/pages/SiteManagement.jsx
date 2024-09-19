@@ -58,9 +58,9 @@ const SiteManagement = () => {
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
           <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
-            <StickyContainer top={`${headerHeight}px`}>
+            <StickyContainer style={{ top: `${headerHeight}px` }}>
               <CCardTitle
-                className="d-flex flex-row justify-content-between align-items-center px-3 py-2 shadow-sm"
+                className="d-flex justify-content-between align-items-center px-3 py-2 shadow-sm"
                 style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
               >
                 Sites Management
@@ -80,7 +80,7 @@ const SiteManagement = () => {
                   {siteList.map(({ id, name }) => (
                     <CListGroupItem
                       key={id}
-                      className="py-3"
+                      className="border rounded py-3 my-1 shadow-sm"
                       as="button"
                       onClick={() => handleViewSite(id)}
                     >

@@ -25,6 +25,11 @@ def get_stations():
 def get_station_by_id(station_id):
     def session(connection):
         station_data = station.get_station_by_id(connection, station_id)
+        if (
+            request.auth["role"] == "owner"
+            and request.auth["user_id"] != station_data["owner_id"]
+        ):
+            raise Exception("Access denied", 403)
         if not station_data:
             raise Exception("Station not found", 404)
         return station_data

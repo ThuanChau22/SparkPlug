@@ -74,8 +74,8 @@ const StationMapView = ({ handleViewStation }) => {
   };
 
   return (
-    <StickyContainer top={`${headerHeight}px`}>
-      <StickyContainer top={`${headerHeight}px`}>
+    <StickyContainer style={{ top: `${headerHeight}px` }}>
+      <StickyContainer style={{ top: `${headerHeight}px` }}>
         <LocationFilter
           ref={filterRef}
           selectedState={stationSelectedState}

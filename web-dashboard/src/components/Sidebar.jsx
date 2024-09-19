@@ -197,6 +197,7 @@ const Sidebar = () => {
       <SidebarNav items={navigation} />
       <CSidebarFooter className="border-top d-none d-lg-flex">
         <CSidebarToggler
+          className="shadow-none"
           onClick={() => {
             dispatch(layoutSetSidebarFold(!sidebarFold))
           }}

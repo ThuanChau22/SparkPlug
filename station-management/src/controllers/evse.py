@@ -12,10 +12,8 @@ def get_evses():
         filter = request.args.to_dict()
         if request.auth["role"] == "owner":
             filter["owner_id"] = request.auth["user_id"]
-
         limit = filter.get("limit")
         limit = int(limit) if limit else None
-
         return evse.get_evses(connection, filter, limit=limit)
 
     try:
@@ -40,6 +38,11 @@ def get_evses_by_station(station_id):
 def get_evse_by_id(station_id, evse_id):
     def session(connection):
         evse_data = evse.get_evse_by_ids(connection, station_id, evse_id)
+        if (
+            request.auth["role"] == "owner"
+            and request.auth["user_id"] != evse_data["owner_id"]
+        ):
+            raise Exception("Access denied", 403)
         if not evse_data:
             raise Exception("Evse not found", 404)
         return evse_data

@@ -1,6 +1,5 @@
 import { useCallback, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import useWebSocket, { ReadyState } from "react-use-websocket";
 import {
   CRow,
   CCol,
@@ -10,109 +9,60 @@ import {
   CListGroup,
   CListGroupItem,
 } from "@coreui/react";
-import ms from "ms";
 
 import LoadingIndicator from "components/LoadingIndicator";
 import StickyContainer from "components/StickyContainer";
 import DriverStationListItem from "components/DriverStation/StationListItem";
 import DriverStationMapView from "components/DriverStation/MapView";
 import DriverStationDetailsModal from "components/DriverStation/DetailsModal";
+import useStationEventSocket, { Action } from "hooks/useStationEventSocket";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
-import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   stationGetList,
-  selectStationList,
+  selectStationIds,
 } from "redux/station/stationSlice";
 import {
-  evseStatusStateUpsertMany,
-  evseStatusStateUpsertById,
   evseStatusGetList,
-  selectEvseStatusIds,
+  selectEvseStatusList,
 } from "redux/evse/evseStatusSlice";
 
-const DriverStation = () => {
-  const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
 
+const DriverStation = () => {
   const headerHeight = useSelector(selectLayoutHeaderHeight);
-  const token = useSelector(selectAuthAccessToken);
-  const stationList = useSelector(selectStationList);
-  const evseStatusIds = useSelector(selectEvseStatusIds);
+
+  const stationIds = useSelector(selectStationIds);
+  const evseStatusList = useSelector(selectEvseStatusList);
 
   const [loading, setLoading] = useState(false);
 
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [stationId, setStationId] = useState(null);
 
-  const {
-    readyState,
-    lastJsonMessage,
-    sendJsonMessage,
-  } = useWebSocket(`${StationEventWS}`, {
-    queryParams: { token },
-    heartbeat: {
-      message: "ping",
-      returnMessage: "pong",
-      timeout: ms("60s"),
-      interval: ms("30s"),
-    },
-    shouldReconnect: ({ code }) => code === 1006,
+  useStationEventSocket({
+    action: Action.WatchStatusEvent,
+    payload: { stationIds },
   });
 
   const dispatch = useDispatch();
 
-  const fetchData = useCallback(async () => {
-    if (stationList.length === 0) {
+  const fetchStationData = useCallback(async () => {
+    if (stationIds.length === 0) {
       setLoading(true);
       await dispatch(stationGetList()).unwrap();
       setLoading(false);
     }
-  }, [stationList.length, dispatch]);
+  }, [stationIds.length, dispatch]);
 
-  const fetchEvseStatusData = useCallback(async () => {
-    if (evseStatusIds.length === 0) {
-      setLoading(true);
-      await dispatch(evseStatusGetList()).unwrap();
-      setLoading(false);
+  const fetchEvseStatusData = useCallback(() => {
+    if (evseStatusList.length === 0) {
+      dispatch(evseStatusGetList());
     }
-  }, [evseStatusIds.length, dispatch]);
+  }, [evseStatusList.length, dispatch]);
 
   useEffect(() => {
-    fetchData();
+    fetchStationData();
     fetchEvseStatusData();
-  }, [fetchData, fetchEvseStatusData]);
-
-  useEffect(() => {
-    const isStationLoaded = stationList.length > 0;
-    const isConnected = readyState === ReadyState.OPEN;
-    if (isStationLoaded && isConnected) {
-      const stationIds = stationList.map(({ id }) => id);
-      sendJsonMessage({
-        action: "WatchStatusEvent",
-        payload: { stationIds },
-      });
-    }
-  }, [stationList, readyState, sendJsonMessage]);
-
-  useEffect(() => {
-    const { action, payload } = lastJsonMessage || {};
-    if (action === "WatchStatusEvent" && payload.stationId) {
-      const { stationId, payload: { evseId, connectorStatus } } = payload;
-      if (evseId) {
-        dispatch(evseStatusStateUpsertById({
-          station_id: stationId,
-          evse_id: evseId,
-          status: connectorStatus,
-        }));
-      } else {
-        dispatch(evseStatusStateUpsertMany(evseStatusIds
-          .filter(({ station_id }) => station_id === stationId)
-          .map(({ station_id, evse_id }) => ({
-            station_id, evse_id,
-            status: connectorStatus,
-          }))));
-      }
-    }
-  }, [lastJsonMessage, evseStatusIds, dispatch]);
+  }, [fetchStationData, fetchEvseStatusData]);
 
   const handleViewStation = (stationId) => {
     setStationId(stationId);
@@ -124,7 +74,7 @@ const DriverStation = () => {
       <CRow xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
           <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
-            <StickyContainer top={`${headerHeight}px`}>
+            <StickyContainer style={{ top: `${headerHeight}px` }}>
               <CCardTitle
                 className="p-3 shadow-sm"
                 style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
@@ -136,7 +86,7 @@ const DriverStation = () => {
               ? <LoadingIndicator loading={loading} />
               : (
                 <CListGroup className="px-3">
-                  {stationList.map(({ id }) => (
+                  {stationIds.map((id) => (
                     <CListGroupItem
                       key={id}
                       className="d-flex flex-row justify-content-between align-items-center py-3"

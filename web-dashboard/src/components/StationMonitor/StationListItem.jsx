@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 
-import AvailabilityStatus from "components/AvailabilityStatus";
+import EvseAvailabilityStatus from "components/EvseAvailabilityStatus";
 import LoadingIndicator from "components/LoadingIndicator";
 import {
   stationGetById,
@@ -37,7 +37,7 @@ const StationMonitorListItem = ({ stationId }) => {
           <small className="w-100 text-secondary">ID: {station.id}</small>
           <p className="mb-0">{station.name}</p>
         </div>
-        <AvailabilityStatus status={stationStatus} />
+        <EvseAvailabilityStatus status={stationStatus} />
       </>
     )
   )

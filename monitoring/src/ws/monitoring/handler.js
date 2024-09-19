@@ -51,19 +51,18 @@ handler.remoteStop = async (payload) => {
 handler.watchAllEvent = async (ws, payload, response) => {
   try {
     const { stationId } = payload;
-    const instance = sockets.get(ws);
-    const { user: { token } } = instance;
+    const { user: { token }, changeStream } = sockets.get(ws);
+
     const headers = { Authorization: `Bearer ${token}` };
-    const { data } = await axios.get(`${STATION_API_ENDPOINT}/${stationId}`, { headers });
-    if (!data) {
-      throw { code: 403, message: "Access denied" };
-    }
-    instance?.changeStream?.close();
-    instance.changeStream = await StationEvent.watchEvent({
+    await axios.get(`${STATION_API_ENDPOINT}/${stationId}`, { headers });
+
+    const Event = Action.WATCH_ALL_EVENT;
+    changeStream[Event]?.close();
+    changeStream[Event] = await StationEvent.watchEvent({
       stationId,
       source: StationEvent.Sources.Station,
     });
-    instance.changeStream.on("change", ({ fullDocument }) => {
+    changeStream[Event].on("change", ({ fullDocument }) => {
       fullDocument = utils.toClient(fullDocument);
       const { id, stationId, event, payload, createdAt } = fullDocument;
       response({ id, stationId, event, payload, createdAt });
@@ -86,8 +85,8 @@ handler.watchAllEvent = async (ws, payload, response) => {
 handler.watchStatusEvent = async (ws, payload, response) => {
   try {
     const { stationIds } = payload;
-    const instance = sockets.get(ws);
-    const { user: { token } } = instance;
+    const { user: { token }, changeStream } = sockets.get(ws);
+
     const headers = { Authorization: `Bearer ${token}` };
     const { data } = await axios.get(`${STATION_API_ENDPOINT}`, { headers });
     const ownedStationIdList = new Set(data.map(({ id }) => id));
@@ -96,12 +95,14 @@ handler.watchStatusEvent = async (ws, payload, response) => {
         throw { code: 403, message: `Access denied on station ${stationId}` };
       }
     }
-    instance?.changeStream?.close();
-    instance.changeStream = await StationEvent.watchEvent({
+
+    const Event = Action.WATCH_STATUS_EVENT;
+    changeStream[Event]?.close();
+    changeStream[Event] = await StationEvent.watchEvent({
       stationId: stationIds,
       event: "StatusNotification",
     });
-    instance.changeStream.on("change", ({ fullDocument }) => {
+    changeStream[Event].on("change", ({ fullDocument }) => {
       fullDocument = utils.toClient(fullDocument);
       const { id, stationId, event, payload, createdAt } = fullDocument;
       response({ id, stationId, event, payload, createdAt });

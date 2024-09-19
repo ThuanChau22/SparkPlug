@@ -83,23 +83,28 @@ const StationPrediction = () => {
   return (
     <CCard className="flex-grow-1 border border-0 rounded-0">
       <CCardBody className="d-flex flex-column h-100 p-0">
-        <StickyContainer top={`${headerHeight}px`}>
-          <div className="d-flex w-100" ref={inputRef}>
+        <StickyContainer style={{ top: `${headerHeight}px` }}>
+          <div
+            className="d-flex w-100"
+            style={{ backgroundColor: "var(--cui-body-bg)" }}
+            ref={inputRef}
+          >
             <CInputGroup>
-              <CInputGroupText className="border-start-0 border-end-0 border-dark rounded-0 bg-dark text-white">
+              <CInputGroupText className="border-0 rounded-0">
                 Zip Code
               </CInputGroupText>
               <CFormInput
                 type="text"
                 placeholder="Enter Zip Code"
-                className="border-start-0 border-end-0 rounded-0 shadow-none"
+                className="border-0 shadow-none"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
               />
             </CInputGroup>
             <CButton
-              className="border-start-0 border-end-0 border-dark rounded-0"
-              color="dark"
+              className="border-0 rounded-0"
+              variant="outline"
+              color="info"
               onClick={handleSubmit}
               disabled={!input}
             >

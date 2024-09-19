@@ -84,10 +84,7 @@ const UserManagement = () => {
   return (
     <CCard className="flex-grow-1 border border-0 rounded-0">
       <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
-        <StickyContainer
-          ref={titleRef}
-          top={`${headerHeight}px`}
-        >
+        <StickyContainer style={{ top: `${headerHeight}px` }} ref={titleRef}>
           <CCardTitle
             className="p-3 shadow-sm"
             style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
@@ -103,7 +100,7 @@ const UserManagement = () => {
                 {userList.map(({ id, name, email, status }) => (
                   <CListGroupItem
                     key={id}
-                    className="align-items-center py-3"
+                    className="border rounded py-3 my-1 shadow-sm"
                     as="button"
                     onClick={() => handleViewUser(id)}
                   >

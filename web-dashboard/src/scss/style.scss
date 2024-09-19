@@ -1,18 +1,10 @@
 @import "@coreui/coreui/scss/coreui";
+@import "@coreui/chartjs/scss/coreui-chartjs";
 
 @import "variables";
-
 @import "theme";
 
-.form-control:focus,
-.form-select:focus {
-  border-color: var(--cui-gray-200);
-  outline: none;
-  box-shadow: none;
-}
-
 .accordion-button:focus {
-  outline: none;
   box-shadow: none;
 }
 
@@ -32,6 +24,10 @@
   }
 }
 
+.footer {
+  --cui-footer-bg: var(--cui-body-bg);
+}
+
 @if $enable-dark-mode {
   @include color-mode(dark) {
     .leaflet-layer {
@@ -42,6 +38,12 @@
     .leaflet-control-zoom-out {
       background-color: var(--cui-body-bg);
       color: var(--cui-body-color);
+    }
+
+    .leaflet-bar a:hover,
+    .leaflet-bar a:focus,
+    .leaflet-bar a.leaflet-disabled {
+      background-color: var(--cui-tertiary-bg);
     }
 
     .leaflet-control-attribution {

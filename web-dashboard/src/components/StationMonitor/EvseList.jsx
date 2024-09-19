@@ -18,7 +18,7 @@ import {
   selectEvseStatusByStation,
 } from "redux/evse/evseStatusSlice";
 
-const StationMonitorEvseList = ({ stationId, remoteStart, remoteStop }) => {
+const StationMonitorEvseList = ({ stationId }) => {
   const evseList = useSelector((state) => selectEvseByStation(state, stationId));
   const evseStatusList = useSelector((state) => selectEvseStatusByStation(state, stationId));
 
@@ -66,8 +66,6 @@ const StationMonitorEvseList = ({ stationId, remoteStart, remoteStop }) => {
                     <MonitorEvseListItem
                       stationId={station_id}
                       evseId={evse_id}
-                      remoteStart={remoteStart}
-                      remoteStop={remoteStop}
                     />
                   </CListGroupItem>
                 ))}

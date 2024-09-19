@@ -28,12 +28,12 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
   const token = useSelector(selectAuthAccessToken);
 
   const [loading, setLoading] = useState(false);
-  
+
   const [analyticsData, setAnalyticsData] = useState(null);
   const [forecastData, setForecastData] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [chargeLevel, setChargeLevel] = useState("All");
+  // const [chargeLevel, setChargeLevel] = useState("All");
 
   const dispatch = useDispatch();
 
@@ -58,53 +58,51 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
 
   const fetchAnalyticsData = useCallback(async () => {
     try {
-      const base = `${StationAnalyticsAPI}/charts/${stationId}`;//get endpoint
-      const forecastBase = `${EnergyForecastAPI}/${stationId}`;
-
       const params = [];
       if (startDate) params.push(`start_date=${formatDate(startDate)}`);
       if (endDate) params.push(`end_date=${formatDate(endDate)}`);
-      if (chargeLevel !== "All") params.push(`charge_level=${chargeLevel}`);
       const query = params.length > 0 ? `?${params.join("&")}` : "";
-      const headers = { Authorization: `Bearer ${token}` };//get the authori info
-      const { data } = await apiInstance.get(`${base}${query}`, { headers });//use get function 
-      setAnalyticsData(data);
-
-      const forecastResponse = await apiInstance.get(`${EnergyForecastAPI}/${stationId}`, { headers });
+      const analyticsRequestURL = `${StationAnalyticsAPI}/charts/${stationId}${query}`;
+      const forecastRequestURL = `${EnergyForecastAPI}/${stationId}`;
+      const headers = { Authorization: `Bearer ${token}` };
+      const [analyticsResponse, forecastResponse] = await Promise.all([
+        apiInstance.get(analyticsRequestURL, { headers }),
+        apiInstance.get(forecastRequestURL, { headers }),
+      ]);
+      setAnalyticsData(analyticsResponse.data);
       setForecastData(forecastResponse.data);
-      console.log("Forecast Data: ", forecastResponse.data);
     } catch (error) {
       console.log(error);
     }
-  }, [StationAnalyticsAPI, stationId, token, startDate, endDate, chargeLevel]);
+  }, [StationAnalyticsAPI, EnergyForecastAPI, stationId, token, startDate, endDate]);
 
   useEffect(() => {
     fetchStationData();
     fetchAnalyticsData();
-  }, [fetchStationData, fetchAnalyticsData, startDate, endDate, chargeLevel]);
+  }, [fetchStationData, fetchAnalyticsData]);
 
   const getEnergyConsumptionChartData = () => {
     if (!forecastData || !forecastData.data) return null;
-  
+
     // Assuming forecastData contains both historical and predicted data
     const combinedData = forecastData.data.map(item => ({
       date: item.date,
       energy: item.energy,
       type: item.type
     }));
-  
+
     // Sort the data by date
     const sortedData = combinedData.sort((a, b) => new Date(a.date) - new Date(b.date));
-  
+
     // Extract labels (dates) and data (energy values)
     const labels = sortedData.map(item => item.date);
     const data = sortedData.map(item => item.energy);
-  
+
     // Set color based on whether it's historical or predicted
     const backgroundColors = sortedData.map(item =>
       item.type === "historical" ? "rgba(75, 192, 192, 0.6)" : "rgba(255, 99, 132, 0.6)"
     );
-  
+
     return {
       labels, // X-axis labels (dates)
       datasets: [
@@ -115,7 +113,7 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
         }
       ]
     };
-  };  
+  };
 
   return (
     <CModal
@@ -184,7 +182,7 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
           )
           : (<LoadingIndicator />)
         }
-        {forecastData 
+        {forecastData
           ? (
             <>
               <div style={{ marginTop: "30px" }}>
@@ -204,7 +202,7 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
                 />
               </div>
             </>
-          ) 
+          )
           : (<LoadingIndicator />)
         }
       </CModalBody>
