@@ -92,23 +92,27 @@ const EvseStatusWidget = ({ className = "" }) => {
         percentage: 0,
       },
     };
-    // Count of each status
-    let presentCount = 0;
-    for (const { status } of evseStatusList) {
-      if (data[status]) {
-        data[status].count++;
-        presentCount++;
-      }
-    }
-    const absentCount = data.Total.count - presentCount;
-    data[EvseStatus.Unavailable].count += absentCount;
 
-    // Calculate percentage of each status
-    for (const item of Object.values(data)) {
-      if (data.Total.count !== 0) {
+    if (data.Total.count > 0) {
+      // Count of each status
+      let presentCount = 0;
+      for (const { status } of evseStatusList) {
+        if (data[status]) {
+          data[status].count++;
+          presentCount++;
+        }
+      }
+
+      // Count missing as Unavailable
+      const absentCount = data.Total.count - presentCount;
+      data[EvseStatus.Unavailable].count += absentCount;
+
+      // Calculate percentage of each status
+      for (const item of Object.values(data)) {
         item.percentage = (item.count / data.Total.count) * 100;
       }
     }
+
     return data;
   }, [evseIds, evseStatusList]);
 
