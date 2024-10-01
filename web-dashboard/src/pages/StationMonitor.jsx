@@ -75,7 +75,7 @@ const StationMonitor = () => {
           <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
             <StickyContainer style={{ top: `${headerHeight}px` }}>
               <CCardTitle
-                className="px-3 py-3 shadow-sm"
+                className="p-3 shadow-sm"
                 style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
               >
                 Stations Monitor

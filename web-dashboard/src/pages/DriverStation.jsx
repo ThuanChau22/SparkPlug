@@ -89,7 +89,7 @@ const DriverStation = () => {
                   {stationIds.map((id) => (
                     <CListGroupItem
                       key={id}
-                      className="d-flex flex-row justify-content-between align-items-center py-3"
+                      className="d-flex justify-content-between align-items-center border rounded py-3 my-1 shadow-sm"
                       as="button"
                       onClick={() => handleViewStation(id)}
                     >
