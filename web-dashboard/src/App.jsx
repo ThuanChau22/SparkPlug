@@ -24,7 +24,7 @@ import {
   selectAuthSecureStorage,
 } from "redux/auth/authSlice";
 import {
-  layoutSetTheme,
+  layoutStateSetTheme,
   selectLayoutTheme,
 } from "redux/layout/layoutSlice";
 import routes from "routes";
@@ -45,7 +45,7 @@ const App = () => {
 
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme");
-    dispatch(layoutSetTheme(storedTheme || colorMode));
+    dispatch(layoutStateSetTheme(storedTheme || colorMode));
   }, [colorMode, dispatch]);
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createSelector } from "@reduxjs/toolkit";
 
 export const ThemeModes = {
   Auto: "auto",
@@ -20,54 +20,56 @@ export const layoutSlice = createSlice({
   name: "layout",
   initialState,
   reducers: {
-    layoutSetTheme(state, { payload }) {
+    layoutStateSetTheme(state, { payload }) {
       state.theme = payload;
     },
-    layoutSetMobile(state, { payload }) {
+    layoutStateSetMobile(state, { payload }) {
       state.mobile = payload;
     },
-    layoutSetHeaderActive(state, { payload }) {
+    layoutStateSetHeaderActive(state, { payload }) {
       state.headerActive = payload;
     },
-    layoutSetHeaderHeight(state, { payload }) {
+    layoutStateSetHeaderHeight(state, { payload }) {
       state.headerHeight = payload;
     },
-    layoutSetFooterHeight(state, { payload }) {
+    layoutStateSetFooterHeight(state, { payload }) {
       state.footerHeight = payload;
     },
-    layoutSetSidebarShow(state, { payload }) {
+    layoutStateSetSidebarShow(state, { payload }) {
       state.sideBarShow = payload;
     },
-    layoutSetSidebarFold(state, { payload }) {
+    layoutStateSetSidebarFold(state, { payload }) {
       state.sideBarFold = payload;
     },
-    layoutClear() {
+    layoutStateClear() {
       return initialState;
     },
   },
 });
 
 export const {
-  layoutSetTheme,
-  layoutSetMobile,
-  layoutSetHeaderActive,
-  layoutSetHeaderHeight,
-  layoutSetFooterHeight,
-  layoutSetSidebarShow,
-  layoutSetSidebarFold,
-  layoutClear,
+  layoutStateSetTheme,
+  layoutStateSetMobile,
+  layoutStateSetHeaderActive,
+  layoutStateSetHeaderHeight,
+  layoutStateSetFooterHeight,
+  layoutStateSetSidebarShow,
+  layoutStateSetSidebarFold,
+  layoutStateClear,
 } = layoutSlice.actions;
 
 export const selectLayout = (state) => state[layoutSlice.name];
 
 export const selectLayoutTheme = (state) => selectLayout(state).theme;
 
-export const selectLayoutThemeColor = (state) => {
-  const { theme } = selectLayout(state);
-  if (theme !== ThemeModes.Auto) return theme;
-  const isPreferDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  return isPreferDark ? ThemeModes.Dark : ThemeModes.Light;
-};
+export const selectLayoutThemeColor = createSelector(
+  [selectLayoutTheme],
+  (theme) => theme === ThemeModes.Auto
+    ? window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? ThemeModes.Dark
+      : ThemeModes.Light
+    : theme,
+);
 
 export const selectLayoutMobile = (state) => selectLayout(state).mobile;
 

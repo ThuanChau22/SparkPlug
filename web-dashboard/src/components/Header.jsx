@@ -32,9 +32,9 @@ import Breadcrumb from "components/Breadcrumb";
 import HeaderDropdown from "components/HeaderDropdown";
 import {
   selectLayoutSidebarShow,
-  layoutSetHeaderActive,
-  layoutSetHeaderHeight,
-  layoutSetSidebarShow,
+  layoutStateSetHeaderActive,
+  layoutStateSetHeaderHeight,
+  layoutStateSetSidebarShow,
 } from "redux/layout/layoutSlice";
 import routes from "routes";
 import "scss/style.scss";
@@ -51,7 +51,7 @@ const Header = () => {
   const dispatch = useDispatch();
 
   const handleResize = useCallback(() => {
-    dispatch(layoutSetHeaderHeight(headerRef.current.offsetHeight));
+    dispatch(layoutStateSetHeaderHeight(headerRef.current.offsetHeight));
   }, [dispatch]);
 
   useEffect(() => {
@@ -74,7 +74,7 @@ const Header = () => {
           setComponents(Object.values(Components));
           for (const { name, path } of Object.values(Components)) {
             if (path === `/${resource}/${component}`) {
-              dispatch(layoutSetHeaderActive(name));
+              dispatch(layoutStateSetHeaderActive(name));
             }
           }
         }
@@ -91,7 +91,7 @@ const Header = () => {
       <CContainer className="border-bottom" fluid>
         <CHeaderToggler
           className="ps-1"
-          onClick={() => dispatch(layoutSetSidebarShow(!sidebarShow))}
+          onClick={() => dispatch(layoutStateSetSidebarShow(!sidebarShow))}
         >
           <CIcon icon={cilMenu} size="lg" />
         </CHeaderToggler>

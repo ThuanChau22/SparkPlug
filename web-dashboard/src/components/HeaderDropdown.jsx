@@ -25,7 +25,7 @@ import routes from "routes";
 import { authLogout } from "redux/auth/authSlice";
 import {
   ThemeModes,
-  layoutSetTheme,
+  layoutStateSetTheme,
   selectLayoutTheme,
 } from "redux/layout/layoutSlice";
 
@@ -43,7 +43,7 @@ const HeaderDropdown = () => {
   );
 
   const handleThemeChange = (selectedTheme) => {
-    dispatch(layoutSetTheme(selectedTheme));
+    dispatch(layoutStateSetTheme(selectedTheme));
   };
 
   const handleLogout = () => {
