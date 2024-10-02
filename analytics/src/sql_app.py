@@ -8,6 +8,18 @@ from src.utils import sanitize_input
 
 class SQLQueryParams(BaseModel):
     owner_id: Optional[int] = Field(default=None, title="The ID of the owner.")
+    country: Optional[str] = Field(default=None, title="The country of the station.")
+    state: Optional[str] = Field(default=None, title="The state of the station.")
+    city: Optional[str] = Field(default=None, title="The city of the station.")
+    zip_code: Optional[int] = Field(default=None, title="The postal code of the station.")
+
+
+def run_custom_query(query):
+    sql_connection = mysql_pool.connection()
+    with sql_connection.cursor() as cursor:
+        cursor.execute(query)
+        data = cursor.fetchall()
+    return data
 
 def build_query(table, query_params: SQLQueryParams):
     params = query_params.dict(exclude_none=True)
