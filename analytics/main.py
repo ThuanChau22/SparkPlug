@@ -97,7 +97,6 @@ def get_transactions(query_in: TransactionQueryParams, user: dict):
         # Assign the string to "station_id"
         query_in["station_id"] = owned_stations_str
     
-    print(f'Query in: {query_in}', file=sys.stderr)
     transactions = fetch_transactions(query_in)
     return transactions
 

@@ -101,8 +101,6 @@ def fetch_transactions(query_in):
     """
     query_out = {}
 
-    print(f'query_in: {query_in}', file=sys.stderr)
-
     if "station_id" in query_in:
         # Convert the station_id parameter to a list of integers
         station_ids = [int(id) for id in query_in["station_id"].split(",")]
