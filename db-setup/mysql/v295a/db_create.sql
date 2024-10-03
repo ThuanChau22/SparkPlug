@@ -120,7 +120,8 @@ CREATE TABLE RFID_map (
 CREATE VIEW stations_joined AS
 SELECT ss.id as id, ss.name as name, ss.latitude, ss.longitude,
 site_id, owner_id, s.latitude as site_latitude, s.longitude as site_longitude,
-s.name as site_name, street_address, zip_code, city, state, country
+s.name as site_name, street_address, zip_code, city, state, country,
+ss.created_at, ss.updated_at
 FROM Site s JOIN Station ss ON s.id = ss.site_id;
 
 CREATE VIEW evses_joined AS

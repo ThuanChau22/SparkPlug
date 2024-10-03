@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
+import sys
 
 from src.config import (
     mysql_pool,
@@ -13,24 +14,18 @@ class SQLQueryParams(BaseModel):
     city: Optional[str] = Field(default=None, title="The city of the station.")
     zip_code: Optional[int] = Field(default=None, title="The postal code of the station.")
 
-
-def run_custom_query(query):
-    sql_connection = mysql_pool.connection()
-    with sql_connection.cursor() as cursor:
-        cursor.execute(query)
-        data = cursor.fetchall()
-    return data
-
 def build_query(table, query_params: SQLQueryParams):
-    params = query_params.dict(exclude_none=True)
+    params = query_params
     if not params:
         return f"SELECT * FROM {table}"
 
     query = f"SELECT * FROM {table} WHERE "
     for key, value in params.items():
-        param = f"{sanitize_input(value)}"
-        if key == 'owner_id':
-            param = value
+        sanitized_value = sanitize_input(value)
+        if isinstance(sanitized_value, str):
+            param = f"'{sanitized_value}'" # Making sure to add quotes around strings so that the query is valid, e.g. WHERE country = 'USA' instead of WHERE country = USA
+        else:
+            param = sanitized_value
         query += f"{key} = {param} AND "
     query = query[:-4]  # Remove the last ' AND '
     return query

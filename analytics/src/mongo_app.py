@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from pydantic import BaseModel, Field
+import sys
 
 from src.config import (
     mongo as db,
@@ -99,6 +100,8 @@ def fetch_transactions(query_in):
     :return: A list of transactions.
     """
     query_out = {}
+
+    print(f'query_in: {query_in}', file=sys.stderr)
 
     if "station_id" in query_in:
         # Convert the station_id parameter to a list of integers

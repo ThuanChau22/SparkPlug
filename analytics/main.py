@@ -2,10 +2,11 @@ import requests
 import uvicorn
 from collections import defaultdict
 from datetime import datetime
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import FastAPI, Request, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional
+import sys
 
 from src.config import (
     PORT,
@@ -13,8 +14,8 @@ from src.config import (
     AUTH_API_ENDPOINT,
 )
 from src.forecast_app import forecast
-from src.mongo_app import fetch_transactions, fetch_evse_status
-from src.sql_app import build_query, fetch_data, query_stations_list_by_owner
+from src.mongo_app import fetch_transactions, fetch_evse_status, TransactionQueryParams
+from src.sql_app import build_query, fetch_data, query_stations_list_by_owner, SQLQueryParams
 
 
 app = FastAPI()
@@ -27,12 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# Query Param Models
-class SQLQueryParams(BaseModel):
-    owner_id: Optional[int] = Field(default=None, title="The ID of the owner.")
-
-
+'''
 class TransactionQueryParams(BaseModel):
     start_date: str | None = Field(
         default=None, title="The start date of the query in the format MM/DD/YYYY."
@@ -54,6 +50,7 @@ class TransactionQueryParams(BaseModel):
     postal_code: int | None = Field(
         default=None, title="The postal code of the station."
     )
+'''
 
 
 # Handle permission
@@ -99,6 +96,8 @@ def get_transactions(query_in: TransactionQueryParams, user: dict):
 
         # Assign the string to "station_id"
         query_in["station_id"] = owned_stations_str
+    
+    print(f'Query in: {query_in}', file=sys.stderr)
     transactions = fetch_transactions(query_in)
     return transactions
 
@@ -355,11 +354,15 @@ def generate_chart_revenue_by_station(raw_docs, count=5, order="desc"):
 
     sorted_stations = sorted(revenue_by_station, key=revenue_by_station.get, reverse=(order == "desc"))
     sorted_stations = sorted_stations[:count]
+
+    # Construct chart label
+    top_or_bottom = "Top" if order == "desc" else "Bottom"
+
     rev_chart_data = {
         "labels": sorted_stations,
         "datasets": [
             {
-                "label": "Revenue by Station",
+                "label": f"{top_or_bottom} {count} Stations by Revenue",
                 "data": [revenue_by_station[station] for station in sorted_stations],
                 "backgroundColor": "rgba(75, 192, 192, 0.6)",
             }
@@ -377,11 +380,15 @@ def generate_chart_session_count_by_station(raw_docs, count=5, order="desc"):
 
     sorted_stations = sorted(sessions_by_station, key=sessions_by_station.get, reverse=(order == "desc"))
     sorted_stations = sorted_stations[:count]
+
+    # Construct chart label
+    top_or_bottom = "Top" if order == "desc" else "Bottom"
+
     sessions_chart_data = {
         "labels": sorted_stations,
         "datasets": [
             {
-                "label": "Number of Sessions",
+                "label": f"{top_or_bottom} {count} Most Visited Stations",
                 "data": [sessions_by_station[station] for station in sorted_stations],
                 "backgroundColor": "rgba(255, 99, 132, 0.6)",
             }
@@ -399,11 +406,15 @@ def generate_chart_energy_consumption_by_station(raw_docs, count=5, order="desc"
 
     sorted_stations = sorted(energy_consumption_by_station, key=energy_consumption_by_station.get, reverse=(order == "desc"))
     sorted_stations = sorted_stations[:count]
+
+    # Construct chart label
+    top_or_bottom = "Top" if order == "desc" else "Bottom"
+
     energy_consumption_chart_data = {
         "labels": sorted_stations,
         "datasets": [
             {
-                "label": "Energy Consumption (kWh)",
+                "label": f"{top_or_bottom} {count} Stations by Energy Consumption (kWh)",
                 "data": [energy_consumption_by_station[station] for station in sorted_stations],
                 "backgroundColor": "rgba(255, 206, 86, 0.6)",
             }
@@ -427,11 +438,15 @@ def generate_chart_utilization_rate_by_station(raw_docs, count=5, order="desc"):
 
     sorted_stations = sorted(utilization_by_station, key=utilization_by_station.get, reverse=(order == "desc"))
     sorted_stations = sorted_stations[:count]
+
+    # Construct chart label
+    top_or_bottom = "Top" if order == "desc" else "Bottom"
+
     utilization_chart_data = {
         "labels": sorted_stations,
         "datasets": [
             {
-                "label": "Utilization Rate (%)",
+                "label": f"{top_or_bottom} {count} Stations by Utilization Rate (%)",
                 "data": [utilization_by_station[station] for station in sorted_stations],
                 "backgroundColor": "rgba(153, 102, 255, 0.6)",
             }
@@ -454,12 +469,12 @@ def generate_chart_peak_time(raw_docs):
 
     peak_chart_data = {
         "labels": [f"{i}:00 - {i+1}:00" for i in range(24)],
-        "datasets": [{"label": "Number of Transactions", "data": hour_counts}],
+        "datasets": [{"label": "Hourly Transaction Count", "data": hour_counts}],
     }
 
     return peak_chart_data
 
-def generate_chart_entity_growth(entity, raw_docs, interval="months", start_date="01/01/2020", end_date="12/31/2020"):
+def generate_chart_entity_growth(entity, raw_docs, interval="months", start_date="01/01/2010", end_date="12/31/2022"):
     station_growth_by_interval = defaultdict(int)
 
     # Convert start_date and end_date to datetime objects
@@ -467,10 +482,12 @@ def generate_chart_entity_growth(entity, raw_docs, interval="months", start_date
         start_date_obj = datetime.strptime(start_date, "%m/%d/%Y")
     if end_date:
         end_date_obj = datetime.strptime(end_date, "%m/%d/%Y")
-
+    
     for doc in raw_docs:
-        created_at_str = doc["created_at"]
-        datetime_obj = datetime.strptime(created_at_str, "%Y-%m-%d %H:%M:%S")
+        #created_at_str = doc["created_at"]
+        #datetime_obj = datetime.strptime(created_at_str, "%Y-%m-%d %H:%M:%S")
+
+        datetime_obj = doc["created_at"]
 
         # Filter by date range
         if start_date and datetime_obj < start_date_obj:
@@ -681,7 +698,7 @@ async def generate_charts_from_transactions(
     return generate_charts(transactions)
 
 
-@app.get("/api/stations/analytics/charts/{station_id}")
+@app.get("/api/stations/analytics/charts/all/{station_id}")
 async def generate_charts_by_station(
     station_id: str,
     start_date: Optional[str] = None,
@@ -807,14 +824,14 @@ async def forecast_energy_consumption_by_station(
 ### Revenue
 @app.get("/api/stations/analytics/charts/revenue-by-time-interval")
 async def chart_revenue_by_time_interval(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    country: Optional[str] = None,
-    state: Optional[str] = None,
-    city: Optional[str] = None,
-    postal: Optional[int] = None,
+    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
+    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
+    state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
+    city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
+    postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    interval: str = "days",
+    interval: str = Query("days", description="Time interval represented by each unit of the X-axis", examples=["days", "months", "years"]),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -831,14 +848,14 @@ async def chart_revenue_by_time_interval(
 ### Session Count
 @app.get("/api/stations/analytics/charts/session-count-by-time-interval")
 async def chart_session_count_by_time_interval(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    country: Optional[str] = None,
-    state: Optional[str] = None,
-    city: Optional[str] = None,
-    postal: Optional[int] = None,
+    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
+    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
+    state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
+    city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
+    postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    interval: str = "days",
+    interval: str = Query("days", description="Time interval represented by each unit of the X-axis", examples=["days", "months", "years"]),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -855,14 +872,14 @@ async def chart_session_count_by_time_interval(
 ### Energy Consumption
 @app.get("/api/stations/analytics/charts/energy-consumption-by-time-interval")
 async def chart_energy_consumption_by_time_interval(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    country: Optional[str] = None,
-    state: Optional[str] = None,
-    city: Optional[str] = None,
-    postal: Optional[int] = None,
+    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
+    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
+    state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
+    city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
+    postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    interval: str = "days",
+    interval: str = Query("days", description="Time interval represented by each unit of the X-axis", examples=["days", "months", "years"]),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -876,17 +893,18 @@ async def chart_energy_consumption_by_time_interval(
     transactions = get_transactions(query_in, user)
     return generate_chart_energy_consumption_by_time_interval(transactions, interval)
 
-### Utilization Rate
+### Utilization Rate - Calculation not quite right, need to revisit later
+'''
 @app.get("/api/stations/analytics/charts/utilization-rate-by-time-interval")
 async def chart_utilization_rate_by_time_interval(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    country: Optional[str] = None,
-    state: Optional[str] = None,
-    city: Optional[str] = None,
-    postal: Optional[int] = None,
+    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
+    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
+    state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
+    city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
+    postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    interval: str = "days",
+    interval: str = Query("days", description="Time interval represented by each unit of the X-axis", examples=["days", "months", "years"]),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -899,6 +917,7 @@ async def chart_utilization_rate_by_time_interval(
     query_in = query_in.dict(exclude_none=True)
     transactions = get_transactions(query_in, user)
     return generate_chart_utilization_rate_by_time_interval(transactions, interval)
+'''
 
 ## Metric by station
 ## Options: displayed_stations_count (int), order (asc, desc)
@@ -906,15 +925,15 @@ async def chart_utilization_rate_by_time_interval(
 ### Revenue
 @app.get("/api/stations/analytics/charts/revenue-by-station")
 async def chart_revenue_by_station(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    country: Optional[str] = None,
-    state: Optional[str] = None,
-    city: Optional[str] = None,
-    postal: Optional[int] = None,
+    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
+    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
+    state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
+    city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
+    postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    count: int = 5,
-    order: str = "desc",
+    count: int = Query(5, description="Number of stations to display", examples=[5, 10, 20]),
+    order: str = Query("desc", description="Order of stations", examples=["asc", "desc"]),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -931,15 +950,15 @@ async def chart_revenue_by_station(
 ### Session Count
 @app.get("/api/stations/analytics/charts/session-count-by-station")
 async def chart_session_count_by_station(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    country: Optional[str] = None,
-    state: Optional[str] = None,
-    city: Optional[str] = None,
-    postal: Optional[int] = None,
+    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
+    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
+    state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
+    city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
+    postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    count: int = 5,
-    order: str = "desc",
+    count: int = Query(5, description="Number of stations to display", examples=[5, 10, 20]),
+    order: str = Query("desc", description="Order of stations", examples=["asc", "desc"]),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -956,15 +975,15 @@ async def chart_session_count_by_station(
 ### Energy Consumption
 @app.get("/api/stations/analytics/charts/energy-consumption-by-station")
 async def chart_energy_consumption_by_station(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    country: Optional[str] = None,
-    state: Optional[str] = None,
-    city: Optional[str] = None,
-    postal: Optional[int] = None,
+    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
+    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
+    state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
+    city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
+    postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    count: int = 5,
-    order: str = "desc",
+    count: int = Query(5, description="Number of stations to display", examples=[5, 10, 20]),
+    order: str = Query("desc", description="Order of stations", examples=["asc", "desc"]),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -978,17 +997,19 @@ async def chart_energy_consumption_by_station(
     transactions = get_transactions(query_in, user)
     return generate_chart_energy_consumption_by_station(transactions, count, order)
 
+### Utilization Rate - Calculation not quite right, need to revisit later
+'''
 @app.get("/api/stations/analytics/charts/utilization-rate-by-station")
 async def chart_utilization_rate_by_station(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    country: Optional[str] = None,
-    state: Optional[str] = None,
-    city: Optional[str] = None,
-    postal: Optional[int] = None,
+    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
+    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
+    state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
+    city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
+    postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    count: int = 5,
-    order: str = "desc",
+    count: int = Query(5, description="Number of stations to display", examples=[5, 10, 20]),
+    order: str = Query("desc", description="Order of stations", examples=["asc", "desc"]),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -1001,16 +1022,17 @@ async def chart_utilization_rate_by_station(
     query_in = query_in.dict(exclude_none=True)
     transactions = get_transactions(query_in, user)
     return generate_chart_utilization_rate_by_station(transactions, count, order)
+'''
 
 ### Peak Time Chart
 @app.get("/api/stations/analytics/charts/peak-time")
 async def chart_peak_time(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    country: Optional[str] = None,
-    state: Optional[str] = None,
-    city: Optional[str] = None,
-    postal: Optional[int] = None,
+    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
+    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
+    state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
+    city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
+    postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner", "driver"),
 ):
     query_in = TransactionQueryParams(
@@ -1031,13 +1053,13 @@ async def chart_peak_time(
 ### Station Growth
 @app.get("/api/stations/analytics/charts/station-growth")
 def chart_station_growth(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    city: Optional[str] = None,
-    postal: Optional[int] = None,
-    state: Optional[str] = None,
-    country: Optional[str] = None,
-    interval: str = "months",
+    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
+    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
+    state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
+    city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
+    postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
+    interval: str = Query("months", description="Time interval represented by each unit of the X-axis", examples=["days", "months", "years"]),
     user: dict = require_permission("staff", "owner"),
     owner_id: Optional[int] = None,
 ):
@@ -1046,14 +1068,20 @@ def chart_station_growth(
     owner_id_input = owner_id
     if user.get("role") == "owner":
         owner_id_input = user.get("user_id")
+    
+    country_input = country
+    state_input = state
+    city_input = city
+    postal_input = postal
 
     params = SQLQueryParams(
         owner_id=owner_id_input,
-        country=country,
-        state=state,
-        city=city,
-        zip_code=postal,
+        country=country_input,
+        state=state_input,
+        city=city_input,
+        zip_code=postal_input,
     )
+
     params = params.dict(exclude_none=True)
 
     query = build_query("stations_joined", params)
@@ -1067,9 +1095,9 @@ def chart_station_growth(
 ### Owner Growth
 @app.get("/api/stations/analytics/charts/owner-growth")
 def chart_owner_growth(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    interval: str = "months",
+    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
+    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    interval: str = Query("months", description="Time interval represented by each unit of the X-axis", examples=["days", "months", "years"]),
     user: dict = require_permission("staff"),
 ):
 
@@ -1085,9 +1113,9 @@ def chart_owner_growth(
 ### Driver Growth
 @app.get("/api/stations/analytics/charts/driver-growth")
 def chart_driver_growth(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    interval: str = "months",
+    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
+    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    interval: str = Query("months", description="Time interval represented by each unit of the X-axis", examples=["days", "months", "years"]),
     user: dict = require_permission("staff"),
 ):
 
