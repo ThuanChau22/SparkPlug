@@ -1011,7 +1011,7 @@ async def chart_peak_time(
     state: Optional[str] = None,
     city: Optional[str] = None,
     postal: Optional[int] = None,
-    user: dict = require_permission("staff", "owner"),
+    user: dict = require_permission("staff", "owner", "driver"),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -1073,7 +1073,8 @@ def chart_owner_growth(
     user: dict = require_permission("staff"),
 ):
 
-    query = build_query("Station_Owners_Details")
+    query = 'SELECT * FROM users_joined WHERE owner = 1'
+
     try:
         owners = fetch_data(query)
     except Exception as e:
@@ -1090,7 +1091,8 @@ def chart_driver_growth(
     user: dict = require_permission("staff"),
 ):
 
-    query = build_query("Drivers")
+    query = 'SELECT * FROM users_joined WHERE driver = 1'
+
     try:
         drivers = fetch_data(query)
     except Exception as e:

@@ -131,10 +131,13 @@ Site.name as site_name, street_address, zip_code, city, state, country,
 EVSE.id as evse_id, evse_number, price, charge_level, connector_type, EVSE.latitude as evse_latitude, EVSE.longitude as evse_longitude
 FROM Station JOIN Site ON Station.site_id = Site.id JOIN EVSE ON Station.id = EVSE.station_id;
 
-CREATE VIEW Station_Owners_Details AS
-SELECT User.id, User.name, User.status, User.created_at, User.updated_at
-FROM User JOIN Station_Owner WHERE Station_Owner.id=User.id;
-
-CREATE VIEW Drivers_Details AS
-SELECT User.id, User.name, User.status, User.created_at, User.updated_at
-FROM User JOIN Driver WHERE Driver.id=User.id;
+CREATE VIEW users_joined AS
+SELECT u.id as id, email, password, name, status,
+IF(s.id IS NOT NULL, TRUE, FALSE) as staff,
+IF(o.id IS NOT NULL, TRUE, FALSE) as owner,
+IF(d.id IS NOT NULL, TRUE, FALSE) as driver,
+created_at, updated_at
+FROM User u	
+LEFT OUTER JOIN Staff s ON u.id=s.id
+LEFT OUTER JOIN Station_Owner o ON u.id=o.id
+LEFT OUTER JOIN Driver d ON u.id=d.id;
