@@ -62,7 +62,7 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
       if (startDate) params.push(`start_date=${formatDate(startDate)}`);
       if (endDate) params.push(`end_date=${formatDate(endDate)}`);
       const query = params.length > 0 ? `?${params.join("&")}` : "";
-      const analyticsRequestURL = `${StationAnalyticsAPI}/charts/${stationId}${query}`;
+      const analyticsRequestURL = `${StationAnalyticsAPI}/charts/all/${stationId}${query}`;
       const forecastRequestURL = `${EnergyForecastAPI}/${stationId}`;
       const headers = { Authorization: `Bearer ${token}` };
       const [analyticsResponse, forecastResponse] = await Promise.all([
