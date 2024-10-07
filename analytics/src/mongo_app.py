@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 from pydantic import BaseModel, Field
-import sys
 
 from src.config import (
     mongo as db,
