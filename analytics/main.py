@@ -1290,5 +1290,29 @@ async def driver_chart_energy_consumption_by_station(
     transactions = get_transactions(query_in, user)
     return generate_chart_energy_consumption_by_station(transactions, count, order)
 
+@app.get("/api/stations/analytics/charts/peak-time/{station_id}")
+async def driver_chart_peak_time(
+    station_id: str,
+    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
+    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
+    state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
+    city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
+    postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
+    user: dict = require_permission("staff", "owner", "driver"),
+):
+    query_in = TransactionQueryParams(
+        station_id=station_id,
+        start_date=start_date,
+        end_date=end_date,
+        country=country,
+        state=state,
+        city=city,
+        postal_code=postal,
+    )
+    query_in = query_in.dict(exclude_none=True)
+    transactions = get_transactions(query_in, user)
+    return generate_chart_peak_time(transactions)
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(PORT))
