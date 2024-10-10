@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CCard,
@@ -12,6 +12,7 @@ import {
 import { newStationIcon } from "assets/mapIcons";
 import LoadingIndicator from "components/LoadingIndicator";
 import MapContainer from "components/MapContainer";
+import MapFitBound from "components/MapFitBound";
 import MapMarker from "components/MapMarker";
 import StationMarker from "components/StationMarker";
 import StickyContainer from "components/StickyContainer";
@@ -36,8 +37,6 @@ const StationPrediction = () => {
 
   const token = useSelector(selectAuthAccessToken);
 
-  const [mapHeight, setMapHeight] = useState(window.innerHeight);
-
   const [loading, setLoading] = useState(false);
 
   const [input, setInput] = useState("");
@@ -46,14 +45,13 @@ const StationPrediction = () => {
 
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    const filterHeight = inputRef.current.offsetHeight;
-    setMapHeight(window.innerHeight - (headerHeight + filterHeight + footerHeight));
+  const mapRefHeight = useMemo(() => {
+    const inputHeight = inputRef.current.offsetHeight;
+    return headerHeight + inputHeight + footerHeight;
   }, [headerHeight, footerHeight, inputRef]);
 
   const positions = useMemo(() => {
-    const list = [...existedStationList, ...newStationList];
-    return list.map(({ latitude, longitude }) => [latitude, longitude]);
+    return [...existedStationList, ...newStationList];
   }, [existedStationList, newStationList]);
 
   const fetchData = async (apiEndpoint) => {
@@ -112,30 +110,32 @@ const StationPrediction = () => {
             </CButton>
           </div>
         </StickyContainer>
-        <div style={{ height: `${mapHeight}px` }}>
-          {loading
-            ? <LoadingIndicator loading={loading} />
-            : (
-              <MapContainer positions={positions}>
-                {existedStationList.map((station) => (
-                  <StationMarker
-                    key={station.id}
-                    station={station}
-                  />
-                ))}
-                {newStationList.map(({ latitude, longitude }) => (
-                  <MapMarker
-                    key={`${latitude},${longitude}`}
-                    icon={newStationIcon}
-                    position={[latitude, longitude]}
-                  >
-                    <div>{latitude}, {longitude}</div>
-                  </MapMarker>
-                ))}
-              </MapContainer>
-            )
-          }
-        </div>
+        {loading
+          ? <LoadingIndicator loading={loading} />
+          : (
+            <MapContainer
+              loading={loading}
+              refHeight={mapRefHeight}
+            >
+              <MapFitBound positions={positions} />
+              {existedStationList.map((station) => (
+                <StationMarker
+                  key={station.id}
+                  station={station}
+                />
+              ))}
+              {newStationList.map(({ latitude, longitude }) => (
+                <MapMarker
+                  key={`${latitude},${longitude}`}
+                  icon={newStationIcon}
+                  position={[latitude, longitude]}
+                >
+                  <div>{latitude}, {longitude}</div>
+                </MapMarker>
+              ))}
+            </MapContainer>
+          )}
+
       </CCardBody>
     </CCard>
   );

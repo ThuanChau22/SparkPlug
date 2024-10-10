@@ -1,9 +1,9 @@
 import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import LoadingIndicator from "components/LoadingIndicator";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
+import MapFitBound from "components/MapFitBound";
 import SiteMarker from "components/SiteMarker";
 import StickyContainer from "components/StickyContainer";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
@@ -36,8 +36,6 @@ const SiteMapView = ({ handleViewSite }) => {
 
   const [loading, setLoading] = useState(false);
 
-  const [mapHeight, setMapHeight] = useState(window.innerHeight);
-
   const dispatch = useDispatch();
 
   const fetchData = useCallback(async () => {
@@ -52,14 +50,10 @@ const SiteMapView = ({ handleViewSite }) => {
     fetchData()
   }, [fetchData]);
 
-  useEffect(() => {
+  const mapRefHeight = useMemo(() => {
     const filterHeight = filterRef.current.offsetHeight;
-    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
+    return headerHeight + filterHeight;
   }, [headerHeight, filterRef]);
-
-  const positions = useMemo(() => siteList.map((site) => {
-    return [site.latitude, site.longitude];
-  }), [siteList]);
 
   const handleFilter = (state, city, zipCode) => {
     const params = [];
@@ -87,22 +81,19 @@ const SiteMapView = ({ handleViewSite }) => {
           onChange={handleFilter}
         />
       </StickyContainer>
-      <div style={{ height: `${mapHeight}px` }}>
-        {loading
-          ? <LoadingIndicator loading={loading} />
-          : (
-            <MapContainer positions={positions}>
-              {siteList.map((site) => (
-                <SiteMarker
-                  key={site.id}
-                  site={site}
-                  onClick={() => handleViewSite(site.id)}
-                />
-              ))}
-            </MapContainer>
-          )
-        }
-      </div>
+      <MapContainer
+        loading={loading}
+        refHeight={mapRefHeight}
+      >
+        <MapFitBound positions={siteList} />
+        {siteList.map((site) => (
+          <SiteMarker
+            key={site.id}
+            site={site}
+            onClick={() => handleViewSite(site.id)}
+          />
+        ))}
+      </MapContainer>
     </StickyContainer>
   );
 };

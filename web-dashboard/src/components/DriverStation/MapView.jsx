@@ -1,9 +1,10 @@
 import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import LoadingIndicator from "components/LoadingIndicator";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/MapContainer";
+import MapFitBound from "components/MapFitBound";
+import MapUserLocation from "components/MapUserLocation";
 import StationStatusMarker from "components/StationStatusMarker";
 import StickyContainer from "components/StickyContainer";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
@@ -36,8 +37,6 @@ const DriverStationMapView = ({ handleViewStation }) => {
 
   const [loading, setLoading] = useState(false);
 
-  const [mapHeight, setMapHeight] = useState(window.innerHeight);
-
   const dispatch = useDispatch();
 
   const fetchData = useCallback(async () => {
@@ -52,14 +51,10 @@ const DriverStationMapView = ({ handleViewStation }) => {
     fetchData()
   }, [fetchData]);
 
-  useEffect(() => {
+  const mapRefHeight = useMemo(() => {
     const filterHeight = filterRef.current.offsetHeight;
-    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
+    return headerHeight + filterHeight;
   }, [headerHeight, filterRef]);
-
-  const positions = useMemo(() => stationList.map((station) => {
-    return [station.latitude, station.longitude];
-  }), [stationList]);
 
   const handleFilter = (state, city, zipCode) => {
     const params = [];
@@ -87,21 +82,20 @@ const DriverStationMapView = ({ handleViewStation }) => {
           onChange={handleFilter}
         />
       </StickyContainer>
-      <div style={{ height: `${mapHeight}px` }}>
-        {loading
-          ? <LoadingIndicator loading={loading} />
-          : (
-            <MapContainer positions={positions} locate={true} >
-              {stationList.map((station) => (
-                <StationStatusMarker
-                  key={station.id}
-                  station={station}
-                  onClick={() => handleViewStation(station.id)}
-                />
-              ))}
-            </MapContainer>
-          )}
-      </div>
+      <MapContainer
+        loading={loading}
+        refHeight={mapRefHeight}
+      >
+        <MapUserLocation />
+        <MapFitBound positions={stationList} />
+        {stationList.map((station) => (
+          <StationStatusMarker
+            key={station.id}
+            station={station}
+            onClick={() => handleViewStation(station.id)}
+          />
+        ))}
+      </MapContainer>
     </StickyContainer>
   );
 };
