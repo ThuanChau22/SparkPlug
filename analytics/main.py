@@ -4,9 +4,7 @@ from collections import defaultdict
 from datetime import datetime
 from fastapi import FastAPI, Request, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
 from typing import Optional
-import sys
 
 from src.config import (
     PORT,
@@ -15,7 +13,12 @@ from src.config import (
 )
 from src.forecast_app import forecast
 from src.mongo_app import fetch_transactions, fetch_evse_status, TransactionQueryParams
-from src.sql_app import build_query, fetch_data, query_stations_list_by_owner, SQLQueryParams
+from src.sql_app import (
+    build_query,
+    fetch_data,
+    query_stations_list_by_owner,
+    SQLQueryParams,
+)
 
 
 app = FastAPI()
@@ -28,7 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-'''
+"""
 class TransactionQueryParams(BaseModel):
     start_date: str | None = Field(
         default=None, title="The start date of the query in the format YYYY-MM-DD."
@@ -50,7 +53,7 @@ class TransactionQueryParams(BaseModel):
     postal_code: int | None = Field(
         default=None, title="The postal code of the station."
     )
-'''
+"""
 
 
 # Handle permission
@@ -96,7 +99,7 @@ def get_transactions(query_in: TransactionQueryParams, user: dict):
 
         # Assign the string to "station_id"
         query_in["station_id"] = owned_stations_str
-    
+
     transactions = fetch_transactions(query_in)
     return transactions
 
@@ -204,6 +207,7 @@ def generate_charts(raw_docs):
 
     return data_pack
 
+
 def generate_chart_revenue_by_time_interval(raw_docs, interval="days"):
     revenue_by_interval = defaultdict(float)
 
@@ -212,7 +216,7 @@ def generate_chart_revenue_by_time_interval(raw_docs, interval="days"):
         timestamp_seconds = mongo_timestamp / 1000.0
         datetime_obj = datetime.utcfromtimestamp(timestamp_seconds)
 
-         # Determine the format based on the interval
+        # Determine the format based on the interval
         if interval == "days":
             formatted_date = datetime_obj.strftime("%Y-%m-%d")
         elif interval == "months":
@@ -220,7 +224,9 @@ def generate_chart_revenue_by_time_interval(raw_docs, interval="days"):
         elif interval == "years":
             formatted_date = datetime_obj.strftime("%Y")
         else:
-            raise ValueError("Invalid interval. Choose from 'days', 'months', or 'years'.")
+            raise ValueError(
+                "Invalid interval. Choose from 'days', 'months', or 'years'."
+            )
 
         # Revenue
         revenue_by_interval[formatted_date] += doc["fee"]
@@ -239,6 +245,7 @@ def generate_chart_revenue_by_time_interval(raw_docs, interval="days"):
 
     return rev_chart_data
 
+
 def generate_chart_session_count_by_time_interval(raw_docs, interval="days"):
     sessions_by_interval = defaultdict(int)
 
@@ -254,7 +261,9 @@ def generate_chart_session_count_by_time_interval(raw_docs, interval="days"):
         elif interval == "years":
             formatted_date = datetime_obj.strftime("%Y")
         else:
-            raise ValueError("Invalid interval. Choose from 'days', 'months', or 'years'.")
+            raise ValueError(
+                "Invalid interval. Choose from 'days', 'months', or 'years'."
+            )
 
         sessions_by_interval[formatted_date] += 1
 
@@ -264,13 +273,16 @@ def generate_chart_session_count_by_time_interval(raw_docs, interval="days"):
         "datasets": [
             {
                 "label": f"Charging Sessions ({interval.capitalize()})",
-                "data": [sessions_by_interval[interval] for interval in sorted_intervals],
+                "data": [
+                    sessions_by_interval[interval] for interval in sorted_intervals
+                ],
                 "backgroundColor": "rgba(255, 99, 132, 0.6)",
             }
         ],
     }
 
     return sessions_chart_data
+
 
 def generate_chart_energy_consumption_by_time_interval(raw_docs, interval="days"):
     energy_consumption_by_interval = defaultdict(float)
@@ -287,7 +299,9 @@ def generate_chart_energy_consumption_by_time_interval(raw_docs, interval="days"
         elif interval == "years":
             formatted_date = datetime_obj.strftime("%Y")
         else:
-            raise ValueError("Invalid interval. Choose from 'days', 'months', or 'years'.")
+            raise ValueError(
+                "Invalid interval. Choose from 'days', 'months', or 'years'."
+            )
 
         energy_consumption_by_interval[formatted_date] += doc["energy_consumed_kwh"]
 
@@ -297,13 +311,17 @@ def generate_chart_energy_consumption_by_time_interval(raw_docs, interval="days"
         "datasets": [
             {
                 "label": f"Energy Consumption (kWh) ({interval.capitalize()})",
-                "data": [energy_consumption_by_interval[interval] for interval in sorted_intervals],
+                "data": [
+                    energy_consumption_by_interval[interval]
+                    for interval in sorted_intervals
+                ],
                 "backgroundColor": "rgba(255, 206, 86, 0.6)",
             }
         ],
     }
 
     return energy_consumption_chart_data
+
 
 def generate_chart_utilization_rate_by_time_interval(raw_docs, interval="days"):
     utilization_by_interval = defaultdict(float)
@@ -320,7 +338,9 @@ def generate_chart_utilization_rate_by_time_interval(raw_docs, interval="days"):
         elif interval == "years":
             formatted_date = datetime_obj.strftime("%Y")
         else:
-            raise ValueError("Invalid interval. Choose from 'days', 'months', or 'years'.")
+            raise ValueError(
+                "Invalid interval. Choose from 'days', 'months', or 'years'."
+            )
 
         charging_time_hours = time_string_to_hours(doc["charging_time"])
         utilization_by_interval[formatted_date] += charging_time_hours
@@ -336,13 +356,16 @@ def generate_chart_utilization_rate_by_time_interval(raw_docs, interval="days"):
         "datasets": [
             {
                 "label": f"Utilization Rate (%) ({interval.capitalize()})",
-                "data": [utilization_by_interval[interval] for interval in sorted_intervals],
+                "data": [
+                    utilization_by_interval[interval] for interval in sorted_intervals
+                ],
                 "backgroundColor": "rgba(153, 102, 255, 0.6)",
             }
         ],
     }
 
     return utilization_chart_data
+
 
 def generate_chart_revenue_by_station(raw_docs, count=5, order="desc"):
     revenue_by_station = defaultdict(float)
@@ -351,7 +374,9 @@ def generate_chart_revenue_by_station(raw_docs, count=5, order="desc"):
         station_id = doc["station_id"]
         revenue_by_station[station_id] += doc["fee"]
 
-    sorted_stations = sorted(revenue_by_station, key=revenue_by_station.get, reverse=(order == "desc"))
+    sorted_stations = sorted(
+        revenue_by_station, key=revenue_by_station.get, reverse=(order == "desc")
+    )
     sorted_stations = sorted_stations[:count]
 
     # Construct chart label
@@ -370,6 +395,7 @@ def generate_chart_revenue_by_station(raw_docs, count=5, order="desc"):
 
     return rev_chart_data
 
+
 def generate_chart_session_count_by_station(raw_docs, count=5, order="desc"):
     sessions_by_station = defaultdict(int)
 
@@ -377,7 +403,9 @@ def generate_chart_session_count_by_station(raw_docs, count=5, order="desc"):
         station_id = doc["station_id"]
         sessions_by_station[station_id] += 1
 
-    sorted_stations = sorted(sessions_by_station, key=sessions_by_station.get, reverse=(order == "desc"))
+    sorted_stations = sorted(
+        sessions_by_station, key=sessions_by_station.get, reverse=(order == "desc")
+    )
     sorted_stations = sorted_stations[:count]
 
     # Construct chart label
@@ -396,6 +424,7 @@ def generate_chart_session_count_by_station(raw_docs, count=5, order="desc"):
 
     return sessions_chart_data
 
+
 def generate_chart_energy_consumption_by_station(raw_docs, count=5, order="desc"):
     energy_consumption_by_station = defaultdict(float)
 
@@ -403,7 +432,11 @@ def generate_chart_energy_consumption_by_station(raw_docs, count=5, order="desc"
         station_id = doc["station_id"]
         energy_consumption_by_station[station_id] += doc["energy_consumed_kwh"]
 
-    sorted_stations = sorted(energy_consumption_by_station, key=energy_consumption_by_station.get, reverse=(order == "desc"))
+    sorted_stations = sorted(
+        energy_consumption_by_station,
+        key=energy_consumption_by_station.get,
+        reverse=(order == "desc"),
+    )
     sorted_stations = sorted_stations[:count]
 
     # Construct chart label
@@ -414,13 +447,17 @@ def generate_chart_energy_consumption_by_station(raw_docs, count=5, order="desc"
         "datasets": [
             {
                 "label": f"{top_or_bottom} {count} Stations by Energy Consumption (kWh)",
-                "data": [energy_consumption_by_station[station] for station in sorted_stations],
+                "data": [
+                    energy_consumption_by_station[station]
+                    for station in sorted_stations
+                ],
                 "backgroundColor": "rgba(255, 206, 86, 0.6)",
             }
         ],
     }
 
     return energy_consumption_chart_data
+
 
 def generate_chart_utilization_rate_by_station(raw_docs, count=5, order="desc"):
     utilization_by_station = defaultdict(float)
@@ -435,7 +472,11 @@ def generate_chart_utilization_rate_by_station(raw_docs, count=5, order="desc"):
             utilization_by_station[station_id] / 24
         ) * 100  # Convert to percentage
 
-    sorted_stations = sorted(utilization_by_station, key=utilization_by_station.get, reverse=(order == "desc"))
+    sorted_stations = sorted(
+        utilization_by_station,
+        key=utilization_by_station.get,
+        reverse=(order == "desc"),
+    )
     sorted_stations = sorted_stations[:count]
 
     # Construct chart label
@@ -446,13 +487,16 @@ def generate_chart_utilization_rate_by_station(raw_docs, count=5, order="desc"):
         "datasets": [
             {
                 "label": f"{top_or_bottom} {count} Stations by Utilization Rate (%)",
-                "data": [utilization_by_station[station] for station in sorted_stations],
+                "data": [
+                    utilization_by_station[station] for station in sorted_stations
+                ],
                 "backgroundColor": "rgba(153, 102, 255, 0.6)",
             }
         ],
     }
 
     return utilization_chart_data
+
 
 def generate_chart_peak_time(raw_docs):
     hour_counts = [0] * 24
@@ -473,7 +517,10 @@ def generate_chart_peak_time(raw_docs):
 
     return peak_chart_data
 
-def generate_chart_entity_growth(entity, raw_docs, interval="months", start_date="01/01/2010", end_date="12/31/2022"):
+
+def generate_chart_entity_growth(
+    entity, raw_docs, interval="months", start_date="01/01/2010", end_date="12/31/2022"
+):
     station_growth_by_interval = defaultdict(int)
 
     # Convert start_date and end_date to datetime objects
@@ -481,10 +528,10 @@ def generate_chart_entity_growth(entity, raw_docs, interval="months", start_date
         start_date_obj = datetime.strptime(start_date, "%m/%d/%Y")
     if end_date:
         end_date_obj = datetime.strptime(end_date, "%m/%d/%Y")
-    
+
     for doc in raw_docs:
-        #created_at_str = doc["created_at"]
-        #datetime_obj = datetime.strptime(created_at_str, "%Y-%m-%d %H:%M:%S")
+        # created_at_str = doc["created_at"]
+        # datetime_obj = datetime.strptime(created_at_str, "%Y-%m-%d %H:%M:%S")
 
         datetime_obj = doc["created_at"]
 
@@ -501,7 +548,9 @@ def generate_chart_entity_growth(entity, raw_docs, interval="months", start_date
         elif interval == "years":
             formatted_date = datetime_obj.strftime("%Y")
         else:
-            raise ValueError("Invalid interval. Choose from 'days', 'months', or 'years'.")
+            raise ValueError(
+                "Invalid interval. Choose from 'days', 'months', or 'years'."
+            )
 
         station_growth_by_interval[formatted_date] += 1
 
@@ -518,6 +567,7 @@ def generate_chart_entity_growth(entity, raw_docs, interval="months", start_date
     }
 
     return growth_chart_data
+
 
 """@app.get("/example")
 async def example_route(user: dict = require_permission("staff", "owner")):
@@ -814,15 +864,18 @@ async def forecast_energy_consumption_by_station(
     # return transactions
     return forecast(transactions)
 
+
 # Charts
 # Universal filter params: start_date, end_date, country, state, city, postal_code
 
 ## Metric over time interval
 ## Intervals: days, months, years
 
+
 ### Revenue
 @app.get("/api/stations/analytics/charts/revenue-by-time-interval")
 async def chart_revenue_by_time_interval(
+
     start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
     end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
@@ -830,7 +883,11 @@ async def chart_revenue_by_time_interval(
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
     postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    interval: str = Query("days", description="Time interval represented by each unit of the X-axis", examples=["days", "months", "years"]),
+    interval: str = Query(
+        "days",
+        description="Time interval represented by each unit of the X-axis",
+        examples=["days", "months", "years"],
+    ),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -844,6 +901,7 @@ async def chart_revenue_by_time_interval(
     transactions = get_transactions(query_in, user)
     return generate_chart_revenue_by_time_interval(transactions, interval)
 
+
 ### Session Count
 @app.get("/api/stations/analytics/charts/session-count-by-time-interval")
 async def chart_session_count_by_time_interval(
@@ -854,7 +912,11 @@ async def chart_session_count_by_time_interval(
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
     postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    interval: str = Query("days", description="Time interval represented by each unit of the X-axis", examples=["days", "months", "years"]),
+    interval: str = Query(
+        "days",
+        description="Time interval represented by each unit of the X-axis",
+        examples=["days", "months", "years"],
+    ),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -868,6 +930,7 @@ async def chart_session_count_by_time_interval(
     transactions = get_transactions(query_in, user)
     return generate_chart_session_count_by_time_interval(transactions, interval)
 
+
 ### Energy Consumption
 @app.get("/api/stations/analytics/charts/energy-consumption-by-time-interval")
 async def chart_energy_consumption_by_time_interval(
@@ -878,7 +941,11 @@ async def chart_energy_consumption_by_time_interval(
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
     postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    interval: str = Query("days", description="Time interval represented by each unit of the X-axis", examples=["days", "months", "years"]),
+    interval: str = Query(
+        "days",
+        description="Time interval represented by each unit of the X-axis",
+        examples=["days", "months", "years"],
+    ),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -892,8 +959,9 @@ async def chart_energy_consumption_by_time_interval(
     transactions = get_transactions(query_in, user)
     return generate_chart_energy_consumption_by_time_interval(transactions, interval)
 
+
 ### Utilization Rate - Calculation not quite right, need to revisit later
-'''
+"""
 @app.get("/api/stations/analytics/charts/utilization-rate-by-time-interval")
 async def chart_utilization_rate_by_time_interval(
     start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
@@ -916,10 +984,11 @@ async def chart_utilization_rate_by_time_interval(
     query_in = query_in.dict(exclude_none=True)
     transactions = get_transactions(query_in, user)
     return generate_chart_utilization_rate_by_time_interval(transactions, interval)
-'''
+"""
 
 ## Metric by station
 ## Options: displayed_stations_count (int), order (asc, desc)
+
 
 ### Revenue
 @app.get("/api/stations/analytics/charts/revenue-by-station")
@@ -931,8 +1000,12 @@ async def chart_revenue_by_station(
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
     postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    count: int = Query(5, description="Number of stations to display", examples=[5, 10, 20]),
-    order: str = Query("desc", description="Order of stations", examples=["asc", "desc"]),
+    count: int = Query(
+        5, description="Number of stations to display", examples=[5, 10, 20]
+    ),
+    order: str = Query(
+        "desc", description="Order of stations", examples=["asc", "desc"]
+    ),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -946,6 +1019,7 @@ async def chart_revenue_by_station(
     transactions = get_transactions(query_in, user)
     return generate_chart_revenue_by_station(transactions, count, order)
 
+
 ### Session Count
 @app.get("/api/stations/analytics/charts/session-count-by-station")
 async def chart_session_count_by_station(
@@ -956,8 +1030,12 @@ async def chart_session_count_by_station(
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
     postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    count: int = Query(5, description="Number of stations to display", examples=[5, 10, 20]),
-    order: str = Query("desc", description="Order of stations", examples=["asc", "desc"]),
+    count: int = Query(
+        5, description="Number of stations to display", examples=[5, 10, 20]
+    ),
+    order: str = Query(
+        "desc", description="Order of stations", examples=["asc", "desc"]
+    ),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -971,6 +1049,7 @@ async def chart_session_count_by_station(
     transactions = get_transactions(query_in, user)
     return generate_chart_session_count_by_station(transactions, count, order)
 
+
 ### Energy Consumption
 @app.get("/api/stations/analytics/charts/energy-consumption-by-station")
 async def chart_energy_consumption_by_station(
@@ -981,8 +1060,12 @@ async def chart_energy_consumption_by_station(
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
     postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
     user: dict = require_permission("staff", "owner"),
-    count: int = Query(5, description="Number of stations to display", examples=[5, 10, 20]),
-    order: str = Query("desc", description="Order of stations", examples=["asc", "desc"]),
+    count: int = Query(
+        5, description="Number of stations to display", examples=[5, 10, 20]
+    ),
+    order: str = Query(
+        "desc", description="Order of stations", examples=["asc", "desc"]
+    ),
 ):
     query_in = TransactionQueryParams(
         start_date=start_date,
@@ -996,8 +1079,9 @@ async def chart_energy_consumption_by_station(
     transactions = get_transactions(query_in, user)
     return generate_chart_energy_consumption_by_station(transactions, count, order)
 
+
 ### Utilization Rate - Calculation not quite right, need to revisit later
-'''
+"""
 @app.get("/api/stations/analytics/charts/utilization-rate-by-station")
 async def chart_utilization_rate_by_station(
     start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
@@ -1021,7 +1105,8 @@ async def chart_utilization_rate_by_station(
     query_in = query_in.dict(exclude_none=True)
     transactions = get_transactions(query_in, user)
     return generate_chart_utilization_rate_by_station(transactions, count, order)
-'''
+"""
+
 
 ### Peak Time Chart
 @app.get("/api/stations/analytics/charts/peak-time")
@@ -1046,8 +1131,10 @@ async def chart_peak_time(
     transactions = get_transactions(query_in, user)
     return generate_chart_peak_time(transactions)
 
+
 ## Meta Charts
 ## Intervals: days, months, years
+
 
 ### Station Growth
 @app.get("/api/stations/analytics/charts/station-growth")
@@ -1062,12 +1149,12 @@ def chart_station_growth(
     user: dict = require_permission("staff", "owner"),
     owner_id: Optional[int] = None,
 ):
-    
+
     # Default to the owner's ID if the user is owner
     owner_id_input = owner_id
     if user.get("role") == "owner":
         owner_id_input = user.get("user_id")
-    
+
     country_input = country
     state_input = state
     city_input = city
@@ -1088,8 +1175,11 @@ def chart_station_growth(
         stations = fetch_data(query)
     except Exception as e:
         return {"status": "error", "message": str(e)}
-    
-    return generate_chart_entity_growth('Stations', stations, interval, start_date, end_date)
+
+    return generate_chart_entity_growth(
+        "Stations", stations, interval, start_date, end_date
+    )
+
 
 ### Owner Growth
 @app.get("/api/stations/analytics/charts/owner-growth")
@@ -1100,14 +1190,17 @@ def chart_owner_growth(
     user: dict = require_permission("staff"),
 ):
 
-    query = 'SELECT * FROM users_joined WHERE owner = 1'
+    query = "SELECT * FROM users_joined WHERE owner = 1"
 
     try:
         owners = fetch_data(query)
     except Exception as e:
         return {"status": "error", "message": str(e)}
-    
-    return generate_chart_entity_growth('Station Owners', owners, interval, start_date, end_date)
+
+    return generate_chart_entity_growth(
+        "Station Owners", owners, interval, start_date, end_date
+    )
+
 
 ### Driver Growth
 @app.get("/api/stations/analytics/charts/driver-growth")
@@ -1118,14 +1211,17 @@ def chart_driver_growth(
     user: dict = require_permission("staff"),
 ):
 
-    query = 'SELECT * FROM users_joined WHERE driver = 1'
+    query = "SELECT * FROM users_joined WHERE driver = 1"
 
     try:
         drivers = fetch_data(query)
     except Exception as e:
         return {"status": "error", "message": str(e)}
-    
-    return generate_chart_entity_growth('Drivers', drivers, interval, start_date, end_date)
+
+    return generate_chart_entity_growth(
+        "Drivers", drivers, interval, start_date, end_date
+    )
+
 
 ###########################################################################
 # Driver Dashboard Charts - split into new service later?
@@ -1315,4 +1411,4 @@ async def driver_chart_peak_time(
     return generate_chart_peak_time(transactions)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(PORT))
+    uvicorn.run("main:app", host="0.0.0.0", port=int(PORT), reload=True)
