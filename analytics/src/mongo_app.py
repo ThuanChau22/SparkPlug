@@ -47,7 +47,7 @@ def test_mongo():
 
 
 # Date operations
-def date_to_milliseconds(date_str, date_format="%m/%d/%Y"):
+def date_to_milliseconds(date_str, date_format="%Y-%m-%d"):
     try:
         dt = datetime.strptime(date_str, date_format)
         epoch = datetime.utcfromtimestamp(0)  # Unix epoch start time
@@ -120,10 +120,10 @@ def fetch_transactions(query_in):
     # Flter transactions by date range
     if "start_date" not in query_in:
         # query_in["start_date"] = get_current_and_past_date()[1]
-        query_in["start_date"] = "01/01/2020"
+        query_in["start_date"] = "2020-01-01"
     if "end_date" not in query_in:
         # query_in["end_date"] = get_current_and_past_date()[0]
-        query_in["end_date"] = "12/31/2020"
+        query_in["end_date"] = "2020-12-31"
 
     start_ms = date_to_milliseconds(query_in["start_date"])
     end_ms = date_to_milliseconds(query_in["end_date"])

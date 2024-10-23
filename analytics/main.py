@@ -31,10 +31,10 @@ app.add_middleware(
 '''
 class TransactionQueryParams(BaseModel):
     start_date: str | None = Field(
-        default=None, title="The start date of the query in the format MM/DD/YYYY."
+        default=None, title="The start date of the query in the format YYYY-MM-DD."
     )
     end_date: str | None = Field(
-        default=None, title="The end date of the query in the format MM/DD/YYYY."
+        default=None, title="The end date of the query in the format YYYY-MM-DD."
     )
     station_id: str | None = Field(default=None, title="The ID of the station.")
     # station_list: list[int] | None = Field(default=None, title="A list of station IDs.")
@@ -823,8 +823,8 @@ async def forecast_energy_consumption_by_station(
 ### Revenue
 @app.get("/api/stations/analytics/charts/revenue-by-time-interval")
 async def chart_revenue_by_time_interval(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -847,8 +847,8 @@ async def chart_revenue_by_time_interval(
 ### Session Count
 @app.get("/api/stations/analytics/charts/session-count-by-time-interval")
 async def chart_session_count_by_time_interval(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -871,8 +871,8 @@ async def chart_session_count_by_time_interval(
 ### Energy Consumption
 @app.get("/api/stations/analytics/charts/energy-consumption-by-time-interval")
 async def chart_energy_consumption_by_time_interval(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -896,8 +896,8 @@ async def chart_energy_consumption_by_time_interval(
 '''
 @app.get("/api/stations/analytics/charts/utilization-rate-by-time-interval")
 async def chart_utilization_rate_by_time_interval(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -924,8 +924,8 @@ async def chart_utilization_rate_by_time_interval(
 ### Revenue
 @app.get("/api/stations/analytics/charts/revenue-by-station")
 async def chart_revenue_by_station(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -949,8 +949,8 @@ async def chart_revenue_by_station(
 ### Session Count
 @app.get("/api/stations/analytics/charts/session-count-by-station")
 async def chart_session_count_by_station(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -974,8 +974,8 @@ async def chart_session_count_by_station(
 ### Energy Consumption
 @app.get("/api/stations/analytics/charts/energy-consumption-by-station")
 async def chart_energy_consumption_by_station(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -1000,8 +1000,8 @@ async def chart_energy_consumption_by_station(
 '''
 @app.get("/api/stations/analytics/charts/utilization-rate-by-station")
 async def chart_utilization_rate_by_station(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -1026,8 +1026,8 @@ async def chart_utilization_rate_by_station(
 ### Peak Time Chart
 @app.get("/api/stations/analytics/charts/peak-time")
 async def chart_peak_time(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -1052,8 +1052,8 @@ async def chart_peak_time(
 ### Station Growth
 @app.get("/api/stations/analytics/charts/station-growth")
 def chart_station_growth(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -1094,8 +1094,8 @@ def chart_station_growth(
 ### Owner Growth
 @app.get("/api/stations/analytics/charts/owner-growth")
 def chart_owner_growth(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     interval: str = Query("months", description="Time interval represented by each unit of the X-axis", examples=["days", "months", "years"]),
     user: dict = require_permission("staff"),
 ):
@@ -1112,8 +1112,8 @@ def chart_owner_growth(
 ### Driver Growth
 @app.get("/api/stations/analytics/charts/driver-growth")
 def chart_driver_growth(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     interval: str = Query("months", description="Time interval represented by each unit of the X-axis", examples=["days", "months", "years"]),
     user: dict = require_permission("staff"),
 ):
@@ -1137,8 +1137,8 @@ def chart_driver_growth(
 ### Revenue
 @app.get("/api/stations/analytics/charts/driver-revenue-by-time-interval")
 async def driver_chart_revenue_by_time_interval(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -1162,8 +1162,8 @@ async def driver_chart_revenue_by_time_interval(
 ### Session Count
 @app.get("/api/stations/analytics/charts/driver-session-count-by-time-interval")
 async def driver_chart_session_count_by_time_interval(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -1187,8 +1187,8 @@ async def driver_chart_session_count_by_time_interval(
 ### Energy Consumption
 @app.get("/api/stations/analytics/charts/driver-energy-consumption-by-time-interval")
 async def driver_chart_energy_consumption_by_time_interval(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -1215,8 +1215,8 @@ async def driver_chart_energy_consumption_by_time_interval(
 ### Revenue
 @app.get("/api/stations/analytics/charts/driver-revenue-by-station")
 async def driver_chart_revenue_by_station(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -1241,8 +1241,8 @@ async def driver_chart_revenue_by_station(
 ### Session Count
 @app.get("/api/stations/analytics/charts/driver-session-count-by-station")
 async def driver_chart_session_count_by_station(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -1267,8 +1267,8 @@ async def driver_chart_session_count_by_station(
 ### Energy Consumption
 @app.get("/api/stations/analytics/charts/driver-energy-consumption-by-station")
 async def driver_chart_energy_consumption_by_station(
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
@@ -1293,8 +1293,8 @@ async def driver_chart_energy_consumption_by_station(
 @app.get("/api/stations/analytics/charts/peak-time/{station_id}")
 async def driver_chart_peak_time(
     station_id: str,
-    start_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["01/01/2020"]),
-    end_date: Optional[str] = Query(None, description="Format MM/DD/YYYY", examples=["12/31/2020"]),
+    start_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-01-01"]),
+    end_date: Optional[str] = Query(None, description="Format YYYY-MM-DD", examples=["2020-12-31"]),
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
