@@ -1,5 +1,6 @@
 **/.DS_Store
 **/build
+**/compose.yaml
 **/Dockerfile*
 **/node_modules
 **/README.md

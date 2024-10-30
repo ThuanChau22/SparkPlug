@@ -1,4 +1,4 @@
-FROM node:lts-alpine AS development
+FROM node:20.18.0-alpine AS development
 WORKDIR /app
 COPY package*.json .
 RUN npm ci
@@ -6,6 +6,7 @@ COPY . .
 CMD ["npm", "start"]
 
 FROM development AS build
+RUN npm ci --only=production --silent
 RUN npm run build
 
 FROM nginx:stable-alpine

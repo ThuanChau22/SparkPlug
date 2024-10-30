@@ -6,4 +6,5 @@ COPY . .
 CMD ["npm", "run", "dev"]
 
 FROM development AS production
+RUN npm ci --only=production --silent
 CMD ["npm", "start"]

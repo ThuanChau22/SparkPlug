@@ -4,6 +4,6 @@ __pycache__/
 *.pyd
 .Python
 .git/
-.dockerignore
+compose.yaml
 Dockerfile
 *.md
