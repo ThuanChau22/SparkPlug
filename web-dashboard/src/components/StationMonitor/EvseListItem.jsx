@@ -25,7 +25,8 @@ const StationMonitorEvseListItem = ({ stationId, evseId }) => {
   const [meterValue, setMeterValue] = useState(evseStatus?.meterValue || 0);
 
   const isDisabled = useMemo(() => {
-    return !["Available", "Occupied"].includes(evseStatus?.status);
+    const { Available, Occupied } = EvseStatus;
+    return ![Available, Occupied].includes(evseStatus?.status);
   }, [evseStatus]);
 
   const dispatch = useDispatch();
