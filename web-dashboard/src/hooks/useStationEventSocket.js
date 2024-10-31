@@ -33,19 +33,23 @@ const useStationEventSocket = ({ action, payload: { stationId, stationIds } = {}
 
   const {
     readyState,
+    sendMessage,
     lastJsonMessage,
     sendJsonMessage,
   } = useWebSocket(`${StationEventWS}`, {
     queryParams: { token },
-    heartbeat: {
-      message: "ping",
-      returnMessage: "pong",
-      timeout: ms("60s"),
-      interval: ms("30s"),
-    },
     share: true,
-    shouldReconnect: ({ code }) => code === 1006,
+    filter: ({ data }) => data !== "pong",
+    shouldReconnect: ({ code }) => code === 1005 || code === 1006,
   });
+
+  // Handle Heartbeat
+  useEffect(() => {
+    const heartbeatInterval = setInterval(() => {
+      sendMessage("ping");
+    }, ms("30s"));
+    return () => clearInterval(heartbeatInterval);
+  }, [sendMessage]);
 
   const dispatch = useDispatch();
 
