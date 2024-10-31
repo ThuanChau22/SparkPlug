@@ -37,18 +37,12 @@ const App = () => {
   const { REACT_APP_WS_ENDPOINT: WS_ENDPOINT } = process.env;
   const { REACT_APP_STATION_IDENTITY: STATION_ID } = process.env;
   const socket = useWebSocket(`${WS_ENDPOINT}/${STATION_ID}`, {
-    heartbeat: {
-      message: "ping",
-      returnMessage: "pong",
-      timeout: ms("60s"),
-      interval: ms("30s"),
-    },
-    shouldReconnect: ({ code }) => {
-      return code === 1006;
-    },
+    filter: ({ data }) => data !== "pong",
+    shouldReconnect: ({ code }) => code === 1005 || code === 1006,
   });
   const {
     readyState,
+    sendMessage,
     lastJsonMessage,
     sendJsonMessage,
   } = socket;
@@ -93,6 +87,13 @@ const App = () => {
       });
     }
   }, [readyState, defaultAlertMessage]);
+
+  useEffect(() => {
+    const heartbeatInterval = setInterval(() => {
+      sendMessage("ping");
+    }, ms("30s"));
+    return () => clearInterval(heartbeatInterval);
+  }, [sendMessage]);
 
   useEffect(() => {
     const { action, payload } = lastJsonMessage || {};
