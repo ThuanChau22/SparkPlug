@@ -2,10 +2,10 @@ import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import LocationFilter from "components/LocationFilter";
-import MapContainer from "components/MapContainer";
-import MapFitBound from "components/MapFitBound";
-import MapUserLocation from "components/MapUserLocation";
-import StationStatusMarker from "components/StationStatusMarker";
+import MapContainer from "components/Map/MapContainer";
+import MapFitBound from "components/Map/MapFitBound";
+import MapUserLocation from "components/Map/MapUserLocation";
+import StationStatusMarkerCluster from "components/Map/StationStatusMarkerCluster";
 import StickyContainer from "components/StickyContainer";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
@@ -88,13 +88,10 @@ const DriverStationMapView = ({ handleViewStation }) => {
       >
         <MapUserLocation />
         <MapFitBound positions={stationList} />
-        {stationList.map((station) => (
-          <StationStatusMarker
-            key={station.id}
-            station={station}
-            onClick={() => handleViewStation(station.id)}
-          />
-        ))}
+        <StationStatusMarkerCluster
+          stationList={stationList}
+          onClick={handleViewStation}
+        />
       </MapContainer>
     </StickyContainer>
   );

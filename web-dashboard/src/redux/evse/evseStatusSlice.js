@@ -83,6 +83,7 @@ export const evseStatusGetByStation = createAsyncThunk(
 export const selectEvseStatus = (state) => state[evseStatusSlice.name];
 
 const evseStatusSelectors = evseStatusEntityAdapter.getSelectors(selectEvseStatus);
+
 export const selectEvseStatusList = evseStatusSelectors.selectAll;
 
 export const selectEvseStatusIds = createSelector(
@@ -94,6 +95,15 @@ export const selectEvseStatusIds = createSelector(
       evse_id: parseInt(evse_id),
     };
   }),
+);
+
+export const selectEvseStatusEntitiesByStation = createSelector(
+  [selectEvseStatusList],
+  (evseStatusList) => evseStatusList.reduce((entities, evseStatus) => {
+    const { station_id, ...remain } = evseStatus;
+    const evses = entities[station_id] || [];
+    return { ...entities, [station_id]: [...evses, remain] }
+  }, {}),
 );
 
 export const selectEvseStatusByStation = createSelector(

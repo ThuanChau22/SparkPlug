@@ -9,12 +9,10 @@ import {
   CButton,
 } from "@coreui/react";
 
-import { newStationIcon } from "assets/mapIcons";
 import LoadingIndicator from "components/LoadingIndicator";
-import MapContainer from "components/MapContainer";
-import MapFitBound from "components/MapFitBound";
-import MapMarker from "components/MapMarker";
-import StationMarker from "components/StationMarker";
+import MapContainer from "components/Map/MapContainer";
+import MapFitBound from "components/Map/MapFitBound";
+import StationPredictionMarkerCluster from "components/Map/StationPredictionMarkerCluster";
 import StickyContainer from "components/StickyContainer";
 import {
   apiInstance,
@@ -41,7 +39,7 @@ const StationPrediction = () => {
 
   const [input, setInput] = useState("");
   const [existedStationList, setExistedStationList] = useState([]);
-  const [newStationList, setNewStationList] = useState([]);
+  const [predictedStationList, setPredictedStationList] = useState([]);
 
   const dispatch = useDispatch();
 
@@ -50,9 +48,9 @@ const StationPrediction = () => {
     return headerHeight + inputHeight + footerHeight;
   }, [headerHeight, footerHeight, inputRef]);
 
-  const positions = useMemo(() => {
-    return [...existedStationList, ...newStationList];
-  }, [existedStationList, newStationList]);
+  const stationList = useMemo(() => (
+    existedStationList.concat(predictedStationList)
+  ), [existedStationList, predictedStationList]);
 
   const fetchData = async (apiEndpoint) => {
     const base = `${apiEndpoint}`;
@@ -71,7 +69,7 @@ const StationPrediction = () => {
         fetchData(StationPredictionAPI),
       ]);
       setExistedStationList(existedStations);
-      setNewStationList(newStations);
+      setPredictedStationList(newStations);
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -117,22 +115,8 @@ const StationPrediction = () => {
               loading={loading}
               refHeight={mapRefHeight}
             >
-              <MapFitBound positions={positions} />
-              {existedStationList.map((station) => (
-                <StationMarker
-                  key={station.id}
-                  station={station}
-                />
-              ))}
-              {newStationList.map(({ latitude, longitude }) => (
-                <MapMarker
-                  key={`${latitude},${longitude}`}
-                  icon={newStationIcon}
-                  position={[latitude, longitude]}
-                >
-                  <div>{latitude}, {longitude}</div>
-                </MapMarker>
-              ))}
+              <MapFitBound positions={stationList} />
+              <StationPredictionMarkerCluster stationList={stationList} />
             </MapContainer>
           )}
 

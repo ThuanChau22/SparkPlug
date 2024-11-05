@@ -2,9 +2,9 @@ import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import LocationFilter from "components/LocationFilter";
-import MapContainer from "components/MapContainer";
-import MapFitBound from "components/MapFitBound";
-import SiteMarker from "components/SiteMarker";
+import MapContainer from "components/Map/MapContainer";
+import MapFitBound from "components/Map/MapFitBound";
+import SiteMarkerCluster from "components/Map/SiteMarkerCluster";
 import StickyContainer from "components/StickyContainer";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
@@ -51,7 +51,7 @@ const SiteMapView = ({ handleViewSite }) => {
   }, [fetchData]);
 
   const mapRefHeight = useMemo(() => {
-    const filterHeight = filterRef.current.offsetHeight;
+    const filterHeight = filterRef.current?.offsetHeight;
     return headerHeight + filterHeight;
   }, [headerHeight, filterRef]);
 
@@ -86,13 +86,10 @@ const SiteMapView = ({ handleViewSite }) => {
         refHeight={mapRefHeight}
       >
         <MapFitBound positions={siteList} />
-        {siteList.map((site) => (
-          <SiteMarker
-            key={site.id}
-            site={site}
-            onClick={() => handleViewSite(site.id)}
-          />
-        ))}
+        <SiteMarkerCluster
+          siteList={siteList}
+          onClick={handleViewSite}
+        />
       </MapContainer>
     </StickyContainer>
   );

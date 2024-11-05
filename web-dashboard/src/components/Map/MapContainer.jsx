@@ -27,8 +27,15 @@ const MapContainer = ({ loading = false, refHeight = 0, children }) => {
           zoom={7}
           style={{ height: "100%", width: "100%" }}
           placeholder={<noscript>You need to enable JavaScript to see this map.</noscript>}
+          minZoom={2}
+          bounceAtZoomLimits={true}
         >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxNativeZoom={19}
+            maxZoom={21}
+            updateWhenZooming={true}
+          />
           {children}
         </Map>
       )}

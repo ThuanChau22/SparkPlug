@@ -49,5 +49,46 @@
     .leaflet-control-attribution {
       background-color: var(--cui-body-bg) !important;
     }
+
+    .leaflet-tooltip {
+      color: var(--cui-body-color);
+      background-color: var(--cui-body-bg);
+      border: inherit inherit var(--cui-body-bg);
+    }
+
+    .leaflet-tooltip-top:before {
+      border-top-color: var(--cui-body-bg);
+    }
+
+    .leaflet-tooltip-bottom:before {
+      border-bottom-color: var(--cui-body-bg);
+    }
+
+    .leaflet-tooltip-left:before {
+      border-left-color: var(--cui-body-bg);
+    }
+
+    .leaflet-tooltip-right:before {
+      border-right-color: var(--cui-body-bg);
+    }
+  }
+}
+
+.map-cluster-icon {
+  position: relative;
+  border-radius: 50%;
+  background: conic-gradient(from 60deg, #7666f7, #cc6dc8, #2584a0, #7666f7);
+
+  .map-cluster-icon-count {
+    background-color: var(--cui-body-bg);
+    border-radius: 50%;
+    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
 }

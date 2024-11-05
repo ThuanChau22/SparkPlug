@@ -2,9 +2,9 @@ import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import LocationFilter from "components/LocationFilter";
-import MapContainer from "components/MapContainer";
-import MapFitBound from "components/MapFitBound";
-import StationMarker from "components/StationMarker";
+import MapContainer from "components/Map/MapContainer";
+import MapFitBound from "components/Map/MapFitBound";
+import StationMarkerCluster from "components/Map/StationMarkerCluster";
 import StickyContainer from "components/StickyContainer";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
@@ -86,13 +86,10 @@ const StationAnalyticsMapView = ({ handleViewStation }) => {
         refHeight={mapRefHeight}
       >
         <MapFitBound positions={stationList} />
-        {stationList.map((station) => (
-          <StationMarker
-            key={station.id}
-            station={station}
-            onClick={() => handleViewStation(station.id)}
-          />
-        ))}
+        <StationMarkerCluster
+          stationList={stationList}
+          onClick={handleViewStation}
+        />
       </MapContainer>
     </StickyContainer>
   );
