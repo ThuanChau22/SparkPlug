@@ -31,16 +31,33 @@ const MapMarkerCluster = ({ customizeIcon, children, ...remain }) => {
           const iconSize = [size.icon, size.icon];
           const html = renderToStaticMarkup(
             <div
-              className="map-cluster-icon"
               style={{
+                borderRadius: "50%",
+                position: "relative",
                 width: `${size.icon}px`,
                 height: `${size.icon}px`,
+                background: `conic-gradient(
+                  from 60deg,
+                  #7666f7,
+                  #cc6dc8,
+                  #2584a0,
+                  #7666f7
+                )`,
                 ...style?.icon,
               }}
             >
               <div
-                className="map-cluster-icon-count"
                 style={{
+                  backgroundColor: "var(--cui-body-bg)",
+                  borderRadius: "50%",
+                  fontSize: "14px",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
                   width: `${size.count}px`,
                   height: `${size.count}px`,
                   ...style?.count,
