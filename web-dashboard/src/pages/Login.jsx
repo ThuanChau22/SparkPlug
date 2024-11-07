@@ -25,6 +25,7 @@ import {
 import ErrorToast from "components/ErrorToast";
 import FormInput from "components/FormInput";
 import LoadingIndicator from "components/LoadingIndicator";
+import useLayoutTheme from "hooks/useLayoutTheme";
 import {
   AuthRoles,
   authLogin,
@@ -47,6 +48,8 @@ const Login = () => {
     password: "",
     role: "",
   });
+
+  useLayoutTheme();
 
   useEffect(() => {
     if (token) {

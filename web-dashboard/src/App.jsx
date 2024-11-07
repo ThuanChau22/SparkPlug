@@ -5,13 +5,13 @@ import {
   useLocation,
   Outlet,
 } from "react-router-dom";
-import { useColorModes } from "@coreui/react";
 
 import Header from "components/Header";
 import Sidebar from "components/Sidebar";
 import Footer from "components/Footer";
 import ErrorToast from "components/ErrorToast";
 import LoadingIndicator from "components/LoadingIndicator";
+import useLayoutTheme from "hooks/useLayoutTheme";
 import { clearHeader } from "redux/api";
 import {
   authStateSet,
@@ -23,16 +23,10 @@ import {
   selectAuthExpiredTime,
   selectAuthSecureStorage,
 } from "redux/auth/authSlice";
-import {
-  layoutStateSetTheme,
-  selectLayoutTheme,
-} from "redux/layout/layoutSlice";
 import routes from "routes";
 import "scss/style.scss";
 
 const App = () => {
-  const { colorMode, setColorMode } = useColorModes("theme");
-  const theme = useSelector(selectLayoutTheme);
   const authenticated = useSelector(selectAuthAuthenticated);
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
@@ -43,15 +37,7 @@ const App = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    const storedTheme = localStorage.getItem("theme");
-    dispatch(layoutStateSetTheme(storedTheme || colorMode));
-  }, [colorMode, dispatch]);
-
-  useEffect(() => {
-    setColorMode(theme);
-    localStorage.setItem("theme", theme);
-  }, [theme, setColorMode]);
+  useLayoutTheme();
 
   useEffect(() => {
     if (token) {
@@ -67,34 +53,36 @@ const App = () => {
   }, [authenticated, expiredTime, dispatch]);
 
   useEffect(() => {
-    const options = { replace: true };
     if (!authenticated && !token) {
-      navigate(routes.Login.path, options);
-      return;
+      navigate(routes.Login.path, { replace: true });
     }
+  }, [authenticated, token, navigate]);
+
+  useEffect(() => {
+    const options = { replace: true };
     const path = location.pathname.split("/");
-    if (path.length >= 2) {
-      const [, resource, component] = path;
-      if (!resource) {
-        if (authIsAdmin || authIsOwner) {
-          navigate(routes.Dashboard.path, options);
-          return;
-        }
-        if (authIsDriver) {
-          navigate(routes.Driver.defaultPath, options);
-          return;
-        }
+    if (path.length < 2) return;
+
+    const [, resource, component] = path;
+    if (!resource) {
+      if (authIsAdmin || authIsOwner) {
+        navigate(routes.Dashboard.path, options);
+        return;
       }
-      if (!component) {
-        for (const { path, defaultPath } of Object.values(routes)) {
-          if (path === `/${resource}` && defaultPath) {
-            navigate(defaultPath, options);
-            return;
-          }
+      if (authIsDriver) {
+        navigate(routes.Driver.defaultPath, options);
+        return;
+      }
+    }
+    if (!component) {
+      for (const { path, defaultPath } of Object.values(routes)) {
+        if (path === `/${resource}` && defaultPath) {
+          navigate(defaultPath, options);
+          return;
         }
       }
     }
-  }, [authenticated, authIsAdmin, authIsOwner, authIsDriver, token, location, navigate]);
+  }, [authIsAdmin, authIsOwner, authIsDriver, location, navigate]);
 
   useEffect(() => {
     const restricted = new Set();

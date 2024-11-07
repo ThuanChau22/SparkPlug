@@ -1,13 +1,10 @@
-import {
-  Link,
-} from "react-router-dom";
-import {
-  CCol,
-  CContainer,
-  CRow,
-} from "@coreui/react";
+import { Link } from "react-router-dom";
+import { CCol, CContainer, CRow } from "@coreui/react";
+
+import useLayoutTheme from "hooks/useLayoutTheme";
 
 const NotFound = () => {
+  useLayoutTheme();
   return (
     <div className="min-vh-100 position-relative">
       <CContainer className="position-absolute top-50 start-50 translate-middle">

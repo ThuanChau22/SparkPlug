@@ -83,7 +83,6 @@ const useStationEventSocket = ({ action, payload: { stationId, stationIds } = {}
     }
   }, [lastJsonMessage, dispatch]);
 
-
   // Handle load data for WatchStatusEvent
   useEffect(() => {
     const isWatchStatusEvent = action === Action.WatchStatusEvent;
