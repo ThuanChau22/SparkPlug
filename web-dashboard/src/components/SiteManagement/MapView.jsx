@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useMemo, useRef } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import LocationFilter from "components/LocationFilter";
@@ -22,8 +22,6 @@ import {
 } from "redux/site/siteSlice";
 
 const SiteMapView = ({ handleViewSite }) => {
-  const filterRef = useRef({});
-
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const siteList = useSelector(selectSiteList);
@@ -35,6 +33,11 @@ const SiteMapView = ({ handleViewSite }) => {
   const siteZipCodeOptions = useSelector(selectZipCodeOptions);
 
   const [loading, setLoading] = useState(false);
+
+  const [filterHeight, setFilterHeight] = useState(0);
+  const filterRef = useCallback((node) => {
+    setFilterHeight(node?.getBoundingClientRect().height);
+  }, []);
 
   const dispatch = useDispatch();
 
@@ -51,9 +54,8 @@ const SiteMapView = ({ handleViewSite }) => {
   }, [fetchData]);
 
   const mapRefHeight = useMemo(() => {
-    const filterHeight = filterRef.current?.offsetHeight;
     return headerHeight + filterHeight;
-  }, [headerHeight, filterRef]);
+  }, [headerHeight, filterHeight]);
 
   const handleFilter = (state, city, zipCode) => {
     const params = [];

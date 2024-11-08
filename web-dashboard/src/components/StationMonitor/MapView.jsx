@@ -1,9 +1,10 @@
-import { useCallback, useState, useEffect, useMemo, useRef } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
+import MapSetBound from "components/Map/MapSetBound";
 import StationStatusMarkerCluster from "components/Map/StationStatusMarkerCluster";
 import StickyContainer from "components/StickyContainer";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
@@ -22,8 +23,6 @@ import {
 } from "redux/station/stationSlice";
 
 const StationMonitorMapView = ({ handleViewStation }) => {
-  const filterRef = useRef({});
-
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const stationList = useSelector(selectStationList);
@@ -35,6 +34,11 @@ const StationMonitorMapView = ({ handleViewStation }) => {
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
 
   const [loading, setLoading] = useState(false);
+
+  const [filterHeight, setFilterHeight] = useState(0);
+  const filterRef = useCallback((node) => {
+    setFilterHeight(node?.getBoundingClientRect().height);
+  }, []);
 
   const dispatch = useDispatch();
 
@@ -51,9 +55,8 @@ const StationMonitorMapView = ({ handleViewStation }) => {
   }, [fetchData]);
 
   const mapRefHeight = useMemo(() => {
-    const filterHeight = filterRef.current?.offsetHeight;
     return headerHeight + filterHeight;
-  }, [headerHeight, filterRef]);
+  }, [headerHeight, filterHeight]);
 
   const handleFilter = (state, city, zipCode) => {
     const params = [];
@@ -85,6 +88,7 @@ const StationMonitorMapView = ({ handleViewStation }) => {
         loading={loading}
         refHeight={mapRefHeight}
       >
+        <MapSetBound />
         <MapFitBound positions={stationList} />
         <StationStatusMarkerCluster
           stationList={stationList}

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMap } from "react-leaflet";
-import L from "leaflet";
 
 const MapFitBound = ({ positions }) => {
   const [fitBounds, setFitBounds] = useState(false);
@@ -19,7 +18,7 @@ const MapFitBound = ({ positions }) => {
 
   useEffect(() => {
     if (fitBounds) {
-      map.fitBounds(new L.LatLngBounds(latlngs));
+      map.fitBounds(latlngs, { padding: [50, 25] });
       setFitBounds(false);
     }
   }, [fitBounds, map, latlngs]);

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useCallback, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CCard,
@@ -9,7 +9,6 @@ import {
   CButton,
 } from "@coreui/react";
 
-import LoadingIndicator from "components/LoadingIndicator";
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
 import StationPredictionMarkerCluster from "components/Map/StationPredictionMarkerCluster";
@@ -28,14 +27,17 @@ const StationPrediction = () => {
   const StationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
   const StationPredictionAPI = process.env.REACT_APP_STATION_PREDICTION_ENDPOINT;
 
-  const inputRef = useRef({});
-
   const headerHeight = useSelector(selectLayoutHeaderHeight);
   const footerHeight = useSelector(selectLayoutFooterHeight);
 
   const token = useSelector(selectAuthAccessToken);
 
   const [loading, setLoading] = useState(false);
+
+  const [inputHeight, setInputHeight] = useState(0);
+  const inputRef = useCallback((node) => {
+    setInputHeight(node?.getBoundingClientRect().height);
+  }, []);
 
   const [input, setInput] = useState("");
   const [existedStationList, setExistedStationList] = useState([]);
@@ -44,9 +46,8 @@ const StationPrediction = () => {
   const dispatch = useDispatch();
 
   const mapRefHeight = useMemo(() => {
-    const inputHeight = inputRef.current.offsetHeight;
     return headerHeight + inputHeight + footerHeight;
-  }, [headerHeight, footerHeight, inputRef]);
+  }, [headerHeight, inputHeight, footerHeight]);
 
   const stationList = useMemo(() => (
     existedStationList.concat(predictedStationList)
@@ -80,11 +81,7 @@ const StationPrediction = () => {
     <CCard className="flex-grow-1 border border-0 rounded-0">
       <CCardBody className="d-flex flex-column h-100 p-0">
         <StickyContainer style={{ top: `${headerHeight}px` }}>
-          <div
-            className="d-flex w-100"
-            style={{ backgroundColor: "var(--cui-body-bg)" }}
-            ref={inputRef}
-          >
+          <div ref={inputRef} className="bg-body d-flex w-100">
             <CInputGroup>
               <CInputGroupText className="border-0 rounded-0">
                 Zip Code
@@ -108,18 +105,13 @@ const StationPrediction = () => {
             </CButton>
           </div>
         </StickyContainer>
-        {loading
-          ? <LoadingIndicator loading={loading} />
-          : (
-            <MapContainer
-              loading={loading}
-              refHeight={mapRefHeight}
-            >
-              <MapFitBound positions={stationList} />
-              <StationPredictionMarkerCluster stationList={stationList} />
-            </MapContainer>
-          )}
-
+        <MapContainer
+          loading={loading}
+          refHeight={mapRefHeight}
+        >
+          <MapFitBound positions={stationList} />
+          <StationPredictionMarkerCluster stationList={stationList} />
+        </MapContainer>
       </CCardBody>
     </CCard>
   );
