@@ -4,8 +4,12 @@
 @import "variables";
 @import "theme";
 
-.accordion-button:focus {
-  box-shadow: none;
+.accordion-button {
+  --cui-accordion-btn-focus-box-shadow: none;
+}
+
+.btn {
+  --cui-btn-focus-box-shadow: none;
 }
 
 // (CoreUI Bug) Undone

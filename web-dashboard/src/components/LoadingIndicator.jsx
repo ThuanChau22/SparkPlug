@@ -8,7 +8,7 @@ const LoadingIndicator = ({ loading = true, size = 80, overlay = false }) => (
     style={!(loading && overlay) ? {} : {
       backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.5)",
       width: "100%",
-      position: "fixed",
+      position: "absolute",
       top: 0,
       left: 0,
       zIndex: 1100,

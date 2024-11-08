@@ -84,7 +84,7 @@ const UserManagement = () => {
   return (
     <CCard className="flex-grow-1 border border-0 rounded-0">
       <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
-        <StickyContainer style={{ top: `${headerHeight}px` }} ref={titleRef}>
+        <StickyContainer ref={titleRef} style={{ top: `${headerHeight}px` }}>
           <CCardTitle
             className="p-3 shadow-sm"
             style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
@@ -96,7 +96,7 @@ const UserManagement = () => {
           ? <LoadingIndicator loading={loading} />
           : (
             <>
-              <CListGroup className="px-3" ref={listRef}>
+              <CListGroup ref={listRef} className="px-3">
                 {userList.map(({ id, name, email, status }) => (
                   <CListGroupItem
                     key={id}

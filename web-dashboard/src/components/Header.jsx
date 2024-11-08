@@ -83,11 +83,7 @@ const Header = () => {
   }, [location, dispatch]);
 
   return (
-    <CHeader
-      ref={headerRef}
-      position="sticky"
-      className="p-0"
-    >
+    <CHeader ref={headerRef} position="sticky" className="p-0">
       <CContainer className="border-bottom" fluid>
         <CHeaderToggler
           className="ps-1"
