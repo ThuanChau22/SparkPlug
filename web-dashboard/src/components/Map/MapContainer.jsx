@@ -44,10 +44,10 @@ const MapContainer = ({ loading = false, refHeight = 0, children }) => {
       <Map
         style={{ height: "100%", width: "100%" }}
         bounceAtZoomLimits={true}
-        center={[35, -120]}
-        zoom={7}
+        center={[36, -119]}
+        zoom={6}
         minZoom={2}
-        zoomSnap={0.5}
+        worldCopyJump={true}
         placeholder={<noscript>You need to enable JavaScript to see this map.</noscript>}
       >
         <LoadingIndicator loading={loading} overlay={true} />

@@ -1,8 +1,27 @@
+import { useEffect, useMemo, useRef } from "react";
 import L from "leaflet";
 import { Marker, Tooltip } from "react-leaflet";
 
-const MapMarker = ({ iconUrl, tooltip, children, ...remain }) => {
+const MapMarker = ({ iconUrl, eventHandlers = {}, tooltip, children, ...remain }) => {
   const DefaultSize = 50;
+
+  const markerRef = useRef({});
+  const moveTimeoutRef = useRef({});
+
+  const extraEventHandlers = useMemo(() => ({
+    ...eventHandlers,
+    mousemove: () => {
+      markerRef.current.closeTooltip();
+      clearTimeout(moveTimeoutRef.current);
+      moveTimeoutRef.current = setTimeout(() => {
+        markerRef.current.openTooltip();
+      }, 250);
+    },
+    mouseout: () => clearTimeout(moveTimeoutRef.current),
+  }), [eventHandlers]);
+
+  useEffect(() => () => clearTimeout(moveTimeoutRef.current), []);
+
   if (iconUrl) {
     remain.icon = L.icon({
       iconUrl,
@@ -10,8 +29,14 @@ const MapMarker = ({ iconUrl, tooltip, children, ...remain }) => {
       iconAnchor: [DefaultSize / 2, DefaultSize],
     });
   }
+
   return (
-    <Marker {...remain}>
+    <Marker
+      ref={markerRef}
+      riseOnHover={true}
+      eventHandlers={extraEventHandlers}
+      {...remain}
+    >
       <Tooltip {...{
         direction: "top",
         offset: [0, -DefaultSize / 2],
