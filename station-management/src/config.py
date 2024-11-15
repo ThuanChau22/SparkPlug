@@ -19,6 +19,9 @@ GEOIP_ACCOUNT_ID = os.environ["GEOIP_ACCOUNT_ID"]
 GEOIP_LICENSE_KEY = os.environ["GEOIP_LICENSE_KEY"]
 
 # MySQL Configuration
+conversions = pymysql.converters.conversions
+conversions[pymysql.FIELD_TYPE.DECIMAL] = lambda x: float(x)
+conversions[pymysql.FIELD_TYPE.NEWDECIMAL] = lambda x: float(x)
 mysql_credential = make_url(MYSQL_URI)
 mysql = PooledDB(
     creator=pymysql,
@@ -29,4 +32,5 @@ mysql = PooledDB(
     user=mysql_credential.username,
     password=mysql_credential.password,
     database=mysql_credential.database,
+    conv=conversions,
 )
