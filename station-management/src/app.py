@@ -11,6 +11,7 @@ from src.controllers import evse
 
 # Flash App
 app = Flask(__name__)
+app.json.sort_keys = False
 CORS(app, resources={r"/api/*": {"origins": WEB_DOMAIN}})
 
 
