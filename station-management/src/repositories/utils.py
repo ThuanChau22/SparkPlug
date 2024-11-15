@@ -1,7 +1,13 @@
 from enum import Enum
+from datetime import datetime
+import re
 
 # Internal Modules
 from src.config import mysql
+from src.utils import (
+    urlsafe_b64_json_encode,
+    urlsafe_b64_json_decode,
+)
 
 
 class Table(Enum):
@@ -39,3 +45,118 @@ def fetch_by_id(connection, table, id):
     with connection.cursor() as cursor:
         cursor.execute(query, id)
         return cursor.fetchone()
+
+
+def append_condition(statement, condition):
+    hasCondition = re.search("^.*( WHERE ){1}.*$", statement, re.IGNORECASE)
+    separator = "" if not condition else " AND " if hasCondition else " WHERE "
+    return f"{statement}{separator}{condition}"
+
+
+def select_fields(params={}, table_fields=[]):
+    statement = "*"
+    if params:
+        require = ["id", "created_at"]
+        include = set(require)
+        exclude = set(table_fields)
+        for field, value in params.items():
+            if field in exclude and value == 1:
+                include.add(field)
+            elif field in exclude and value == 0:
+                exclude.remove(field)
+        if len(include) > len(require):
+            exclude = {field for field in require if field not in exclude}
+            include.difference_update(exclude)
+            include = [field for field in table_fields if field in include]
+            statement = ", ".join(include)
+        elif len(exclude) < len(table_fields):
+            exclude = [field for field in table_fields if field in exclude]
+            statement = ", ".join(exclude)
+    return f"SELECT {statement}"
+
+
+def select_distance(statement, values, lat_lng_origin, table_fields=[]):
+    if lat_lng_origin and len(lat_lng_origin.split(",")) == 2:
+        statement += ", haversine(%s, %s, latitude, longitude) as distance"
+        values.extend(lat_lng_origin.split(","))
+        table_fields.append("distance")
+    return statement
+
+
+def where_fields_equal(statement, values, params={}, table_fields=[]):
+    if params:
+        field_set = set(table_fields)
+        for field, value in params.items():
+            if field in field_set and value:
+                statement = append_condition(statement, f"{field} = %s")
+                values.append(value)
+    return statement
+
+
+def where_lat_lng_range(statement, values, lat_lng_min, lat_lng_max):
+    if lat_lng_min and len(lat_lng_min.split(",")) == 2:
+        condition = "(latitude >= %s AND longitude >= %s)"
+        statement = append_condition(statement, condition)
+        values.extend(lat_lng_min.split(","))
+    if lat_lng_max and len(lat_lng_max.split(",")) == 2:
+        condition = "(latitude <= %s AND longitude <= %s)"
+        statement = append_condition(statement, condition)
+        values.extend(lat_lng_max.split(","))
+    return statement
+
+
+def where_cursor_at(statement, values, sort, cursor, lat_lng_origin):
+    if sort and cursor:
+        payload = urlsafe_b64_json_decode(cursor)
+        params = [(field, payload.get(field)) for field in sort.keys()]
+        params = [(field, value) for field, value in params if value]
+        condition = ""
+        condition_values = []
+        for field, value in params[::-1]:
+            if not condition:
+                condition = f"{field} > %s"
+                condition_values.append(value)
+            elif (
+                field == "distance"
+                and lat_lng_origin
+                and len(lat_lng_origin.split(",")) == 2
+            ):
+                field = "haversine(%s, %s, latitude, longitude)"
+                value = lat_lng_origin.split(",") + [value]
+                condition = f"({field} > %s OR ({field} = %s AND {condition}))"
+                condition_values = value + value + condition_values
+            else:
+                condition = f"({field} > %s OR ({field} = %s AND {condition}))"
+                condition_values = [value, value] + condition_values
+        statement = append_condition(statement, condition)
+        values.extend(condition_values)
+    return statement
+
+
+def sort_by_fields(statement, params={}, table_fields=[]):
+    if params:
+        sort_values = []
+        field_set = set(table_fields)
+        for field, value in params.items():
+            if field in field_set:
+                sort_values.append(f"{field} DESC" if value == -1 else field)
+        if sort_values:
+            conditions = ", ".join(sort_values)
+            return f"{statement} ORDER BY {conditions}"
+    return statement
+
+
+def limit_at(statement, limit):
+    return f"{statement} LIMIT {limit}" if limit and limit > 0 else statement
+
+
+def create_cursor(resources, sort, limit):
+    payload = {}
+    if sort and len(resources) == limit:
+        last_resource = resources[len(resources) - 1]
+        params = [(field, last_resource.get(field)) for field in sort.keys()]
+        params = [(field, value) for field, value in params if value]
+        for field, value in params:
+            is_datetime = isinstance(value, datetime)
+            payload[field] = value.isoformat() if is_datetime else value
+    return {"next": (urlsafe_b64_json_encode(payload) if payload else "")}

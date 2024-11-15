@@ -1,6 +1,12 @@
 from sys import stderr
 from geoip2 import webservice
+from base64 import (
+    urlsafe_b64encode,
+    urlsafe_b64decode,
+)
+import json
 
+# Internal Modules
 from src.config import (
     GEOIP_ACCOUNT_ID,
     GEOIP_LICENSE_KEY,
@@ -20,6 +26,14 @@ def convert_coords_to_float(data):
 
 def convert_price_to_float(data):
     return [{**item, "price": float(item["price"])} for item in data]
+
+
+def urlsafe_b64_json_encode(payload):
+    return urlsafe_b64encode(json.dumps(payload).encode()).decode()
+
+
+def urlsafe_b64_json_decode(payload):
+    return json.loads(urlsafe_b64decode(payload).decode())
 
 
 def get_geo_data(ip_address):
