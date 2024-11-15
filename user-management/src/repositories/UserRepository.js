@@ -67,18 +67,29 @@ repository.getUsers = async ({ filter, select, sort, limit, cursor } = {}) => {
   // Select
   let selectFields = "*";
   if (!utils.isObjectEmpty(select)) {
-    const fieldSet = new Set(fieldList);
-    select = Object.entries(select).filter(([field]) => fieldSet.has(field));
-    for (const [field] of select.filter(([_, value]) => value === 0)) {
-      fieldSet.delete(field);
+    const require = ["id", "created_at"];
+    const include = new Set(require);
+    const exclude = new Set(fieldList);
+    for (const [field, value] of Object.entries(select)) {
+      if (exclude.has(field) && value === 1) {
+        include.add(field);
+      } else if (exclude.has(field) && value === 0) {
+        exclude.delete(field);
+      }
     }
-    if (fieldSet.size !== fieldList.length) {
-      const reducer = (s, field) => `${s}, ${field}`;
-      selectFields = Array.from(fieldSet).reduce(reducer);
-    } else if (select.length !== 0) {
-      const filter = ([field, value]) => field !== "id" && value === 1;
-      const reducer = (s, [field]) => `${s}, ${field}`;
-      selectFields = select.filter(filter).reduce(reducer, "id");
+    if (include.size > require.length) {
+      for (const field of require) {
+        if (!exclude.has(field)) {
+          include.delete(field);
+        }
+      }
+      selectFields = fieldList.filter((field) => {
+        return include.has(field);
+      }).join(", ");
+    } else if (exclude.size < fieldList.length) {
+      selectFields = fieldList.filter((field) => {
+        return exclude.has(field);
+      }).join(", ");
     }
   }
   let query = `SELECT ${selectFields} FROM ${Table.UserView}`;
@@ -105,8 +116,8 @@ repository.getUsers = async ({ filter, select, sort, limit, cursor } = {}) => {
   if (cursor) {
     const { id, created_at } = utils.toJSON(decode(cursor).toString()) || {};
     if (id && created_at) {
-      const conditions = `created_at > ? OR (created_at = ? AND id > ?)`;
-      query += `${filterValues.length === 0 ? " WHERE" : " AND"} ${conditions}`;
+      const conditions = `(created_at > ? OR (created_at = ? AND id > ?))`;
+      query += ` ${filterValues.length === 0 ? "WHERE" : "AND"} ${conditions}`;
       filterValues.push(created_at, created_at, id);
     }
   }
@@ -117,11 +128,11 @@ repository.getUsers = async ({ filter, select, sort, limit, cursor } = {}) => {
     const fieldSet = new Set(fieldList);
     for (const [field, value] of Object.entries(sort)) {
       if (fieldSet.has(field)) {
-        sortValues.push(`${value === -1 ? `${field} DESC` : field}`);
+        sortValues.push(value === -1 ? `${field} DESC` : field);
       }
     }
     if (sortValues.length !== 0) {
-      query += ` ORDER BY ${sortValues.reduce((s, v) => `${s}, ${v}`)}`;
+      query += ` ORDER BY ${sortValues.join(", ")}`;
     }
   }
 
@@ -137,7 +148,9 @@ repository.getUsers = async ({ filter, select, sort, limit, cursor } = {}) => {
   let next = "";
   if (users.length === parseInt(limit)) {
     const { id, created_at } = users[users.length - 1];
-    next = encode(Buffer.from(JSON.stringify({ id, created_at })));
+    if (id && created_at) {
+      next = encode(Buffer.from(JSON.stringify({ id, created_at })));
+    }
   }
 
   return { users, cursor: { next } };
