@@ -3,7 +3,6 @@ from src.repositories.utils import (
     get_fields,
     fetch_by_id,
 )
-from src.utils import convert_coords_to_float
 
 
 def get_stations(connection, filter={}, select={}, sort={}, limit=None):
@@ -24,12 +23,11 @@ def get_stations(connection, filter={}, select={}, sort={}, limit=None):
         cursor.execute(query, filter_values)
         stations = cursor.fetchall()
 
-    return convert_coords_to_float(stations)
+    return stations or []
 
 
 def get_station_by_id(connection, station_id):
-    station = fetch_by_id(connection, Table.StationView.value, station_id)
-    return convert_coords_to_float([station])[0] if station else None
+    return fetch_by_id(connection, Table.StationView.value, station_id)
 
 
 def create_station(connection, station_data):
@@ -39,10 +37,10 @@ def create_station(connection, station_data):
         ) VALUES (%s, %s, %s, %s)
     """
     values = (
-        station_data["name"],
-        station_data["site_id"],
-        station_data["latitude"],
-        station_data["longitude"],
+        station_data.get("name"),
+        station_data.get("site_id"),
+        station_data.get("latitude"),
+        station_data.get("longitude"),
     )
     with connection.cursor() as cursor:
         cursor.execute(query, values)
@@ -61,7 +59,7 @@ def update_station(connection, station_id, station_data):
             query += f"{separator} {field} = %s"
             update_values.append(value)
 
-    if len(update_values) == 0:
+    if not update_values:
         return False
 
     query += f" WHERE id = %s"
@@ -69,11 +67,11 @@ def update_station(connection, station_id, station_data):
 
     with connection.cursor() as cursor:
         affected_rows = cursor.execute(query, update_values)
-    return affected_rows > 0 if affected_rows else False
+    return affected_rows
 
 
 def delete_station(connection, station_id):
     query = f"DELETE FROM {Table.Station.value} WHERE id = %s"
     with connection.cursor() as cursor:
         affected_rows = cursor.execute(query, station_id)
-    return affected_rows > 0 if affected_rows else False
+    return affected_rows

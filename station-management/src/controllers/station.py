@@ -25,13 +25,13 @@ def get_stations():
 def get_station_by_id(station_id):
     def session(connection):
         station_data = station.get_station_by_id(connection, station_id)
+        if not station_data:
+            raise Exception("Station not found", 404)
         if (
             request.auth["role"] == "owner"
             and request.auth["user_id"] != station_data["owner_id"]
         ):
             raise Exception("Access denied", 403)
-        if not station_data:
-            raise Exception("Station not found", 404)
         return station_data
 
     try:
@@ -54,10 +54,14 @@ def create_station():
             if not body.get(field):
                 raise Exception(f"{field} is required", 400)
 
-        if request.auth["role"] == "owner":
-            site_data = site.get_site_by_id(body["site_id"])
-            if request.auth["user_id"] != site_data["owner_id"]:
-                raise Exception("Access denied", 403)
+        site_data = site.get_site_by_id(body["site_id"])
+        if not site_data:
+            raise Exception("Site not found", 404)
+        if (
+            request.auth["role"] == "owner"
+            and request.auth["user_id"] != site_data["owner_id"]
+        ):
+            raise Exception("Access denied", 403)
 
         station_id = station.create_station(connection, body)
         return station.get_station_by_id(connection, station_id)

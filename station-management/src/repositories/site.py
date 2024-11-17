@@ -42,7 +42,7 @@ def get_sites(connection, filter={}, select={}, sort={}, limit=None, cursor=None
 
 
 def get_site_by_id(connection, site_id):
-    return fetch_by_id(connection, Table.Site.value, site_id) or None
+    return fetch_by_id(connection, Table.Site.value, site_id)
 
 
 def create_site(connection, site_data):
@@ -88,11 +88,11 @@ def update_site(connection, site_id, site_data):
 
     with connection.cursor() as cursor:
         affected_rows = cursor.execute(query, update_values)
-    return affected_rows > 0 if affected_rows else False
+    return affected_rows
 
 
 def delete_site(connection, site_id):
     query = f"DELETE FROM {Table.Site.value} WHERE id = %s"
     with connection.cursor() as cursor:
         affected_rows = cursor.execute(query, site_id)
-    return affected_rows > 0 if affected_rows else False
+    return affected_rows

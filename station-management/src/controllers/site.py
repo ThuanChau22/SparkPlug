@@ -30,13 +30,13 @@ def get_sites():
 def get_site_by_id(site_id):
     def session(connection):
         site_data = site.get_site_by_id(connection, site_id)
+        if not site_data:
+            raise Exception("Site not found", 404)
         if (
             request.auth["role"] == "owner"
             and request.auth["user_id"] != site_data["owner_id"]
         ):
             raise Exception("Access denied", 403)
-        if not site_data:
-            raise Exception("Site not found", 404)
         return site_data
 
     try:
