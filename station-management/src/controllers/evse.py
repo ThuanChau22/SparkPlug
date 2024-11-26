@@ -1,6 +1,11 @@
 from flask import request
 
 # Internal Modules
+from src.controllers.utils import (
+    extract_args_lat_lng,
+    extract_args_select,
+    extract_args_sort_by,
+)
 from src.repositories import evse
 from src.repositories import station
 from src.repositories.utils import transaction
@@ -12,9 +17,12 @@ def get_evses():
         filter = request.args.to_dict()
         if request.auth["role"] == "owner":
             filter["owner_id"] = request.auth["user_id"]
-        limit = filter.get("limit")
-        limit = int(limit) if limit else None
-        return evse.get_evses(connection, filter, limit=limit)
+        filter.update(extract_args_lat_lng(filter))
+        select = extract_args_select(filter.get("fields"))
+        sort = extract_args_sort_by(filter.get("sort_by"))
+        limit = int(filter.get("limit") or 0) or None
+        cursor = filter.get("cursor")
+        return evse.get_evses(connection, filter, select, sort, limit, cursor)
 
     try:
         return transaction(session), 200
@@ -38,13 +46,13 @@ def get_evses_by_station(station_id):
 def get_evse_by_id(station_id, evse_id):
     def session(connection):
         evse_data = evse.get_evse_by_ids(connection, station_id, evse_id)
+        if not evse_data:
+            raise Exception("Evse not found", 404)
         if (
             request.auth["role"] == "owner"
             and request.auth["user_id"] != evse_data["owner_id"]
         ):
             raise Exception("Access denied", 403)
-        if not evse_data:
-            raise Exception("Evse not found", 404)
         return evse_data
 
     try:
@@ -68,10 +76,14 @@ def create_evse(station_id):
             if not body.get(field):
                 raise Exception(f"{field} is required", 400)
 
-        if request.auth["role"] == "owner":
-            station_data = station.get_station_by_id(connection, station_id)
-            if request.auth["user_id"] != station_data["owner_id"]:
-                raise Exception("Access denied", 403)
+        station_data = station.get_station_by_id(connection, station_id)
+        if not station_data:
+            raise Exception("Station not found", 404)
+        if (
+            request.auth["role"] == "owner"
+            and request.auth["user_id"] != station_data["owner_id"]
+        ):
+            raise Exception("Access denied", 403)
 
         entry_id = evse.create_evse(connection, body)
         return evse.get_evse_by_id(connection, entry_id)

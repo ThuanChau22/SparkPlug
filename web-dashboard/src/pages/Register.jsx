@@ -24,6 +24,8 @@ import {
 
 import ErrorToast from "components/ErrorToast";
 import FormInput from "components/FormInput";
+import LoadingIndicator from "components/LoadingIndicator";
+import useLayoutTheme from "hooks/useLayoutTheme";
 import {
   AuthRoles,
   authSignup,
@@ -35,41 +37,55 @@ import {
 const Register = () => {
   const authenticated = useSelector(selectAuthAuthenticated);
   const token = useSelector(selectAuthSecureStorage);
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
+
+  const [validated, setValidated] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [input, setInput] = useState({
     name: "",
     email: "",
     password: "",
     role: "",
   });
-  const [validated, setValidated] = useState(false);
+
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  useLayoutTheme();
+
   useEffect(() => {
     if (token) {
       dispatch(authStateSet({ token }));
     }
   }, [token, dispatch]);
+
   useEffect(() => {
     if (authenticated) {
       navigate("/", { replace: true });
     }
   }, [authenticated, navigate]);
+
   const handleInputChange = ({ target }) => {
     const { name, value } = target;
     setInput({ ...input, [name]: value });
   };
-  const handleSubmit = () => {
+
+  const handleSubmit = async () => {
     const { name, email, password, role } = input;
     if (!name || !email || !password || !role) {
       setValidated(true);
       return;
     }
-    dispatch(authSignup({ name, email, password, role }));
+    setLoading(true);
+    const params = { name, email, password, role };
+    await dispatch(authSignup(params)).unwrap();
+    setLoading(false);
   };
+
   return (
     <div className="min-vh-100 d-flex flex-row align-items-center">
       <ErrorToast />
       <CContainer>
+        <LoadingIndicator loading={loading} overlay={true} />
         <CRow className="justify-content-center">
           <CCol md={9} lg={7} xl={6}>
             <CCard className="mx-4">

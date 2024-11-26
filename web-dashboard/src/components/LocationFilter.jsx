@@ -56,11 +56,7 @@ const LocationFilter = forwardRef(({
   );
 
   return (
-    <div
-      className="d-none d-lg-flex justify-content-end align-items-center"
-      style={{ backgroundColor: "var(--cui-body-bg)" }}
-      ref={ref}
-    >
+    <div ref={ref} className="bg-body d-none d-lg-flex justify-content-end align-items-center">
       <FilterFormSelectGroup
         id="state"
         options={states.map(state => (

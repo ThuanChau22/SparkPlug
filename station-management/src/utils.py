@@ -1,39 +1,48 @@
+from enum import Enum
 from sys import stderr
-from geoip2 import webservice
-
-from src.config import (
-    GEOIP_ACCOUNT_ID,
-    GEOIP_LICENSE_KEY,
+from base64 import (
+    urlsafe_b64encode,
+    urlsafe_b64decode,
 )
+from flask import request
+from geoip2.errors import GeoIP2Error
+import json
+
+# Internal Modules
+from src.config import geo_client
 
 
-def convert_coords_to_float(data):
-    return [
-        {
-            **item,
-            "latitude": float(item["latitude"]),
-            "longitude": float(item["longitude"]),
-        }
-        for item in data
-    ]
+class Constants(Enum):
+    Lat_lng_origin = "36,-119"
+    Lat_lng_delta = 0.125
 
 
-def convert_price_to_float(data):
-    return [{**item, "price": float(item["price"])} for item in data]
+def get_client_ip_address():
+    default = request.remote_addr
+    return request.environ.get("HTTP_X_FORWARDED_FOR", default)
 
 
 def get_geo_data(ip_address):
-    account_id = GEOIP_ACCOUNT_ID
-    license_key = GEOIP_LICENSE_KEY
-    host = "geolite.info"
-    with webservice.Client(account_id, license_key, host) as client:
-        data = client.city(ip_address or "me")
-    return {
-        "city": data.city.name,
-        "zip_code": data.postal.code,
-        "latitude": data.location.latitude,
-        "longitude": data.location.longitude,
-    }
+    for param in [ip_address, "me"]:
+        try:
+            data = geo_client.city(param)
+            return {
+                "city": data.city.name,
+                "zip_code": data.postal.code,
+                "latitude": data.location.latitude,
+                "longitude": data.location.longitude,
+            }
+        except GeoIP2Error:
+            continue
+    return {}
+
+
+def urlsafe_b64_json_encode(payload):
+    return urlsafe_b64encode(json.dumps(payload).encode()).decode()
+
+
+def urlsafe_b64_json_decode(payload):
+    return json.loads(urlsafe_b64decode(payload).decode())
 
 
 def handle_error(error):

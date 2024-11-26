@@ -21,8 +21,9 @@ services:
     depends_on:
       - user-management
       - station-management
-      - analytics
       - monitoring
+      - analytics
+      - ml-service
     develop:
       watch:
         - action: sync
@@ -71,29 +72,6 @@ services:
         - action: rebuild
           path: ./station-management/requirements.txt
 
-  analytics:
-    extends:
-      file: compose.prod.yaml
-      service: analytics
-    build:
-      target: development
-    environment:
-      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
-      AUTH_API_ENDPOINT: ${ANALYTICS_AUTH_API_ENDPOINT}
-      MYSQL_URI: ${MYSQL_URI}
-      MONGODB_URI: ${MONGODB_URI}
-      ENERGY_FORECAST_API_ENDPOINT: ${ANALYTICS_ENERGY_FORECAST_API_ENDPOINT}
-      ENERGY_FORECAST_MODEL_PATH: ${ANALYTICS_ENERGY_FORECAST_MODEL_PATH}
-    depends_on:
-      - user-management
-    develop:
-      watch:
-        - action: sync
-          path: ./analytics
-          target: /app
-        - action: rebuild
-          path: ./analytics/requirements.txt
-
   monitoring:
     extends:
       file: compose.prod.yaml
@@ -116,6 +94,29 @@ services:
           target: /app
         - action: rebuild
           path: ./monitoring/package.json
+
+  analytics:
+    extends:
+      file: compose.prod.yaml
+      service: analytics
+    build:
+      target: development
+    environment:
+      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
+      AUTH_API_ENDPOINT: ${ANALYTICS_AUTH_API_ENDPOINT}
+      MYSQL_URI: ${MYSQL_URI}
+      MONGODB_URI: ${MONGODB_URI}
+      ENERGY_FORECAST_API_ENDPOINT: ${ANALYTICS_ENERGY_FORECAST_API_ENDPOINT}
+      ENERGY_FORECAST_MODEL_PATH: ${ANALYTICS_ENERGY_FORECAST_MODEL_PATH}
+    depends_on:
+      - user-management
+    develop:
+      watch:
+        - action: sync
+          path: ./analytics
+          target: /app
+        - action: rebuild
+          path: ./analytics/requirements.txt
 
   ml-service:
     extends:

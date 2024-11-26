@@ -2,6 +2,7 @@ import os
 import dotenv
 import pymysql
 from dbutils.pooled_db import PooledDB
+from geoip2 import webservice
 from sqlalchemy.engine.url import make_url
 
 # Load environment variables
@@ -19,6 +20,9 @@ GEOIP_ACCOUNT_ID = os.environ["GEOIP_ACCOUNT_ID"]
 GEOIP_LICENSE_KEY = os.environ["GEOIP_LICENSE_KEY"]
 
 # MySQL Configuration
+conversions = pymysql.converters.conversions
+conversions[pymysql.FIELD_TYPE.DECIMAL] = lambda x: float(x)
+conversions[pymysql.FIELD_TYPE.NEWDECIMAL] = lambda x: float(x)
 mysql_credential = make_url(MYSQL_URI)
 mysql = PooledDB(
     creator=pymysql,
@@ -29,4 +33,12 @@ mysql = PooledDB(
     user=mysql_credential.username,
     password=mysql_credential.password,
     database=mysql_credential.database,
+    conv=conversions,
+)
+
+# GeoIP Configuration
+geo_client = webservice.Client(
+    GEOIP_ACCOUNT_ID,
+    GEOIP_LICENSE_KEY,
+    "geolite.info",
 )

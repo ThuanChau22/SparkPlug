@@ -71,7 +71,7 @@ const DriverStation = () => {
 
   return (
     <CCard className="flex-grow-1 border border-0 rounded-0">
-      <CRow xs={{ gutterX: 0 }}>
+      <CRow className="flex-grow-1" xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
           <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
             <StickyContainer style={{ top: `${headerHeight}px` }}>
@@ -89,7 +89,7 @@ const DriverStation = () => {
                   {stationIds.map((id) => (
                     <CListGroupItem
                       key={id}
-                      className="d-flex flex-row justify-content-between align-items-center py-3"
+                      className="d-flex justify-content-between align-items-center border rounded py-3 my-1 shadow-sm"
                       as="button"
                       onClick={() => handleViewStation(id)}
                     >

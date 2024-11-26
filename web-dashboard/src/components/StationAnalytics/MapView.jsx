@@ -1,10 +1,10 @@
-import { useCallback, useState, useEffect, useMemo, useRef } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import LoadingIndicator from "components/LoadingIndicator";
 import LocationFilter from "components/LocationFilter";
-import MapContainer from "components/MapContainer";
-import StationMarker from "components/StationMarker";
+import MapContainer from "components/Map/MapContainer";
+import MapFitBound from "components/Map/MapFitBound";
+import StationMarkerCluster from "components/Map/StationMarkerCluster";
 import StickyContainer from "components/StickyContainer";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
@@ -22,8 +22,6 @@ import {
 } from "redux/station/stationSlice";
 
 const StationAnalyticsMapView = ({ handleViewStation }) => {
-  const filterRef = useRef({});
-
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const stationList = useSelector(selectStationList);
@@ -36,7 +34,10 @@ const StationAnalyticsMapView = ({ handleViewStation }) => {
 
   const [loading, setLoading] = useState(false);
 
-  const [mapHeight, setMapHeight] = useState(window.innerHeight);
+  const [filterHeight, setFilterHeight] = useState(0);
+  const filterRef = useCallback((node) => {
+    setFilterHeight(node?.getBoundingClientRect().height);
+  }, []);
 
   const dispatch = useDispatch();
 
@@ -52,14 +53,9 @@ const StationAnalyticsMapView = ({ handleViewStation }) => {
     fetchData()
   }, [fetchData]);
 
-  useEffect(() => {
-    const filterHeight = filterRef.current.offsetHeight;
-    setMapHeight(window.innerHeight - (headerHeight + filterHeight));
-  }, [headerHeight, filterRef]);
-
-  const positions = useMemo(() => stationList.map((station) => {
-    return [station.latitude, station.longitude];
-  }), [stationList]);
+  const mapRefHeight = useMemo(() => {
+    return headerHeight + filterHeight;
+  }, [headerHeight, filterHeight]);
 
   const handleFilter = (state, city, zipCode) => {
     const params = [];
@@ -87,21 +83,16 @@ const StationAnalyticsMapView = ({ handleViewStation }) => {
           onChange={handleFilter}
         />
       </StickyContainer>
-      <div style={{ height: `${mapHeight}px` }}>
-        {loading
-          ? <LoadingIndicator loading={loading} />
-          : (
-            <MapContainer positions={positions}>
-              {stationList.map((station) => (
-                <StationMarker
-                  key={station.id}
-                  station={station}
-                  onClick={() => handleViewStation(station.id)}
-                />
-              ))}
-            </MapContainer>
-          )}
-      </div>
+      <MapContainer
+        loading={loading}
+        refHeight={mapRefHeight}
+      >
+        <MapFitBound positions={stationList} />
+        <StationMarkerCluster
+          stationList={stationList}
+          onClick={handleViewStation}
+        />
+      </MapContainer>
     </StickyContainer>
   );
 };

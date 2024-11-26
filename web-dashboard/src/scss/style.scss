@@ -4,8 +4,12 @@
 @import "variables";
 @import "theme";
 
-.accordion-button:focus {
-  box-shadow: none;
+.accordion-button {
+  --cui-accordion-btn-focus-box-shadow: none;
+}
+
+.btn {
+  --cui-btn-focus-box-shadow: none;
 }
 
 // (CoreUI Bug) Undone
@@ -48,6 +52,28 @@
 
     .leaflet-control-attribution {
       background-color: var(--cui-body-bg) !important;
+    }
+
+    .leaflet-tooltip {
+      color: var(--cui-body-color);
+      background-color: var(--cui-body-bg);
+      border: inherit inherit var(--cui-body-bg);
+    }
+
+    .leaflet-tooltip-top:before {
+      border-top-color: var(--cui-body-bg);
+    }
+
+    .leaflet-tooltip-bottom:before {
+      border-bottom-color: var(--cui-body-bg);
+    }
+
+    .leaflet-tooltip-left:before {
+      border-left-color: var(--cui-body-bg);
+    }
+
+    .leaflet-tooltip-right:before {
+      border-right-color: var(--cui-body-bg);
     }
   }
 }

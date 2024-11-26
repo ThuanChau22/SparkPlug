@@ -1,6 +1,11 @@
 from flask import request
 
 # Internal Modules
+from src.controllers.utils import (
+    extract_args_lat_lng,
+    extract_args_select,
+    extract_args_sort_by,
+)
 from src.repositories import site
 from src.repositories.utils import transaction
 from src.utils import handle_error
@@ -11,9 +16,12 @@ def get_sites():
         filter = request.args.to_dict()
         if request.auth["role"] == "owner":
             filter["owner_id"] = request.auth["user_id"]
-        limit = filter.get("limit")
-        limit = int(limit) if limit else None
-        return site.get_sites(connection, filter, limit=limit)
+        filter.update(extract_args_lat_lng(filter))
+        select = extract_args_select(filter.get("fields"))
+        sort = extract_args_sort_by(filter.get("sort_by"))
+        limit = int(filter.get("limit") or 0) or None
+        cursor = filter.get("cursor")
+        return site.get_sites(connection, filter, select, sort, limit, cursor)
 
     try:
         return transaction(session), 200
@@ -24,13 +32,13 @@ def get_sites():
 def get_site_by_id(site_id):
     def session(connection):
         site_data = site.get_site_by_id(connection, site_id)
+        if not site_data:
+            raise Exception("Site not found", 404)
         if (
             request.auth["role"] == "owner"
             and request.auth["user_id"] != site_data["owner_id"]
         ):
             raise Exception("Access denied", 403)
-        if not site_data:
-            raise Exception("Site not found", 404)
         return site_data
 
     try:

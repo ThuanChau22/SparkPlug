@@ -6,6 +6,7 @@ COPY . .
 CMD ["npm", "start"]
 
 FROM development AS build
+RUN npm ci --only=production --silent
 RUN npm run build
 
 FROM nginx:stable-alpine

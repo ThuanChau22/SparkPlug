@@ -33,9 +33,9 @@ import {
   selectLayoutHeaderActive,
   selectLayoutSidebarShow,
   selectLayoutSidebarFold,
-  layoutSetMobile,
-  layoutSetSidebarShow,
-  layoutSetSidebarFold,
+  layoutStateSetMobile,
+  layoutStateSetSidebarShow,
+  layoutStateSetSidebarFold,
 } from "redux/layout/layoutSlice";
 
 const Sidebar = () => {
@@ -51,10 +51,10 @@ const Sidebar = () => {
 
   const handleResize = useCallback(() => {
     const medium = "only screen and (min-width: 768px)";
-    dispatch(layoutSetMobile(!window.matchMedia(medium).matches));
+    dispatch(layoutStateSetMobile(!window.matchMedia(medium).matches));
     const extraLarge = "only screen and (min-width: 1200px)";
     if (!window.matchMedia(extraLarge).matches) {
-      dispatch(layoutSetSidebarFold(true));
+      dispatch(layoutStateSetSidebarFold(true));
     }
   }, [dispatch]);
 
@@ -185,7 +185,7 @@ const Sidebar = () => {
       unfoldable={sidebarFold}
       visible={sidebarShow}
       onVisibleChange={(visible) => {
-        dispatch(layoutSetSidebarShow(visible))
+        dispatch(layoutStateSetSidebarShow(visible))
       }}
     >
       <CSidebarHeader className="border-bottom justify-content-center">
@@ -199,7 +199,7 @@ const Sidebar = () => {
         <CSidebarToggler
           className="shadow-none"
           onClick={() => {
-            dispatch(layoutSetSidebarFold(!sidebarFold))
+            dispatch(layoutStateSetSidebarFold(!sidebarFold))
           }}
         />
       </CSidebarFooter>

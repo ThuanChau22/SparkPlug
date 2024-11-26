@@ -6,6 +6,7 @@ import {
 } from "@reduxjs/toolkit";
 
 import {
+  EvseStatus,
   selectEvseStatusByStation
 } from "redux/evse/evseStatusSlice";
 import {
@@ -166,13 +167,7 @@ export const selectStationStatusById = createSelector(
     const statuses = evses.reduce((object, { status }) => {
       return { ...object, [status]: object[status] || true };
     }, {});
-    for (const status of [
-      "Available",
-      "Occupied",
-      "Reserved",
-      "Faulted",
-      "Unavailable",
-    ]) {
+    for (const status of Object.values(EvseStatus)) {
       if (statuses[status]) {
         return status
       }

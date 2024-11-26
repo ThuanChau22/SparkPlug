@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { CFooter } from "@coreui/react";
 
-import { layoutSetFooterHeight } from "redux/layout/layoutSlice";
+import { layoutStateSetFooterHeight } from "redux/layout/layoutSlice";
 
 const Footer = () => {
   const footerRef = useRef({});
@@ -10,7 +10,7 @@ const Footer = () => {
   const dispatch = useDispatch();
 
   const handleResize = useCallback(() => {
-    dispatch(layoutSetFooterHeight(footerRef.current.offsetHeight));
+    dispatch(layoutStateSetFooterHeight(footerRef.current.offsetHeight));
   }, [dispatch]);
 
   useEffect(() => {

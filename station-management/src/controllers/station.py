@@ -1,6 +1,11 @@
 from flask import request
 
 # Internal Modules
+from src.controllers.utils import (
+    extract_args_lat_lng,
+    extract_args_select,
+    extract_args_sort_by,
+)
 from src.repositories import site
 from src.repositories import station
 from src.repositories.utils import transaction
@@ -12,9 +17,12 @@ def get_stations():
         filter = request.args.to_dict()
         if request.auth["role"] == "owner":
             filter["owner_id"] = request.auth["user_id"]
-        limit = filter.get("limit")
-        limit = int(limit) if limit else None
-        return station.get_stations(connection, filter, limit=limit)
+        filter.update(extract_args_lat_lng(filter))
+        select = extract_args_select(filter.get("fields"))
+        sort = extract_args_sort_by(filter.get("sort_by"))
+        limit = int(filter.get("limit") or 0) or None
+        cursor = filter.get("cursor")
+        return station.get_stations(connection, filter, select, sort, limit, cursor)
 
     try:
         return transaction(session), 200
@@ -25,13 +33,13 @@ def get_stations():
 def get_station_by_id(station_id):
     def session(connection):
         station_data = station.get_station_by_id(connection, station_id)
+        if not station_data:
+            raise Exception("Station not found", 404)
         if (
             request.auth["role"] == "owner"
             and request.auth["user_id"] != station_data["owner_id"]
         ):
             raise Exception("Access denied", 403)
-        if not station_data:
-            raise Exception("Station not found", 404)
         return station_data
 
     try:
@@ -54,10 +62,14 @@ def create_station():
             if not body.get(field):
                 raise Exception(f"{field} is required", 400)
 
-        if request.auth["role"] == "owner":
-            site_data = site.get_site_by_id(body["site_id"])
-            if request.auth["user_id"] != site_data["owner_id"]:
-                raise Exception("Access denied", 403)
+        site_data = site.get_site_by_id(body["site_id"])
+        if not site_data:
+            raise Exception("Site not found", 404)
+        if (
+            request.auth["role"] == "owner"
+            and request.auth["user_id"] != site_data["owner_id"]
+        ):
+            raise Exception("Access denied", 403)
 
         station_id = station.create_station(connection, body)
         return station.get_station_by_id(connection, station_id)

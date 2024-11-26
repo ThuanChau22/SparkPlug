@@ -14,12 +14,12 @@ export const store = configureStore({
   reducer: {
     [layoutSlice.name]: layoutSlice.reducer,
     [authSlice.name]: authSlice.reducer,
-    [userSlice.name]: userSlice.reducer,
     [siteSlice.name]: siteSlice.reducer,
     [stationSlice.name]: stationSlice.reducer,
     [stationEventSlice.name]: stationEventSlice.reducer,
     [evseSlice.name]: evseSlice.reducer,
     [evseStatusSlice.name]: evseStatusSlice.reducer,
+    [userSlice.name]: userSlice.reducer,
     [errorSlice.name]: errorSlice.reducer,
   },
 });

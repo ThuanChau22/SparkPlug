@@ -2,42 +2,60 @@ from src.repositories.utils import (
     Table,
     get_fields,
     fetch_by_id,
+    select_fields,
+    select_distance,
+    where_fields_equal,
+    where_lat_lng_range,
+    where_cursor_at,
+    sort_by_fields,
+    limit_at,
+    create_cursor,
 )
-from src.utils import (
-    convert_coords_to_float,
-    convert_price_to_float,
-)
 
 
-def get_evses(connection, filter={}, select={}, sort={}, limit=None):
-    query = f"SELECT * FROM {Table.EvseView.value}"
+def get_evses(connection, filter={}, select={}, sort={}, limit=None, cursor=None):
+    query_values = []
+    field_list = get_fields(connection, Table.EvseView.value)
+    query = select_fields(select, field_list)
+    lat_lng_origin = filter.get("lat_lng_origin")
+    query = select_distance(query, query_values, lat_lng_origin, field_list)
+    query = f"{query} FROM {Table.EvseView.value}"
+    query = where_fields_equal(query, query_values, filter, field_list)
+    query = where_lat_lng_range(
+        query,
+        query_values,
+        filter.get("lat_lng_min"),
+        filter.get("lat_lng_max"),
+    )
+    query = where_cursor_at(query, query_values, sort, cursor, lat_lng_origin)
+    query = sort_by_fields(query, sort, field_list)
+    query = limit_at(query, limit)
 
-    field_set = set(get_fields(connection, Table.EvseView.value))
-    filter_values = []
-    for field, value in filter.items():
-        if field in field_set:
-            separator = "WHERE" if len(filter_values) == 0 else "AND"
-            query += f" {separator} {field} = %s"
-            filter_values.append(value)
+    # query = f"SELECT * FROM {Table.EvseView.value}"
 
-    if limit and limit > 0:
-        query += f" LIMIT {limit}"
+    # field_set = set(get_fields(connection, Table.EvseView.value))
+    # filter_values = []
+    # for field, value in filter.items():
+    #     if field in field_set:
+    #         separator = "WHERE" if len(filter_values) == 0 else "AND"
+    #         query += f" {separator} {field} = %s"
+    #         filter_values.append(value)
+
+    # if limit and limit > 0:
+    #     query += f" LIMIT {limit}"
 
     with connection.cursor() as cursor:
-        cursor.execute(query, filter_values)
+        cursor.execute(query, query_values)
         evses = cursor.fetchall()
 
-    evses = convert_coords_to_float(evses)
-    evses = convert_price_to_float(evses)
-    return evses
+    return {
+        "evses": evses or [],
+        "cursor": create_cursor(evses, sort, limit),
+    }
 
 
 def get_evse_by_id(connection, entry_id):
-    evse = fetch_by_id(connection, Table.EvseView.value, entry_id)
-    if evse:
-        evses = convert_coords_to_float([evse])
-        return convert_price_to_float(evses)[0]
-    return None
+    return fetch_by_id(connection, Table.EvseView.value, entry_id)
 
 
 def get_evse_by_ids(connection, station_id, evse_id):
@@ -48,10 +66,7 @@ def get_evse_by_ids(connection, station_id, evse_id):
     with connection.cursor() as cursor:
         cursor.execute(query, (station_id, evse_id))
         evse = cursor.fetchone()
-    if evse:
-        evses = convert_coords_to_float([evse])
-        return convert_price_to_float(evses)[0]
-    return None
+    return evse
 
 
 def create_evse(connection, evse_data):
@@ -62,11 +77,11 @@ def create_evse(connection, evse_data):
         ) VALUES (%s, %s, %s, %s, %s)
     """
     values = (
-        evse_data["station_id"],
-        evse_data["evse_id"],
-        evse_data["connector_type"],
-        evse_data["charge_level"],
-        evse_data["price"],
+        evse_data.get("station_id"),
+        evse_data.get("evse_id"),
+        evse_data.get("connector_type"),
+        evse_data.get("charge_level"),
+        evse_data.get("price"),
     )
     with connection.cursor() as cursor:
         cursor.execute(query, values)
@@ -81,20 +96,19 @@ def update_evse(connection, station_id, evse_id, evse_data):
     update_values = []
     for field, value in evse_data.items():
         if field in field_set:
-            separator = "" if len(update_values) == 0 else ","
+            separator = "" if not update_values else ","
             query += f"{separator} {field} = %s"
             update_values.append(value)
 
-    if len(update_values) == 0:
+    if not update_values:
         return False
 
     query += f" WHERE station_id = %s AND evse_id = %s"
-    update_values.append(station_id)
-    update_values.append(evse_id)
+    update_values.extend([station_id, evse_id])
 
     with connection.cursor() as cursor:
         affected_rows = cursor.execute(query, update_values)
-    return affected_rows > 0 if affected_rows else False
+    return affected_rows
 
 
 def delete_evse(connection, station_id, evse_id):
@@ -104,4 +118,4 @@ def delete_evse(connection, station_id, evse_id):
     """
     with connection.cursor() as cursor:
         affected_rows = cursor.execute(query, (station_id, evse_id))
-    return affected_rows > 0 if affected_rows else False
+    return affected_rows

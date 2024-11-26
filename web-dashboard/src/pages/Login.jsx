@@ -24,6 +24,8 @@ import {
 
 import ErrorToast from "components/ErrorToast";
 import FormInput from "components/FormInput";
+import LoadingIndicator from "components/LoadingIndicator";
+import useLayoutTheme from "hooks/useLayoutTheme";
 import {
   AuthRoles,
   authLogin,
@@ -35,40 +37,54 @@ import {
 const Login = () => {
   const authenticated = useSelector(selectAuthAuthenticated);
   const token = useSelector(selectAuthSecureStorage);
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  const [validated, setValidated] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [input, setInput] = useState({
     email: "",
     password: "",
     role: "",
   });
-  const [validated, setValidated] = useState(false);
+
+  useLayoutTheme();
+
   useEffect(() => {
     if (token) {
       dispatch(authStateSet({ token }));
     }
   }, [dispatch, token]);
+
   useEffect(() => {
     if (authenticated) {
       navigate("/", { replace: true });
     }
   }, [authenticated, navigate]);
+
   const handleInputChange = ({ target }) => {
     const { name, value } = target;
     setInput({ ...input, [name]: value });
   };
-  const handleSubmit = () => {
+
+  const handleSubmit = async () => {
     const { email, password, role } = input;
     if (!email || !password || !role) {
       setValidated(true);
       return;
     }
-    dispatch(authLogin({ email, password, role }));
+    setLoading(true);
+    const params = { email, password, role };
+    await dispatch(authLogin(params)).unwrap();
+    setLoading(false);
   };
+
   return (
     <div className="min-vh-100 d-flex flex-row align-items-center">
       <ErrorToast />
       <CContainer>
+        <LoadingIndicator loading={loading} overlay={true} />
         <CRow className="justify-content-center">
           <CCol md={8}>
             <CCardGroup>

@@ -2,34 +2,47 @@ from src.repositories.utils import (
     Table,
     get_fields,
     fetch_by_id,
+    select_fields,
+    select_distance,
+    where_fields_equal,
+    where_lat_lng_range,
+    where_cursor_at,
+    sort_by_fields,
+    limit_at,
+    create_cursor,
 )
-from src.utils import convert_coords_to_float
 
 
-def get_stations(connection, filter={}, select={}, sort={}, limit=None):
-    query = f"SELECT * FROM {Table.StationView.value}"
-
-    field_set = set(get_fields(connection, Table.StationView.value))
-    filter_values = []
-    for field, value in filter.items():
-        if field in field_set:
-            separator = "WHERE" if len(filter_values) == 0 else "AND"
-            query += f" {separator} {field} = %s"
-            filter_values.append(value)
-
-    if limit and limit > 0:
-        query += f" LIMIT {limit}"
+def get_stations(connection, filter={}, select={}, sort={}, limit=None, cursor=None):
+    query_values = []
+    field_list = get_fields(connection, Table.StationView.value)
+    query = select_fields(select, field_list)
+    lat_lng_origin = filter.get("lat_lng_origin")
+    query = select_distance(query, query_values, lat_lng_origin, field_list)
+    query = f"{query} FROM {Table.StationView.value}"
+    query = where_fields_equal(query, query_values, filter, field_list)
+    query = where_lat_lng_range(
+        query,
+        query_values,
+        filter.get("lat_lng_min"),
+        filter.get("lat_lng_max"),
+    )
+    query = where_cursor_at(query, query_values, sort, cursor, lat_lng_origin)
+    query = sort_by_fields(query, sort, field_list)
+    query = limit_at(query, limit)
 
     with connection.cursor() as cursor:
-        cursor.execute(query, filter_values)
+        cursor.execute(query, query_values)
         stations = cursor.fetchall()
 
-    return convert_coords_to_float(stations)
+    return {
+        "stations": stations or [],
+        "cursor": create_cursor(stations, sort, limit),
+    }
 
 
 def get_station_by_id(connection, station_id):
-    station = fetch_by_id(connection, Table.StationView.value, station_id)
-    return convert_coords_to_float([station])[0] if station else None
+    return fetch_by_id(connection, Table.StationView.value, station_id)
 
 
 def create_station(connection, station_data):
@@ -39,10 +52,10 @@ def create_station(connection, station_data):
         ) VALUES (%s, %s, %s, %s)
     """
     values = (
-        station_data["name"],
-        station_data["site_id"],
-        station_data["latitude"],
-        station_data["longitude"],
+        station_data.get("name"),
+        station_data.get("site_id"),
+        station_data.get("latitude"),
+        station_data.get("longitude"),
     )
     with connection.cursor() as cursor:
         cursor.execute(query, values)
@@ -57,11 +70,11 @@ def update_station(connection, station_id, station_data):
     update_values = []
     for field, value in station_data.items():
         if field in field_set:
-            separator = "" if len(update_values) == 0 else ","
+            separator = "" if not update_values else ","
             query += f"{separator} {field} = %s"
             update_values.append(value)
 
-    if len(update_values) == 0:
+    if not update_values:
         return False
 
     query += f" WHERE id = %s"
@@ -69,11 +82,11 @@ def update_station(connection, station_id, station_data):
 
     with connection.cursor() as cursor:
         affected_rows = cursor.execute(query, update_values)
-    return affected_rows > 0 if affected_rows else False
+    return affected_rows
 
 
 def delete_station(connection, station_id):
     query = f"DELETE FROM {Table.Station.value} WHERE id = %s"
     with connection.cursor() as cursor:
         affected_rows = cursor.execute(query, station_id)
-    return affected_rows > 0 if affected_rows else False
+    return affected_rows

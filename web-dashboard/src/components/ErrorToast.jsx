@@ -7,6 +7,7 @@ import {
   CToastBody,
   CToastClose,
 } from "@coreui/react";
+import { v4 as uuid } from "uuid";
 
 import {
   selectErrorMessage,
@@ -20,8 +21,7 @@ const ErrorToast = () => {
   useEffect(() => {
     if (errorMessage) {
       setToast(
-        <CToast
-          className="bg-danger-subtle text-danger mt-3 mb-0">
+        <CToast key={uuid()} className="border border-danger text-danger mt-3 mb-0">
           <div className="d-flex">
             <CToastBody className="p-2 pe-0">
               {errorMessage}
