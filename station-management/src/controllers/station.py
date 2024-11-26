@@ -1,6 +1,11 @@
 from flask import request
 
 # Internal Modules
+from src.controllers.utils import (
+    extract_args_lat_lng,
+    extract_args_select,
+    extract_args_sort_by,
+)
 from src.repositories import site
 from src.repositories import station
 from src.repositories.utils import transaction
@@ -12,9 +17,12 @@ def get_stations():
         filter = request.args.to_dict()
         if request.auth["role"] == "owner":
             filter["owner_id"] = request.auth["user_id"]
-        limit = filter.get("limit")
-        limit = int(limit) if limit else None
-        return station.get_stations(connection, filter, limit=limit)
+        filter.update(extract_args_lat_lng(filter))
+        select = extract_args_select(filter.get("fields"))
+        sort = extract_args_sort_by(filter.get("sort_by"))
+        limit = int(filter.get("limit") or 0) or None
+        cursor = filter.get("cursor")
+        return station.get_stations(connection, filter, select, sort, limit, cursor)
 
     try:
         return transaction(session), 200
