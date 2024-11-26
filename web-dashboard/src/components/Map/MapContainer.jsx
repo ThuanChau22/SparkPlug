@@ -1,43 +1,17 @@
-import { useCallback, useState, useEffect } from "react";
-import { MapContainer as Map, TileLayer, useMap } from "react-leaflet";
+import { useState } from "react";
+import { MapContainer as Map, TileLayer } from "react-leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
+import MapResize from "components/Map/MapResize";
 import LoadingIndicator from "components/LoadingIndicator";
 
-const MapResize = ({ resize }) => {
-  const map = useMap();
-  useEffect(() => {
-    if (resize) {
-      map.invalidateSize();
-    }
-  }, [map, resize]);
-  return (<></>);
-};
-
 const MapContainer = ({ loading = false, refHeight = 0, children }) => {
-  const [mapHeight, setMapHeight] = useState(window.innerHeight);
-  const [resize, setResize] = useState(false);
+  const [mapHeight, setMapHeight] = useState(0);
 
-  const handleResize = useCallback(() => {
+  const onResize = () => {
     setMapHeight(window.innerHeight - refHeight);
-    setResize(true);
-  }, [refHeight]);
-
-  useEffect(() => {
-    if (resize) {
-      setResize(false);
-    }
-  }, [resize]);
-
-  useEffect(() => {
-    handleResize();
-    window.addEventListener("load", handleResize);
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("load", handleResize);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [handleResize]);
+  };
 
   return (
     <div style={{ height: `${mapHeight}px` }}>
@@ -48,16 +22,18 @@ const MapContainer = ({ loading = false, refHeight = 0, children }) => {
         zoom={6}
         minZoom={2}
         worldCopyJump={true}
+        preferCanvas={true}
+        renderer={L.canvas()}
         placeholder={<noscript>You need to enable JavaScript to see this map.</noscript>}
       >
         <LoadingIndicator loading={loading} overlay={true} />
-        <MapResize resize={resize} />
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxNativeZoom={19}
           maxZoom={21}
           updateWhenZooming={true}
         />
+        <MapResize onResize={onResize} />
         {children}
       </Map>
     </div>
