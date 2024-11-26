@@ -57,7 +57,7 @@ const StationPredictionMarkerCluster = ({ stationList = [], onClick = null }) =>
       const background = `conic-gradient(
         ${Object.values(stationCategories).map(({ color }, i) => (
         `${color} ${percentages[i]}% ${percentages[i + 1]}%`
-      )).join(",")}
+      )).join()}
       )`;
       const style = { icon: { background } };
       // Add tooltip

@@ -47,8 +47,8 @@ const EvseDetails = ({ stationId, evseId }) => {
   const Info = () => {
     const { evse_id, charge_level, connector_type, price } = evse;
     const formatPrice = (price) => {
-      const options = { style: 'currency', currency: 'USD' };
-      return new Intl.NumberFormat('en-US', options).format(price);
+      const options = { style: "currency", currency: "USD" };
+      return new Intl.NumberFormat("en-US", options).format(price);
     };
     return (
       <>

@@ -83,7 +83,7 @@ const StationStatusMarkerCluster = ({ stationList = [], onClick = null }) => (
       const background = `conic-gradient(
         ${Object.values(EvseStatus).map((status, i) => (
         `${Colors[status]} ${percentages[i]}% ${percentages[i + 1]}%`
-      )).join(",")}
+      )).join()}
       )`;
       const style = { icon: { background } };
       // Add tooltip
