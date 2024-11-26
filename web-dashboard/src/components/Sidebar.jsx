@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -19,11 +19,12 @@ import {
   EvStationOutlined,
   PeopleOutlined,
   StarOutlined,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
 import logo from "assets/logo";
 import logoBrand from "assets/logo-brand";
 import routes from "routes";
+import useWindowResize from "hooks/useWindowResize";
 import {
   selectAuthRoleIsStaff,
   selectAuthRoleIsOwner,
@@ -49,24 +50,14 @@ const Sidebar = () => {
   const location = useLocation();
   const dispatch = useDispatch();
 
-  const handleResize = useCallback(() => {
+  useWindowResize(() => {
     const medium = "only screen and (min-width: 768px)";
     dispatch(layoutStateSetMobile(!window.matchMedia(medium).matches));
     const extraLarge = "only screen and (min-width: 1200px)";
     if (!window.matchMedia(extraLarge).matches) {
       dispatch(layoutStateSetSidebarFold(true));
     }
-  }, [dispatch]);
-
-  useEffect(() => {
-    handleResize();
-    window.addEventListener("load", handleResize);
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("load", handleResize);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [handleResize]);
+  });
 
   useEffect(() => {
     const newNavigation = [];
