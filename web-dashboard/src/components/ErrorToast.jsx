@@ -23,14 +23,13 @@ const ErrorToast = () => {
       setToast(
         <CToast key={uuid()} className="border border-danger text-danger mt-3 mb-0">
           <div className="d-flex">
-            <CToastBody className="p-2">
+            <CToastBody className="p-2 pe-0">
               {errorMessage}
             </CToastBody>
             <CToastClose
-              className="border border-0 ms-auto"
+              className="border border-0 text-danger ps-1"
               as={CButton}
-              color="danger"
-              variant="ghost"
+              color="link"
               size="sm"
             >
               Dismiss

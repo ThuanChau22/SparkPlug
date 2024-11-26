@@ -118,14 +118,26 @@ CREATE TABLE RFID_map (
 );
 
 CREATE VIEW stations_joined AS
-SELECT Station.id as station_id, Station.name as station_name, Station.latitude, Station.longitude,
-site_id, owner_id, Site.latitude as site_latitude, Site.longitude as site_longitude,
-Site.name as site_name, street_address, zip_code, city, state, country
-FROM Station JOIN Site ON Station.site_id = Site.id;
+SELECT ss.id as id, ss.name as name, ss.latitude, ss.longitude,
+site_id, owner_id, s.latitude as site_latitude, s.longitude as site_longitude,
+s.name as site_name, street_address, zip_code, city, state, country,
+ss.created_at, ss.updated_at
+FROM Site s JOIN Station ss ON s.id = ss.site_id;
 
 CREATE VIEW evses_joined AS
-SELECT Station.id as station_id, Station.name as station_name, Station.latitude, Station.longitude,
-site_id, owner_id, Site.latitude as site_latitude, Site.longitude as site_longitude,
-Site.name as site_name, street_address, zip_code, city, state, country, 
-EVSE.id as evse_id, evse_number, price, charge_level, connector_type, EVSE.latitude as evse_latitude, EVSE.longitude as evse_longitude
-FROM Station JOIN Site ON Station.site_id = Site.id JOIN EVSE ON Station.id = EVSE.station_id;
+SELECT e.id as id, station_id, evse_id, connector_type, price, charge_level,
+s.name as station_name, s.latitude, s.longitude,
+site_id, owner_id, site_latitude, site_longitude,
+site_name, street_address, zip_code, city, state, country
+FROM stations_joined s JOIN EVSE e ON s.id = e.station_id;
+
+CREATE VIEW users_joined AS
+SELECT u.id as id, email, password, name, status,
+IF(s.id IS NOT NULL, TRUE, FALSE) as staff,
+IF(o.id IS NOT NULL, TRUE, FALSE) as owner,
+IF(d.id IS NOT NULL, TRUE, FALSE) as driver,
+created_at, updated_at
+FROM User u	
+LEFT OUTER JOIN Staff s ON u.id=s.id
+LEFT OUTER JOIN Station_Owner o ON u.id=o.id
+LEFT OUTER JOIN Driver d ON u.id=d.id;
