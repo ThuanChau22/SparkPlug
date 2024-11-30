@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { MapContainer as Map, TileLayer } from "react-leaflet";
-import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import MapResize from "components/Map/MapResize";
@@ -8,11 +7,7 @@ import LoadingIndicator from "components/LoadingIndicator";
 
 const MapContainer = ({ loading = false, refHeight = 0, children }) => {
   const [mapHeight, setMapHeight] = useState(0);
-
-  const onResize = () => {
-    setMapHeight(window.innerHeight - refHeight);
-  };
-
+  const onResize = () => setMapHeight(window.innerHeight - refHeight);
   return (
     <div style={{ height: `${mapHeight}px` }}>
       <Map
@@ -23,7 +18,6 @@ const MapContainer = ({ loading = false, refHeight = 0, children }) => {
         minZoom={2}
         worldCopyJump={true}
         preferCanvas={true}
-        renderer={L.canvas()}
         placeholder={<noscript>You need to enable JavaScript to see this map.</noscript>}
       >
         <LoadingIndicator loading={loading} overlay={true} />

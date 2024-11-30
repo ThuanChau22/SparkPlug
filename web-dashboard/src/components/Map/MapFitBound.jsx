@@ -1,27 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useMap } from "react-leaflet";
 
-const MapFitBound = ({ positions }) => {
-  const [fitBounds, setFitBounds] = useState(false);
-
+const MapFitBound = ({ bounds = [] }) => {
   const map = useMap();
 
   const latlngs = useMemo(() => (
-    positions.map((p) => [p.latitude, p.longitude])
-  ), [positions]);
+    bounds.map((p) => [p.latitude, p.longitude])
+  ), [bounds]);
 
   useEffect(() => {
     if (latlngs.length > 0) {
-      setFitBounds(true);
-    }
-  }, [latlngs.length]);
-
-  useEffect(() => {
-    if (fitBounds) {
       map.fitBounds(latlngs, { padding: [50, 25] });
-      setFitBounds(false);
     }
-  }, [fitBounds, map, latlngs]);
+  }, [latlngs, map]);
 
   return (<></>);
 }
