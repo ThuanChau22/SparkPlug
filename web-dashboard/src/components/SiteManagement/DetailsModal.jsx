@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -12,17 +12,23 @@ import {
 
 import FormInput from "components/FormInput";
 import LoadingIndicator from "components/LoadingIndicator";
+import useFetchData from "hooks/useFetchData";
 import {
   selectAuthUserId,
   selectAuthRoleIsStaff,
   selectAuthRoleIsOwner,
 } from "redux/auth/authSlice";
 import {
+  mapStateSet,
+} from "redux/map/mapSlice";
+import {
+  SiteFields,
   siteGetById,
   siteUpdateById,
   siteDeleteById,
   selectSiteById,
 } from "redux/site/siteSlice";
+import utils from "utils";
 
 const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
   const userId = useSelector(selectAuthUserId);
@@ -30,24 +36,30 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
   const site = useSelector((state) => selectSiteById(state, siteId));
 
-  const [loading, setLoading] = useState(false);
-
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
 
+  const fetchOnLoad = useMemo(() => {
+    const filter = (field) => site[field] === undefined;
+    return Object.values(SiteFields).filter(filter).length > 0;
+  }, [site]);
+
+  const { loadState } = useFetchData({
+    condition: fetchOnLoad,
+    action: useCallback(() => siteGetById(siteId), [siteId]),
+  });
+
   const dispatch = useDispatch();
 
-  const fetchData = useCallback(async () => {
-    if (!site) {
-      setLoading(true);
-      await dispatch(siteGetById(siteId)).unwrap();
-      setLoading(false);
-    }
-  }, [siteId, site, dispatch]);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    const { latitude: lat, longitude: lng } = site;
+    if (utils.hasLatLngValue({ lat, lng })) {
+      dispatch(mapStateSet({
+        center: { lat, lng },
+        zoom: 20,
+      }))
+    }
+  }, [site, dispatch]);
 
   const InfoModal = () => (
     <>
@@ -332,14 +344,14 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
       onClose={onClose}
     >
       <CModalHeader className="mb-2">
-        {!loading &&
+        {!loadState.loading &&
           <CModalTitle>
             {site.name}
           </CModalTitle>
         }
       </CModalHeader>
-      {loading
-        ? <LoadingIndicator loading={loading} />
+      {loadState.loading
+        ? <LoadingIndicator loading={loadState.loading} />
         : isEdit
           ? <EditModal />
           : isDelete
