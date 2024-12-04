@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -7,28 +7,40 @@ import {
   CCard,
   CCardTitle,
   CCardBody,
-  CListGroup,
-  CListGroupItem,
 } from "@coreui/react";
 
-import LoadingIndicator from "components/LoadingIndicator";
 import StickyContainer from "components/StickyContainer";
 import SiteAddModal from "components/SiteManagement/AddModal";
 import SiteDetailsModal from "components/SiteManagement/DetailsModal";
+import SiteListView from "components/SiteManagement/ListView";
 import SiteMapView from "components/SiteManagement/MapView";
+import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
-  selectLayoutHeaderHeight,
-} from "redux/layout/layoutSlice";
+  selectMapLowerBound,
+  selectMapUpperBound,
+} from "redux/map/mapSlice";
 import {
-  siteGetList,
+  siteStateDeleteMany,
+  siteStateClear,
   selectSiteList,
 } from "redux/site/siteSlice";
+import utils from "utils";
 
 const SiteManagement = () => {
   const headerHeight = useSelector(selectLayoutHeaderHeight);
+
+  const mapLowerBound = useSelector(selectMapLowerBound);
+  const mapUpperBound = useSelector(selectMapUpperBound);
   const siteList = useSelector(selectSiteList);
 
-  const [loading, setLoading] = useState(false);
+  const [titleHeight, setTitleHeight] = useState(0);
+  const titleRef = useCallback((node) => {
+    setTitleHeight(node?.getBoundingClientRect().height);
+  }, []);
+
+  const listRefHeight = useMemo(() => {
+    return headerHeight + titleHeight;
+  }, [headerHeight, titleHeight]);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -36,17 +48,22 @@ const SiteManagement = () => {
 
   const dispatch = useDispatch();
 
-  const fetchData = useCallback(async () => {
-    if (siteList.length === 0) {
-      setLoading(true);
-      await dispatch(siteGetList()).unwrap();
-      setLoading(false);
-    }
-  }, [siteList.length, dispatch]);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    const hasLowerBound = utils.hasLatLngValue(mapLowerBound);
+    const hasUpperBound = utils.hasLatLngValue(mapUpperBound);
+    if (hasLowerBound && hasUpperBound) {
+      const { lat: latMin, lng: lngMin } = mapLowerBound;
+      const { lat: latMax, lng: lngMax } = mapUpperBound;
+      const siteIds = siteList.filter(({ latitude, longitude }) => {
+        const isNotLowerBound = latitude < latMin || longitude < lngMin;
+        const isNotUpperBound = latitude > latMax || longitude > lngMax;
+        return isNotLowerBound || isNotUpperBound;
+      }).map(({ id }) => id);
+      dispatch(siteStateDeleteMany(siteIds));
+    }
+  }, [siteList, mapLowerBound, mapUpperBound, dispatch]);
+
+  useEffect(() => () => dispatch(siteStateClear()), [dispatch]);
 
   const handleViewSite = (siteId) => {
     setSiteId(siteId);
@@ -57,8 +74,8 @@ const SiteManagement = () => {
     <CCard className="flex-grow-1 border border-0 rounded-0">
       <CRow className="flex-grow-1" xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
-          <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
-            <StickyContainer style={{ top: `${headerHeight}px` }}>
+          <CCardBody className="d-flex flex-column h-100 p-0">
+            <StickyContainer ref={titleRef} style={{ top: `${headerHeight}px` }}>
               <CCardTitle
                 className="d-flex justify-content-between align-items-center px-3 py-2 shadow-sm"
                 style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
@@ -73,24 +90,10 @@ const SiteManagement = () => {
                 </CButton>
               </CCardTitle>
             </StickyContainer>
-            {loading
-              ? <LoadingIndicator loading={loading} />
-              : (
-                <CListGroup className="px-3">
-                  {siteList.map(({ id, name }) => (
-                    <CListGroupItem
-                      key={id}
-                      className="border rounded py-3 my-1 shadow-sm"
-                      as="button"
-                      onClick={() => handleViewSite(id)}
-                    >
-                      <small className="w-100 text-secondary">ID: {id}</small>
-                      <p className="mb-0">{name}</p>
-                    </CListGroupItem>
-                  ))}
-                </CListGroup>
-              )
-            }
+            <SiteListView
+              refHeight={listRefHeight}
+              handleViewSite={handleViewSite}
+            />
           </CCardBody>
         </CCol>
         <CCol md={6} lg={7}>
@@ -110,7 +113,7 @@ const SiteManagement = () => {
           siteId={siteId}
         />
       }
-    </CCard >
+    </CCard>
   );
 };
 

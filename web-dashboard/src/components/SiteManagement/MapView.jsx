@@ -1,18 +1,27 @@
-import { useCallback, useState, useEffect, useMemo } from "react";
+import { useCallback, useState, useMemo, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
-import SiteMarkerCluster from "components/Map/SiteMarkerCluster";
+import MapSetView from "components/Map/MapSetView";
 import StickyContainer from "components/StickyContainer";
+import SiteMarkerCluster from "components/SiteManagement/MarkerCluster";
+import useFetchData from "hooks/useFetchData";
+import useFetchDataOnMapView from "hooks/useFetchDataOnMapView";
+import useMapParams from "hooks/useMapParams";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
+  selectMapLowerBound,
+  selectMapUpperBound,
+} from "redux/map/mapSlice";
+import {
+  SiteFields,
   siteGetList,
   siteSetStateSelected,
   siteSetCitySelected,
   siteSetZipCodeSelected,
-  selectSiteList,
+  selectSiteListByFields,
   selectSelectedState,
   selectStateOptions,
   selectSelectedCity,
@@ -20,11 +29,22 @@ import {
   selectSelectedZipCode,
   selectZipCodeOptions,
 } from "redux/site/siteSlice";
+import utils from "utils";
 
 const SiteMapView = ({ handleViewSite }) => {
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
-  const siteList = useSelector(selectSiteList);
+  const mapLowerBound = useSelector(selectMapLowerBound);
+  const mapUpperBound = useSelector(selectMapUpperBound);
+
+  const siteFields = useMemo(() => ([
+    SiteFields.latitude,
+    SiteFields.longitude,
+  ]), []);
+  const siteList = useSelector((state) => {
+    return selectSiteListByFields(state, siteFields);
+  });
+
   const siteSelectedState = useSelector(selectSelectedState);
   const siteStateOptions = useSelector(selectStateOptions);
   const siteSelectedCity = useSelector(selectSelectedCity);
@@ -32,37 +52,61 @@ const SiteMapView = ({ handleViewSite }) => {
   const siteSelectedZipCode = useSelector(selectSelectedZipCode);
   const siteZipCodeOptions = useSelector(selectZipCodeOptions);
 
-  const [loading, setLoading] = useState(false);
-
   const [filterHeight, setFilterHeight] = useState(0);
   const filterRef = useCallback((node) => {
     setFilterHeight(node?.getBoundingClientRect().height);
   }, []);
 
-  const dispatch = useDispatch();
-
-  const fetchData = useCallback(async () => {
-    if (siteList.length === 0) {
-      setLoading(true);
-      await dispatch(siteGetList()).unwrap();
-      setLoading(false);
-    }
-  }, [siteList.length, dispatch]);
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData]);
+  const [mapParams] = useMapParams();
 
   const mapRefHeight = useMemo(() => {
     return headerHeight + filterHeight;
   }, [headerHeight, filterHeight]);
 
+  const { latLngMin, latLngMax } = useMemo(() => ({
+    latLngMin: utils.toLatLngString(mapLowerBound),
+    latLngMax: utils.toLatLngString(mapUpperBound),
+  }), [mapLowerBound, mapUpperBound]);
+
+  const fetchOnLoad = useMemo(() => (
+    !mapParams.exist && !latLngMin && !latLngMax
+  ), [latLngMin, latLngMax, mapParams]);
+
+  const { data, loadState } = useFetchData({
+    condition: fetchOnLoad,
+    action: useCallback(() => siteGetList({
+      fields: siteFields.join(),
+      latLngOrigin: "default",
+    }), [siteFields]),
+  });
+
+  const {
+    loadState: loadStateOnMapView,
+  } = useFetchDataOnMapView({
+    condition: !loadState.loading,
+    action: useCallback(() => siteGetList({
+      fields: siteFields.join(),
+      latLngMin, latLngMax,
+    }), [siteFields, latLngMin, latLngMax]),
+  });
+
+  const loading = useMemo(() => (
+    loadState.loading || (loadState.idle && loadStateOnMapView.loading)
+  ), [loadState, loadStateOnMapView]);
+
+  useEffect(() => {
+    if (loadState.idle && loadStateOnMapView.done) {
+      loadState.setDone();
+    }
+  }, [loadState, loadStateOnMapView]);
+
+  const dispatch = useDispatch();
+
   const handleFilter = (state, city, zipCode) => {
-    const params = [];
-    if (state !== "All") params.push(`state=${state}`);
-    if (city !== "All") params.push(`city=${city}`);
-    if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
-    const query = params.length > 0 ? `?${params.join("&")}` : "";
+    const query = {};
+    if (state !== "All") query.state = state;
+    if (city !== "All") query.city = city;
+    if (zipCode !== "All") query.zipCode = zipCode;
     dispatch(siteGetList(query));
     dispatch(siteSetStateSelected(state));
     dispatch(siteSetCitySelected(city));
@@ -87,9 +131,11 @@ const SiteMapView = ({ handleViewSite }) => {
         loading={loading}
         refHeight={mapRefHeight}
       >
-        <MapFitBound positions={siteList} />
+        <MapSetView delay={1000} />
+        <MapFitBound bounds={data?.sites || []} />
         <SiteMarkerCluster
           siteList={siteList}
+          loading={loadStateOnMapView.loading}
           onClick={handleViewSite}
         />
       </MapContainer>
