@@ -20,6 +20,9 @@ const MapSetView = ({ delay = 0 }) => {
   const dispatch = useDispatch();
 
   const map = useMapEvents({
+    movestart: () => {
+      clearTimeout(moveTimeoutRef.current);
+    },
     moveend: () => {
       clearTimeout(moveTimeoutRef.current);
       moveTimeoutRef.current = setTimeout(() => {
@@ -47,7 +50,11 @@ const MapSetView = ({ delay = 0 }) => {
     const { lat, lng } = mapCenter;
     const condition = (e) => e === null;
     if ([lat, lng, mapZoom].filter(condition).length === 0) {
-      setMapParams({ lat, lng, zoom: mapZoom });
+      setMapParams({
+        lat: lat.toFixed(6),
+        lng: lng.toFixed(6),
+        zoom: mapZoom,
+      });
     }
   }, [mapCenter, mapZoom, setMapParams]);
 
