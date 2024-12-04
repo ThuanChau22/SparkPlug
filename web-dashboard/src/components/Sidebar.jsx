@@ -39,6 +39,44 @@ import {
   layoutStateSetSidebarFold,
 } from "redux/layout/layoutSlice";
 
+const SidebarNav = ({ items }) => {
+  const location = useLocation();
+  const NavItem = ({ component: Component, name, icon, ...rest }, index) => (
+    <Component key={index}>
+      <CNavLink {...(rest.to && { as: NavLink })} {...rest}>
+        {icon && icon}
+        {name && name}
+      </CNavLink>
+    </Component>
+  );
+  const NavGroup = ({ component: Component, name, icon, to, items, ...rest }, index) => (
+    <Component
+      key={index}
+      visible={location.pathname.startsWith(to)}
+      toggler={(
+        <>
+          {icon && icon}
+          {name && name}
+        </>
+      )}
+      {...rest}
+    >
+      {items?.map((item, index) => (
+        item.items ? NavGroup(item, index) : NavItem(item, index)
+      ))}
+    </Component>
+  );
+  return (
+    <CSidebarNav>
+      {items && items.map((item, index) => (
+        item.items
+          ? NavGroup(item, index)
+          : NavItem(item, index)
+      ))}
+    </CSidebarNav>
+  );
+};
+
 const Sidebar = () => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
@@ -47,7 +85,7 @@ const Sidebar = () => {
   const sidebarFold = useSelector(selectLayoutSidebarFold);
   const sidebarShow = useSelector(selectLayoutSidebarShow);
   const [navigation, setNavigation] = useState([]);
-  const location = useLocation();
+
   const dispatch = useDispatch();
 
   useWindowResize(() => {
@@ -131,43 +169,6 @@ const Sidebar = () => {
     }
     setNavigation(newNavigation);
   }, [authIsAdmin, authIsOwner, authIsDriver, headerActive]);
-
-  const SidebarNav = ({ items }) => {
-    const NavItem = ({ component: Component, name, icon, ...rest }, index) => (
-      <Component key={index}>
-        <CNavLink {...(rest.to && { as: NavLink })} {...rest}>
-          {icon && icon}
-          {name && name}
-        </CNavLink>
-      </Component>
-    );
-    const NavGroup = ({ component: Component, name, icon, to, items, ...rest }, index) => (
-      <Component
-        key={index}
-        visible={location.pathname.startsWith(to)}
-        toggler={(
-          <>
-            {icon && icon}
-            {name && name}
-          </>
-        )}
-        {...rest}
-      >
-        {items?.map((item, index) => (
-          item.items ? NavGroup(item, index) : NavItem(item, index)
-        ))}
-      </Component>
-    );
-    return (
-      <CSidebarNav>
-        {items && items.map((item, index) => (
-          item.items
-            ? NavGroup(item, index)
-            : NavItem(item, index)
-        ))}
-      </CSidebarNav>
-    );
-  };
 
   return (
     <CSidebar
