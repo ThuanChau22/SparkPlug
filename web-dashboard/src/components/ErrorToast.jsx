@@ -22,7 +22,7 @@ const ErrorToast = () => {
     if (errorMessage) {
       setToast(
         <CToast key={uuid()} className="border border-danger text-danger mt-3 mb-0">
-          <div className="d-flex">
+          <div className="d-flex justify-content-between">
             <CToastBody className="p-2 pe-0">
               {errorMessage}
             </CToastBody>

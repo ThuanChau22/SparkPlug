@@ -20,7 +20,7 @@ import {
   EmailOutlined,
   PersonOutlined,
   PeopleOutlined,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
 import ErrorToast from "components/ErrorToast";
 import FormInput from "components/FormInput";

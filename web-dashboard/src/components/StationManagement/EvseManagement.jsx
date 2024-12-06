@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useCallback } from "react";
+import { useSelector } from "react-redux";
 import {
   CCard,
   CCardBody,
@@ -10,30 +10,20 @@ import {
 import LoadingIndicator from "components/LoadingIndicator";
 import EvseAdd from "components/StationManagement/EvseAdd";
 import EvseDetails from "components/StationManagement/EvseDetails";
+import useFetchData from "hooks/useFetchData";
 import {
   evseGetByStation,
   selectEvseByStation,
 } from "redux/evse/evseSlice";
 
 const EvseManagement = ({ stationId }) => {
-  const evseList = useSelector((state) => selectEvseByStation(state, stationId));
-
-  const [loading, setLoading] = useState(false);
-
-  const dispatch = useDispatch();
-
-  const fetchData = useCallback(async () => {
-    if (evseList.length === 0) {
-      setLoading(true);
-      await dispatch(evseGetByStation(stationId)).unwrap();
-      setLoading(false);
-    }
-  }, [stationId, evseList.length, dispatch]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
+  const evseByStationList = useSelector((state) => {
+    return selectEvseByStation(state, stationId);
+  });
+  const { loadState } = useFetchData({
+    condition: evseByStationList.length === 0,
+    action: useCallback(() => evseGetByStation(stationId), [stationId]),
+  });
   return (
     <CCard
       className="border-0 rounded-top-0 overflow-y-auto"
@@ -43,12 +33,12 @@ const EvseManagement = ({ stationId }) => {
       }}
     >
       <CCardBody className="d-flex flex-column py-2">
-        {loading
-          ? <LoadingIndicator loading={loading} />
-          : evseList.length > 0
+        {loadState.loading
+          ? <LoadingIndicator loading={loadState.loading} />
+          : evseByStationList.length > 0
             ? (
-              <CListGroup className={evseList.length > 0 ? "mb-2" : ""}>
-                {evseList.map(({ station_id, evse_id }) => (
+              <CListGroup className={evseByStationList.length > 0 ? "mb-2" : ""}>
+                {evseByStationList.map(({ station_id, evse_id }) => (
                   <CListGroupItem key={`${station_id},${evse_id}`}>
                     <EvseDetails stationId={station_id} evseId={evse_id} />
                   </CListGroupItem>

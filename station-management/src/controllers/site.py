@@ -1,4 +1,5 @@
 from flask import request
+from pymysql import IntegrityError
 
 # Internal Modules
 from src.controllers.utils import (
@@ -117,5 +118,9 @@ def delete_site(site_id):
 
     try:
         return transaction(session, modify=True), 204
+    except IntegrityError as e:
+        if e.args[0] == 1451:
+            e = Exception("Site contains one or more stations", 409)
+        return handle_error(e)
     except Exception as e:
         return handle_error(e)

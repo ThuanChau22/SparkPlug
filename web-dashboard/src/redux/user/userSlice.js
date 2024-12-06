@@ -22,11 +22,7 @@ export const UserStatus = {
 
 const userEntityAdapter = createEntityAdapter();
 
-const initialState = userEntityAdapter.getInitialState({
-  cursor: {
-    next: "",
-  },
-});
+const initialState = userEntityAdapter.getInitialState();
 
 export const userSlice = createSlice({
   name: "user",
@@ -45,9 +41,6 @@ export const userSlice = createSlice({
     userStateDeleteById(state, { payload }) {
       userEntityAdapter.removeOne(state, payload);
     },
-    userStateSetCursor(state, { payload }) {
-      state.cursor = payload;
-    },
     userStateClear(_) {
       return initialState;
     },
@@ -59,7 +52,6 @@ export const {
   userStateSetById,
   userStateUpdateById,
   userStateDeleteById,
-  userStateSetCursor,
   userStateClear,
 } = userSlice.actions;
 
@@ -80,7 +72,7 @@ export const userGetList = createAsyncThunk(
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(`${UserAPI}${params}`, config);
       dispatch(userStateSetMany(data.users));
-      dispatch(userStateSetCursor(data.cursor));
+      return data;
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -137,7 +129,5 @@ export const selectUserRoleById = createSelector(
   [selectUserById],
   (user) => Object.values(AuthRoles).filter((role) => user[role]),
 );
-
-export const selectUserCursor = (state) => selectUser(state).cursor;
 
 export default userSlice.reducer;

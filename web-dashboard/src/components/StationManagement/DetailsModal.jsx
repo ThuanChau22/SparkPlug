@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -8,58 +8,51 @@ import {
   CModalBody,
   CForm,
   CFormInput,
-  CFormSelect,
 } from "@coreui/react";
 
 import FormInput from "components/FormInput";
 import EvseManagement from "components/StationManagement/EvseManagement";
 import LoadingIndicator from "components/LoadingIndicator";
+import useFetchData from "hooks/useFetchData";
+import { selectAuthRoleIsStaff } from "redux/auth/authSlice";
+import { mapStateSet } from "redux/map/mapSlice";
 import {
-  selectAuthRoleIsStaff,
-} from "redux/auth/authSlice";
-import {
-  siteGetList,
-  selectSiteIds,
-} from "redux/site/siteSlice";
-import {
+  StationFields,
   stationGetById,
   stationUpdateById,
   stationDeleteById,
   selectStationById,
 } from "redux/station/stationSlice";
+import utils from "utils";
 
 const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
-  const siteIds = useSelector(selectSiteIds);
   const station = useSelector((state) => selectStationById(state, stationId));
 
-  const [loading, setLoading] = useState(false);
-
-  const [siteOptions, setSiteOptions] = useState([]);
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
 
+  const fetchOnLoad = useMemo(() => {
+    const filter = (field) => station[field] === undefined;
+    return Object.values(StationFields).filter(filter).length > 0;
+  }, [station]);
+
+  const { loadState } = useFetchData({
+    condition: fetchOnLoad,
+    action: useCallback(() => stationGetById(stationId), [stationId]),
+  });
+
   const dispatch = useDispatch();
 
-  const fetchData = useCallback(async () => {
-    if (!station) {
-      setLoading(true);
-      await dispatch(stationGetById(stationId)).unwrap();
-      setLoading(false);
-    }
-  }, [stationId, station, dispatch]);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  useEffect(() => {
-    if (siteIds.length === 0) {
-      dispatch(siteGetList());
-    } else {
-      setSiteOptions(siteIds);
+    const { latitude: lat, longitude: lng } = station;
+    if (utils.hasLatLngValue({ lat, lng })) {
+      dispatch(mapStateSet({
+        center: { lat, lng },
+        zoom: 20,
+      }))
     }
-  }, [siteIds, dispatch]);
+  }, [station, dispatch]);
 
   const InfoModal = () => (
     <>
@@ -85,18 +78,42 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
         </div>
       </div>
       <CModalBody className="pb-0">
-        {authIsAdmin && <p>Owner ID: {station.owner_id}</p>}
-        <p>Site ID: {station.site_id}</p>
-        <p>Site Name: {station.site_name}</p>
+        {authIsAdmin && (
+          <p>
+            <span>Owner ID: </span>
+            <span className="text-secondary">
+              {station.owner_id}
+            </span>
+          </p>
+        )}
+        <p>
+          <span> Site ID: </span>
+          <span className="text-secondary">
+            {station.site_id}
+          </span>
+        </p>
+        <p>
+          <span>Site Name: </span>
+          <span className="text-secondary">
+            {station.site_name}
+          </span>
+        </p>
         <p>
           <span>Address: </span>
-          <span>{station.street_address}, </span>
-          <span>{station.city}, </span>
-          <span>{station.state} </span>
-          <span>{station.zip_code}, </span>
-          <span>{station.country}</span>
+          <span className="text-secondary">
+            <span>{station.street_address}, </span>
+            <span>{station.city}, </span>
+            <span>{station.state} </span>
+            <span>{station.zip_code}, </span>
+            <span>{station.country}</span>
+          </span>
         </p>
-        <p>Coordinate: {station.latitude}, {station.longitude}</p>
+        <p>
+          <span>Coordinate: </span>
+          <span className="text-secondary">
+            {station.latitude}, {station.longitude}
+          </span>
+        </p>
       </CModalBody>
     </>
   );
@@ -149,6 +166,17 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
         <CForm noValidate validated={validated}>
           <FormInput
             InputForm={CFormInput}
+            label="Site ID"
+            name="siteId"
+            type="text"
+            placeholder="Site ID"
+            value={formData.siteId}
+            feedbackInvalid="Please select a site ID"
+            required
+            disabled
+          />
+          <FormInput
+            InputForm={CFormInput}
             label="Name"
             name="name"
             type="text"
@@ -156,21 +184,6 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
             value={formData.name}
             onChange={handleInputChange}
             feedbackInvalid="Please provide station name"
-            required
-          />
-          <FormInput
-            InputForm={CFormSelect}
-            label="Site ID"
-            name="siteId"
-            options={[
-              { label: "Select Site ID", value: "", disabled: true },
-              ...siteOptions.map((id) => (
-                { label: id, value: id }
-              )),
-            ]}
-            value={formData.siteId}
-            onChange={handleInputChange}
-            feedbackInvalid="Please select a site ID"
             required
           />
           <FormInput
@@ -277,14 +290,14 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
       onClose={onClose}
     >
       <CModalHeader className="mb-2">
-        {!loading &&
+        {!loadState.loading &&
           <CModalTitle>
             {station.name}
           </CModalTitle>
         }
       </CModalHeader>
-      {loading
-        ? <LoadingIndicator loading={loading} />
+      {loadState.loading
+        ? <LoadingIndicator loading={loadState.loading} />
         : isEdit
           ? <EditModal />
           : isDelete

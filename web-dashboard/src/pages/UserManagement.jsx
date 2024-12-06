@@ -14,67 +14,73 @@ import LoadingIndicator from "components/LoadingIndicator";
 import StickyContainer from "components/StickyContainer";
 import UserActiveStatus from "components/UserManagement/ActiveStatus";
 import UserDetailsModal from "components/UserManagement/DetailsModal";
+import useFetchData from "hooks/useFetchData";
+import useFetchDataOnScroll from "hooks/useFetchDataOnScroll";
+import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
-  selectLayoutHeaderHeight,
-} from "redux/layout/layoutSlice";
-import {
+  userStateClear,
   userGetList,
   selectUserList,
-  selectUserCursor,
 } from "redux/user/userSlice";
 
 const UserManagement = () => {
-  const userLoadLimit = 100;
-  const titleRef = useRef({});
-  const listRef = useRef({});
+  const UserLoadLimit = 100;
 
   const headerHeight = useSelector(selectLayoutHeaderHeight);
   const userList = useSelector(selectUserList);
-  const userCursor = useSelector(selectUserCursor);
 
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [isFetched, setIsFetched] = useState(false);
+  const [userCursor, setUserCursor] = useState({});
 
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [userId, setUserId] = useState(null);
 
   const dispatch = useDispatch();
 
-  const fetchData = useCallback(async () => {
-    if (userList.length === 0) {
-      setLoading(true);
-      await dispatch(userGetList({
-        limit: userLoadLimit
-      })).unwrap();
-      setLoading(false);
-    }
-  }, [userList.length, dispatch]);
+  const [titleHeight, setTitleHeight] = useState(0);
+  const titleRef = useCallback((node) => {
+    setTitleHeight(node?.getBoundingClientRect().height);
+  }, []);
+  const listRef = useRef({});
+
+  const { data, loadState } = useFetchData({
+    condition: !isFetched,
+    action: useCallback(() => userGetList({ limit: UserLoadLimit }), []),
+  });
+
+  const {
+    data: dataOnScroll,
+    loadState: loadStateOnScroll,
+  } = useFetchDataOnScroll({
+    isWindow: true,
+    action: useCallback(() => userGetList({
+      limit: UserLoadLimit,
+      cursor: userCursor.next,
+    }), [userCursor.next]),
+    ref: listRef,
+    cursor: userCursor,
+    refHeight: headerHeight + titleHeight,
+  });
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleLoadMore = useCallback(async () => {
-    const titleHeight = titleRef.current?.offsetHeight;
-    const listHeight = listRef.current?.offsetHeight;
-    const topHeight = headerHeight + titleHeight;
-    const loadPosition = listHeight - window.innerHeight + topHeight;
-    if (!loadingMore && userCursor.next && window.scrollY >= loadPosition) {
-      setLoadingMore(true);
-      await dispatch(userGetList({
-        limit: userLoadLimit,
-        cursor: userCursor.next,
-      })).unwrap();
-      setLoadingMore(false);
+    if (loadState.done) {
+      setIsFetched(true);
     }
-  }, [loadingMore, userCursor, headerHeight, titleRef, listRef, dispatch]);
+  }, [loadState]);
 
   useEffect(() => {
-    window.addEventListener("scroll", handleLoadMore);
-    return () => {
-      window.removeEventListener("scroll", handleLoadMore);
+    if (data && loadState.done) {
+      setUserCursor(data.cursor);
     }
-  }, [handleLoadMore]);
+  }, [data, loadState]);
+
+  useEffect(() => {
+    if (dataOnScroll && loadStateOnScroll.done) {
+      setUserCursor(dataOnScroll.cursor);
+    }
+  }, [dataOnScroll, loadStateOnScroll]);
+
+  useEffect(() => () => dispatch(userStateClear()), [dispatch]);
 
   const handleViewUser = (userId) => {
     setUserId(userId);
@@ -92,44 +98,42 @@ const UserManagement = () => {
             Users Management
           </CCardTitle>
         </StickyContainer>
-        {loading
-          ? <LoadingIndicator loading={loading} />
+        {loadState.loading
+          ? <LoadingIndicator loading={loadState.loading} />
           : (
-            <>
-              <CListGroup ref={listRef} className="px-3">
-                {userList.map(({ id, name, email, status }) => (
-                  <CListGroupItem
-                    key={id}
-                    className="border rounded py-3 my-1 shadow-sm"
-                    as="button"
-                    onClick={() => handleViewUser(id)}
-                  >
-                    <p className="d-flex justify-content-between mb-0">
-                      <small className="w-100 text-secondary">ID: {id}</small>
-                      <span>Status</span>
-                    </p>
-                    <CRow>
-                      <CCol>
-                        <CRow>
-                          <CCol xs={12} sm={6} className="pe-0">
-                            Name: {name}
-                          </CCol>
-                          <CCol xs={12} sm={6} className="pe-0">
-                            Email: {email}
-                          </CCol>
-                        </CRow>
-                      </CCol>
-                      <CCol xs="auto" sm={3} className="ps-0 text-end">
-                        <UserActiveStatus status={status} />
-                      </CCol>
-                    </CRow>
-                  </CListGroupItem>
-                ))}
-              </CListGroup>
-              {loadingMore && (
-                <LoadingIndicator loading={loadingMore} />
+            <CListGroup ref={listRef} className="px-3">
+              {userList.map(({ id, name, email, status }) => (
+                <CListGroupItem
+                  key={id}
+                  className="border rounded py-3 my-1 shadow-sm"
+                  as="button"
+                  onClick={() => handleViewUser(id)}
+                >
+                  <p className="d-flex justify-content-between mb-0">
+                    <small className="w-100 text-secondary">ID: {id}</small>
+                    <span>Status</span>
+                  </p>
+                  <CRow>
+                    <CCol>
+                      <CRow>
+                        <CCol xs={12} sm={6} className="pe-0">
+                          Name: {name}
+                        </CCol>
+                        <CCol xs={12} sm={6} className="pe-0">
+                          Email: {email}
+                        </CCol>
+                      </CRow>
+                    </CCol>
+                    <CCol xs="auto" sm={3} className="ps-0 text-end">
+                      <UserActiveStatus status={status} />
+                    </CCol>
+                  </CRow>
+                </CListGroupItem>
+              ))}
+              {loadStateOnScroll.loading && (
+                <LoadingIndicator loading={loadStateOnScroll.loading} />
               )}
-            </>
+            </CListGroup>
           )}
       </CCardBody>
       {isDetailsModalOpen && (

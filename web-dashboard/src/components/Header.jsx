@@ -2,7 +2,6 @@ import {
   useEffect,
   useState,
   useRef,
-  useCallback,
 } from "react";
 import {
   useDispatch,
@@ -30,6 +29,7 @@ import CIcon from "@coreui/icons-react";
 import logoBrand from "assets/logo-brand";
 import Breadcrumb from "components/Breadcrumb";
 import HeaderDropdown from "components/HeaderDropdown";
+import useWindowResize from "hooks/useWindowResize";
 import {
   selectLayoutSidebarShow,
   layoutStateSetHeaderActive,
@@ -50,19 +50,10 @@ const Header = () => {
 
   const dispatch = useDispatch();
 
-  const handleResize = useCallback(() => {
-    dispatch(layoutStateSetHeaderHeight(headerRef.current.offsetHeight));
-  }, [dispatch]);
-
-  useEffect(() => {
-    handleResize();
-    window.addEventListener("load", handleResize);
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("load", handleResize);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [handleResize]);
+  useWindowResize(() => {
+    const headerHeight = headerRef.current?.offsetHeight;
+    dispatch(layoutStateSetHeaderHeight(headerHeight));
+  });
 
   useEffect(() => {
     setComponents([]);

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
   CForm,
@@ -8,15 +8,29 @@ import {
 } from "@coreui/react";
 
 import FormInput from "components/FormInput";
-import { evseAdd } from "redux/evse/evseSlice";
+import {
+  evseAdd,
+  selectEvseByStation,
+} from "redux/evse/evseSlice";
 
 const EvseAdd = ({ stationId }) => {
+  const evseByStationList = useSelector((state) => {
+    return selectEvseByStation(state, stationId);
+  });
+
   const [isAdd, setIsAdd] = useState(false);
   const dispatch = useDispatch();
 
+  const newEvseId = useMemo(() => {
+    if (evseByStationList.length > 0) {
+      const lastIndex = evseByStationList.length - 1;
+      return evseByStationList[lastIndex].evse_id + 1;
+    }
+    return 1;
+  }, [evseByStationList]);
+
   const AddForm = () => {
     const initialFormData = {
-      evseId: "",
       chargeLevel: "",
       connectorType: "",
       price: "",
@@ -31,8 +45,9 @@ const EvseAdd = ({ stationId }) => {
 
     const handleSubmit = () => {
       const data = {
-        ...formData,
         stationId,
+        evseId: newEvseId,
+        ...formData,
       };
       if (!data.evseId
         || !data.chargeLevel
@@ -50,14 +65,15 @@ const EvseAdd = ({ stationId }) => {
       <CForm className="mt-3" noValidate validated={validated}>
         <FormInput
           InputForm={CFormInput}
+          label="EVSE ID"
           name="evseId"
           type="number"
           min="1"
           placeholder="EVSE ID"
-          value={formData.evseId}
-          onChange={handleInputChange}
+          value={newEvseId}
           feedbackInvalid="Please provide EVSE ID"
           required
+          disabled
         />
         <FormInput
           InputForm={CFormSelect}

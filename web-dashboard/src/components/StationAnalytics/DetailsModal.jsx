@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CChart } from "@coreui/react-chartjs";
 import {
@@ -13,12 +13,13 @@ import {
 } from "@coreui/react";
 
 import LoadingIndicator from "components/LoadingIndicator";
-import { apiInstance } from "redux/api";
+import { apiInstance, handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   stationGetById,
   selectStationById,
 } from "redux/station/stationSlice";
+import useFetchData from "hooks/useFetchData";
 
 const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
@@ -27,93 +28,87 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
   const station = useSelector((state) => selectStationById(state, stationId));
   const token = useSelector(selectAuthAccessToken);
 
-  const [loading, setLoading] = useState(false);
-
   const [analyticsData, setAnalyticsData] = useState(null);
-  const [forecastData, setForecastData] = useState(null);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  // const [chargeLevel, setChargeLevel] = useState("All");
+  const [energyForecastData, setEnergyForecastData] = useState(null);
+
+  // Default value for demo purpose
+  const [startDate, setStartDate] = useState("2020-01-01");
+  const [endDate, setEndDate] = useState("2020-12-31");
+
+  const { loadState } = useFetchData({
+    condition: !station?.name,
+    action: useCallback(() => stationGetById(stationId), [stationId]),
+  });
 
   const dispatch = useDispatch();
 
-  const fetchStationData = useCallback(async () => {
-    if (!station) {
-      setLoading(true);
-      await dispatch(stationGetById(stationId)).unwrap();
-      setLoading(false);
-    }
-  }, [stationId, station, dispatch]);
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    let month = "" + (date.getMonth() + 1);
-    let day = "" + date.getDate();
-    const year = date.getFullYear();
-    if (month.length < 2) month = "0" + month;
-    if (day.length < 2) day = "0" + day;
-    return [month, day, year].join("/");
-  };
+  const apiConfig = useMemo(() => {
+    return { headers: { Authorization: `Bearer ${token}` } };
+  }, [token]);
 
   const fetchAnalyticsData = useCallback(async () => {
     try {
-      const params = [];
-      if (startDate) params.push(`start_date=${formatDate(startDate)}`);
-      if (endDate) params.push(`end_date=${formatDate(endDate)}`);
-      const query = params.length > 0 ? `?${params.join("&")}` : "";
-      const analyticsRequestURL = `${StationAnalyticsAPI}/charts/all/${stationId}${query}`;
-      const forecastRequestURL = `${EnergyForecastAPI}/${stationId}`;
-      const headers = { Authorization: `Bearer ${token}` };
-      const [analyticsResponse, forecastResponse] = await Promise.all([
-        apiInstance.get(analyticsRequestURL, { headers }),
-        apiInstance.get(forecastRequestURL, { headers }),
-      ]);
-      setAnalyticsData(analyticsResponse.data);
-      setForecastData(forecastResponse.data);
+      const endpoint = `${StationAnalyticsAPI}/charts/all/${stationId}`;
+      const params = Object.entries({
+        start_date: startDate,
+        end_date: endDate,
+      }).map(([key, value]) => value ? `${key}=${value}` : "")
+        .filter((param) => param).join("&");
+      const query = `${endpoint}${params ? `?${params}` : ""}`
+      const { data } = await apiInstance.get(query, apiConfig);
+      setAnalyticsData(data);
     } catch (error) {
-      console.log(error);
+      handleError({ error, dispatch });
     }
-  }, [StationAnalyticsAPI, EnergyForecastAPI, stationId, token, startDate, endDate]);
+  }, [StationAnalyticsAPI, stationId, apiConfig, startDate, endDate, dispatch]);
+
+  const fetchEnergyForecastData = useCallback(async () => {
+    try {
+      const query = `${EnergyForecastAPI}/${stationId}`;
+      const { data } = await apiInstance.get(query, apiConfig);
+      setEnergyForecastData(data);
+    } catch (error) {
+      handleError({ error, dispatch });
+      setEnergyForecastData({ data: [] });
+    }
+  }, [EnergyForecastAPI, stationId, apiConfig, dispatch]);
 
   useEffect(() => {
-    fetchStationData();
     fetchAnalyticsData();
-  }, [fetchStationData, fetchAnalyticsData]);
+    fetchEnergyForecastData();
+  }, [fetchAnalyticsData, fetchEnergyForecastData]);
 
-  const getEnergyConsumptionChartData = () => {
-    if (!forecastData || !forecastData.data) return null;
-
-    // Assuming forecastData contains both historical and predicted data
-    const combinedData = forecastData.data.map(item => ({
-      date: item.date,
-      energy: item.energy,
-      type: item.type
-    }));
-
-    // Sort the data by date
-    const sortedData = combinedData.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    // Extract labels (dates) and data (energy values)
-    const labels = sortedData.map(item => item.date);
-    const data = sortedData.map(item => item.energy);
-
-    // Set color based on whether it's historical or predicted
-    const backgroundColors = sortedData.map(item =>
-      item.type === "historical" ? "rgba(75, 192, 192, 0.6)" : "rgba(255, 99, 132, 0.6)"
-    );
-
-    return {
-      labels, // X-axis labels (dates)
-      datasets: [
-        {
-          label: "Energy Consumption Forecast (kWh)",
-          backgroundColor: backgroundColors, // Dynamic colors based on type
-          data: data  // Combined energy data
-        }
-      ]
+  // Combined forecast data (historical + predicted)
+  const energyConsumptionChartData = useMemo(() => {
+    const chartData = {
+      labels: [],
+      datasets: [{
+        label: "Energy Consumption Forecast (kWh)",
+        data: [],
+      }],
     };
-  };
+    if (energyForecastData) {
+      // Assuming forecastData contains both historical and predicted data
+      const combinedData = energyForecastData.data.map(item => ({
+        date: item.date,
+        energy: item.energy,
+        type: item.type
+      })).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      // Extract labels (dates) and data (energy values)
+      chartData.labels = combinedData.map(({ date }) => date);
+      const [dataset] = chartData.datasets;
+      dataset.data = combinedData.map(({ energy }) => energy);
+
+      // Set color based on whether historical or predicted data
+      dataset.backgroundColor = combinedData.map(({ type }) =>
+        type === "historical"
+          ? "rgba(75, 192, 192, 0.6)"
+          : "rgba(255, 99, 132, 0.6)"
+      );
+    }
+    return chartData;
+  }, [energyForecastData]);
 
   return (
     <CModal
@@ -125,11 +120,11 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
       scrollable
     >
       <CModalHeader>
-        <CModalTitle>{!loading && station.name}</CModalTitle>
+        <CModalTitle>{!loadState.loading && station.name}</CModalTitle>
       </CModalHeader>
       <CForm className="d-flex align-item-center">
         <CInputGroup>
-          <CInputGroupText className="bg-secondary text-white rounded-0">
+          <CInputGroupText className="rounded-0">
             From
           </CInputGroupText>
           <CFormInput
@@ -140,7 +135,7 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
           />
         </CInputGroup>
         <CInputGroup>
-          <CInputGroupText className="bg-secondary text-white rounded-0">
+          <CInputGroupText className="rounded-0">
             To
           </CInputGroupText>
           <CFormInput
@@ -150,60 +145,39 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
             onChange={(e) => setEndDate(e.target.value)}
           />
         </CInputGroup>
-        {/*        
-        <CInputGroup>
-          <CInputGroupText className="bg-secondary text-white rounded-0">
-            Charge Level
-          </CInputGroupText>
-          <CFormSelect
-            className="rounded-0 shadow-none"
-            options={[
-              { label: "All Levels", value: "All" },
-              { label: "Level 1", value: "1" },
-              { label: "Level 2", value: "2" },
-              { label: "Level 3", value: "3" },
-            ]}
-            value={chargeLevel}
-            onChange={(e) => setChargeLevel(e.target.value)}
-          />
-        </CInputGroup>
-*/}
       </CForm>
       <CModalBody>
-        {analyticsData
-          ? (
+        {!analyticsData
+          ? (<LoadingIndicator />)
+          : (
             <>
-              <CChart type="bar" data={analyticsData.revenue} />
-              <CChart type="bar" data={analyticsData.peak_time} />
-              <CChart type="bar" data={analyticsData.utilization_rate} />
-              <CChart type="bar" data={analyticsData.sessions_count} />
-              <CChart type="bar" data={analyticsData.energy_consumption} />
+              <CChart className="mt-3" type="bar" data={analyticsData.revenue} />
+              <CChart className="mt-3" type="bar" data={analyticsData.peak_time} />
+              <CChart className="mt-3" type="bar" data={analyticsData.utilization_rate} />
+              <CChart className="mt-3" type="bar" data={analyticsData.sessions_count} />
+              <CChart className="mt-3" type="bar" data={analyticsData.energy_consumption} />
             </>
           )
-          : (<LoadingIndicator />)
         }
-        {forecastData
-          ? (
-            <>
-              <div style={{ marginTop: "30px" }}>
-                <CChart
-                  type="bar"
-                  data={getEnergyConsumptionChartData()}  // Combined forecast data (historical + predicted)
-                  options={{
-                    scales: {
-                      x: {
-                        stacked: false, // Ensure the datasets are not stacked
-                      },
-                      y: {
-                        stacked: false
-                      }
-                    }
-                  }}
-                />
-              </div>
-            </>
+        {!energyForecastData
+          ? (<LoadingIndicator />)
+          : (
+            <CChart
+              className="mt-3"
+              type="bar"
+              data={energyConsumptionChartData}
+              options={{
+                scales: {
+                  x: {
+                    stacked: false,
+                  },
+                  y: {
+                    stacked: false,
+                  }
+                }
+              }}
+            />
           )
-          : (<LoadingIndicator />)
         }
       </CModalBody>
     </CModal>

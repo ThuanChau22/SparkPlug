@@ -1,28 +1,24 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import L from "leaflet";
 import { Marker, Tooltip } from "react-leaflet";
 
-const MapMarker = ({ iconUrl, eventHandlers = {}, tooltip, children, ...remain }) => {
+import defaultIconUrl from "assets/station_pointer.png";
+
+const MapMarker = ({
+  iconUrl = defaultIconUrl,
+  eventHandlers = {},
+  tooltip = {},
+  children,
+  ...remain
+}) => {
   const DefaultSize = 50;
 
   const markerRef = useRef({});
   const moveTimeoutRef = useRef({});
 
-  const extraEventHandlers = useMemo(() => ({
-    ...eventHandlers,
-    mousemove: () => {
-      markerRef.current.closeTooltip();
-      clearTimeout(moveTimeoutRef.current);
-      moveTimeoutRef.current = setTimeout(() => {
-        markerRef.current.openTooltip();
-      }, 250);
-    },
-    mouseout: () => clearTimeout(moveTimeoutRef.current),
-  }), [eventHandlers]);
-
   useEffect(() => () => clearTimeout(moveTimeoutRef.current), []);
 
-  if (iconUrl) {
+  if (iconUrl && !remain.icon) {
     remain.icon = L.icon({
       iconUrl,
       iconSize: [DefaultSize, DefaultSize],
@@ -34,16 +30,28 @@ const MapMarker = ({ iconUrl, eventHandlers = {}, tooltip, children, ...remain }
     <Marker
       ref={markerRef}
       riseOnHover={true}
-      eventHandlers={extraEventHandlers}
+      eventHandlers={{
+        mousemove: () => {
+          markerRef.current?.closeTooltip();
+          clearTimeout(moveTimeoutRef.current);
+          moveTimeoutRef.current = setTimeout(() => {
+            markerRef.current?.openTooltip();
+          }, 250);
+        },
+        mouseout: () => clearTimeout(moveTimeoutRef.current),
+        ...eventHandlers,
+      }}
       {...remain}
     >
-      <Tooltip {...{
-        direction: "top",
-        offset: [0, -DefaultSize / 2],
-        ...tooltip,
-      }}>
-        {children}
-      </Tooltip>
+      {children && (
+        <Tooltip {...{
+          direction: "top",
+          offset: [0, -DefaultSize / 2],
+          ...tooltip,
+        }}>
+          {children}
+        </Tooltip>
+      )}
     </Marker>
   );
 };

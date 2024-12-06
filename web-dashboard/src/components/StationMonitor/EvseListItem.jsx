@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ms from "ms";
 import { CButton } from "@coreui/react";
-import { EvStation } from '@mui/icons-material';
+import { EvStation } from "@mui/icons-material";
 
 import EvseAvailabilityStatus from "components/EvseAvailabilityStatus";
 import useStationEventSocket from "hooks/useStationEventSocket";

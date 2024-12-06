@@ -16,7 +16,9 @@ import {
   selectAuthRoleIsStaff,
   selectAuthRoleIsOwner,
 } from "redux/auth/authSlice";
+import { mapStateSet } from "redux/map/mapSlice";
 import { siteAdd } from "redux/site/siteSlice";
+import utils from "utils";
 
 const SiteAddModal = ({ isOpen, onClose }) => {
   const userId = useSelector(selectAuthUserId);
@@ -44,7 +46,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const data = formData;
     if (authIsOwner) {
       data.ownerId = userId;
@@ -62,7 +64,18 @@ const SiteAddModal = ({ isOpen, onClose }) => {
       setValidated(true);
       return;
     }
-    dispatch(siteAdd(data));
+    const site = await dispatch(siteAdd(data)).unwrap();
+    if (site) {
+      const { latitude: lat, longitude: lng } = site;
+      if (utils.hasLatLngValue({ lat, lng })) {
+        dispatch(mapStateSet({
+          center: { lat, lng },
+          lowerBound: { lat, lng },
+          upperBound: { lat, lng },
+          zoom: 20,
+        }));
+      }
+    }
     handleClose();
   };
 
@@ -83,16 +96,6 @@ const SiteAddModal = ({ isOpen, onClose }) => {
       </CModalHeader>
       <CModalBody>
         <CForm noValidate validated={validated}>
-          <FormInput
-            InputForm={CFormInput}
-            name="name"
-            type="text"
-            placeholder="Name"
-            value={formData.name}
-            onChange={handleInputChange}
-            feedbackInvalid="Please provide site name"
-            required
-          />
           {authIsAdmin &&
             <FormInput
               InputForm={CFormInput}
@@ -104,6 +107,16 @@ const SiteAddModal = ({ isOpen, onClose }) => {
               feedbackInvalid="Please provide owner ID"
               required
             />}
+          <FormInput
+            InputForm={CFormInput}
+            name="name"
+            type="text"
+            placeholder="Name"
+            value={formData.name}
+            onChange={handleInputChange}
+            feedbackInvalid="Please provide site name"
+            required
+          />
           <FormInput
             InputForm={CFormInput}
             name="latitude"

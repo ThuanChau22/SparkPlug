@@ -2,6 +2,7 @@ import {
   createSlice,
   createAsyncThunk,
   createEntityAdapter,
+  createSelector,
 } from "@reduxjs/toolkit";
 
 import {
@@ -15,22 +16,36 @@ import {
 
 const SiteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
 
+export const SiteFields = {
+  id: "id",
+  ownerId: "owner_id",
+  name: "name",
+  latitude: "latitude",
+  longitude: "longitude",
+  streetAddress: "street_address",
+  city: "city",
+  state: "state",
+  country: "country",
+  zipCode: "zip_code",
+};
+
 const siteEntityAdapter = createEntityAdapter({
-  sortComparer: (a, b) => a.id - b.id,
+  sortComparer: (a, b) => {
+    const result = new Date(a.created_at) - new Date(b.created_at);
+    return result || a.id - b.id;
+  },
 });
 const locationFilterAdapter = createLocationFilterAdapter();
-
-const initialState = {
-  ...siteEntityAdapter.getInitialState(),
+const initialState = siteEntityAdapter.getInitialState({
   ...locationFilterAdapter.getInitialState(),
-};
+});
 
 export const siteSlice = createSlice({
   name: "site",
   initialState,
   reducers: {
-    siteStateSetMany(state, { payload }) {
-      siteEntityAdapter.setMany(state, payload);
+    siteStateUpsertMany(state, { payload }) {
+      siteEntityAdapter.upsertMany(state, payload);
     },
     siteStateSetById(state, { payload }) {
       siteEntityAdapter.setOne(state, payload);
@@ -38,6 +53,9 @@ export const siteSlice = createSlice({
     siteStateUpdateById(state, { payload }) {
       const { id, ...changes } = payload;
       siteEntityAdapter.updateOne(state, { id, changes });
+    },
+    siteStateDeleteMany(state, { payload }) {
+      siteEntityAdapter.removeMany(state, payload);
     },
     siteStateDeleteById(state, { payload }) {
       siteEntityAdapter.removeOne(state, payload);
@@ -66,9 +84,10 @@ export const siteSlice = createSlice({
 });
 
 export const {
-  siteStateSetMany,
+  siteStateUpsertMany,
   siteStateSetById,
   siteStateUpdateById,
+  siteStateDeleteMany,
   siteStateDeleteById,
   siteSetStateSelected,
   siteSetCitySelected,
@@ -78,11 +97,32 @@ export const {
 
 export const siteGetList = createAsyncThunk(
   `${siteSlice.name}/getList`,
-  async (query = "", { dispatch, getState }) => {
+  async ({
+    fields, name,
+    latitude, longitude,
+    city, state, country,
+    limit, cursor,
+    ownerId: owner_id,
+    streetAddress: street_address,
+    zipCode: zip_code,
+    latLngOrigin: lat_lng_origin,
+    latLngMin: lat_lng_min,
+    latLngMax: lat_lng_max,
+    sortBy: sort_by,
+  } = {}, { dispatch, getState }) => {
     try {
+      const params = Object.entries({
+        fields, name, owner_id, latitude, longitude,
+        street_address, city, state, country, zip_code,
+        lat_lng_origin, lat_lng_min, lat_lng_max,
+        sort_by, limit, cursor,
+      }).map(([key, value]) => value ? `${key}=${value}` : "")
+        .filter((param) => param).join("&");
+      const query = `${SiteAPI}${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.get(`${SiteAPI}${query}`, config);
-      dispatch(siteStateSetMany(data));
+      const { data } = await apiInstance.get(query, config);
+      dispatch(siteStateUpsertMany(data.sites));
+      return data;
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -119,6 +159,7 @@ export const siteAdd = createAsyncThunk(
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.post(`${SiteAPI}`, body, config);
       dispatch(siteStateSetById(data));
+      return data;
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -129,10 +170,11 @@ export const siteUpdateById = createAsyncThunk(
   `${siteSlice.name}/updateById`,
   async ({
     id, name,
-    ownerId: owner_id,
     latitude, longitude,
+    city, state, country,
+    ownerId: owner_id,
     streetAddress: street_address,
-    city, state, zipCode: zip_code, country,
+    zipCode: zip_code,
   }, { dispatch, getState }) => {
     try {
       const body = {
@@ -167,6 +209,13 @@ const siteSelectors = siteEntityAdapter.getSelectors(selectSite);
 export const selectSiteIds = siteSelectors.selectIds;
 export const selectSiteList = siteSelectors.selectAll;
 export const selectSiteById = siteSelectors.selectById;
+
+export const selectSiteListByFields = createSelector(
+  [selectSiteList, (_, fields) => fields],
+  (siteList, fields) => siteList.filter((site) => {
+    return fields.filter((field) => !site[field]).length === 0;
+  }),
+);
 
 const filterSelectors = locationFilterAdapter.getSelectors(selectSite);
 export const selectSelectedState = filterSelectors.selectSelectedState;

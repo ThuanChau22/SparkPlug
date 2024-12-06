@@ -15,10 +15,10 @@ def get_stations_by_zip_code(zip_code):
     params = f"?zip_code={zip_code}"
     headers = request.headers
     response = requests.get(f"{STATION_API_ENDPOINT}{params}", headers=headers)
-    stations = response.json()
+    data = response.json()
     if not response.status_code == 200:
-        raise Exception(stations, response.status_code)
-    return stations
+        raise Exception(data, response.status_code)
+    return data.get("stations")
 
 
 def handle_error(error):

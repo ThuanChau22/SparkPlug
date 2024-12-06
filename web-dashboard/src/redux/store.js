@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 
 import { layoutSlice } from "redux/layout/layoutSlice";
+import { mapSlice } from "redux/map/mapSlice";
 import { authSlice } from "redux/auth/authSlice";
 import { userSlice } from "redux/user/userSlice";
 import { siteSlice } from "redux/site/siteSlice";
@@ -13,6 +14,7 @@ import { errorSlice } from "redux/error/errorSlice";
 export const store = configureStore({
   reducer: {
     [layoutSlice.name]: layoutSlice.reducer,
+    [mapSlice.name]: mapSlice.reducer,
     [authSlice.name]: authSlice.reducer,
     [siteSlice.name]: siteSlice.reducer,
     [stationSlice.name]: stationSlice.reducer,
