@@ -18,9 +18,7 @@ import {
   selectAuthRoleIsStaff,
   selectAuthRoleIsOwner,
 } from "redux/auth/authSlice";
-import {
-  mapStateSet,
-} from "redux/map/mapSlice";
+import { mapStateSet } from "redux/map/mapSlice";
 import {
   SiteFields,
   siteGetById,
@@ -85,16 +83,30 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
         </div>
       </div>
       <CModalBody className="pt-1">
-        {authIsAdmin && <p>Owner ID: {site.owner_id}</p>}
+        {authIsAdmin && (
+          <p>
+            <span>Owner ID: </span>
+            <span className="text-secondary">
+              {site.owner_id}
+            </span>
+          </p>
+        )}
         <p>
           <span>Address: </span>
-          <span>{site.street_address}, </span>
-          <span>{site.city}, </span>
-          <span>{site.state} </span>
-          <span>{site.zip_code}, </span>
-          <span>{site.country}</span>
+          <span className="text-secondary">
+            <span>{site.street_address}, </span>
+            <span>{site.city}, </span>
+            <span>{site.state} </span>
+            <span>{site.zip_code}, </span>
+            <span>{site.country}</span>
+          </span>
         </p>
-        <p>Coordinate: {site.latitude}, {site.longitude}</p>
+        <p>
+          <span>Coordinate: </span>
+          <span className="text-secondary">
+            {site.latitude}, {site.longitude}
+          </span>
+        </p>
       </CModalBody>
     </>
   );
@@ -163,6 +175,19 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
     return (
       <CModalBody>
         <CForm noValidate validated={validated}>
+          {authIsAdmin && (
+            <FormInput
+              InputForm={CFormInput}
+              label="Owner ID"
+              name="ownerId"
+              type="text"
+              placeholder="Owner ID"
+              value={formData.ownerId}
+              feedbackInvalid="Please provide owner ID"
+              required
+              disabled
+            />
+          )}
           <FormInput
             InputForm={CFormInput}
             label="Name"
@@ -174,18 +199,6 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
             feedbackInvalid="Please provide site name"
             required
           />
-          {authIsAdmin &&
-            <FormInput
-              InputForm={CFormInput}
-              label="Owner ID"
-              name="ownerId"
-              type="text"
-              placeholder="Owner ID"
-              value={formData.ownerId}
-              onChange={handleInputChange}
-              feedbackInvalid="Please provide owner ID"
-              required
-            />}
           <FormInput
             InputForm={CFormInput}
             label="Latitude"

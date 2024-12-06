@@ -9,6 +9,7 @@ import {
 
 import FormInput from "components/FormInput";
 import LoadingIndicator from "components/LoadingIndicator";
+import useFetchData from "hooks/useFetchData";
 import {
   evseGetById,
   evseUpdateById,
@@ -17,32 +18,22 @@ import {
 } from "redux/evse/evseSlice";
 
 const EvseDetails = ({ stationId, evseId }) => {
-  const evse = useSelector((state) => selectEvseById(state, {
-    stationId,
-    evseId,
-  }));
-
-  const [loading, setLoading] = useState(false);
+  const evse = useSelector((state) => {
+    return selectEvseById(state, { stationId, evseId });
+  });
 
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
 
+  const { loadState } = useFetchData({
+    condition: !evse,
+    action: useCallback(() => evseGetById({
+      stationId,
+      evseId,
+    }), [stationId, evseId]),
+  });
+
   const dispatch = useDispatch();
-
-  const fetchData = useCallback(async () => {
-    if (!evse) {
-      setLoading(true);
-      await dispatch(evseGetById({
-        stationId,
-        evseId,
-      })).unwrap();
-      setLoading(false);
-    }
-  }, [stationId, evseId, evse, dispatch]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   const Info = () => {
     const { evse_id, charge_level, connector_type, price } = evse;
@@ -72,9 +63,24 @@ const EvseDetails = ({ stationId, evseId }) => {
             </CButton>
           </div>
         </div>
-        <p>Charge Level: {charge_level}</p>
-        <p>Connector Type: {connector_type}</p>
-        <p>Price: {formatPrice(price)}</p>
+        <p>
+          <span>Charge Level: </span>
+          <span className="text-secondary">
+            {charge_level}
+          </span>
+        </p>
+        <p>
+          <span>Connector Type: </span>
+          <span className="text-secondary">
+            {connector_type}
+          </span>
+        </p>
+        <p>
+          <span>Price: </span>
+          <span className="text-secondary">
+            {formatPrice(price)}
+          </span>
+        </p>
       </>
     );
   };
@@ -91,6 +97,7 @@ const EvseDetails = ({ stationId, evseId }) => {
     useEffect(() => {
       if (evse) {
         setFormData({
+          evseId: evse.evse_id,
           chargeLevel: evse.charge_level,
           connectorType: evse.connector_type,
           price: evse.price.toString(),
@@ -122,6 +129,18 @@ const EvseDetails = ({ stationId, evseId }) => {
 
     return (
       <CForm noValidate validated={validated}>
+        <FormInput
+          InputForm={CFormInput}
+          label="EVSE ID"
+          name="evseId"
+          type="number"
+          min="1"
+          placeholder="EVSE ID"
+          value={evseId}
+          feedbackInvalid="Please provide EVSE ID"
+          required
+          disabled
+        />
         <FormInput
           InputForm={CFormSelect}
           label="Charge Level"
@@ -226,8 +245,8 @@ const EvseDetails = ({ stationId, evseId }) => {
     );
   };
 
-  return (loading
-    ? <LoadingIndicator loading={loading} />
+  return (loadState.loading
+    ? <LoadingIndicator loading={loadState.loading} />
     : isEdit
       ? <Edit />
       : isDelete

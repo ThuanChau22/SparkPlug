@@ -31,6 +31,7 @@ const SiteManagement = () => {
 
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
+
   const siteList = useSelector(selectSiteList);
 
   const [titleHeight, setTitleHeight] = useState(0);
@@ -49,18 +50,11 @@ const SiteManagement = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const hasLowerBound = utils.hasLatLngValue(mapLowerBound);
-    const hasUpperBound = utils.hasLatLngValue(mapUpperBound);
-    if (hasLowerBound && hasUpperBound) {
-      const { lat: latMin, lng: lngMin } = mapLowerBound;
-      const { lat: latMax, lng: lngMax } = mapUpperBound;
-      const siteIds = siteList.filter(({ latitude, longitude }) => {
-        const isNotLowerBound = latitude < latMin || longitude < lngMin;
-        const isNotUpperBound = latitude > latMax || longitude > lngMax;
-        return isNotLowerBound || isNotUpperBound;
-      }).map(({ id }) => id);
-      dispatch(siteStateDeleteMany(siteIds));
-    }
+    const siteIds = utils.outOfBoundResources(siteList, {
+      lowerBound: mapLowerBound,
+      upperBound: mapUpperBound,
+    }).map(({ id }) => id);
+    dispatch(siteStateDeleteMany(siteIds));
   }, [siteList, mapLowerBound, mapUpperBound, dispatch]);
 
   useEffect(() => () => dispatch(siteStateClear()), [dispatch]);

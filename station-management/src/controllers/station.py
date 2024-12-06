@@ -1,4 +1,5 @@
 from flask import request
+from pymysql import IntegrityError
 
 # Internal Modules
 from src.controllers.utils import (
@@ -62,7 +63,7 @@ def create_station():
             if not body.get(field):
                 raise Exception(f"{field} is required", 400)
 
-        site_data = site.get_site_by_id(body["site_id"])
+        site_data = site.get_site_by_id(connection, body["site_id"])
         if not site_data:
             raise Exception("Site not found", 404)
         if (
@@ -118,5 +119,9 @@ def delete_station(station_id):
 
     try:
         return transaction(session, modify=True), 204
+    except IntegrityError as e:
+        if e.args[0] == 1451:
+            e = Exception("Station contains one or more EVSEs", 409)
+        return handle_error(e)
     except Exception as e:
         return handle_error(e)

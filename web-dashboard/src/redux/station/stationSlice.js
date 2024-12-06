@@ -18,22 +18,38 @@ import { createLocationFilterAdapter } from "redux/locationFilterAdapter";
 
 const StationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
 
-const stationEntityAdapter = createEntityAdapter({
-  sortComparer: (a, b) => a.site_id - b.site_id,
-});
-const locationFilterAdapter = createLocationFilterAdapter();
-
-const initialState = {
-  ...stationEntityAdapter.getInitialState(),
-  ...locationFilterAdapter.getInitialState(),
+export const StationFields = {
+  id: "id",
+  ownerId: "owner_id",
+  siteId: "site_id",
+  name: "name",
+  latitude: "latitude",
+  longitude: "longitude",
+  streetAddress: "street_address",
+  city: "city",
+  state: "state",
+  country: "country",
+  zipCode: "zip_code",
 };
+
+const stationEntityAdapter = createEntityAdapter({
+  sortComparer: (a, b) => {
+    const result = new Date(a.created_at) - new Date(b.created_at);
+    return result || a.id - b.id;
+  }
+});
+
+const locationFilterAdapter = createLocationFilterAdapter();
+const initialState = stationEntityAdapter.getInitialState({
+  ...locationFilterAdapter.getInitialState()
+});
 
 export const stationSlice = createSlice({
   name: "station",
   initialState,
   reducers: {
-    stationStateSetMany(state, { payload }) {
-      stationEntityAdapter.setMany(state, payload);
+    stationStateUpsertMany(state, { payload }) {
+      stationEntityAdapter.upsertMany(state, payload);
     },
     stationStateSetById(state, { payload }) {
       stationEntityAdapter.setOne(state, payload);
@@ -41,6 +57,9 @@ export const stationSlice = createSlice({
     stationStateUpdateById(state, { payload }) {
       const { id, ...changes } = payload;
       stationEntityAdapter.updateOne(state, { id, changes });
+    },
+    stationStateDeleteMany(state, { payload }) {
+      stationEntityAdapter.removeMany(state, payload);
     },
     stationStateDeleteById(state, { payload }) {
       stationEntityAdapter.removeOne(state, payload);
@@ -69,9 +88,10 @@ export const stationSlice = createSlice({
 });
 
 export const {
-  stationStateSetMany,
+  stationStateUpsertMany,
   stationStateSetById,
   stationStateUpdateById,
+  stationStateDeleteMany,
   stationStateDeleteById,
   stationSetStateSelected,
   stationSetCitySelected,
@@ -81,11 +101,33 @@ export const {
 
 export const stationGetList = createAsyncThunk(
   `${stationSlice.name}/getList`,
-  async (query = "", { dispatch, getState }) => {
+  async ({
+    field, name,
+    latitude, longitude,
+    city, state, country,
+    limit, cursor,
+    ownerId: owner_id,
+    siteId: site_id,
+    streetAddress: street_address,
+    zipCode: zip_code,
+    latLngOrigin: lat_lng_origin,
+    latLngMin: lat_lng_min,
+    latLngMax: lat_lng_max,
+    sortBy: sort_by,
+  } = {}, { dispatch, getState }) => {
     try {
+      const params = Object.entries({
+        field, name, site_id, owner_id, latitude, longitude,
+        street_address, city, state, country, zip_code,
+        lat_lng_origin, lat_lng_min, lat_lng_max,
+        sort_by, cursor, limit,
+      }).map(([key, value]) => value ? `${key}=${value}` : "")
+        .filter((param) => param).join("&");
+      const query = `${StationAPI}${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.get(`${StationAPI}${query}`, config);
-      dispatch(stationStateSetMany(data));
+      const { data } = await apiInstance.get(query, config);
+      dispatch(stationStateUpsertMany(data.stations));
+      return data;
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -117,6 +159,7 @@ export const stationAdd = createAsyncThunk(
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.post(`${StationAPI}`, body, config);
       dispatch(stationStateSetById(data));
+      return data;
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -161,12 +204,20 @@ export const selectStationList = stationSelectors.selectAll;
 export const selectStationIds = stationSelectors.selectIds;
 export const selectStationById = stationSelectors.selectById;
 
+export const selectStationListByFields = createSelector(
+  [selectStationList, (_, fields) => fields],
+  (stationList, fields) => stationList.filter((station) => {
+    return fields.filter((field) => !station[field]).length === 0;
+  }),
+);
+
 export const selectStationStatusById = createSelector(
   [selectEvseStatusByStation],
   (evses) => {
-    const statuses = evses.reduce((object, { status }) => {
-      return { ...object, [status]: object[status] || true };
-    }, {});
+    const statuses = {};
+    for (const { status } of evses) {
+      statuses[status] = statuses[status] || true;
+    }
     for (const status of Object.values(EvseStatus)) {
       if (statuses[status]) {
         return status

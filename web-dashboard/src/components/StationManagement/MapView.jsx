@@ -4,15 +4,24 @@ import { useDispatch, useSelector } from "react-redux";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
-import StationMarkerCluster from "components/Map/StationMarkerCluster";
+import MapSetView from "components/Map/MapSetView";
 import StickyContainer from "components/StickyContainer";
+import StationMarkerCluster from "components/StationManagement/MarkerCluster";
+import useFetchData from "hooks/useFetchData";
+import useFetchDataOnMapView from "hooks/useFetchDataOnMapView";
+import useMapParams from "hooks/useMapParams";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
+  selectMapLowerBound,
+  selectMapUpperBound,
+} from "redux/map/mapSlice";
+import {
+  StationFields,
   stationGetList,
   stationSetStateSelected,
   stationSetCitySelected,
   stationSetZipCodeSelected,
-  selectStationList,
+  selectStationListByFields,
   selectSelectedState,
   selectStateOptions,
   selectSelectedCity,
@@ -20,11 +29,22 @@ import {
   selectSelectedZipCode,
   selectZipCodeOptions,
 } from "redux/station/stationSlice";
+import utils from "utils";
 
 const StationMapView = ({ handleViewStation }) => {
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
-  const stationList = useSelector(selectStationList);
+  const mapLowerBound = useSelector(selectMapLowerBound);
+  const mapUpperBound = useSelector(selectMapUpperBound);
+
+  const stationSelectedFields = useMemo(() => ([
+    StationFields.latitude,
+    StationFields.longitude,
+  ]), []);
+  const stationList = useSelector((state) => {
+    return selectStationListByFields(state, stationSelectedFields);
+  });
+
   const stationSelectedState = useSelector(selectSelectedState);
   const stationStateOptions = useSelector(selectStateOptions);
   const stationSelectedCity = useSelector(selectSelectedCity);
@@ -32,37 +52,61 @@ const StationMapView = ({ handleViewStation }) => {
   const stationSelectedZipCode = useSelector(selectSelectedZipCode);
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
 
-  const [loading, setLoading] = useState(false);
-
   const [filterHeight, setFilterHeight] = useState(0);
   const filterRef = useCallback((node) => {
     setFilterHeight(node?.getBoundingClientRect().height);
   }, []);
 
-  const dispatch = useDispatch();
-
-  const fetchData = useCallback(async () => {
-    if (stationList.length === 0) {
-      setLoading(true);
-      await dispatch(stationGetList()).unwrap();
-      setLoading(false);
-    }
-  }, [stationList.length, dispatch]);
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData]);
-
   const mapRefHeight = useMemo(() => {
     return headerHeight + filterHeight;
   }, [headerHeight, filterHeight]);
 
+  const { latLngMin, latLngMax } = useMemo(() => ({
+    latLngMin: utils.toLatLngString(mapLowerBound),
+    latLngMax: utils.toLatLngString(mapUpperBound),
+  }), [mapLowerBound, mapUpperBound]);
+
+  const [mapParams] = useMapParams();
+
+  const fetchOnLoad = useMemo(() => (
+    !mapParams.exist && !latLngMin && !latLngMax
+  ), [latLngMin, latLngMax, mapParams]);
+
+  const { data, loadState } = useFetchData({
+    condition: fetchOnLoad,
+    action: useCallback(() => stationGetList({
+      fields: stationSelectedFields.join(),
+      latLngOrigin: "default",
+    }), [stationSelectedFields]),
+  });
+
+  const {
+    loadState: loadStateOnMapView,
+  } = useFetchDataOnMapView({
+    condition: !loadState.loading,
+    action: useCallback(() => stationGetList({
+      fields: stationSelectedFields.join(),
+      latLngMin, latLngMax,
+    }), [stationSelectedFields, latLngMin, latLngMax]),
+  });
+
+  const loading = useMemo(() => (
+    loadState.loading || (loadState.idle && loadStateOnMapView.loading)
+  ), [loadState, loadStateOnMapView]);
+
+  useEffect(() => {
+    if (loadState.idle && loadStateOnMapView.done) {
+      loadState.setDone();
+    }
+  }, [loadState, loadStateOnMapView]);
+
+  const dispatch = useDispatch();
+
   const handleFilter = (state, city, zipCode) => {
-    const params = [];
-    if (state !== "All") params.push(`state=${state}`);
-    if (city !== "All") params.push(`city=${city}`);
-    if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
-    const query = params.length > 0 ? `?${params.join("&")}` : "";
+    const query = {};
+    if (state !== "All") query.state = state;
+    if (city !== "All") query.city = city;
+    if (zipCode !== "All") query.zipCode = zipCode;
     dispatch(stationGetList(query));
     dispatch(stationSetStateSelected(state));
     dispatch(stationSetCitySelected(city));
@@ -87,9 +131,11 @@ const StationMapView = ({ handleViewStation }) => {
         loading={loading}
         refHeight={mapRefHeight}
       >
-        <MapFitBound positions={stationList} />
+        <MapSetView delay={1000} />
+        <MapFitBound bounds={data?.stations || []} />
         <StationMarkerCluster
           stationList={stationList}
+          loading={loadStateOnMapView.loading}
           onClick={handleViewStation}
         />
       </MapContainer>

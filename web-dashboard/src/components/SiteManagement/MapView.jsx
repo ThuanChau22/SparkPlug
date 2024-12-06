@@ -37,12 +37,12 @@ const SiteMapView = ({ handleViewSite }) => {
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
 
-  const siteFields = useMemo(() => ([
+  const siteSelectedFields = useMemo(() => ([
     SiteFields.latitude,
     SiteFields.longitude,
   ]), []);
   const siteList = useSelector((state) => {
-    return selectSiteListByFields(state, siteFields);
+    return selectSiteListByFields(state, siteSelectedFields);
   });
 
   const siteSelectedState = useSelector(selectSelectedState);
@@ -57,8 +57,6 @@ const SiteMapView = ({ handleViewSite }) => {
     setFilterHeight(node?.getBoundingClientRect().height);
   }, []);
 
-  const [mapParams] = useMapParams();
-
   const mapRefHeight = useMemo(() => {
     return headerHeight + filterHeight;
   }, [headerHeight, filterHeight]);
@@ -68,6 +66,8 @@ const SiteMapView = ({ handleViewSite }) => {
     latLngMax: utils.toLatLngString(mapUpperBound),
   }), [mapLowerBound, mapUpperBound]);
 
+  const [mapParams] = useMapParams();
+
   const fetchOnLoad = useMemo(() => (
     !mapParams.exist && !latLngMin && !latLngMax
   ), [latLngMin, latLngMax, mapParams]);
@@ -75,9 +75,9 @@ const SiteMapView = ({ handleViewSite }) => {
   const { data, loadState } = useFetchData({
     condition: fetchOnLoad,
     action: useCallback(() => siteGetList({
-      fields: siteFields.join(),
+      fields: siteSelectedFields.join(),
       latLngOrigin: "default",
-    }), [siteFields]),
+    }), [siteSelectedFields]),
   });
 
   const {
@@ -85,9 +85,9 @@ const SiteMapView = ({ handleViewSite }) => {
   } = useFetchDataOnMapView({
     condition: !loadState.loading,
     action: useCallback(() => siteGetList({
-      fields: siteFields.join(),
+      fields: siteSelectedFields.join(),
       latLngMin, latLngMax,
-    }), [siteFields, latLngMin, latLngMax]),
+    }), [siteSelectedFields, latLngMin, latLngMax]),
   });
 
   const loading = useMemo(() => (

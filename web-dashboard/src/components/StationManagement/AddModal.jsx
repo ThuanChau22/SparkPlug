@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useState } from "react";
+import { useDispatch } from "react-redux";
 import {
   CButton,
   CModal,
@@ -8,19 +8,14 @@ import {
   CModalBody,
   CForm,
   CFormInput,
-  CFormSelect,
 } from "@coreui/react";
 
 import FormInput from "components/FormInput";
-import {
-  siteGetList,
-  selectSiteIds,
-} from "redux/site/siteSlice";
+import { mapStateSet } from "redux/map/mapSlice";
 import { stationAdd } from "redux/station/stationSlice";
+import utils from "utils";
 
 const StationAddModal = ({ isOpen, onClose }) => {
-  const siteIds = useSelector(selectSiteIds);
-
   const initialFormData = {
     name: "",
     siteId: "",
@@ -30,24 +25,14 @@ const StationAddModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState(initialFormData);
   const [validated, setValidated] = useState(false);
 
-  const [siteOptions, setSiteOptions] = useState([]);
-
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    if (siteIds.length === 0) {
-      dispatch(siteGetList());
-    } else {
-      setSiteOptions(siteIds);
-    }
-  }, [siteIds, dispatch]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name
       || !formData.siteId
       || !formData.latitude
@@ -56,7 +41,18 @@ const StationAddModal = ({ isOpen, onClose }) => {
       setValidated(true);
       return;
     }
-    dispatch(stationAdd(formData));
+    const station = await dispatch(stationAdd(formData)).unwrap();
+    if (station) {
+      const { latitude: lat, longitude: lng } = station;
+      if (utils.hasLatLngValue({ lat, lng })) {
+        dispatch(mapStateSet({
+          center: { lat, lng },
+          lowerBound: { lat, lng },
+          upperBound: { lat, lng },
+          zoom: 20,
+        }));
+      }
+    }
     handleClose();
   };
 
@@ -79,26 +75,22 @@ const StationAddModal = ({ isOpen, onClose }) => {
         <CForm noValidate validated={validated}>
           <FormInput
             InputForm={CFormInput}
+            name="siteId"
+            type="text"
+            placeholder="Site ID"
+            value={formData.siteId}
+            onChange={handleInputChange}
+            feedbackInvalid="Please select a site ID"
+            required
+          />
+          <FormInput
+            InputForm={CFormInput}
             name="name"
             type="text"
             placeholder="Name"
             value={formData.name}
             onChange={handleInputChange}
             feedbackInvalid="Please provide station name"
-            required
-          />
-          <FormInput
-            InputForm={CFormSelect}
-            name="siteId"
-            options={[
-              { label: "Select Site ID", value: "", disabled: true },
-              ...siteOptions.map((id) => (
-                { label: id, value: id }
-              )),
-            ]}
-            value={formData.siteId}
-            onChange={handleInputChange}
-            feedbackInvalid="Please select a site ID"
             required
           />
           <FormInput

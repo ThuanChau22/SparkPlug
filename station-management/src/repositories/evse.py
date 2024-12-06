@@ -31,19 +31,6 @@ def get_evses(connection, filter={}, select={}, sort={}, limit=None, cursor=None
     query = sort_by_fields(query, sort, field_list)
     query = limit_at(query, limit)
 
-    # query = f"SELECT * FROM {Table.EvseView.value}"
-
-    # field_set = set(get_fields(connection, Table.EvseView.value))
-    # filter_values = []
-    # for field, value in filter.items():
-    #     if field in field_set:
-    #         separator = "WHERE" if len(filter_values) == 0 else "AND"
-    #         query += f" {separator} {field} = %s"
-    #         filter_values.append(value)
-
-    # if limit and limit > 0:
-    #     query += f" LIMIT {limit}"
-
     with connection.cursor() as cursor:
         cursor.execute(query, query_values)
         evses = cursor.fetchall()

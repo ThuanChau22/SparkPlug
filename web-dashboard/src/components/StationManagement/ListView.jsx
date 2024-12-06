@@ -16,26 +16,26 @@ import {
   selectMapUpperBound,
 } from "redux/map/mapSlice";
 import {
-  SiteFields,
-  siteGetList,
-  selectSiteListByFields,
-} from "redux/site/siteSlice";
+  StationFields,
+  stationGetList,
+  selectStationListByFields,
+} from "redux/station/stationSlice";
 import utils from "utils";
 
-const SiteListView = ({ refHeight, handleViewSite }) => {
+const StationListView = ({ refHeight, handleViewStation }) => {
   const ListLimit = 50;
   const listRef = useRef({});
 
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
 
-  const siteSelectedFields = useMemo(() => ([
-    SiteFields.name,
-    SiteFields.streetAddress,
-    SiteFields.city,
+  const stationSelectedFields = useMemo(() => ([
+    StationFields.name,
+    StationFields.streetAddress,
+    StationFields.city,
   ]), []);
-  const siteList = useSelector((state) => {
-    return selectSiteListByFields(state, siteSelectedFields);
+  const stationList = useSelector((state) => {
+    return selectStationListByFields(state, stationSelectedFields);
   });
 
   const [listPage, setListPage] = useState(0);
@@ -52,9 +52,9 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
     return { latLngMin, latLngMax };
   }, [mapLowerBound, mapUpperBound]);
 
-  const siteListByPage = useMemo(() => (
-    siteList.filter((_, index) => index < ListLimit * listPage)
-  ), [siteList, listPage]);
+  const stationListByPage = useMemo(() => (
+    stationList.filter((_, index) => index < ListLimit * listPage)
+  ), [stationList, listPage]);
 
   const [mapParams] = useMapParams();
 
@@ -64,11 +64,11 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
 
   const { data, loadState } = useFetchData({
     condition: fetchOnLoad,
-    action: useCallback(() => siteGetList({
-      fields: siteSelectedFields.join(),
+    action: useCallback(() => stationGetList({
+      fields: stationSelectedFields.join(),
       latLngOrigin: "default",
       limit: ListLimit,
-    }), [siteSelectedFields]),
+    }), [stationSelectedFields]),
   });
 
   const {
@@ -76,18 +76,18 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
     loadState: loadStateOnMapView,
   } = useFetchDataOnMapView({
     condition: !loadState.loading,
-    action: useCallback(() => siteGetList({
-      fields: siteSelectedFields.join(),
+    action: useCallback(() => stationGetList({
+      fields: stationSelectedFields.join(),
       latLngMin, latLngMax,
       limit: ListLimit,
-    }), [siteSelectedFields, latLngMin, latLngMax]),
+    }), [stationSelectedFields, latLngMin, latLngMax]),
   });
 
   const {
     data: dataOnScroll,
     loadState: loadStateOnScroll,
   } = useFetchDataOnScroll({
-    action: useCallback(() => siteGetList({
+    action: useCallback(() => stationGetList({
       latLngMin, latLngMax,
       limit: ListLimit,
       cursor: listCursor.next,
@@ -136,26 +136,25 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
         className="overflow-auto px-3 pb-3"
         style={{ height: `${listHeight}px` }}
       >
-        {siteListByPage.length > 0
+        {stationListByPage.length > 0
           ? (
             <>
-              {
-                siteListByPage.map(({ id, name, street_address, city }) => (
-                  <CListGroupItem
-                    key={id}
-                    className="border rounded py-3 my-1 shadow-sm"
-                    as="button"
-                    onClick={() => handleViewSite(id)}
-                  >
-                    <p className="mb-0 text-secondary">
-                      {`ID: ${id}`}
-                    </p>
-                    <p className="mb-0 text-secondary small">
-                      {street_address}, {city}
-                    </p>
-                    <p className="mb-0">{name}</p>
-                  </CListGroupItem>
-                ))}
+              {stationListByPage.map(({ id, name, street_address, city }) => (
+                <CListGroupItem
+                  key={id}
+                  className="border rounded py-3 my-1 shadow-sm"
+                  as="button"
+                  onClick={() => handleViewStation(id)}
+                >
+                  <p className="mb-0 text-secondary">
+                    {`ID: ${id}`}
+                  </p>
+                  <p className="mb-0 text-secondary small">
+                    {street_address}, {city}
+                  </p>
+                  <p className="mb-0">{name}</p>
+                </CListGroupItem>
+              ))}
               {loadStateOnScroll.loading && (
                 <LoadingIndicator loading={loadStateOnScroll.loading} />
               )}
@@ -163,14 +162,13 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
           )
           : (
             <div className="d-flex flex-grow-1 justify-content-center align-items-center">
-              <span className="text-secondary">No sites found</span>
+              <span className="text-secondary">No stations found</span>
             </div>
           )
         }
 
       </CListGroup>
-    )
-  );
+    ));
 };
 
-export default SiteListView;
+export default StationListView;

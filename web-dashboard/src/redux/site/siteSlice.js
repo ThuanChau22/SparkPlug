@@ -109,7 +109,7 @@ export const siteGetList = createAsyncThunk(
     latLngMin: lat_lng_min,
     latLngMax: lat_lng_max,
     sortBy: sort_by,
-  }, { dispatch, getState }) => {
+  } = {}, { dispatch, getState }) => {
     try {
       const params = Object.entries({
         fields, name, owner_id, latitude, longitude,
@@ -118,7 +118,7 @@ export const siteGetList = createAsyncThunk(
         sort_by, limit, cursor,
       }).map(([key, value]) => value ? `${key}=${value}` : "")
         .filter((param) => param).join("&");
-      const query = `${SiteAPI}${params ? `?${params}` : ""}`
+      const query = `${SiteAPI}${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(query, config);
       dispatch(siteStateUpsertMany(data.sites));
@@ -159,6 +159,7 @@ export const siteAdd = createAsyncThunk(
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.post(`${SiteAPI}`, body, config);
       dispatch(siteStateSetById(data));
+      return data;
     } catch (error) {
       handleError({ error, dispatch });
     }

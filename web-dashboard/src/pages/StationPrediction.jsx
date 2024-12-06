@@ -11,7 +11,7 @@ import {
 
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
-import StationPredictionMarkerCluster from "components/Map/StationPredictionMarkerCluster";
+import StationPredictionMarkerCluster from "components/StationPrediction/MarkerCluster";
 import StickyContainer from "components/StickyContainer";
 import {
   apiInstance,
@@ -65,7 +65,7 @@ const StationPrediction = () => {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const [existedStations, newStations] = await Promise.all([
+      const [{ stations: existedStations }, newStations] = await Promise.all([
         fetchData(StationAPI),
         fetchData(StationPredictionAPI),
       ]);
@@ -109,7 +109,7 @@ const StationPrediction = () => {
           loading={loading}
           refHeight={mapRefHeight}
         >
-          <MapFitBound positions={stationList} />
+          <MapFitBound bounds={stationList} />
           <StationPredictionMarkerCluster stationList={stationList} />
         </MapContainer>
       </CCardBody>
