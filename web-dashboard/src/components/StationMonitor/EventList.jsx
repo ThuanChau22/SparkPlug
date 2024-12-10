@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CCard,
@@ -10,6 +10,7 @@ import {
 } from "@coreui/react";
 
 import LoadingIndicator from "components/LoadingIndicator";
+import useFetchData from "hooks/useFetchData";
 import {
   stationEventGetById,
   stationEventStateClear,
@@ -19,21 +20,12 @@ import {
 const StationMonitorEventList = ({ stationId }) => {
   const stationEventList = useSelector(selectStationEventList);
 
-  const [loading, setLoading] = useState(false);
-
   const dispatch = useDispatch();
 
-  const fetchData = useCallback(async () => {
-    if (stationEventList.length === 0) {
-      setLoading(true);
-      await dispatch(stationEventGetById(stationId)).unwrap();
-      setLoading(false);
-    }
-  }, [stationId, stationEventList.length, dispatch]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const { loadState } = useFetchData({
+    condition: stationEventList.length === 0,
+    action: useCallback(() => stationEventGetById(stationId), [stationId]),
+  });
 
   useEffect(() => () => dispatch(stationEventStateClear()), [dispatch]);
 
@@ -46,8 +38,8 @@ const StationMonitorEventList = ({ stationId }) => {
       }}
     >
       <CCardBody className="d-flex flex-column p-0">
-        {loading
-          ? <LoadingIndicator loading={loading} />
+        {loadState.loading
+          ? <LoadingIndicator loading={loadState.loading} />
           : stationEventList.length > 0
             ? (
               <CAccordion

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useCallback, useMemo } from "react";
+import { useSelector } from "react-redux";
 import {
   CCard,
   CCardBody,
@@ -9,6 +9,7 @@ import {
 
 import LoadingIndicator from "components/LoadingIndicator";
 import MonitorEvseListItem from "components/StationMonitor/EvseListItem";
+import useFetchData from "hooks/useFetchData";
 import {
   evseGetByStation,
   selectEvseByStation,
@@ -22,30 +23,20 @@ const StationMonitorEvseList = ({ stationId }) => {
   const evseList = useSelector((state) => selectEvseByStation(state, stationId));
   const evseStatusList = useSelector((state) => selectEvseStatusByStation(state, stationId));
 
-  const [loading, setLoading] = useState(false);
+  const { loadState: evseLoadState } = useFetchData({
+    condition: evseList.length === 0,
+    action: useCallback(() => evseGetByStation(stationId), [stationId]),
+  });
 
-  const dispatch = useDispatch();
+  const { loadState: evseStatusLoadState } = useFetchData({
+    condition: evseStatusList.length === 0,
+    action: useCallback(() => evseStatusGetByStation(stationId), [stationId]),
+  });
 
-  const fetchEvseData = useCallback(async () => {
-    if (evseList.length === 0) {
-      setLoading(true);
-      await dispatch(evseGetByStation(stationId)).unwrap();
-      setLoading(false);
-    }
-  }, [stationId, evseList.length, dispatch]);
-
-  const fetchEvseStatusData = useCallback(async () => {
-    if (evseStatusList.length === 0) {
-      setLoading(true);
-      await dispatch(evseStatusGetByStation(stationId)).unwrap();
-      setLoading(false);
-    }
-  }, [stationId, evseStatusList.length, dispatch]);
-
-  useEffect(() => {
-    fetchEvseData();
-    fetchEvseStatusData();
-  }, [fetchEvseData, fetchEvseStatusData]);
+  const loading = useMemo(() => (
+    evseLoadState.loading
+    && evseStatusLoadState.loading
+  ), [evseLoadState, evseStatusLoadState]);
 
   return (
     <CCard

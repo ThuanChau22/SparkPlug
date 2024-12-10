@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useCallback, useMemo } from "react";
+import { useSelector } from "react-redux";
 import {
   CModal,
   CModalHeader,
@@ -10,6 +10,7 @@ import {
 import LoadingIndicator from "components/LoadingIndicator";
 import StationMonitorEventList from "components/StationMonitor/EventList";
 import StationMonitorEvseList from "components/StationMonitor/EvseList";
+import useFetchData from "hooks/useFetchData";
 import useStationEventSocket, { Action } from "hooks/useStationEventSocket";
 import { selectAuthRoleIsStaff } from "redux/auth/authSlice";
 import {
@@ -21,26 +22,20 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const station = useSelector((state) => selectStationById(state, stationId));
 
-  const [loading, setLoading] = useState(false);
-
   useStationEventSocket({
     action: Action.WatchAllEvent,
     payload: { stationId },
   });
 
-  const dispatch = useDispatch();
+  const hasDetails = useMemo(() => {
+    const { name, owner_id } = station || {};
+    return name && owner_id
+  }, [station]);
 
-  const fetchData = useCallback(async () => {
-    if (!station) {
-      setLoading(true);
-      await dispatch(stationGetById(stationId)).unwrap();
-      setLoading(false);
-    }
-  }, [stationId, station, dispatch]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const { loadState } = useFetchData({
+    condition: !hasDetails,
+    action: useCallback(() => stationGetById(stationId), [stationId]),
+  });
 
   return (
     <CModal
@@ -52,10 +47,10 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
       scrollable
     >
       <CModalHeader className="mb-2">
-        <CModalTitle>{!loading && station.name}</CModalTitle>
+        <CModalTitle>{!loadState.loading && station.name}</CModalTitle>
       </CModalHeader>
-      {loading
-        ? <LoadingIndicator loading={loading} />
+      {loadState.loading
+        ? <LoadingIndicator loading={loadState.loading} />
         : (
           <>
             <p className="ps-3 mb-0">

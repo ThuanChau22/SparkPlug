@@ -88,8 +88,8 @@ export const stationSlice = createSlice({
 });
 
 export const {
-  stationStateUpsertMany,
   stationStateSetById,
+  stationStateUpsertMany,
   stationStateUpdateById,
   stationStateDeleteMany,
   stationStateDeleteById,

@@ -27,8 +27,8 @@ export const evseSlice = createSlice({
   name: "evse",
   initialState,
   reducers: {
-    evseStateSetMany(state, { payload }) {
-      evseEntityAdapter.setMany(state, payload);
+    evseStateUpsertMany(state, { payload }) {
+      evseEntityAdapter.upsertMany(state, payload);
     },
     evseStateSetById(state, { payload }) {
       evseEntityAdapter.setOne(state, payload);
@@ -49,8 +49,8 @@ export const evseSlice = createSlice({
 });
 
 export const {
-  evseStateSetMany,
   evseStateSetById,
+  evseStateUpsertMany,
   evseStateUpdateById,
   evseStateDeleteById,
   evseStateClear,
@@ -58,12 +58,36 @@ export const {
 
 export const evseGetList = createAsyncThunk(
   `${evseSlice.name}/getList`,
-  async (query = "", { dispatch, getState }) => {
+  async ({
+    field, price,
+    latitude, longitude,
+    city, state, country,
+    limit, cursor,
+    ownerId: owner_id,
+    siteId: site_id,
+    connectorType: connector_type,
+    chargeLevel: charge_level,
+    streetAddress: street_address,
+    zipCode: zip_code,
+    latLngOrigin: lat_lng_origin,
+    latLngMin: lat_lng_min,
+    latLngMax: lat_lng_max,
+    sortBy: sort_by,
+  } = {}, { dispatch, getState }) => {
     try {
-      const baseUrl = `${StationAPI}/evses${query}`;
+      const params = Object.entries({
+        field, price, site_id, owner_id, latitude, longitude,
+        connector_type, charge_level,
+        street_address, city, state, country, zip_code,
+        lat_lng_origin, lat_lng_min, lat_lng_max,
+        sort_by, cursor, limit,
+      }).map(([key, value]) => value ? `${key}=${value}` : "")
+        .filter((param) => param).join("&");
+      const query = `${StationAPI}/evses${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.get(baseUrl, config);
-      dispatch(evseStateSetMany(data.evses));
+      const { data } = await apiInstance.get(query, config);
+      dispatch(evseStateUpsertMany(data.evses));
+      return data;
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -77,7 +101,8 @@ export const evseGetByStation = createAsyncThunk(
       const baseUrl = `${StationAPI}/${stationId}/evses`;
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(baseUrl, config);
-      dispatch(evseStateSetMany(data));
+      dispatch(evseStateUpsertMany(data));
+      return data;
     } catch (error) {
       handleError({ error, dispatch });
     }

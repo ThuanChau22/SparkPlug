@@ -4,16 +4,28 @@ import { useDispatch, useSelector } from "react-redux";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
-import MapSetBound from "components/Map/MapSetBound";
-import StationStatusMarkerCluster from "components/Map/StationStatusMarkerCluster";
+import MapSetView from "components/Map/MapSetView";
 import StickyContainer from "components/StickyContainer";
+import StationStatusMarkerCluster from "components/StationMonitor/MarkerCluster";
+import useFetchData from "hooks/useFetchData";
+import useFetchDataOnMapView from "hooks/useFetchDataOnMapView";
+import useMapParams from "hooks/useMapParams";
+import {
+  selectAuthUserId,
+  selectAuthRoleIsOwner,
+} from "redux/auth/authSlice";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
+  selectMapLowerBound,
+  selectMapUpperBound,
+} from "redux/map/mapSlice";
+import {
+  StationFields,
   stationGetList,
   stationSetStateSelected,
   stationSetCitySelected,
   stationSetZipCodeSelected,
-  selectStationList,
+  selectStationListByFields,
   selectSelectedState,
   selectStateOptions,
   selectSelectedCity,
@@ -21,11 +33,37 @@ import {
   selectSelectedZipCode,
   selectZipCodeOptions,
 } from "redux/station/stationSlice";
+import {
+  evseStatusGetList,
+  selectEvseStatusEntities,
+} from "redux/evse/evseStatusSlice";
+import utils from "utils";
 
 const StationMonitorMapView = ({ handleViewStation }) => {
+  const authUserId = useSelector(selectAuthUserId);
+  const authIsOwner = useSelector(selectAuthRoleIsOwner);
+
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
-  const stationList = useSelector(selectStationList);
+  const mapLowerBound = useSelector(selectMapLowerBound);
+  const mapUpperBound = useSelector(selectMapUpperBound);
+
+  const stationSelectedFields = useMemo(() => ([
+    StationFields.latitude,
+    StationFields.longitude,
+  ]), []);
+  const stationList = useSelector((state) => {
+    return selectStationListByFields(state, stationSelectedFields);
+  });
+
+  const evseStatusEntities = useSelector(selectEvseStatusEntities);
+
+  const stationStatusList = useMemo(() => (
+    stationList.map((station) => (
+      { ...station, evses: evseStatusEntities[station.id] }
+    ))
+  ), [stationList, evseStatusEntities]);
+
   const stationSelectedState = useSelector(selectSelectedState);
   const stationStateOptions = useSelector(selectStateOptions);
   const stationSelectedCity = useSelector(selectSelectedCity);
@@ -33,37 +71,75 @@ const StationMonitorMapView = ({ handleViewStation }) => {
   const stationSelectedZipCode = useSelector(selectSelectedZipCode);
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
 
-  const [loading, setLoading] = useState(false);
-
   const [filterHeight, setFilterHeight] = useState(0);
   const filterRef = useCallback((node) => {
     setFilterHeight(node?.getBoundingClientRect().height);
   }, []);
 
-  const dispatch = useDispatch();
-
-  const fetchData = useCallback(async () => {
-    if (stationList.length === 0) {
-      setLoading(true);
-      await dispatch(stationGetList()).unwrap();
-      setLoading(false);
-    }
-  }, [stationList.length, dispatch]);
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData]);
-
   const mapRefHeight = useMemo(() => {
     return headerHeight + filterHeight;
   }, [headerHeight, filterHeight]);
 
+  const { latLngMin, latLngMax } = useMemo(() => ({
+    latLngMin: utils.toLatLngString(mapLowerBound),
+    latLngMax: utils.toLatLngString(mapUpperBound),
+  }), [mapLowerBound, mapUpperBound]);
+
+  const [mapParams] = useMapParams();
+
+  const fetchOnLoad = useMemo(() => (
+    !mapParams.exist && !latLngMin && !latLngMax
+  ), [latLngMin, latLngMax, mapParams]);
+
+  const { data, loadState } = useFetchData({
+    condition: fetchOnLoad,
+    action: useCallback(() => stationGetList({
+      fields: stationSelectedFields.join(),
+      latLngOrigin: "default",
+    }), [stationSelectedFields]),
+  });
+
+  const {
+    loadState: stationLoadStateOnMapView,
+  } = useFetchDataOnMapView({
+    condition: !loadState.loading,
+    action: useCallback(() => stationGetList({
+      fields: stationSelectedFields.join(),
+      latLngMin, latLngMax,
+    }), [stationSelectedFields, latLngMin, latLngMax]),
+  });
+
+  const {
+    loadState: evseStatusLoadStateOnMapView,
+  } = useFetchDataOnMapView({
+    condition: latLngMin || latLngMax,
+    action: useCallback(() => evseStatusGetList({
+      latLngMin, latLngMax,
+      ...(authIsOwner ? { ownerId: authUserId } : {}),
+    }), [latLngMin, latLngMax, authIsOwner, authUserId]),
+  });
+
+  const loading = useMemo(() => (
+    loadState.loading
+    || (loadState.idle && stationLoadStateOnMapView.loading)
+    || (loadState.idle && evseStatusLoadStateOnMapView.loading)
+  ), [loadState, stationLoadStateOnMapView, evseStatusLoadStateOnMapView]);
+
+  useEffect(() => {
+    if (loadState.idle
+      && stationLoadStateOnMapView.done
+      && evseStatusLoadStateOnMapView.done) {
+      loadState.setDone();
+    }
+  }, [loadState, stationLoadStateOnMapView, evseStatusLoadStateOnMapView]);
+
+  const dispatch = useDispatch();
+
   const handleFilter = (state, city, zipCode) => {
-    const params = [];
-    if (state !== "All") params.push(`state=${state}`);
-    if (city !== "All") params.push(`city=${city}`);
-    if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
-    const query = params.length > 0 ? `?${params.join("&")}` : "";
+    const query = {};
+    if (state !== "All") query.state = state;
+    if (city !== "All") query.city = city;
+    if (zipCode !== "All") query.zipCode = zipCode;
     dispatch(stationGetList(query));
     dispatch(stationSetStateSelected(state));
     dispatch(stationSetCitySelected(city));
@@ -88,10 +164,11 @@ const StationMonitorMapView = ({ handleViewStation }) => {
         loading={loading}
         refHeight={mapRefHeight}
       >
-        <MapSetBound />
-        <MapFitBound positions={stationList} />
+        <MapSetView delay={1000} />
+        <MapFitBound bounds={data?.stations || []} />
         <StationStatusMarkerCluster
-          stationList={stationList}
+          stationList={stationStatusList}
+          loading={stationLoadStateOnMapView.loading}
           onClick={handleViewStation}
         />
       </MapContainer>

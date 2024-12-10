@@ -12,12 +12,7 @@ import {
   selectStationById,
 } from "redux/station/stationSlice";
 import { selectStationStatusById } from "redux/station/stationSlice";
-import {
-  EvseStatus,
-
-  selectEvseStatusEntities
-
-} from "redux/evse/evseStatusSlice";
+import { EvseStatus } from "redux/evse/evseStatusSlice";
 import utils from "utils";
 
 const EvseStatusColors = {
@@ -89,81 +84,72 @@ const StationStatusMarkerCluster = ({
   stationList = [],
   loading = false,
   onClick = () => { },
-}) => {
-  const evseStatusEntities = useSelector(selectEvseStatusEntities);
-  const stationStatusList = useMemo(() => (
-    stationList.map((station) => (
-      { ...station, evses: evseStatusEntities[station.id] }
-    ))
-  ), [stationList, evseStatusEntities]);
-
-  return (
-    <MapMarkerCluster
-      data={utils.toGeoJSON(stationStatusList)}
-      options={{
-        disableRefresh: loading,
-        map: ({ evses }) => {
-          // Determine evse status count
-          const countByStatus = { Total: 0 };
-          for (const status of Object.values(EvseStatus)) {
-            countByStatus[status] = 0;
-          }
-          for (const { status } of evses || []) {
-            countByStatus[status] += 1;
-            countByStatus.Total++;
-          }
-          return { ...countByStatus };
-        },
-        reduce: (accumulated, properties) => {
-          // Accumulate evse status count
-          accumulated.Total += properties.Total;
-          for (const status of Object.values(EvseStatus)) {
-            accumulated[status] += properties[status];
-          }
+}) => (
+  <MapMarkerCluster
+    data={utils.toGeoJSON(stationList)}
+    options={{
+      disableRefresh: loading,
+      map: ({ evses }) => {
+        // Determine evse status count
+        const countByStatus = { Total: 0 };
+        for (const status of Object.values(EvseStatus)) {
+          countByStatus[status] = 0;
         }
-      }}
-      createMarker={({ properties: { id } }) => (
-        <StationStatusMarker
-          key={id}
-          stationId={id}
-          eventHandlers={{ click: () => onClick(id) }}
-        />
-      )}
-      customizeClusterIcon={({ properties }) => {
-        // Modify icon style
-        let gradients = `${EvseStatusColors[EvseStatus.Unavailable]} 0% 100%`;
-        const count = properties.Total;
-        if (count) {
-          const percentages = [0];
-          for (const status of Object.values(EvseStatus)) {
-            const fraction = (properties[status] || 0) * 100 / count;
-            percentages.push(fraction + percentages[percentages.length - 1]);
-          }
-          gradients = Object.values(EvseStatus).map((status, i) => (
-            `${EvseStatusColors[status]} ${percentages[i]}% ${percentages[i + 1]}%`
-          )).join();
+        for (const { status } of evses || []) {
+          countByStatus[status] += 1;
+          countByStatus.Total++;
         }
-        const style = { icon: { background: `conic-gradient(${gradients})` } };
-        // Add tooltip
-        const tooltip = (
-          <>
-            {Object.values(EvseStatus)
-              .filter((status) => properties[status])
-              .map((status) => (
-                <span
-                  key={status}
-                  className="d-block"
-                  style={{ color: EvseStatusColors[status] }}
-                >
-                  {status}: {properties[status]}
-                </span>
-              ))}
-          </>
-        );
-        return { count, style, tooltip };
-      }}
-    />
-  );
-};
+        return { ...countByStatus };
+      },
+      reduce: (accumulated, properties) => {
+        // Accumulate evse status count
+        accumulated.Total += properties.Total;
+        for (const status of Object.values(EvseStatus)) {
+          accumulated[status] += properties[status];
+        }
+      }
+    }}
+    createMarker={({ properties: { id } }) => (
+      <StationStatusMarker
+        key={id}
+        stationId={id}
+        eventHandlers={{ click: () => onClick(id) }}
+      />
+    )}
+    customizeClusterIcon={({ properties }) => {
+      // Modify icon style
+      let gradients = `${EvseStatusColors[EvseStatus.Unavailable]} 0% 100%`;
+      const count = properties.Total;
+      if (count) {
+        const percentages = [0];
+        for (const status of Object.values(EvseStatus)) {
+          const fraction = (properties[status] || 0) * 100 / count;
+          percentages.push(fraction + percentages[percentages.length - 1]);
+        }
+        gradients = Object.values(EvseStatus).map((status, i) => (
+          `${EvseStatusColors[status]} ${percentages[i]}% ${percentages[i + 1]}%`
+        )).join();
+      }
+      const style = { icon: { background: `conic-gradient(${gradients})` } };
+      // Add tooltip
+      const tooltip = (
+        <>
+          {Object.values(EvseStatus)
+            .filter((status) => properties[status])
+            .map((status) => (
+              <span
+                key={status}
+                className="d-block"
+                style={{ color: EvseStatusColors[status] }}
+              >
+                {status}: {properties[status]}
+              </span>
+            ))}
+        </>
+      );
+      return { count, style, tooltip };
+    }}
+  />
+);
 
 export default StationStatusMarkerCluster;

@@ -41,6 +41,12 @@ export const evseStatusSlice = createSlice({
     evseStatusStateUpsertById(state, { payload }) {
       evseStatusEntityAdapter.upsertOne(state, payload);
     },
+    evseStatusStateDeleteMany(state, { payload }) {
+      const evseStatusIds = (payload || []).map(({ station_id, evse_id }) => {
+        return evseStatusEntityAdapter.selectId({ station_id, evse_id });
+      });
+      evseStatusEntityAdapter.removeMany(state, evseStatusIds);
+    },
     evseStatusStateClear(_) {
       return initialState;
     },
@@ -50,16 +56,34 @@ export const evseStatusSlice = createSlice({
 export const {
   evseStatusStateUpsertMany,
   evseStatusStateUpsertById,
+  evseStatusStateDeleteMany,
   evseStatusStateClear,
 } = evseStatusSlice.actions;
 
 export const evseStatusGetList = createAsyncThunk(
   `${evseStatusSlice.name}/getAllStatus`,
-  async (_, { dispatch, getState }) => {
+  async ({
+    siteId: site_id,
+    ownerId: owner_id,
+    latLngOrigin: lat_lng_origin,
+    latLngMin: lat_lng_min,
+    latLngMax: lat_lng_max,
+    sortBy: sort_by,
+    limit,
+    cursor,
+  } = {}, { dispatch, getState }) => {
     try {
+      const params = Object.entries({
+        site_id, owner_id,
+        lat_lng_origin, lat_lng_min, lat_lng_max,
+        sort_by, cursor, limit,
+      }).map(([key, value]) => value ? `${key}=${value}` : "")
+        .filter((param) => param).join("&");
+      const query = `${StationStatusAPI}/latest${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.get(`${StationStatusAPI}/latest`, config);
-      dispatch(evseStatusStateUpsertMany(data));
+      const { data } = await apiInstance.get(query, config);
+      dispatch(evseStatusStateUpsertMany(data.data));
+      return data;
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -74,6 +98,7 @@ export const evseStatusGetByStation = createAsyncThunk(
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(baseUrl, config);
       dispatch(evseStatusStateUpsertById(data));
+      return data;
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -97,13 +122,16 @@ export const selectEvseStatusIds = createSelector(
   }),
 );
 
-export const selectEvseStatusEntitiesByStation = createSelector(
+export const selectEvseStatusEntities = createSelector(
   [selectEvseStatusList],
-  (evseStatusList) => evseStatusList.reduce((entities, evseStatus) => {
-    const { station_id, ...remain } = evseStatus;
-    const evses = entities[station_id] || [];
-    return { ...entities, [station_id]: [...evses, remain] }
-  }, {}),
+  (evseStatusList) => {
+    const entities = {};
+    for (const { station_id, ...remain } of evseStatusList) {
+      entities[station_id] = entities[station_id] || [];
+      entities[station_id].push(remain);
+    }
+    return entities;
+  },
 );
 
 export const selectEvseStatusByStation = createSelector(

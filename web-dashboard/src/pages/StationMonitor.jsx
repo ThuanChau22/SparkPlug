@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CRow,
@@ -6,33 +6,50 @@ import {
   CCard,
   CCardTitle,
   CCardBody,
-  CListGroup,
-  CListGroupItem,
 } from "@coreui/react";
 
-import LoadingIndicator from "components/LoadingIndicator";
 import StickyContainer from "components/StickyContainer";
-import StationMonitorListItem from "components/StationMonitor/StationListItem";
 import StationMonitorDetailsModal from "components/StationMonitor/DetailsModal";
+import StationMonitorListView from "components/StationMonitor/ListView";
 import StationMonitorMapView from "components/StationMonitor/MapView";
 import useStationEventSocket, { Action } from "hooks/useStationEventSocket";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
-  stationGetList,
-  selectStationIds,
-} from "redux/station/stationSlice";
+  selectMapLowerBound,
+  selectMapUpperBound,
+} from "redux/map/mapSlice";
 import {
-  evseStatusGetList,
+  stationStateDeleteMany,
+  stationStateClear,
+  selectStationIds,
+  selectStationList,
+} from "redux/station/stationSlice";
+import { evseStateClear } from "redux/evse/evseSlice";
+import {
+  evseStatusStateDeleteMany,
+  evseStatusStateClear,
   selectEvseStatusList,
 } from "redux/evse/evseStatusSlice";
+import utils from "utils";
 
 const StationMonitor = () => {
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
+  const mapLowerBound = useSelector(selectMapLowerBound);
+  const mapUpperBound = useSelector(selectMapUpperBound);
+
   const stationIds = useSelector(selectStationIds);
+  const stationList = useSelector(selectStationList);
   const evseStatusList = useSelector(selectEvseStatusList);
 
-  const [loading, setLoading] = useState(false);
+  const [titleHeight, setTitleHeight] = useState(0);
+  const titleRef = useCallback((node) => {
+    setTitleHeight(node?.getBoundingClientRect().height);
+  }, []);
+
+  const listRefHeight = useMemo(() => {
+    return headerHeight + titleHeight;
+  }, [headerHeight, titleHeight]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [stationId, setStationId] = useState(null);
@@ -44,24 +61,27 @@ const StationMonitor = () => {
 
   const dispatch = useDispatch();
 
-  const fetchStationData = useCallback(async () => {
-    if (stationIds.length === 0) {
-      setLoading(true);
-      await dispatch(stationGetList()).unwrap();
-      setLoading(false);
-    }
-  }, [stationIds.length, dispatch]);
-
-  const fetchEvseStatusData = useCallback(() => {
-    if (evseStatusList.length === 0) {
-      dispatch(evseStatusGetList());
-    }
-  }, [evseStatusList.length, dispatch]);
+  useEffect(() => {
+    const stationIds = utils.outOfBoundResources(stationList, {
+      lowerBound: mapLowerBound,
+      upperBound: mapUpperBound,
+    }).map(({ id }) => id);
+    dispatch(stationStateDeleteMany(stationIds));
+  }, [stationList, mapLowerBound, mapUpperBound, dispatch]);
 
   useEffect(() => {
-    fetchStationData();
-    fetchEvseStatusData();
-  }, [fetchStationData, fetchEvseStatusData]);
+    const evseStatusIds = utils.outOfBoundResources(evseStatusList, {
+      lowerBound: mapLowerBound,
+      upperBound: mapUpperBound,
+    }).map(({ station_id, evse_id }) => ({ station_id, evse_id }));
+    dispatch(evseStatusStateDeleteMany(evseStatusIds));
+  }, [evseStatusList, mapLowerBound, mapUpperBound, dispatch]);
+
+  useEffect(() => () => {
+    dispatch(stationStateClear());
+    dispatch(evseStateClear());
+    dispatch(evseStatusStateClear());
+  }, [dispatch]);
 
   const handleViewStation = (stationId) => {
     setStationId(stationId);
@@ -73,7 +93,7 @@ const StationMonitor = () => {
       <CRow className="flex-grow-1" xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
           <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
-            <StickyContainer style={{ top: `${headerHeight}px` }}>
+            <StickyContainer ref={titleRef} style={{ top: `${headerHeight}px` }}>
               <CCardTitle
                 className="p-3 shadow-sm"
                 style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
@@ -81,22 +101,10 @@ const StationMonitor = () => {
                 Stations Monitor
               </CCardTitle>
             </StickyContainer>
-            {loading
-              ? <LoadingIndicator loading={loading} />
-              : (
-                <CListGroup className="px-3">
-                  {stationIds.map((id) => (
-                    <CListGroupItem
-                      key={id}
-                      className="d-flex justify-content-between align-items-center border rounded py-3 my-1 shadow-sm"
-                      as="button"
-                      onClick={() => handleViewStation(id)}
-                    >
-                      <StationMonitorListItem stationId={id} />
-                    </CListGroupItem>
-                  ))}
-                </CListGroup>
-              )}
+            <StationMonitorListView
+              refHeight={listRefHeight}
+              handleViewStation={handleViewStation}
+            />
           </CCardBody>
         </CCol>
         <CCol md={6} lg={7}>

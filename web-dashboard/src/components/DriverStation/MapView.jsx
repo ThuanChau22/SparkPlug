@@ -5,7 +5,7 @@ import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
 import MapUserLocation from "components/Map/MapUserLocation";
-import StationStatusMarkerCluster from "components/Map/StationStatusMarkerCluster";
+import StationStatusMarkerCluster from "components/StationMonitor/MarkerCluster";
 import StickyContainer from "components/StickyContainer";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
@@ -59,11 +59,10 @@ const DriverStationMapView = ({ handleViewStation }) => {
   }, [headerHeight, filterHeight]);
 
   const handleFilter = (state, city, zipCode) => {
-    const params = [];
-    if (state !== "All") params.push(`state=${state}`);
-    if (city !== "All") params.push(`city=${city}`);
-    if (zipCode !== "All") params.push(`zip_code=${zipCode}`);
-    const query = params.length > 0 ? `?${params.join("&")}` : "";
+    const query = {};
+    if (state !== "All") query.state = state;
+    if (city !== "All") query.city = city;
+    if (zipCode !== "All") query.zipCode = zipCode;
     dispatch(stationGetList(query));
     dispatch(stationSetStateSelected(state));
     dispatch(stationSetCitySelected(city));
@@ -89,7 +88,7 @@ const DriverStationMapView = ({ handleViewStation }) => {
         refHeight={mapRefHeight}
       >
         <MapUserLocation />
-        <MapFitBound positions={stationList} />
+        <MapFitBound bounds={stationList} />
         <StationStatusMarkerCluster
           stationList={stationList}
           onClick={handleViewStation}
