@@ -60,9 +60,11 @@ router.get(
   "/station-status/latest",
   authenticate,
   authorizeRole(["staff", "owner", "driver"]),
-  async (_, res) => {
+  async (req, res) => {
     try {
-      const stationStatus = await StationStatus.getStationStatusesLatest();
+      const { sort_by, cursor, limit, ...filter } = req.query;
+      const params = { filter, sort: sort_by, cursor, limit };
+      const stationStatus = await StationStatus.getStationStatusesLatest(params);
       res.status(200).json(utils.toClient(stationStatus));
     } catch (error) {
       const { message } = error;
@@ -78,8 +80,8 @@ router.get(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const filter = { station_id: parseInt(id) }
-      const stationStatus = await StationStatus.getStationStatusesLatest({ filter });
+      const params = { filter: { station_id: parseInt(id) } };
+      const stationStatus = await StationStatus.getStationStatusesLatest(params);
       res.status(200).json(utils.toClient(stationStatus));
     } catch (error) {
       const { message } = error;

@@ -121,17 +121,21 @@ const MapMarkerCluster = ({
   const { clusters, supercluster } = useSupercluster({
     points, bounds, zoom, disableRefresh, options: {
       maxZoom: 18,
-      radius: 50,
+      radius: 80,
       ...remain,
     },
   });
 
-  const expansionZoom = ({ properties, geometry }) => {
-    const { cluster_id: clusterId, } = properties;
-    const { coordinates: [longitude, latitude] } = geometry;
-    const z = supercluster.getClusterExpansionZoom(clusterId);
-    map.flyTo([latitude, longitude], Math.min(z, 18) + 1);
-  };
+  const expansionZoom = useCallback(({ properties, geometry }) => {
+    try {
+      const { cluster_id: clusterId, } = properties;
+      const { coordinates: [longitude, latitude] } = geometry;
+      const z = supercluster.getClusterExpansionZoom(clusterId);
+      map.flyTo([latitude, longitude], Math.min(z, 18) + 1);
+    } catch (error) {
+      console.log({ error });
+    }
+  }, [map, supercluster]);
 
   return clusters.map((cluster) => (
     cluster.properties.cluster

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CRow,
@@ -10,22 +10,49 @@ import {
 } from "@coreui/react";
 
 import LoadingIndicator from "components/LoadingIndicator";
+import useFetchData from "hooks/useFetchData";
 import useStationEventSocket, { Action } from "hooks/useStationEventSocket";
 import {
+  selectAuthUserId,
+  selectAuthRoleIsOwner,
+} from "redux/auth/authSlice";
+import {
+  evseStateClear,
   evseGetList,
   selectEvseIds,
 } from "redux/evse/evseSlice";
 import {
   EvseStatus,
+  evseStatusStateClear,
   evseStatusGetList,
   selectEvseStatusList,
 } from "redux/evse/evseStatusSlice";
 
 const EvseStatusWidget = ({ className = "" }) => {
+  const authUserId = useSelector(selectAuthUserId);
+  const authIsOwner = useSelector(selectAuthRoleIsOwner);
+
   const evseIds = useSelector(selectEvseIds);
   const evseStatusList = useSelector(selectEvseStatusList);
 
-  const [loading, setLoading] = useState(false);
+  const { loadState: evseLoadState } = useFetchData({
+    condition: evseIds.length === 0,
+    action: useCallback(() => evseGetList({
+      ...(authIsOwner ? { ownerId: authUserId } : {}),
+    }), [authIsOwner, authUserId]),
+  });
+
+  const { loadState: evseStatusLoadState } = useFetchData({
+    condition: evseStatusList.length === 0,
+    action: useCallback(() => evseStatusGetList({
+      ...(authIsOwner ? { ownerId: authUserId } : {}),
+    }), [authIsOwner, authUserId]),
+  });
+
+  const loading = useMemo(() => (
+    evseLoadState.loading
+    && evseStatusLoadState.loading
+  ), [evseLoadState, evseStatusLoadState]);
 
   const stationIds = useMemo(() => (
     [...new Set(evseIds.map(({ station_id: id }) => id))]
@@ -35,29 +62,6 @@ const EvseStatusWidget = ({ className = "" }) => {
     action: Action.WatchStatusEvent,
     payload: { stationIds },
   });
-
-  const dispatch = useDispatch();
-
-  const fetchEvseData = useCallback(async () => {
-    if (evseIds.length === 0) {
-      setLoading(true);
-      await dispatch(evseGetList()).unwrap();
-      setLoading(false);
-    }
-  }, [evseIds.length, dispatch]);
-
-  const fetchEvseStatusData = useCallback(async () => {
-    if (evseStatusList.length === 0) {
-      setLoading(true);
-      await dispatch(evseStatusGetList()).unwrap();
-      setLoading(false);
-    }
-  }, [evseStatusList.length, dispatch]);
-
-  useEffect(() => {
-    fetchEvseData();
-    fetchEvseStatusData();
-  }, [fetchEvseData, fetchEvseStatusData]);
 
   const evseStatusData = useMemo(() => {
     const data = {
@@ -92,7 +96,6 @@ const EvseStatusWidget = ({ className = "" }) => {
         percentage: 0,
       },
     };
-
     if (data.Total.count > 0) {
       // Count of each status
       let presentCount = 0;
@@ -102,19 +105,23 @@ const EvseStatusWidget = ({ className = "" }) => {
           presentCount++;
         }
       }
-
       // Count missing as Unavailable
       const absentCount = data.Total.count - presentCount;
       data[EvseStatus.Unavailable].count += absentCount;
-
       // Calculate percentage of each status
       for (const item of Object.values(data)) {
         item.percentage = (item.count / data.Total.count) * 100;
       }
     }
-
     return data;
   }, [evseIds, evseStatusList]);
+
+  const dispatch = useDispatch();
+
+  useEffect(() => () => {
+    dispatch(evseStateClear());
+    dispatch(evseStatusStateClear());
+  }, [dispatch]);
 
   return (
     <CCard className={className}>

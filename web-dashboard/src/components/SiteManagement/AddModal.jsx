@@ -21,7 +21,7 @@ import { siteAdd } from "redux/site/siteSlice";
 import utils from "utils";
 
 const SiteAddModal = ({ isOpen, onClose }) => {
-  const userId = useSelector(selectAuthUserId);
+  const authUserId = useSelector(selectAuthUserId);
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
 
@@ -49,7 +49,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
   const handleSubmit = async () => {
     const data = formData;
     if (authIsOwner) {
-      data.ownerId = userId;
+      data.ownerId = authUserId;
     }
     if (!data.name
       || !data.ownerId
