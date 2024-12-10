@@ -1,6 +1,7 @@
 from flask import Flask, request
 from flask_cors import CORS
 
+from datetime import datetime
 from src.config import WEB_DOMAIN
 from src.middlewares import auth
 from src.station_prediction.model import StationPredictionModel
@@ -72,6 +73,56 @@ def predict_wait_time():
         wait_time_estimate = model.predict(evse_id, station_id, latitude, longitude, hour_of_day, day_of_week, elapsed_time)
 
         return {"wait_time_estimate": wait_time_estimate}, 200
+    except Exception as e:
+        return handle_error(e)
+
+@app.route("/api/wait-time/batch", methods=["POST"])
+@auth.require_permission("staff", "owner", "driver")
+def batch_wait_time():
+    try:
+        body = request.get_json()
+        if not body or "data" not in body:
+            raise Exception("Missing 'data' in request body", 400)
+
+        data_entries = body["data"]
+        if not isinstance(data_entries, list):
+            raise Exception("'data' should be a list of EVSE entries", 400)
+
+        # Generate hour_of_day and day_of_week from current system time
+        now = datetime.now()
+        hour_of_day = now.hour
+        day_of_week = now.weekday()  # Monday=0, Sunday=6
+
+        model = WaitTimeModel()
+
+        results = []
+        for entry in data_entries:
+            station_id = entry.get("station_id")
+            evse_id = entry.get("evse_id")
+            latitude = entry.get("latitude")
+            longitude = entry.get("longitude")
+            status = entry.get("status")
+
+            # Validate needed fields
+            if station_id is None or evse_id is None or latitude is None or longitude is None or status is None:
+                raise Exception("station_id, evse_id, latitude, longitude, and status are required", 400)
+
+            # If not Occupied, wait_time = 0
+            if status.lower() != "occupied":
+                wait_time = 0
+            else:
+                # For Occupied, predict wait_time
+                elapsed_time = 0
+                predicted_total = model.predict(evse_id, station_id, latitude, longitude, hour_of_day, day_of_week, elapsed_time)
+                wait_time = round(predicted_total - elapsed_time)
+
+            results.append({
+                "station_id": station_id,
+                "evse_id": evse_id,
+                "wait_time": wait_time
+            })
+
+        return {"data": results}, 200
     except Exception as e:
         return handle_error(e)
 
