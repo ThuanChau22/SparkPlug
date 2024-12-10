@@ -14,6 +14,7 @@ import {
 import FormInput from "components/FormInput";
 import LoadingIndicator from "components/LoadingIndicator";
 import UserActiveStatus from "components/UserManagement/ActiveStatus";
+import useFetchData from "hooks/useFetchData";
 import {
   UserStatus,
   userGetById,
@@ -27,24 +28,20 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
   const user = useSelector((state) => selectUserById(state, userId));
   const userRole = useSelector((state) => selectUserRoleById(state, userId));
 
-  const [loading, setLoading] = useState(false);
-
   const [isEdit, setIsEdit] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
 
   const dispatch = useDispatch();
 
-  const fetchData = useCallback(async () => {
-    if (!user) {
-      setLoading(true);
-      await dispatch(userGetById(userId)).unwrap();
-      setLoading(false);
-    }
-  }, [userId, user, dispatch]);
+  const hasDetails = useMemo(() => {
+    const { name, email, status, created_at } = user || {};
+    return name && email && status && created_at && userRole;
+  }, [user, userRole]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const { loadState } = useFetchData({
+    condition: !hasDetails,
+    action: useCallback(() => userGetById(userId), [userId]),
+  });
 
   const userRoleFormatted = useMemo(() => userRole.reduce((s, role) => {
     role = role.charAt(0).toUpperCase() + role.slice(1);
@@ -75,10 +72,34 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
         </div>
       </div>
       <CModalBody>
-        <p>Email: {user.email}</p>
-        <p>Status: <UserActiveStatus status={user.status} /></p>
-        <p>Role: {userRoleFormatted}</p>
-        <p>Registered on: {new Date(user.created_at).toLocaleString("en-US")}</p>
+        <p>
+          <span>Name: </span>
+          <span className="text-secondary">
+            {user.name}
+          </span>
+        </p>
+        <p>
+          <span>Email: </span>
+          <span className="text-secondary">
+            {user.email}
+          </span>
+        </p>
+        <p>
+          <span>Status: </span>
+          <UserActiveStatus status={user.status} />
+        </p>
+        <p>
+          <span>Role: </span>
+          <span className="text-secondary">
+            {userRoleFormatted}
+          </span>
+        </p>
+        <p>
+          <span>Registered on: </span>
+          <span className="text-secondary">
+            {new Date(user.created_at).toLocaleString("en-US")}
+          </span>
+        </p>
       </CModalBody>
     </>
   );
@@ -225,14 +246,14 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
       onClose={onClose}
     >
       <CModalHeader className="mb-2">
-        {!loading &&
+        {!loadState.loading &&
           <CModalTitle>
             {user.name}
           </CModalTitle>
         }
       </CModalHeader>
-      {loading
-        ? <LoadingIndicator loading={loading} />
+      {loadState.loading
+        ? <LoadingIndicator loading={loadState.loading} />
         : isEdit
           ? <EditModal />
           : isDelete
