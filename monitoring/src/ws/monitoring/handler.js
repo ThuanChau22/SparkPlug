@@ -85,17 +85,7 @@ handler.watchAllEvent = async (ws, payload, response) => {
 handler.watchStatusEvent = async (ws, payload, response) => {
   try {
     const { stationIds } = payload;
-    const { user: { token }, changeStream } = sockets.get(ws);
-
-    const headers = { Authorization: `Bearer ${token}` };
-    const { data } = await axios.get(`${STATION_API_ENDPOINT}`, { headers });
-    const ownedStationIdList = new Set(data.map(({ id }) => id));
-    for (const stationId of stationIds) {
-      if (!ownedStationIdList.has(stationId)) {
-        throw { code: 403, message: `Access denied on station ${stationId}` };
-      }
-    }
-
+    const { changeStream } = sockets.get(ws);
     const Event = Action.WATCH_STATUS_EVENT;
     changeStream[Event]?.close();
     changeStream[Event] = await StationEvent.watchEvent({

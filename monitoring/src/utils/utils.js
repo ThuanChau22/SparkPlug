@@ -1,6 +1,52 @@
 const utils = {};
 
 /**
+ * @param {Object} obj
+ * @returns True if obj does not have any property else false
+ */
+utils.isObjectEmpty = (obj) => {
+  for (const prop in obj) {
+    if (Object.hasOwn(obj, prop)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * @param {*} value
+ * @returns True if value is integer string else false
+ */
+utils.isInteger = (value) => {
+  if (typeof value != "string") return false
+  return /^-?\d+$/.test(value);
+}
+
+/**
+ * @param {*} value
+ * @returns True if value is ISO Date string else false
+ */
+utils.isIsoDate = (value) => {
+  const isoFormat = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
+  if (!isoFormat.test(value)) return false;
+  const date = new Date(value);
+  return !isNaN(date.getTime()) && date.toISOString() === value;
+};
+
+/**
+ * Convert a string into JSON
+ * Wrapper for JSON.parse
+ * @return JSON Object
+ */
+utils.toJSON = (string) => {
+  try {
+    return JSON.parse(string);
+  } catch (error) {
+    return undefined;
+  }
+};
+
+/**
  * Replace "_id" with "id" on Mongoose Object Document
  * @param doc (Object|Array)
  * @return Document
