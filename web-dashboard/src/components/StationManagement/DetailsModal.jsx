@@ -87,7 +87,7 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
           </p>
         )}
         <p>
-          <span> Site ID: </span>
+          <span>Site ID: </span>
           <span className="text-secondary">
             {station.site_id}
           </span>

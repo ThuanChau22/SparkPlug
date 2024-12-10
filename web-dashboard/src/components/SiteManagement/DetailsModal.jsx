@@ -29,7 +29,7 @@ import {
 import utils from "utils";
 
 const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
-  const userId = useSelector(selectAuthUserId);
+  const authUserId = useSelector(selectAuthUserId);
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
   const site = useSelector((state) => selectSiteById(state, siteId));
@@ -153,7 +153,7 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
         id: site.id,
       };
       if (authIsOwner) {
-        data.ownerId = userId;
+        data.ownerId = authUserId;
       }
       if (!data.name
         || !data.ownerId
