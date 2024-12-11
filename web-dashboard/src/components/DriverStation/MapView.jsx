@@ -4,16 +4,26 @@ import { useDispatch, useSelector } from "react-redux";
 import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
+import MapSetView from "components/Map/MapSetView";
 import MapUserLocation from "components/Map/MapUserLocation";
-import StationStatusMarkerCluster from "components/StationMonitor/MarkerCluster";
 import StickyContainer from "components/StickyContainer";
+import StationStatusMarkerCluster from "components/StationMonitor/MarkerCluster";
+import useFetchData from "hooks/useFetchData";
+import useFetchDataOnMapView from "hooks/useFetchDataOnMapView";
+import useMapParams from "hooks/useMapParams";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
+  selectMapLowerBound,
+  selectMapUpperBound,
+  selectMapLocation,
+} from "redux/map/mapSlice";
+import {
+  StationFields,
+  stationGetList,
   stationSetStateSelected,
   stationSetCitySelected,
   stationSetZipCodeSelected,
-  stationGetList,
-  selectStationList,
+  selectStationListByFields,
   selectSelectedState,
   selectStateOptions,
   selectSelectedCity,
@@ -21,11 +31,35 @@ import {
   selectSelectedZipCode,
   selectZipCodeOptions,
 } from "redux/station/stationSlice";
+import {
+  evseStatusGetList,
+  selectEvseStatusEntities,
+} from "redux/evse/evseStatusSlice";
+import utils from "utils";
 
 const DriverStationMapView = ({ handleViewStation }) => {
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
-  const stationList = useSelector(selectStationList);
+  const mapLowerBound = useSelector(selectMapLowerBound);
+  const mapUpperBound = useSelector(selectMapUpperBound);
+  const mapLocation = useSelector(selectMapLocation);
+
+  const stationSelectedFields = useMemo(() => ([
+    StationFields.latitude,
+    StationFields.longitude,
+  ]), []);
+  const stationList = useSelector((state) => {
+    return selectStationListByFields(state, stationSelectedFields);
+  });
+
+  const evseStatusEntities = useSelector(selectEvseStatusEntities);
+
+  const stationStatusList = useMemo(() => (
+    stationList.map((station) => (
+      { ...station, evses: evseStatusEntities[station.id] }
+    ))
+  ), [stationList, evseStatusEntities]);
+
   const stationSelectedState = useSelector(selectSelectedState);
   const stationStateOptions = useSelector(selectStateOptions);
   const stationSelectedCity = useSelector(selectSelectedCity);
@@ -33,30 +67,72 @@ const DriverStationMapView = ({ handleViewStation }) => {
   const stationSelectedZipCode = useSelector(selectSelectedZipCode);
   const stationZipCodeOptions = useSelector(selectZipCodeOptions);
 
-  const [loading, setLoading] = useState(false);
-
   const [filterHeight, setFilterHeight] = useState(0);
   const filterRef = useCallback((node) => {
     setFilterHeight(node?.getBoundingClientRect().height);
   }, []);
 
-  const dispatch = useDispatch();
-
-  const fetchData = useCallback(async () => {
-    if (stationList.length === 0) {
-      setLoading(true);
-      await dispatch(stationGetList()).unwrap();
-      setLoading(false);
-    }
-  }, [stationList.length, dispatch]);
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData]);
-
   const mapRefHeight = useMemo(() => {
     return headerHeight + filterHeight;
   }, [headerHeight, filterHeight]);
+
+  const { latLngMin, latLngMax } = useMemo(() => ({
+    latLngMin: utils.toLatLngString(mapLowerBound),
+    latLngMax: utils.toLatLngString(mapUpperBound),
+  }), [mapLowerBound, mapUpperBound]);
+
+  const [mapParams] = useMapParams();
+
+  const fetchOnLoad = useMemo(() => (
+    !mapLocation.located && !mapParams.exist && !latLngMin && !latLngMax
+  ), [latLngMin, latLngMax, mapParams, mapLocation]);
+
+  const { data, loadState } = useFetchData({
+    condition: fetchOnLoad,
+    action: useCallback(() => stationGetList({
+      fields: stationSelectedFields.join(),
+      latLngOrigin: "default",
+    }), [stationSelectedFields]),
+  });
+
+  const {
+    loadState: stationLoadStateOnMapView,
+  } = useFetchDataOnMapView({
+    condition: !loadState.loading,
+    action: useCallback(() => stationGetList({
+      fields: stationSelectedFields.join(),
+      latLngMin, latLngMax,
+      ...!mapLocation.located ? {} : {
+        latLngOrigin: utils.toLatLngString(mapLocation),
+        sortBy: "distance"
+      },
+    }), [stationSelectedFields, latLngMin, latLngMax, mapLocation]),
+  });
+
+  const {
+    loadState: evseStatusLoadStateOnMapView,
+  } = useFetchDataOnMapView({
+    condition: latLngMin || latLngMax,
+    action: useCallback(() => evseStatusGetList({
+      latLngMin, latLngMax,
+    }), [latLngMin, latLngMax]),
+  });
+
+  const loading = useMemo(() => (
+    loadState.loading
+    || (loadState.idle && stationLoadStateOnMapView.loading)
+    || (loadState.idle && evseStatusLoadStateOnMapView.loading)
+  ), [loadState, stationLoadStateOnMapView, evseStatusLoadStateOnMapView]);
+
+  useEffect(() => {
+    if (loadState.idle
+      && stationLoadStateOnMapView.done
+      && evseStatusLoadStateOnMapView.done) {
+      loadState.setDone();
+    }
+  }, [loadState, stationLoadStateOnMapView, evseStatusLoadStateOnMapView]);
+
+  const dispatch = useDispatch();
 
   const handleFilter = (state, city, zipCode) => {
     const query = {};
@@ -87,10 +163,15 @@ const DriverStationMapView = ({ handleViewStation }) => {
         loading={loading}
         refHeight={mapRefHeight}
       >
+        <MapSetView delay={1000} />
         <MapUserLocation />
-        <MapFitBound bounds={stationList} />
+        <MapFitBound bounds={data?.stations || []} />
         <StationStatusMarkerCluster
-          stationList={stationList}
+          stationList={stationStatusList}
+          loading={
+            stationLoadStateOnMapView.loading
+            || evseStatusLoadStateOnMapView.loading
+          }
           onClick={handleViewStation}
         />
       </MapContainer>

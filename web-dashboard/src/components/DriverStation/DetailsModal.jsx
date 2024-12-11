@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CChart } from "@coreui/react-chartjs";
 import {
   CForm,
   CFormInput,
-  CFormSelect,
   CInputGroup,
   CInputGroupText,
   CModal,
@@ -13,72 +12,63 @@ import {
   CModalBody,
 } from "@coreui/react";
 
+import EvseAvailabilityStatus from "components/EvseAvailabilityStatus";
 import LoadingIndicator from "components/LoadingIndicator";
-import { apiInstance } from "redux/api";
+import useFetchData from "hooks/useFetchData";
+import { apiInstance, handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   stationGetById,
   selectStationById,
+  selectStationStatusById
 } from "redux/station/stationSlice";
 
 const DriverStationDetailsModal = ({ isOpen, onClose, stationId }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
 
   const station = useSelector((state) => selectStationById(state, stationId));
+  const stationStatus = useSelector((state) => selectStationStatusById(state, stationId));
   const token = useSelector(selectAuthAccessToken);
 
-  const [loading, setLoading] = useState(false);
-
   const [analyticsData, setAnalyticsData] = useState(null);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [chargeLevel, setChargeLevel] = useState("All");
+  const [startDate, setStartDate] = useState("2020-01-01");
+  const [endDate, setEndDate] = useState("2020-12-31");
+
+  const { loadState } = useFetchData({
+    condition: !station?.name,
+    action: useCallback(() => stationGetById(stationId), [stationId]),
+  });
 
   const dispatch = useDispatch();
 
-  const fetchStationData = useCallback(async () => {
-    if (!station) {
-      setLoading(true);
-      await dispatch(stationGetById(stationId)).unwrap();
-      setLoading(false);
-    }
-  }, [stationId, station, dispatch]);
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    let month = "" + (date.getMonth() + 1);
-    let day = "" + date.getDate();
-    const year = date.getFullYear();
-    if (month.length < 2) month = "0" + month;
-    if (day.length < 2) day = "0" + day;
-    return [month, day, year].join("/");
-  };
+  const apiConfig = useMemo(() => {
+    return { headers: { Authorization: `Bearer ${token}` } };
+  }, [token]);
 
   const fetchAnalyticsData = useCallback(async () => {
     try {
-      const base = `${StationAnalyticsAPI}/charts/peak-time/${stationId}`;
-      const params = [];
-      if (startDate) params.push(`start_date=${formatDate(startDate)}`);
-      if (endDate) params.push(`end_date=${formatDate(endDate)}`);
-      if (chargeLevel !== "All") params.push(`charge_level=${chargeLevel}`);
-      const query = params.length > 0 ? `?${params.join("&")}` : "";
-      const headers = { Authorization: `Bearer ${token}` };
-      const { data } = await apiInstance.get(`${base}${query}`, { headers });
+      const endpoint = `${StationAnalyticsAPI}/charts/peak-time/${stationId}`;
+      const params = Object.entries({
+        start_date: startDate,
+        end_date: endDate,
+      }).map(([key, value]) => value ? `${key}=${value}` : "")
+        .filter((param) => param).join("&");
+      const query = `${endpoint}${params ? `?${params}` : ""}`;
+      const { data } = await apiInstance.get(query, apiConfig);
       setAnalyticsData(data);
     } catch (error) {
+      handleError({ error, dispatch });
       console.log(error);
     }
-  }, [StationAnalyticsAPI, stationId, token, startDate, endDate, chargeLevel]);
+  }, [StationAnalyticsAPI, stationId, startDate, endDate, apiConfig, dispatch]);
 
   useEffect(() => {
-    fetchStationData();
     fetchAnalyticsData();
-  }, [fetchStationData, fetchAnalyticsData]);
+  }, [fetchAnalyticsData]);
 
   return (
     <CModal
-      size="xl"
+      size="lg"
       alignment="center"
       backdrop="static"
       visible={isOpen}
@@ -86,7 +76,18 @@ const DriverStationDetailsModal = ({ isOpen, onClose, stationId }) => {
       scrollable
     >
       <CModalHeader>
-        <CModalTitle>{!loading && station.name}</CModalTitle>
+        <CModalTitle>
+          {!loadState.loading && (
+            <>
+              <span>{station.name} - </span>
+              <span className="fw-medium">
+                <EvseAvailabilityStatus
+                  status={stationStatus}
+                />
+              </span>
+            </>
+          )}
+        </CModalTitle>
       </CModalHeader>
       <CForm className="d-flex align-item-center">
         <CInputGroup>
@@ -109,22 +110,6 @@ const DriverStationDetailsModal = ({ isOpen, onClose, stationId }) => {
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-          />
-        </CInputGroup>
-        <CInputGroup>
-          <CInputGroupText className="bg-secondary text-white rounded-0">
-            Charge Level
-          </CInputGroupText>
-          <CFormSelect
-            className="rounded-0 shadow-none"
-            options={[
-              { label: "All Levels", value: "All" },
-              { label: "Level 1", value: "1" },
-              { label: "Level 2", value: "2" },
-              { label: "Level 3", value: "3" },
-            ]}
-            value={chargeLevel}
-            onChange={(e) => setChargeLevel(e.target.value)}
           />
         </CInputGroup>
       </CForm>

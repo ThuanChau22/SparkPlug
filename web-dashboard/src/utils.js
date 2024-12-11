@@ -32,4 +32,6 @@ utils.toGeoJSON = (data = []) => data.map((item) => ({
   },
 }));
 
+utils.kmToMi = (value) => value * 0.621371;
+
 export default utils;

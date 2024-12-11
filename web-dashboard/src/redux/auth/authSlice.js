@@ -7,6 +7,7 @@ import {
   clearHeader,
   handleError,
 } from "redux/api";
+import { mapStateClear } from "redux/map/mapSlice";
 import { siteStateClear } from "redux/site/siteSlice";
 import { stationStateClear } from "redux/station/stationSlice";
 import { stationEventStateClear } from "redux/station/stationEventSlice";
@@ -85,6 +86,7 @@ export const authLogout = createAsyncThunk(
   async (_, { dispatch }) => {
     try {
       dispatch(authStateClear());
+      dispatch(mapStateClear());
       dispatch(siteStateClear());
       dispatch(stationStateClear());
       dispatch(stationEventStateClear());

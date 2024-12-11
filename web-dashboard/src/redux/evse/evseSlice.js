@@ -59,7 +59,7 @@ export const {
 export const evseGetList = createAsyncThunk(
   `${evseSlice.name}/getList`,
   async ({
-    field, price,
+    fields, price,
     latitude, longitude,
     city, state, country,
     limit, cursor,
@@ -76,7 +76,7 @@ export const evseGetList = createAsyncThunk(
   } = {}, { dispatch, getState }) => {
     try {
       const params = Object.entries({
-        field, price, site_id, owner_id, latitude, longitude,
+        fields, price, site_id, owner_id, latitude, longitude,
         connector_type, charge_level,
         street_address, city, state, country, zip_code,
         lat_lng_origin, lat_lng_min, lat_lng_max,
