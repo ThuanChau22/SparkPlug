@@ -13,13 +13,13 @@ import {
 } from "@coreui/react";
 
 import LoadingIndicator from "components/LoadingIndicator";
+import useFetchData from "hooks/useFetchData";
 import { apiInstance, handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   stationGetById,
   selectStationById,
 } from "redux/station/stationSlice";
-import useFetchData from "hooks/useFetchData";
 
 const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
@@ -60,7 +60,7 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
     } catch (error) {
       handleError({ error, dispatch });
     }
-  }, [StationAnalyticsAPI, stationId, apiConfig, startDate, endDate, dispatch]);
+  }, [StationAnalyticsAPI, stationId, startDate, endDate, apiConfig, dispatch]);
 
   const fetchEnergyForecastData = useCallback(async () => {
     try {

@@ -168,7 +168,10 @@ const StationMonitorMapView = ({ handleViewStation }) => {
         <MapFitBound bounds={data?.stations || []} />
         <StationStatusMarkerCluster
           stationList={stationStatusList}
-          loading={stationLoadStateOnMapView.loading}
+          loading={
+            stationLoadStateOnMapView.loading
+            || evseStatusLoadStateOnMapView.loading
+          }
           onClick={handleViewStation}
         />
       </MapContainer>

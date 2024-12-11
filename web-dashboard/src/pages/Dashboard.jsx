@@ -1,4 +1,4 @@
-// import { useState } from "react";
+import { useSelector } from "react-redux";
 import { CRow, CCol, CCard } from "@coreui/react";
 
 import DriverGrowthChartWidget from "components/Dashboard/DriverGrowthChartWidget";
@@ -9,8 +9,11 @@ import PeakTimeChartWidget from "components/Dashboard/PeakTimeChartWidget";
 import RevenueChartWidget from "components/Dashboard/RevenueChartWidget";
 import SessionCountChartWidget from "components/Dashboard/SessionCountChartWidget";
 import StationGrowthChartWidget from "components/Dashboard/StationGrowthChartWidget";
+import { selectAuthRoleIsStaff } from "redux/auth/authSlice";
 
 const Dashboard = () => {
+  const authIsAdmin = useSelector(selectAuthRoleIsStaff);
+
   // const [startDate, setStartDate] = useState("");
   // const [endDate, setEndDate] = useState("");
   // const [chargeLevel, setChargeLevel] = useState("All");
@@ -75,12 +78,16 @@ const Dashboard = () => {
             </div>
           </CRow>
         </CCol> */}
-        <CCol>
-          <DriverGrowthChartWidget />
-        </CCol>
-        <CCol>
-          <OwnerGrowthChartWidget />
-        </CCol>
+        {authIsAdmin && (
+          <>
+            <CCol>
+              <DriverGrowthChartWidget />
+            </CCol>
+            <CCol>
+              <OwnerGrowthChartWidget />
+            </CCol>
+          </>
+        )}
         <CCol>
           <StationGrowthChartWidget />
         </CCol>

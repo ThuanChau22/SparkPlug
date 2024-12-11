@@ -5,6 +5,7 @@ const initialState = {
   lowerBound: { lat: null, lng: null },
   upperBound: { lat: null, lng: null },
   zoom: null,
+  location: { located: false, lat: null, lng: null },
 };
 
 export const mapSlice = createSlice({
@@ -38,6 +39,8 @@ export const selectMapLowerBound = (state) => selectMap(state).lowerBound;
 export const selectMapUpperBound = (state) => selectMap(state).upperBound;
 
 export const selectMapZoom = (state) => selectMap(state).zoom;
+
+export const selectMapLocation = (state) => selectMap(state).location;
 
 export default mapSlice.reducer;
 

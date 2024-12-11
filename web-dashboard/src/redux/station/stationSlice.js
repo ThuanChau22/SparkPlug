@@ -102,7 +102,7 @@ export const {
 export const stationGetList = createAsyncThunk(
   `${stationSlice.name}/getList`,
   async ({
-    field, name,
+    fields, name,
     latitude, longitude,
     city, state, country,
     limit, cursor,
@@ -117,7 +117,7 @@ export const stationGetList = createAsyncThunk(
   } = {}, { dispatch, getState }) => {
     try {
       const params = Object.entries({
-        field, name, site_id, owner_id, latitude, longitude,
+        fields, name, site_id, owner_id, latitude, longitude,
         street_address, city, state, country, zip_code,
         lat_lng_origin, lat_lng_min, lat_lng_max,
         sort_by, cursor, limit,
@@ -210,6 +210,14 @@ export const selectStationListByFields = createSelector(
     return fields.filter((field) => !station[field]).length === 0;
   }),
 );
+
+// export const selectStationListSortByDistance = createSelector(
+//   [],
+//   (stationList) => {
+//     [].sort()
+//     stationList.so
+//   },
+// );
 
 export const selectStationStatusById = createSelector(
   [selectEvseStatusByStation],

@@ -1,17 +1,25 @@
-import { useEffect, useState } from "react";
-import L from "leaflet";
-import { Marker, Popup, useMapEvents } from "react-leaflet";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useMapEvents } from "react-leaflet";
+import MapMarker from "components/Map/MapMarker";
 
 import userIconUrl from "assets/user_pointer.png";
+import {
+  mapStateSet,
+  selectMapLocation,
+} from "redux/map/mapSlice";
 
 const MapUserLocation = () => {
-  const [position, setPosition] = useState({ located: false });
+
+  const location = useSelector(selectMapLocation);
+
+  const dispatch = useDispatch();
 
   const map = useMapEvents({
     locationfound: ({ latlng: { lat, lng } }) => {
-      const { lat: foundLat, lng: foundLng } = position;
+      const { lat: foundLat, lng: foundLng } = location;
       if (lat !== foundLat || lng !== foundLng) {
-        setPosition({ located: true, lat, lng });
+        dispatch(mapStateSet({ location: { located: true, lat, lng } }));
       }
     },
   });
@@ -21,21 +29,17 @@ const MapUserLocation = () => {
   }, [map]);
 
   useEffect(() => {
-    if (position.located) {
-      map.flyTo(position, 17);
+    if (location.located) {
+      map.flyTo(location, 12);
     }
-  }, [map, position]);
+  }, [map, location]);
 
-  const userIcon = L.icon({
-    iconUrl: userIconUrl,
-    iconSize: [50, 50],
-    iconAnchor: [25, 50],
-  });
-
-  return position.located && (
-    <Marker position={position} icon={userIcon}>
-      <Popup>You are here</Popup>
-    </Marker>
+  return location.located && (
+    <MapMarker
+      position={location}
+      iconUrl={userIconUrl}
+      riseOnHover={true}
+    />
   );
 };
 
