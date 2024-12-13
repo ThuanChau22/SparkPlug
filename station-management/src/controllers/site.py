@@ -30,6 +30,18 @@ def get_sites():
         return handle_error(e)
 
 
+def get_site_locations():
+    def session(connection):
+        location = request.args.to_dict()
+        limit = int(location.get("limit") or 0) or None
+        return site.get_site_locations(connection, location, limit)
+
+    try:
+        return transaction(session), 200
+    except Exception as e:
+        return handle_error(e)
+
+
 def get_site_by_id(site_id):
     def session(connection):
         site_data = site.get_site_by_id(connection, site_id)

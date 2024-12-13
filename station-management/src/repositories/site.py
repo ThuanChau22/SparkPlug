@@ -41,6 +41,35 @@ def get_sites(connection, filter={}, select={}, sort={}, limit=None, cursor=None
     }
 
 
+def get_site_locations(connection, location={}, limit=None):
+    if not location:
+        return []
+
+    location_fields = [
+        "street_address",
+        "city",
+        "state",
+        "country",
+        "zip_code",
+    ]
+    for location_field in location_fields:
+        if location.get(location_field):
+            field = location_field
+            value = location.get(location_field)
+            break
+
+    query = f"SELECT DISTINCT {field} FROM {Table.Site.value}"
+    query = f"{query} WHERE {field} LIKE %s"
+    query = limit_at(query, limit)
+    query_values = f"{value}%"
+
+    with connection.cursor() as cursor:
+        cursor.execute(query, query_values)
+        locations = cursor.fetchall()
+
+    return [entry.get(field) for entry in locations]
+
+
 def get_site_by_id(connection, site_id):
     return fetch_by_id(connection, Table.Site.value, site_id)
 

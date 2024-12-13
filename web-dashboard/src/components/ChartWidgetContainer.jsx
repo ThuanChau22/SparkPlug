@@ -6,7 +6,7 @@ import LoadingIndicator from "components/LoadingIndicator";
 /**
  * chart.type: "line"|"bar"|"radar"|"doughnut"|"polarArea"|"bubble"|"pie"|"scatter"
  */
-const ChartWidgetContainer = ({ className = "", style = {}, label, chart }) => (
+const ChartWidgetContainer = ({ className = "", style = {}, label = "", chart = {} }) => (
   <CWidgetStatsA
     className="shadow-sm"
     value={label}
@@ -18,7 +18,7 @@ const ChartWidgetContainer = ({ className = "", style = {}, label, chart }) => (
         {!chart.data
           ? <LoadingIndicator loading={!chart.data} />
           : chart.data?.length !== 0
-            ? <CChart {...chart} />
+            ? <CChart customTooltips={false} {...chart} />
             : (
               <span className="d-flex justify-content-center align-items-center h-100">
                 Data not available

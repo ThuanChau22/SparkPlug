@@ -22,6 +22,12 @@ def get_sites():
     return site.get_sites()
 
 
+@app.route("/api/sites/locations", methods=["GET"])
+@auth.require_permission("anonymous", "staff", "owner", "driver")
+def get_site_locations():
+    return site.get_site_locations()
+
+
 @app.route("/api/sites/<int:site_id>", methods=["GET"])
 @auth.require_permission("anonymous", "staff", "owner", "driver")
 def get_site_by_id(site_id):

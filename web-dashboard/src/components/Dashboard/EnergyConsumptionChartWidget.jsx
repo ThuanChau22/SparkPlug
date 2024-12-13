@@ -5,7 +5,7 @@ import ChartWidgetContainer from "components/ChartWidgetContainer";
 import { apiInstance, handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 
-const EnergyConsumptionChartWidget = ({ className = "", style = {} }) => {
+const EnergyConsumptionChartWidget = ({ filter = {}, className = "", style = {} }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
 
@@ -15,14 +15,32 @@ const EnergyConsumptionChartWidget = ({ className = "", style = {} }) => {
 
   const fetchData = useCallback(async () => {
     try {
-      const baseURL = `${StationAnalyticsAPI}/charts/energy-consumption-by-time-interval`;
+      const {
+        viewBy,
+        city, state, country,
+        order, count,
+        startDate: start_date,
+        endDate: end_date,
+        zipCode: postal,
+      } = filter;
+      const endpoint = `${StationAnalyticsAPI}/charts`;
+      const resource = viewBy === "station"
+        ? "energy-consumption-by-station"
+        : "energy-consumption-by-time-interval";
+      const params = Object.entries({
+        start_date, end_date,
+        city, state, country, postal,
+        order, count,
+      }).map(([key, value]) => value ? `${key}=${value}` : "")
+        .filter((param) => param).join("&");
+      const query = `${endpoint}/${resource}${params ? `?${params}` : ""}`;
       const headers = { Authorization: `Bearer ${token}` };
-      const { data } = await apiInstance.get(`${baseURL}`, { headers });
+      const { data } = await apiInstance.get(query, { headers });
       setData(data);
     } catch (error) {
       handleError({ error, dispatch });
     }
-  }, [StationAnalyticsAPI, token, dispatch]);
+  }, [StationAnalyticsAPI, token, filter, dispatch]);
 
   useEffect(() => {
     fetchData();
