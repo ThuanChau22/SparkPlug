@@ -5,7 +5,7 @@ import ChartWidgetContainer from "components/ChartWidgetContainer";
 import { apiInstance, handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 
-const DriverChartSessionCountByStationWidget = ({ className = "", style = {} }) => {
+const DriverSessionCountByTimeChartWidget = ({ className = "", style = {} }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
 
@@ -15,7 +15,7 @@ const DriverChartSessionCountByStationWidget = ({ className = "", style = {} }) 
 
   const fetchData = useCallback(async () => {
     try {
-      const baseURL = `${StationAnalyticsAPI}/charts/driver-session-count-by-station`;
+      const baseURL = `${StationAnalyticsAPI}/charts/driver-session-count-by-time-interval`;
       const headers = { Authorization: `Bearer ${token}` };
       const { data } = await apiInstance.get(`${baseURL}`, { headers });
       setData(data);
@@ -31,7 +31,7 @@ const DriverChartSessionCountByStationWidget = ({ className = "", style = {} }) 
     <ChartWidgetContainer
       className={className}
       style={style}
-      label="Driver Sessions by Station"
+      label="Sessions"
       chart={{
         type: "bar",
         data: data,
@@ -60,4 +60,4 @@ const DriverChartSessionCountByStationWidget = ({ className = "", style = {} }) 
   );
 }
 
-export default DriverChartSessionCountByStationWidget;
+export default DriverSessionCountByTimeChartWidget;
