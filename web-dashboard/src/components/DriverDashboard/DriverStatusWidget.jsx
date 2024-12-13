@@ -13,10 +13,12 @@ import LoadingIndicator from "components/LoadingIndicator";
 import useStationEventSocket, { Action } from "hooks/useStationEventSocket";
 import {
   evseGetList,
+  evseStateClear,
   selectEvseIds,
 } from "redux/evse/evseSlice";
 import {
   EvseStatus,
+  evseStatusStateClear,
   evseStatusGetList,
   selectEvseStatusList,
 } from "redux/evse/evseStatusSlice";
@@ -111,6 +113,11 @@ const DriverStatusWidget = ({ className = "" }) => {
     }
     return data;
   }, [evseIds, evseStatusList]);
+
+  useEffect(() => () => {
+    dispatch(evseStateClear());
+    dispatch(evseStatusStateClear());
+  }, [dispatch]);
 
   return (
     <CCard className={className}>

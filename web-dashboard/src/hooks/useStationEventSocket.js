@@ -9,10 +9,7 @@ import {
 import {
   stationEventStateSetById,
 } from "redux/station/stationEventSlice";
-import {
-  evseGetList,
-  selectEvseIds,
-} from "redux/evse/evseSlice";
+import { selectEvseIds } from "redux/evse/evseSlice";
 import {
   evseStatusStateUpsertMany,
   evseStatusStateUpsertById,
@@ -84,13 +81,6 @@ const useStationEventSocket = ({ action, payload: { stationId, stationIds } = {}
   }, [lastJsonMessage, dispatch]);
 
   // Handle load data for WatchStatusEvent
-  useEffect(() => {
-    const isWatchStatusEvent = action === Action.WatchStatusEvent;
-    if (isWatchStatusEvent && evseIds.length === 0) {
-      dispatch(evseGetList());
-    }
-  }, [action, evseIds.length, dispatch]);
-
   const evseIdsByStation = useMemo(() => (
     evseIds.reduce((data, { station_id, evse_id }) => {
       if (!data[station_id]) {

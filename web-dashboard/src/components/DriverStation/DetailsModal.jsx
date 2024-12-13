@@ -17,11 +17,13 @@ import LoadingIndicator from "components/LoadingIndicator";
 import useFetchData from "hooks/useFetchData";
 import { apiInstance, handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
+import { mapStateSet } from "redux/map/mapSlice";
 import {
   stationGetById,
   selectStationById,
   selectStationStatusById
 } from "redux/station/stationSlice";
+import utils from "utils";
 
 const DriverStationDetailsModal = ({ isOpen, onClose, stationId }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
@@ -41,6 +43,16 @@ const DriverStationDetailsModal = ({ isOpen, onClose, stationId }) => {
 
   const dispatch = useDispatch();
 
+  useEffect(() => {
+      const { latitude: lat, longitude: lng } = station;
+      if (utils.hasLatLngValue({ lat, lng })) {
+        dispatch(mapStateSet({
+          center: { lat, lng },
+          zoom: 20,
+        }))
+      }
+    }, [station, dispatch]);
+
   const apiConfig = useMemo(() => {
     return { headers: { Authorization: `Bearer ${token}` } };
   }, [token]);
@@ -58,7 +70,6 @@ const DriverStationDetailsModal = ({ isOpen, onClose, stationId }) => {
       setAnalyticsData(data);
     } catch (error) {
       handleError({ error, dispatch });
-      console.log(error);
     }
   }, [StationAnalyticsAPI, stationId, startDate, endDate, apiConfig, dispatch]);
 

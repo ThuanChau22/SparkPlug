@@ -88,10 +88,11 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
     loadState: loadStateOnScroll,
   } = useFetchDataOnScroll({
     action: useCallback(() => siteGetList({
+      fields: siteSelectedFields.join(),
       latLngMin, latLngMax,
       limit: ListLimit,
       cursor: listCursor.next,
-    }), [latLngMin, latLngMax, listCursor.next]),
+    }), [siteSelectedFields, latLngMin, latLngMax, listCursor.next]),
     ref: listRef,
     cursor: listCursor,
   });
@@ -115,9 +116,11 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
 
   useEffect(() => {
     if (dataOnMapView && loadStateOnMapView.done) {
-      listRef.current.scrollTop = 0;
       setListCursor(dataOnMapView.cursor);
       setListPage(1);
+      if (listRef.current) {
+        listRef.current.scrollTop = 0;
+      }
     }
   }, [dataOnMapView, loadStateOnMapView]);
 
