@@ -23,10 +23,7 @@ export const EvseStatus = {
 
 const evseStatusEntityAdapter = createEntityAdapter({
   selectId: ({ station_id, evse_id }) => `${station_id},${evse_id}`,
-  sortComparer: (a, b) => {
-    const result = a.station_id - b.station_id;
-    return result ? result : a.evse_id - b.evse_id;
-  },
+  sortComparer: (a, b) => a.station_id - b.station_id || a.evse_id - b.evse_id,
 });
 
 const initialState = evseStatusEntityAdapter.getInitialState();

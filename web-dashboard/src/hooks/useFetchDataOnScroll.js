@@ -20,9 +20,13 @@ const useFetchDataOnScroll = ({
       }
     };
     const current = isWindow ? window : ref.current;
-    current?.addEventListener("scroll", handleScroll);
+    if (current?.addEventListener) {
+      current.addEventListener("scroll", handleScroll);
+    }
     return () => {
-      current?.removeEventListener("scroll", handleScroll);
+      if (current?.removeEventListener) {
+        current?.removeEventListener("scroll", handleScroll);
+      }
     };
   }, [isWindow, refHeight, ref, cursor, loadState, fetchData]);
 

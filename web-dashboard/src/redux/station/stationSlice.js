@@ -7,7 +7,7 @@ import {
 
 import {
   EvseStatus,
-  selectEvseStatusByStation
+  selectEvseStatusByStation,
 } from "redux/evse/evseStatusSlice";
 import {
   apiInstance,
@@ -211,14 +211,6 @@ export const selectStationListByFields = createSelector(
   }),
 );
 
-// export const selectStationListSortByDistance = createSelector(
-//   [],
-//   (stationList) => {
-//     [].sort()
-//     stationList.so
-//   },
-// );
-
 export const selectStationStatusById = createSelector(
   [selectEvseStatusByStation],
   (evses) => {
@@ -232,6 +224,17 @@ export const selectStationStatusById = createSelector(
       }
     }
     return "Unknown";
+  },
+);
+
+export const selectStationStatusEntities = createSelector(
+  [selectStationList, (state) => state],
+  (stationList, state) => {
+    const entities = {};
+    for (const { id } of stationList) {
+      entities[id] = selectStationStatusById(state, id);
+    }
+    return entities;
   },
 );
 

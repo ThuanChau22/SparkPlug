@@ -13,12 +13,22 @@ import {
 
 const StationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
 
+export const EvseFields = {
+  id: "id",
+  stationId: "station_id",
+  evseId: "evse_id",
+  connectorType: "connector_type",
+  price: "price",
+  chargeLevel: "charge_level",
+  latitude: "latitude",
+  longitude: "longitude",
+  siteId: "site_id",
+  ownerId: "owner_id",
+};
+
 const evseEntityAdapter = createEntityAdapter({
   selectId: ({ station_id, evse_id }) => `${station_id},${evse_id}`,
-  sortComparer: (a, b) => {
-    const result = a.station_id - b.station_id;
-    return result ? result : a.evse_id - b.evse_id;
-  },
+  sortComparer: (a, b) => a.station_id - b.station_id || a.evse_id - b.evse_id,
 });
 
 const initialState = evseEntityAdapter.getInitialState();
@@ -38,6 +48,12 @@ export const evseSlice = createSlice({
       const id = evseEntityAdapter.selectId({ station_id, evse_id });
       evseEntityAdapter.updateOne(state, { id, changes });
     },
+    evseStateDeleteMany(state, { payload }) {
+      const evseIds = (payload || []).map(({ station_id, evse_id }) => {
+        return evseEntityAdapter.selectId({ station_id, evse_id });
+      });
+      evseEntityAdapter.removeMany(state, evseIds);
+    },
     evseStateDeleteById(state, { payload }) {
       const id = evseEntityAdapter.selectId(payload);
       evseEntityAdapter.removeOne(state, id);
@@ -52,6 +68,7 @@ export const {
   evseStateSetById,
   evseStateUpsertMany,
   evseStateUpdateById,
+  evseStateDeleteMany,
   evseStateDeleteById,
   evseStateClear,
 } = evseSlice.actions;

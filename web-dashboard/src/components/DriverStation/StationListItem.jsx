@@ -11,7 +11,7 @@ import {
 } from "redux/station/stationSlice";
 import utils from "utils";
 
-const DriverStationListItem = ({ stationId }) => {
+const DriverStationListItem = ({ stationId, waitTime = null }) => {
   const station = useSelector((state) => selectStationById(state, stationId));
   const stationStatus = useSelector((state) => selectStationStatusById(state, stationId));
 
@@ -34,6 +34,15 @@ const DriverStationListItem = ({ stationId }) => {
             {station.street_address}, {station.city}
           </p>
           <p className="mb-0">{station.name}</p>
+          {waitTime !== null && (
+            <p className={`${waitTime <= 15
+                ? "text-success"
+                : waitTime <= 60
+                  ? "text-warning"
+                  : "text-danger"} mb-0 small`}>
+              {`Estimated wait: ${waitTime} minutes`}
+            </p>
+          )}
         </div>
         <div>
           <EvseAvailabilityStatus status={stationStatus} />

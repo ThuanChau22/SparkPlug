@@ -15,7 +15,6 @@ import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
   selectMapLowerBound,
   selectMapUpperBound,
-  selectMapLocation,
 } from "redux/map/mapSlice";
 import {
   StationFields,
@@ -32,6 +31,10 @@ import {
   selectZipCodeOptions,
 } from "redux/station/stationSlice";
 import {
+  EvseFields,
+  evseGetList,
+} from "redux/evse/evseSlice";
+import {
   evseStatusGetList,
   selectEvseStatusEntities,
 } from "redux/evse/evseStatusSlice";
@@ -42,7 +45,6 @@ const DriverStationMapView = ({ handleViewStation }) => {
 
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
-  const mapLocation = useSelector(selectMapLocation);
 
   const stationSelectedFields = useMemo(() => ([
     StationFields.latitude,
@@ -84,8 +86,8 @@ const DriverStationMapView = ({ handleViewStation }) => {
   const [mapParams] = useMapParams();
 
   const fetchOnLoad = useMemo(() => (
-    !mapLocation.located && !mapParams.exist && !latLngMin && !latLngMax
-  ), [latLngMin, latLngMax, mapParams, mapLocation]);
+    !mapParams.exist && !latLngMin && !latLngMax
+  ), [latLngMin, latLngMax, mapParams]);
 
   const { data, loadState } = useFetchData({
     condition: fetchOnLoad,
@@ -102,11 +104,24 @@ const DriverStationMapView = ({ handleViewStation }) => {
     action: useCallback(() => stationGetList({
       fields: stationSelectedFields.join(),
       latLngMin, latLngMax,
-      ...!mapLocation.located ? {} : {
-        latLngOrigin: utils.toLatLngString(mapLocation),
-        sortBy: "distance"
-      },
-    }), [stationSelectedFields, latLngMin, latLngMax, mapLocation]),
+    }), [stationSelectedFields, latLngMin, latLngMax]),
+  });
+
+  const evseSelectedFields = useMemo(() => ([
+    EvseFields.stationId,
+    EvseFields.evseId,
+    EvseFields.latitude,
+    EvseFields.longitude,
+  ]), []);
+
+  const {
+    loadState: evseLoadStateOnMapView,
+  } = useFetchDataOnMapView({
+    condition: !loadState.loading,
+    action: useCallback(() => evseGetList({
+      fields: evseSelectedFields.join(),
+      latLngMin, latLngMax,
+    }), [evseSelectedFields, latLngMin, latLngMax]),
   });
 
   const {
@@ -121,16 +136,29 @@ const DriverStationMapView = ({ handleViewStation }) => {
   const loading = useMemo(() => (
     loadState.loading
     || (loadState.idle && stationLoadStateOnMapView.loading)
+    || (loadState.idle && evseLoadStateOnMapView.loading)
     || (loadState.idle && evseStatusLoadStateOnMapView.loading)
-  ), [loadState, stationLoadStateOnMapView, evseStatusLoadStateOnMapView]);
+  ), [
+    loadState,
+    stationLoadStateOnMapView,
+    evseLoadStateOnMapView,
+    evseStatusLoadStateOnMapView,
+  ]);
 
   useEffect(() => {
     if (loadState.idle
       && stationLoadStateOnMapView.done
-      && evseStatusLoadStateOnMapView.done) {
+      && evseLoadStateOnMapView.done
+      && evseStatusLoadStateOnMapView.done
+    ) {
       loadState.setDone();
     }
-  }, [loadState, stationLoadStateOnMapView, evseStatusLoadStateOnMapView]);
+  }, [
+    loadState,
+    stationLoadStateOnMapView,
+    evseLoadStateOnMapView,
+    evseStatusLoadStateOnMapView,
+  ]);
 
   const dispatch = useDispatch();
 

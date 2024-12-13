@@ -1,5 +1,5 @@
 import { useCallback, useState, useEffect, useMemo, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   CListGroup,
   CListGroupItem,
@@ -12,6 +12,8 @@ import useFetchDataOnMapView from "hooks/useFetchDataOnMapView";
 import useFetchDataOnScroll from "hooks/useFetchDataOnScroll";
 import useMapParams from "hooks/useMapParams";
 import useWindowResize from "hooks/useWindowResize";
+import { apiInstance, handleError } from "redux/api";
+import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   selectMapLowerBound,
   selectMapUpperBound,
@@ -21,12 +23,19 @@ import {
   StationFields,
   stationGetList,
   selectStationListByFields,
+  selectStationStatusEntities,
 } from "redux/station/stationSlice";
+import { selectEvseList } from "redux/evse/evseSlice";
+import { EvseStatus } from "redux/evse/evseStatusSlice";
 import utils from "utils";
 
 const DriverStationListView = ({ refHeight, handleViewStation }) => {
+  const StationWaitTimeEstimationAPI = process.env.REACT_APP_STATION_WAIT_TIME_ESTIMATION_API;
+
   const ListLimit = 50;
   const listRef = useRef({});
+
+  const authToken = useSelector(selectAuthAccessToken);
 
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
@@ -36,13 +45,15 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
     StationFields.name,
     StationFields.streetAddress,
     StationFields.city,
-    ...!mapLocation.located ? [] : [
-      "distance"
-    ],
+    ...mapLocation.located ? ["distance"] : [],
   ]), [mapLocation]);
   const stationList = useSelector((state) => {
     return selectStationListByFields(state, stationSelectedFields);
   });
+
+  const stationStatusEntities = useSelector(selectStationStatusEntities);
+
+  const evseList = useSelector(selectEvseList);
 
   const [listPage, setListPage] = useState(0);
   const [listCursor, setListCursor] = useState({});
@@ -68,7 +79,8 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
   const [mapParams] = useMapParams();
 
   const fetchOnLoad = useMemo(() => (
-    !mapLocation.located && !mapParams.exist && !latLngMin && !latLngMax
+    (!mapParams.exist && !latLngMin && !latLngMax)
+    || (mapLocation.located && latLngMin && latLngMax)
   ), [latLngMin, latLngMax, mapParams, mapLocation]);
 
   const { data, loadState } = useFetchData({
@@ -76,8 +88,13 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
     action: useCallback(() => stationGetList({
       fields: stationSelectedFields.join(),
       latLngOrigin: "default",
+      sortBy: "distance",
       limit: ListLimit,
-    }), [stationSelectedFields]),
+      ...!mapLocation.located ? {} : {
+        latLngOrigin: utils.toLatLngString(mapLocation),
+        latLngMin, latLngMax,
+      },
+    }), [stationSelectedFields, latLngMin, latLngMax, mapLocation]),
   });
 
   const {
@@ -88,42 +105,37 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
     action: useCallback(() => stationGetList({
       fields: stationSelectedFields.join(),
       latLngMin, latLngMax,
+      limit: ListLimit,
       ...!mapLocation.located ? {} : {
         latLngOrigin: utils.toLatLngString(mapLocation),
-        sortBy: "distance"
+        sortBy: "distance",
       },
-      limit: ListLimit,
     }), [stationSelectedFields, latLngMin, latLngMax, mapLocation]),
   });
-
-  useEffect(() => {
-    console.log(stationList);
-  }, [stationList]);
 
   const {
     data: dataOnScroll,
     loadState: loadStateOnScroll,
   } = useFetchDataOnScroll({
     action: useCallback(() => stationGetList({
+      fields: stationSelectedFields.join(),
       latLngMin, latLngMax,
-      ...!mapLocation.located ? {} : {
-        latLngOrigin: utils.toLatLngString(mapLocation),
-        sortBy: "distance"
-      },
       limit: ListLimit,
       cursor: listCursor.next,
-    }), [latLngMin, latLngMax, listCursor.next, mapLocation]),
+      ...!mapLocation.located ? {} : {
+        latLngOrigin: utils.toLatLngString(mapLocation),
+        sortBy: "distance",
+      },
+    }), [stationSelectedFields, latLngMin, latLngMax, listCursor.next, mapLocation]),
     ref: listRef,
     cursor: listCursor,
   });
 
-  const loading = useMemo(() => (
-    loadState.loading || (loadState.idle && loadStateOnMapView.loading)
-  ), [loadState, loadStateOnMapView]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (loadState.idle && loadStateOnMapView.done) {
-      loadState.setDone();
+    if (loadState.done && loadStateOnMapView.done) {
+      setLoading(false);
     }
   }, [loadState, loadStateOnMapView]);
 
@@ -136,9 +148,11 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
 
   useEffect(() => {
     if (dataOnMapView && loadStateOnMapView.done) {
-      listRef.current.scrollTop = 0;
       setListCursor(dataOnMapView.cursor);
       setListPage(1);
+      if (listRef.current) {
+        listRef.current.scrollTop = 0;
+      }
     }
   }, [dataOnMapView, loadStateOnMapView]);
 
@@ -148,6 +162,40 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
       setListPage((state) => state + 1);
     }
   }, [dataOnScroll, loadStateOnScroll]);
+
+  const dispatch = useDispatch();
+
+  const [waitTimeByStation, setWaitTimeByStation] = useState({});
+
+  const fetchWaitTimes = useCallback(async (body) => {
+    try {
+      const baseURL = StationWaitTimeEstimationAPI;
+      const headers = { Authorization: `Bearer ${authToken}` };
+      const { data } = await apiInstance.post(baseURL, body, { headers });
+      const waitTimes = {};
+      for (const { station_id, wait_time } of data) {
+        const currentMin = waitTimes[station_id] || Infinity;
+        waitTimes[station_id] = Math.min(currentMin, wait_time);
+      }
+      setWaitTimeByStation(waitTimes);
+    } catch (error) {
+      handleError({ error, dispatch });
+    }
+  }, [StationWaitTimeEstimationAPI, authToken, dispatch]);
+
+  useEffect(() => {
+    const currentDateTime = new Date();
+    const hour_of_day = currentDateTime.getHours();
+    const day_of_week = (currentDateTime.getDay() + 6) % 7;
+    const body = evseList.filter(({ station_id }) => (
+      stationStatusEntities[station_id] === EvseStatus.Occupied
+    )).map(({ station_id, evse_id, latitude, longitude }) => ({
+      station_id, evse_id, latitude, longitude,
+      hour_of_day, day_of_week,
+    }));
+    if (body.length === 0) return;
+    fetchWaitTimes(body);
+  }, [stationStatusEntities, evseList, fetchWaitTimes]);
 
   return loading
     ? <LoadingIndicator loading={loading} />
@@ -167,7 +215,10 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
                   as="button"
                   onClick={() => handleViewStation(id)}
                 >
-                  <DriverStationListItem stationId={id} />
+                  <DriverStationListItem
+                    stationId={id}
+                    waitTime={Math.round(waitTimeByStation[id] || 0) || null}
+                  />
                 </CListGroupItem>
               ))}
             </>

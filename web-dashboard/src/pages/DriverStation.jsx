@@ -24,14 +24,17 @@ import {
   selectStationIds,
   selectStationList,
 } from "redux/station/stationSlice";
-import { evseStateClear } from "redux/evse/evseSlice";
+import {
+  evseStateClear,
+  evseStateDeleteMany,
+  selectEvseList,
+} from "redux/evse/evseSlice";
 import {
   evseStatusStateDeleteMany,
   evseStatusStateClear,
   selectEvseStatusList,
 } from "redux/evse/evseStatusSlice";
 import utils from "utils";
-
 
 const DriverStation = () => {
   const headerHeight = useSelector(selectLayoutHeaderHeight);
@@ -41,6 +44,7 @@ const DriverStation = () => {
 
   const stationIds = useSelector(selectStationIds);
   const stationList = useSelector(selectStationList);
+  const evseList = useSelector(selectEvseList);
   const evseStatusList = useSelector(selectEvseStatusList);
 
   const [titleHeight, setTitleHeight] = useState(0);
@@ -69,6 +73,14 @@ const DriverStation = () => {
     }).map(({ id }) => id);
     dispatch(stationStateDeleteMany(stationIds));
   }, [stationList, mapLowerBound, mapUpperBound, dispatch]);
+
+  useEffect(() => {
+    const evseIds = utils.outOfBoundResources(evseList, {
+      lowerBound: mapLowerBound,
+      upperBound: mapUpperBound,
+    }).map(({ station_id, evse_id }) => ({ station_id, evse_id }));
+    dispatch(evseStateDeleteMany(evseIds));
+  }, [evseList, mapLowerBound, mapUpperBound, dispatch]);
 
   useEffect(() => {
     const evseStatusIds = utils.outOfBoundResources(evseStatusList, {

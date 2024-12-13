@@ -1,23 +1,25 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useMapEvents } from "react-leaflet";
-import MapMarker from "components/Map/MapMarker";
 
 import userIconUrl from "assets/user_pointer.png";
+import MapMarker from "components/Map/MapMarker";
+import useMapParams from "hooks/useMapParams";
 import {
   mapStateSet,
   selectMapLocation,
 } from "redux/map/mapSlice";
 
 const MapUserLocation = () => {
+  const mapLocation = useSelector(selectMapLocation);
 
-  const location = useSelector(selectMapLocation);
+  const [mapParams] = useMapParams();
 
   const dispatch = useDispatch();
 
   const map = useMapEvents({
     locationfound: ({ latlng: { lat, lng } }) => {
-      const { lat: foundLat, lng: foundLng } = location;
+      const { lat: foundLat, lng: foundLng } = mapLocation;
       if (lat !== foundLat || lng !== foundLng) {
         dispatch(mapStateSet({ location: { located: true, lat, lng } }));
       }
@@ -29,14 +31,14 @@ const MapUserLocation = () => {
   }, [map]);
 
   useEffect(() => {
-    if (location.located) {
-      map.flyTo(location, 12);
+    if (mapLocation.located && !mapParams.exist) {
+      map.setView(mapLocation, 12);
     }
-  }, [map, location]);
+  }, [map, mapLocation, mapParams]);
 
-  return location.located && (
+  return mapLocation.located && (
     <MapMarker
-      position={location}
+      position={mapLocation}
       iconUrl={userIconUrl}
       riseOnHover={true}
     />
