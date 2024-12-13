@@ -17,6 +17,7 @@ import {
   selectAuthRoleIsOwner,
 } from "redux/auth/authSlice";
 import {
+  EvseFields,
   evseStateClear,
   evseGetList,
   selectEvseIds,
@@ -38,6 +39,7 @@ const EvseStatusWidget = ({ className = "" }) => {
   const { loadState: evseLoadState } = useFetchData({
     condition: evseIds.length === 0,
     action: useCallback(() => evseGetList({
+      fields: [EvseFields.stationId, EvseFields.evseId].join(),
       ...(authIsOwner ? { ownerId: authUserId } : {}),
     }), [authIsOwner, authUserId]),
   });

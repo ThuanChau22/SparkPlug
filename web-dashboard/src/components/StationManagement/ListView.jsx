@@ -88,10 +88,11 @@ const StationListView = ({ refHeight, handleViewStation }) => {
     loadState: loadStateOnScroll,
   } = useFetchDataOnScroll({
     action: useCallback(() => stationGetList({
+      fields: stationSelectedFields.join(),
       latLngMin, latLngMax,
       limit: ListLimit,
       cursor: listCursor.next,
-    }), [latLngMin, latLngMax, listCursor.next]),
+    }), [stationSelectedFields, latLngMin, latLngMax, listCursor.next]),
     ref: listRef,
     cursor: listCursor,
   });
@@ -115,9 +116,11 @@ const StationListView = ({ refHeight, handleViewStation }) => {
 
   useEffect(() => {
     if (dataOnMapView && loadStateOnMapView.done) {
-      listRef.current.scrollTop = 0;
       setListCursor(dataOnMapView.cursor);
       setListPage(1);
+      if (listRef.current) {
+        listRef.current.scrollTop = 0;
+      }
     }
   }, [dataOnMapView, loadStateOnMapView]);
 
