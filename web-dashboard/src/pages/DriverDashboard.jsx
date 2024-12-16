@@ -1,12 +1,12 @@
 import { CRow, CCol, CCard } from "@coreui/react";
 
-import DriverStatusWidget from "components/DriverDashboard/DriverStatusWidget";
-import DriverEnergyConsumptionByStationChartWidget from "components/DriverDashboard/EnergyConsumptionByStationWidget";
-import DriverEnergyConsumptionByTimeChartWidget from "components/DriverDashboard/EnergyConsumptionByTimeWidget";
-import DriverRevenueByStationChartWidget from "components/DriverDashboard/RevenueByStationWidget";
-import DriverRevenueByTimeChartWidget from "components/DriverDashboard/RevenueByTimeWidget";
-import DriverSessionCountByStationChartWidget from "components/DriverDashboard/SessionCountByStationWidget";
-import DriverSessionCountByTimeChartWidget from "components/DriverDashboard/SessionCountByTimeWidget";
+import DriverStatusWidget from "components/DriverDashboard/DriverStatusChartWidget";
+import DriverEnergyConsumptionByStationChartWidget from "components/DriverDashboard/EnergyConsumptionByStationChartWidget";
+import DriverEnergyConsumptionByTimeChartWidget from "components/DriverDashboard/EnergyConsumptionByTimeChartWidget";
+import DriverRevenueByStationChartWidget from "components/DriverDashboard/RevenueByStationChartWidget";
+import DriverRevenueByTimeChartWidget from "components/DriverDashboard/RevenueByTimeChartWidget";
+import DriverSessionCountByStationChartWidget from "components/DriverDashboard/SessionCountByStationChartWidget";
+import DriverSessionCountByTimeChartWidget from "components/DriverDashboard/SessionCountByTimeChartWidget";
 
 const DriverDashboard = () => {
   // const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
