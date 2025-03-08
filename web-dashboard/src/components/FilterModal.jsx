@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
   CForm,
@@ -6,45 +7,89 @@ import {
   CFormSelect,
   CModal,
   CModalHeader,
+  CModalTitle,
   CModalBody,
+  CRow,
+  CCol,
 } from "@coreui/react";
 
 import FormInput from "components/FormInput";
+import FormInputAutocomplete from "components/FormInputAutocomplete";
+import { apiInstance, toUrlParams, handleError } from "redux/api";
+import { selectAuthAccessToken } from "redux/auth/authSlice";
+import {
+  filterDashboardStateSetAll,
+  filterDashboardStateClearAll,
+  selectFilterDashboardEntities,
+} from "redux/filter/dashboardSlice";
 
-const FilterModal = ({ filter = {}, isOpen, onSubmit, onClose }) => {
-  const [formData, setFormData] = useState(filter);
+const FilterModal = ({ isOpen, onClose }) => {
+  const SiteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
 
-  // const dispatch = useDispatch();
+  const token = useSelector(selectAuthAccessToken);
 
-  // const fetchLocations = useCallback(async ({
-  //   city, state, limit,
-  //   zipCode: zip_code,
-  // }) => {
-  //   try {
-  //     const endpoint = `${SiteAPI}/locations`;
-  //     const params = Object.entries({
-  //       city, state, zip_code, limit,
-  //     }).map(([key, value]) => value ? `${key}=${value}` : "")
-  //       .filter((param) => param).join("&");
-  //     const query = `${endpoint}${params ? `?${params}` : ""}`;
-  //     const headers = { Authorization: `Bearer ${token}` };
-  //     const { data } = await apiInstance.get(query, { headers });
-  //     console.log({ data });
+  const filter = useSelector(selectFilterDashboardEntities);
 
-  //     // setCityOptions(data.map((value) => ({ label: value, value })));
-  //     return data.map((value) => ({ label: value, value }));
-  //   } catch (error) {
-  //     handleError(error, dispatch)
-  //   }
-  // }, [SiteAPI, token, dispatch]);
+  const [formInput, setFormInput] = useState(filter);
+
+  const dispatch = useDispatch();
+
+  const fetchLocations = useCallback(async ({
+    city, state, country,
+    zipCode: zip_code,
+  }) => {
+    try {
+      const endpoint = `${SiteAPI}/locations`;
+      const params = toUrlParams({
+        city, state,
+        zip_code, country,
+        limit: 5,
+      });
+      const query = `${endpoint}${params ? `?${params}` : ""}`;
+      const headers = { Authorization: `Bearer ${token}` };
+      const { data } = await apiInstance.get(query, { headers });
+      return data.map((value) => ({ value, label: value.toString() }));
+    } catch (error) {
+      handleError(error, dispatch);
+    }
+  }, [SiteAPI, token, dispatch]);
+
+  const isViewByInterval = () => {
+    const { text, options } = formInput.viewBy;
+    return text === options.interval;
+  };
+
+  const isViewByStation = () => {
+    const { text, options } = formInput.viewBy;
+    return text === options.station;
+  };
 
   const handleInputChange = ({ target }) => {
-    const { name, value } = target;
-    setFormData({ ...formData, [name]: value });
+    const { name, type, value } = target;
+    const changes = { ...formInput };
+    changes[name].value = value;
+    changes[name].text = value;
+    if (value !== "" && type === "date") {
+      const formatter = new Intl.DateTimeFormat();
+      const date = new Date(`${value}T00:00:00`);
+      changes[name].text = formatter.format(date);
+    } else if (value !== "" && type === "select-one") {
+      changes[name].text = changes[name].options[value];
+    } else if (value !== "" && type === "number") {
+      const intValue = parseInt(value);
+      changes[name].value = intValue >= 1 ? intValue : 1;
+      changes[name].text = changes[name].value.toString();
+    }
+    setFormInput(changes);
   };
 
   const handleSubmit = () => {
-    onSubmit(formData);
+    dispatch(filterDashboardStateSetAll(formInput));
+    onClose();
+  };
+
+  const handleClearAll = () => {
+    dispatch(filterDashboardStateClearAll());
     onClose();
   };
 
@@ -55,121 +100,198 @@ const FilterModal = ({ filter = {}, isOpen, onSubmit, onClose }) => {
       visible={isOpen}
       onClose={onClose}
     >
-      <CModalHeader></CModalHeader>
+      <CModalHeader>
+        <CModalTitle>Filters</CModalTitle>
+      </CModalHeader>
       <CModalBody>
         <CForm>
-          <FormInput
-            InputForm={CFormInput}
-            label="From"
-            name="startDate"
-            type="date"
-            value={formData.startDate}
-            onChange={handleInputChange}
-          />
-          <FormInput
-            InputForm={CFormInput}
-            label="To"
-            name="endDate"
-            type="date"
-            value={formData.endDate}
-            onChange={handleInputChange}
-          />
-          <FormInput
-            InputForm={CFormInput}
-            label="City"
-            name="city"
-            type="text"
-            placeholder="Enter city"
-            value={formData.city}
-            onChange={handleInputChange}
-          />
-          <FormInput
-            InputForm={CFormInput}
-            label="State"
-            name="state"
-            type="text"
-            placeholder="Enter state"
-            value={formData.state}
-            onChange={handleInputChange}
-          />
-          <FormInput
-            InputForm={CFormInput}
-            label="Zip Code"
-            name="zipCode"
-            type="text"
-            placeholder="Enter zip code"
-            value={formData.zipCode}
-            onChange={handleInputChange}
-          />
-          <FormInput
-            InputForm={CFormInput}
-            label="Country"
-            name="country"
-            type="text"
-            placeholder="Enter country"
-            value={formData.country}
-            onChange={handleInputChange}
-          />
-          <FormInput
-            InputForm={CFormSelect}
-            label="View By"
-            name="viewBy"
-            options={[
-              { label: "Select View By", value: "", disabled: true },
-              { label: "Time interval", value: "interval" },
-              { label: "Station", value: "station" },
-            ]}
-            placeholder="Select view"
-            value={formData.viewBy}
-            onChange={handleInputChange}
-          />
-          <FormInput
-            InputForm={CFormSelect}
-            label="Order By"
-            name="order"
-            options={[
-              { label: "Select View Order", value: "", disabled: true },
-              { label: "Descending", value: "desc" },
-              { label: "Ascending", value: "asc" },
-            ]}
-            placeholder="Select order"
-            value={formData.order}
-            onChange={handleInputChange}
-          />
-          <FormInput
-            InputForm={CFormInput}
-            label="Count"
-            name="count"
-            type="number"
-            min="1"
-            placeholder="Enter count"
-            value={formData.count}
-            onChange={handleInputChange}
-          />
-          <FormInput
-            InputForm={CFormSelect}
-            label="View Interval"
-            name="order"
-            options={[
-              { label: "Select View Interval", value: "", disabled: true },
-              { label: "Days", value: "days" },
-              { label: "Months", value: "months" },
-              { label: "Years", value: "years" },
-            ]}
-            placeholder="Select order"
-            value={formData.order}
-            onChange={handleInputChange}
-          />
-          <div className="text-center">
-            <CButton
-              className="w-100"
-              variant="outline"
-              color="info"
-              onClick={handleSubmit}
-            >
-              Apply
-            </CButton>
-          </div>
+          <CRow xs={{ gutterX: 2 }}>
+            <CCol sm={6}>
+              <FormInput
+                InputForm={CFormInput}
+                name="startDate"
+                type="date"
+                label={formInput.startDate.label}
+                value={formInput.startDate.value}
+                onChange={handleInputChange}
+              />
+            </CCol>
+            <CCol sm={6}>
+              <FormInput
+                InputForm={CFormInput}
+                name="endDate"
+                type="date"
+                label={formInput.endDate.label}
+                value={formInput.endDate.value}
+                onChange={handleInputChange}
+              />
+            </CCol>
+          </CRow>
+          <CRow xs={{ gutterX: 2 }}>
+            <CCol sm={6}>
+              <FormInputAutocomplete
+                id="city-input-autocomplete"
+                placeholder="Enter city"
+                label={formInput.city.label}
+                defaultInputValue={formInput.city.value}
+                onSearch={(city) => fetchLocations({ city })}
+                onChange={([selected]) => handleInputChange({
+                  target: {
+                    name: "city",
+                    type: "text",
+                    value: selected?.value || "",
+                  },
+                })}
+              />
+            </CCol>
+            <CCol sm={6}>
+              <FormInputAutocomplete
+                id="state-input-autocomplete"
+                placeholder="Enter state"
+                label={formInput.state.label}
+                defaultInputValue={formInput.state.value}
+                onSearch={(state) => fetchLocations({ state })}
+                onChange={([selected]) => handleInputChange({
+                  target: {
+                    name: "state",
+                    type: "text",
+                    value: selected?.value || "",
+                  },
+                })}
+              />
+            </CCol>
+            <CCol sm={6}>
+              <FormInputAutocomplete
+                id="zip-code-input-autocomplete"
+                placeholder="Enter zip code"
+                label={formInput.zipCode.label}
+                defaultInputValue={formInput.zipCode.value}
+                onSearch={(zipCode) => fetchLocations({ zipCode })}
+                onChange={([selected]) => handleInputChange({
+                  target: {
+                    name: "zipCode",
+                    type: "text",
+                    value: selected?.value || "",
+                  },
+                })}
+              />
+            </CCol>
+            <CCol sm={6}>
+              <FormInputAutocomplete
+                id="country-input-autocomplete"
+                placeholder="Enter country"
+                label={formInput.country.label}
+                defaultInputValue={formInput.country.value}
+                onSearch={(country) => fetchLocations({ country })}
+                onChange={([selected]) => handleInputChange({
+                  target: {
+                    name: "country",
+                    type: "text",
+                    value: selected?.value || "",
+                  },
+                })}
+              />
+            </CCol>
+          </CRow>
+          <CRow xs={{ gutterX: 2 }}>
+            <CCol xs={12}>
+              <FormInput
+                InputForm={CFormSelect}
+                name="viewBy"
+                label={formInput.viewBy.label}
+                value={formInput.viewBy.value}
+                options={[
+                  { label: "Select view", value: "", disabled: true },
+                  ...Object.entries(formInput.viewBy.options)
+                    .map(([value, label]) => ({ label, value })),
+                ]}
+                onChange={(e) => {
+                  handleInputChange(e);
+                  const changes = { ...formInput };
+                  if (isViewByInterval()) {
+                    changes.orderBy.text = "";
+                    changes.orderBy.value = "";
+                    changes.count.text = "";
+                    changes.count.value = "";
+                  }
+                  if (isViewByStation()) {
+                    changes.interval.text = "";
+                    changes.interval.value = "";
+                  }
+                  setFormInput(changes);
+                }}
+              />
+            </CCol>
+            {isViewByInterval() && (
+              <CCol xs={12}>
+                <FormInput
+                  InputForm={CFormSelect}
+                  name="interval"
+                  label={formInput.interval.label}
+                  value={formInput.interval.value}
+                  options={[
+                    { label: "Select interval", value: "", disabled: true },
+                    ...Object.entries(formInput.interval.options)
+                      .map(([value, label]) => ({ label, value })),
+                  ]}
+                  onChange={handleInputChange}
+                />
+              </CCol>
+            )}
+            {isViewByStation() && (
+              <>
+                <CCol sm={6}>
+                  <FormInput
+                    InputForm={CFormSelect}
+                    name="orderBy"
+                    label={formInput.orderBy.label}
+                    value={formInput.orderBy.value}
+                    options={[
+                      { label: "Select order", value: "", disabled: true },
+                      ...Object.entries(formInput.orderBy.options)
+                        .map(([value, label]) => ({ label, value })),
+                    ]}
+                    onChange={handleInputChange}
+                  />
+                </CCol>
+                <CCol sm={6}>
+                  <FormInput
+                    InputForm={CFormInput}
+                    name="count"
+                    type="number"
+                    min="1"
+                    placeholder="Enter count"
+                    label={formInput.count.label}
+                    value={formInput.count.value}
+                    onChange={handleInputChange}
+                  />
+                </CCol>
+              </>
+            )}
+          </CRow>
+          <CButton
+            variant="outline"
+            color="info"
+            onClick={handleSubmit}
+          >
+            Apply
+          </CButton>
+          <CButton
+            className="ms-2"
+            variant="outline"
+            color="secondary"
+            onClick={onClose}
+          >
+            Cancel
+          </CButton>
+          <CButton
+            className="float-end"
+            variant="outline"
+            color="warning"
+            onClick={handleClearAll}
+          >
+            Clear All
+          </CButton>
         </CForm>
       </CModalBody>
     </CModal>

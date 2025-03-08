@@ -1,13 +1,35 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import ChartWidgetContainer from "components/ChartWidgetContainer";
-import { apiInstance, handleError } from "redux/api";
+import { apiInstance, toUrlParams, handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
+import { selectFilterDashboardValues } from "redux/filter/dashboardSlice";
 
-const SessionCountChartWidget = ({ filter = {}, className = "", style = {} }) => {
+const SessionCountChartWidget = ({ className = "", style = {} }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
+
   const token = useSelector(selectAuthAccessToken);
+
+  const filter = useSelector(selectFilterDashboardValues);
+
+  const resource = useMemo(() => (
+    filter.viewBy === "station"
+      ? "session-count-by-station"
+      : "session-count-by-time-interval"
+  ), [filter]);
+
+  const params = useMemo(() => toUrlParams({
+    start_date: filter.startDate,
+    end_date: filter.endDate,
+    city: filter.city,
+    state: filter.state,
+    country: filter.country,
+    postal: filter.zipCode,
+    interval: filter.interval,
+    order: filter.orderBy,
+    count: filter.count,
+  }), [filter]);
 
   const [data, setData] = useState(null);
 
@@ -15,24 +37,7 @@ const SessionCountChartWidget = ({ filter = {}, className = "", style = {} }) =>
 
   const fetchData = useCallback(async () => {
     try {
-      const {
-        viewBy,
-        city, state, country,
-        order, count,
-        startDate: start_date,
-        endDate: end_date,
-        zipCode: postal,
-      } = filter;
       const endpoint = `${StationAnalyticsAPI}/charts`;
-      const resource = viewBy === "station"
-        ? "session-count-by-station"
-        : "session-count-by-time-interval";
-      const params = Object.entries({
-        start_date, end_date,
-        city, state, country, postal,
-        order, count,
-      }).map(([key, value]) => value ? `${key}=${value}` : "")
-        .filter((param) => param).join("&");
       const query = `${endpoint}/${resource}${params ? `?${params}` : ""}`;
       const headers = { Authorization: `Bearer ${token}` };
       const { data } = await apiInstance.get(query, { headers });
@@ -40,7 +45,7 @@ const SessionCountChartWidget = ({ filter = {}, className = "", style = {} }) =>
     } catch (error) {
       handleError({ error, dispatch });
     }
-  }, [StationAnalyticsAPI, token, filter, dispatch]);
+  }, [StationAnalyticsAPI, resource, params, token, dispatch]);
 
   useEffect(() => {
     fetchData();

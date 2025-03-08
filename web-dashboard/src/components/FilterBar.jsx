@@ -1,3 +1,4 @@
+import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
   CCard,
@@ -10,7 +11,14 @@ import {
   FilterAlt,
 } from "@mui/icons-material";
 
-const FilterBar = ({ filter = {}, onClick, onRemove }) => {
+import {
+  filterDashboardStateClearOne,
+  selectFilterDashboardList,
+} from "redux/filter/dashboardSlice";
+
+const FilterBar = ({ onClick, onRemove }) => {
+  const filterList = useSelector(selectFilterDashboardList);  
+  const dispatch = useDispatch();
   return (
     <CCard className="border-0 border-bottom">
       <CCardBody className="d-flex flex-row align-items-center py-2">
@@ -21,19 +29,19 @@ const FilterBar = ({ filter = {}, onClick, onRemove }) => {
           onClick={onClick}
         >
           <FilterAlt />
-          Filter
+          Filters
         </CButton>
-        <CListGroup className="d-flex overflow-auto ms-3" layout={"horizontal"}>
-          {Object.entries(filter).filter(([_, value]) => value).map(([field, value]) => (
+        <CListGroup className="d-flex overflow-auto ms-2" layout={"horizontal"}>
+          {filterList.filter(({ text }) => text !== "").map(({ field, label, text, paths }) => (
             <CListGroupItem
               key={field}
-              className="d-flex flex-fill justify-content-between align-items-center border border-info rounded-pill me-2 py-1 px-2"
+              className="d-flex justify-content-between align-items-center border border-info rounded-pill me-2 py-1 px-2"
             >
-              <p className="text-info ms-1 me-2 mb-0 small text-nowrap">{field}: {value}</p>
-              <CloseRounded
-                color="info"
-                fontSize="small"
-                onClick={() => onRemove(field)}
+              <p className="m-0 mx-1 text-info text-nowrap small">{label}: {text}</p>
+              <CButton
+                as={CloseRounded}
+                className="p-0 rounded-circle text-info fs-5"
+                onClick={() => dispatch(filterDashboardStateClearOne({ field, paths }))}
               />
             </CListGroupItem>
           ))}

@@ -23,31 +23,11 @@ import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 const Dashboard = () => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const headerHeight = useSelector(selectLayoutHeaderHeight);
-
-  const defaultFilter = {
-    startDate: "",
-    endDate: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    country: "",
-    viewBy: "",
-    orderBy: "",
-    count: 0,
-    interval: "",
-  };
-  const [filter, setFilter] = useState(defaultFilter);
-
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-
   return (
     <CCard className="flex-grow-1 border border-0 rounded-0">
       <StickyContainer style={{ top: `${headerHeight}px` }}>
-        <FilterBar
-          filter={filter}
-          onClick={() => setIsFilterModalOpen(true)}
-          onRemove={(field) => setFilter({ ...filter, [field]: "" })}
-        />
+        <FilterBar onClick={() => setIsFilterModalOpen(true)} />
       </StickyContainer>
       <EvseStatusWidget className="mx-4 mt-3 shadow-sm" />
       <CRow
@@ -57,36 +37,34 @@ const Dashboard = () => {
         xxl={{ cols: 3 }}
       >
         <CCol>
-          <SessionCountChartWidget filter={filter} />
+          <SessionCountChartWidget />
         </CCol>
         <CCol>
-          <RevenueChartWidget filter={filter} />
+          <RevenueChartWidget />
         </CCol>
         <CCol>
-          <EnergyConsumptionChartWidget filter={filter} />
+          <EnergyConsumptionChartWidget />
         </CCol>
         <CCol>
-          <PeakTimeChartWidget filter={filter} />
+          <PeakTimeChartWidget />
         </CCol>
         {authIsAdmin && (
           <>
             <CCol>
-              <DriverGrowthChartWidget filter={filter} />
+              <DriverGrowthChartWidget />
             </CCol>
             <CCol>
-              <OwnerGrowthChartWidget filter={filter} />
+              <OwnerGrowthChartWidget />
             </CCol>
           </>
         )}
         <CCol>
-          <StationGrowthChartWidget filter={filter} />
+          <StationGrowthChartWidget />
         </CCol>
       </CRow>
       {isFilterModalOpen && (
         <FilterModal
-          filter={filter}
           isOpen={isFilterModalOpen}
-          onSubmit={(data) => setFilter(data)}
           onClose={() => setIsFilterModalOpen(false)}
         />
       )}

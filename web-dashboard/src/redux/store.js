@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 
 import { layoutSlice } from "redux/layout/layoutSlice";
+import { filterDashboardSlice } from "redux/filter/dashboardSlice";
 import { mapSlice } from "redux/map/mapSlice";
 import { authSlice } from "redux/auth/authSlice";
 import { userSlice } from "redux/user/userSlice";
@@ -11,9 +12,11 @@ import { evseSlice } from "redux/evse/evseSlice";
 import { evseStatusSlice } from "redux/evse/evseStatusSlice";
 import { errorSlice } from "redux/error/errorSlice";
 
+
 export const store = configureStore({
   reducer: {
     [layoutSlice.name]: layoutSlice.reducer,
+    [filterDashboardSlice.name]: filterDashboardSlice.reducer,
     [mapSlice.name]: mapSlice.reducer,
     [authSlice.name]: authSlice.reducer,
     [siteSlice.name]: siteSlice.reducer,
