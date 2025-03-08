@@ -11,10 +11,10 @@ import {
 } from "redux/evse/evseStatusSlice";
 import {
   apiInstance,
+  toUrlParams,
   tokenConfig,
   handleError,
 } from "redux/api";
-import { createLocationFilterAdapter } from "redux/locationFilterAdapter";
 
 const StationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
 
@@ -39,10 +39,7 @@ const stationEntityAdapter = createEntityAdapter({
   }
 });
 
-const locationFilterAdapter = createLocationFilterAdapter();
-const initialState = stationEntityAdapter.getInitialState({
-  ...locationFilterAdapter.getInitialState()
-});
+const initialState = stationEntityAdapter.getInitialState();
 
 export const stationSlice = createSlice({
   name: "station",
@@ -64,26 +61,9 @@ export const stationSlice = createSlice({
     stationStateDeleteById(state, { payload }) {
       stationEntityAdapter.removeOne(state, payload);
     },
-    stationSetStateSelected(state, { payload }) {
-      locationFilterAdapter.setStateSelected(state, payload);
-    },
-    stationSetCitySelected(state, { payload }) {
-      locationFilterAdapter.setCitySelected(state, payload);
-    },
-    stationSetZipCodeSelected(state, { payload }) {
-      locationFilterAdapter.setZipCodeSelected(state, payload);
-    },
     stationStateClear(_) {
       return initialState;
     },
-  },
-  extraReducers: (builder) => {
-    builder.addDefaultCase((state) => {
-      const data = Object.values(state.entities);
-      locationFilterAdapter.setStateOptions(state, data);
-      locationFilterAdapter.setCityOptions(state, data);
-      locationFilterAdapter.setZipCodeOptions(state, data);
-    });
   },
 });
 
@@ -93,9 +73,6 @@ export const {
   stationStateUpdateById,
   stationStateDeleteMany,
   stationStateDeleteById,
-  stationSetStateSelected,
-  stationSetCitySelected,
-  stationSetZipCodeSelected,
   stationStateClear,
 } = stationSlice.actions;
 
@@ -116,13 +93,12 @@ export const stationGetList = createAsyncThunk(
     sortBy: sort_by,
   } = {}, { dispatch, getState }) => {
     try {
-      const params = Object.entries({
+      const params = toUrlParams({
         fields, name, site_id, owner_id, latitude, longitude,
         street_address, city, state, country, zip_code,
         lat_lng_origin, lat_lng_min, lat_lng_max,
         sort_by, cursor, limit,
-      }).map(([key, value]) => value ? `${key}=${value}` : "")
-        .filter((param) => param).join("&");
+      });
       const query = `${StationAPI}${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(query, config);
@@ -237,13 +213,5 @@ export const selectStationStatusEntities = createSelector(
     return entities;
   },
 );
-
-const filterSelectors = locationFilterAdapter.getSelectors(selectStation);
-export const selectSelectedState = filterSelectors.selectSelectedState;
-export const selectStateOptions = filterSelectors.selectStateOptions;
-export const selectSelectedCity = filterSelectors.selectSelectedCity;
-export const selectCityOptions = filterSelectors.selectCityOptions;
-export const selectSelectedZipCode = filterSelectors.selectSelectedZipCode;
-export const selectZipCodeOptions = filterSelectors.selectZipCodeOptions;
 
 export default stationSlice.reducer;

@@ -26,6 +26,14 @@ export const tokenConfig = async ({ config = apiInstance.defaults, getState }) =
   return config;
 };
 
+// Convert url parameters
+export const toUrlParams = (data) => {
+  const entries = Object.entries(data);
+  const filtered = entries.filter(([_, value]) => value);
+  const mapped = filtered.map(([key, value]) => `${key}=${value}`);
+  return mapped.join("&");
+};
+
 export const clearHeader = () => {
   delete apiInstance.defaults.headers["Authorization"];
 };

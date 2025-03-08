@@ -1,10 +1,6 @@
-import { useCallback, useState, useEffect, useMemo } from "react";
-import {
-  // useDispatch,
-  useSelector,
-} from "react-redux";
+import { useCallback, useEffect, useMemo } from "react";
+import { useSelector } from "react-redux";
 
-// import LocationFilter from "components/LocationFilter";
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
 import MapSetView from "components/Map/MapSetView";
@@ -22,16 +18,7 @@ import {
 import {
   StationFields,
   stationGetList,
-  // stationSetStateSelected,
-  // stationSetCitySelected,
-  // stationSetZipCodeSelected,
   selectStationListByFields,
-  // selectSelectedState,
-  // selectStateOptions,
-  // selectSelectedCity,
-  // selectCityOptions,
-  // selectSelectedZipCode,
-  // selectZipCodeOptions,
 } from "redux/station/stationSlice";
 import {
   EvseFields,
@@ -64,25 +51,6 @@ const DriverStationMapView = ({ handleViewStation }) => {
       { ...station, evses: evseStatusEntities[station.id] }
     ))
   ), [stationList, evseStatusEntities]);
-
-  // const stationSelectedState = useSelector(selectSelectedState);
-  // const stationStateOptions = useSelector(selectStateOptions);
-  // const stationSelectedCity = useSelector(selectSelectedCity);
-  // const stationCityOptions = useSelector(selectCityOptions);
-  // const stationSelectedZipCode = useSelector(selectSelectedZipCode);
-  // const stationZipCodeOptions = useSelector(selectZipCodeOptions);
-
-  const [
-    filterHeight,
-    //  setFilterHeight,
-  ] = useState(0);
-  // const filterRef = useCallback((node) => {
-  //   setFilterHeight(node?.getBoundingClientRect().height);
-  // }, []);
-
-  const mapRefHeight = useMemo(() => {
-    return headerHeight + filterHeight;
-  }, [headerHeight, filterHeight]);
 
   const { latLngMin, latLngMax } = useMemo(() => ({
     latLngMin: utils.toLatLngString(mapLowerBound),
@@ -166,36 +134,11 @@ const DriverStationMapView = ({ handleViewStation }) => {
     evseStatusLoadStateOnMapView,
   ]);
 
-  // const dispatch = useDispatch();
-
-  // const handleFilter = (state, city, zipCode) => {
-  //   const query = {};
-  //   if (state !== "All") query.state = state;
-  //   if (city !== "All") query.city = city;
-  //   if (zipCode !== "All") query.zipCode = zipCode;
-  //   dispatch(stationGetList(query));
-  //   dispatch(stationSetStateSelected(state));
-  //   dispatch(stationSetCitySelected(city));
-  //   dispatch(stationSetZipCodeSelected(zipCode));
-  // };
-
   return (
     <StickyContainer style={{ top: `${headerHeight}px` }}>
-      {/* <StickyContainer style={{ top: `${headerHeight}px` }}>
-        <LocationFilter
-          ref={filterRef}
-          selectedState={stationSelectedState}
-          states={stationStateOptions}
-          selectedCity={stationSelectedCity}
-          cities={stationCityOptions}
-          selectedZipCode={stationSelectedZipCode}
-          zipCodes={stationZipCodeOptions}
-          onChange={handleFilter}
-        />
-      </StickyContainer> */}
       <MapContainer
         loading={loading}
-        refHeight={mapRefHeight}
+        refHeight={headerHeight}
       >
         <MapSetView delay={1000} />
         <MapUserLocation />
