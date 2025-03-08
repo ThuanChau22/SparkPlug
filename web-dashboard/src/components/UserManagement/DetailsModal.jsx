@@ -215,24 +215,22 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
             value={inputEmail}
             onChange={(e) => setInputEmail(e.target.value)}
           />
-          <div className="float-end">
-            <CButton
-              variant="outline"
-              color="secondary"
-              onClick={() => setIsDelete(false)}
-            >
-              Cancel
-            </CButton>
-            <CButton
-              className="ms-2"
-              variant="outline"
-              color="danger"
-              disabled={email !== inputEmail}
-              onClick={handleDelete}
-            >
-              Delete
-            </CButton>
-          </div>
+          <CButton
+            variant="outline"
+            color="danger"
+            disabled={email !== inputEmail}
+            onClick={handleDelete}
+          >
+            Delete
+          </CButton>
+          <CButton
+            className="ms-2"
+            variant="outline"
+            color="secondary"
+            onClick={() => setIsDelete(false)}
+          >
+            Cancel
+          </CButton>
         </CForm>
       </CModalBody>
     );

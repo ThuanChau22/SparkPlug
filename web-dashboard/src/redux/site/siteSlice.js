@@ -8,11 +8,9 @@ import {
 import {
   apiInstance,
   tokenConfig,
+  toUrlParams,
   handleError,
 } from "redux/api";
-import {
-  createLocationFilterAdapter,
-} from "redux/locationFilterAdapter";
 
 const SiteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
 
@@ -35,10 +33,7 @@ const siteEntityAdapter = createEntityAdapter({
     return result || a.id - b.id;
   },
 });
-const locationFilterAdapter = createLocationFilterAdapter();
-const initialState = siteEntityAdapter.getInitialState({
-  ...locationFilterAdapter.getInitialState(),
-});
+const initialState = siteEntityAdapter.getInitialState();
 
 export const siteSlice = createSlice({
   name: "site",
@@ -60,26 +55,9 @@ export const siteSlice = createSlice({
     siteStateDeleteById(state, { payload }) {
       siteEntityAdapter.removeOne(state, payload);
     },
-    siteSetStateSelected(state, { payload }) {
-      locationFilterAdapter.setStateSelected(state, payload);
-    },
-    siteSetCitySelected(state, { payload }) {
-      locationFilterAdapter.setCitySelected(state, payload);
-    },
-    siteSetZipCodeSelected(state, { payload }) {
-      locationFilterAdapter.setZipCodeSelected(state, payload);
-    },
     siteStateClear(_) {
       return initialState;
     },
-  },
-  extraReducers: (builder) => {
-    builder.addDefaultCase((state) => {
-      const data = Object.values(state.entities);
-      locationFilterAdapter.setStateOptions(state, data);
-      locationFilterAdapter.setCityOptions(state, data);
-      locationFilterAdapter.setZipCodeOptions(state, data);
-    });
   },
 });
 
@@ -89,9 +67,6 @@ export const {
   siteStateUpdateById,
   siteStateDeleteMany,
   siteStateDeleteById,
-  siteSetStateSelected,
-  siteSetCitySelected,
-  siteSetZipCodeSelected,
   siteStateClear,
 } = siteSlice.actions;
 
@@ -111,13 +86,12 @@ export const siteGetList = createAsyncThunk(
     sortBy: sort_by,
   } = {}, { dispatch, getState }) => {
     try {
-      const params = Object.entries({
+      const params = toUrlParams({
         fields, name, owner_id, latitude, longitude,
         street_address, city, state, country, zip_code,
         lat_lng_origin, lat_lng_min, lat_lng_max,
         sort_by, limit, cursor,
-      }).map(([key, value]) => value ? `${key}=${value}` : "")
-        .filter((param) => param).join("&");
+      });
       const query = `${SiteAPI}${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(query, config);
@@ -216,13 +190,5 @@ export const selectSiteListByFields = createSelector(
     return fields.filter((field) => !site[field]).length === 0;
   }),
 );
-
-const filterSelectors = locationFilterAdapter.getSelectors(selectSite);
-export const selectSelectedState = filterSelectors.selectSelectedState;
-export const selectStateOptions = filterSelectors.selectStateOptions;
-export const selectSelectedCity = filterSelectors.selectSelectedCity;
-export const selectCityOptions = filterSelectors.selectCityOptions;
-export const selectSelectedZipCode = filterSelectors.selectSelectedZipCode;
-export const selectZipCodeOptions = filterSelectors.selectZipCodeOptions;
 
 export default siteSlice.reducer;

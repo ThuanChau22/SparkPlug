@@ -80,7 +80,7 @@ const SiteManagement = () => {
                   color="info"
                   onClick={() => setIsAddModalOpen(true)}
                 >
-                  Add Site
+                  Add
                 </CButton>
               </CCardTitle>
             </StickyContainer>

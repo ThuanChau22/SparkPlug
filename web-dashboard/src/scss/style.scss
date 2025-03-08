@@ -12,6 +12,12 @@
   --cui-btn-focus-box-shadow: none;
 }
 
+.form-control,
+.form-control:focus {
+  border: none;
+  box-shadow: none;
+}
+
 // (CoreUI Bug) Undone
 // .sidebar-narrow-unfoldable:not(.sidebar-end) ~ * {
 //   --cui-sidebar-occupy-start: 4rem !important;

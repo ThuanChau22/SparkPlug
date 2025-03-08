@@ -1,13 +1,21 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import ChartWidgetContainer from "components/ChartWidgetContainer";
-import { apiInstance, handleError } from "redux/api";
+import { apiInstance, toUrlParams, handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
+import { selectFilterDashboardValues } from "redux/filter/dashboardSlice";
 
-const OwnerGrowthChartWidget = ({ filter = {}, className = "", style = {} }) => {
+const OwnerGrowthChartWidget = ({ className = "", style = {} }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
+  const filter = useSelector(selectFilterDashboardValues);
+
+  const params = useMemo(() => toUrlParams({
+    start_date: filter.startDate,
+    end_date: filter.endDate,
+    interval: filter.interval,
+  }), [filter]);
 
   const [data, setData] = useState(null);
 
@@ -15,16 +23,7 @@ const OwnerGrowthChartWidget = ({ filter = {}, className = "", style = {} }) => 
 
   const fetchData = useCallback(async () => {
     try {
-      const {
-        interval,
-        startDate: start_date,
-        endDate: end_date,
-      } = filter;
       const endpoint = `${StationAnalyticsAPI}/charts/owner-growth`;
-      const params = Object.entries({
-        start_date, end_date, interval
-      }).map(([key, value]) => value ? `${key}=${value}` : "")
-        .filter((param) => param).join("&");
       const query = `${endpoint}${params ? `?${params}` : ""}`;
       const headers = { Authorization: `Bearer ${token}` };
       const { data } = await apiInstance.get(query, { headers });
@@ -32,7 +31,7 @@ const OwnerGrowthChartWidget = ({ filter = {}, className = "", style = {} }) => 
     } catch (error) {
       handleError({ error, dispatch });
     }
-  }, [StationAnalyticsAPI, token, filter, dispatch]);
+  }, [StationAnalyticsAPI, params, token, dispatch]);
 
   useEffect(() => {
     fetchData();

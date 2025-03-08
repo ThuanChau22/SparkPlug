@@ -1,13 +1,24 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import ChartWidgetContainer from "components/ChartWidgetContainer";
-import { apiInstance, handleError } from "redux/api";
+import { apiInstance, toUrlParams, handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
+import { selectFilterDashboardValues } from "redux/filter/dashboardSlice";
 
-const PeakTimeChartWidget = ({ filter = {}, className = "", style = {} }) => {
+const PeakTimeChartWidget = ({ className = "", style = {} }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
+  const filter = useSelector(selectFilterDashboardValues);
+
+  const params = useMemo(() => toUrlParams({
+    start_date: filter.startDate,
+    end_date: filter.endDate,
+    city: filter.city,
+    state: filter.state,
+    country: filter.country,
+    postal: filter.zipCode,
+  }), [filter]);
 
   const [data, setData] = useState(null);
 
@@ -15,18 +26,7 @@ const PeakTimeChartWidget = ({ filter = {}, className = "", style = {} }) => {
 
   const fetchData = useCallback(async () => {
     try {
-      const {
-        city, state, country,
-        startDate: start_date,
-        endDate: end_date,
-        zipCode: postal,
-      } = filter;
       const endpoint = `${StationAnalyticsAPI}/charts/peak-time`;
-      const params = Object.entries({
-        start_date, end_date,
-        city, state, country, postal,
-      }).map(([key, value]) => value ? `${key}=${value}` : "")
-        .filter((param) => param).join("&");
       const query = `${endpoint}${params ? `?${params}` : ""}`;
       const headers = { Authorization: `Bearer ${token}` };
       const { data } = await apiInstance.get(query, { headers });
@@ -34,7 +34,7 @@ const PeakTimeChartWidget = ({ filter = {}, className = "", style = {} }) => {
     } catch (error) {
       handleError({ error, dispatch });
     }
-  }, [StationAnalyticsAPI, token, filter, dispatch]);
+  }, [StationAnalyticsAPI, params, token, dispatch]);
 
   useEffect(() => {
     fetchData();

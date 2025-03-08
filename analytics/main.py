@@ -525,9 +525,9 @@ def generate_chart_entity_growth(
 
     # Convert start_date and end_date to datetime objects
     if start_date:
-        start_date_obj = datetime.strptime(start_date, "%m/%d/%Y")
+        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
     if end_date:
-        end_date_obj = datetime.strptime(end_date, "%m/%d/%Y")
+        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
 
     for doc in raw_docs:
         # created_at_str = doc["created_at"]

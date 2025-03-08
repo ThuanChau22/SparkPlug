@@ -84,7 +84,7 @@ const StationManagement = () => {
                   color="info"
                   onClick={() => setIsAddModalOpen(true)}
                 >
-                  Add Station
+                  Add
                 </CButton>
               </CCardTitle>
             </StickyContainer>
