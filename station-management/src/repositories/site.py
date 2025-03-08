@@ -42,8 +42,8 @@ def get_sites(connection, filter={}, select={}, sort={}, limit=None, cursor=None
 
 
 def get_site_locations(connection, location={}, limit=None):
-    if not location:
-        return []
+    field = ""
+    value = ""
 
     location_fields = [
         "street_address",
@@ -58,8 +58,12 @@ def get_site_locations(connection, location={}, limit=None):
             value = location.get(location_field)
             break
 
+    if not field or not value:
+        return []
+
     query = f"SELECT DISTINCT {field} FROM {Table.Site.value}"
-    query = f"{query} WHERE {field} LIKE %s"
+    query = f"{query} WHERE LOWER({field}) LIKE %s"
+    query = sort_by_fields(query, {f"{field}": 1}, location_fields)
     query = limit_at(query, limit)
     query_values = f"{value}%"
 
