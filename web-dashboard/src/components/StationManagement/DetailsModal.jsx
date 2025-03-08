@@ -259,24 +259,22 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
             value={inputName}
             onChange={(e) => setInputName(e.target.value)}
           />
-          <div className="float-end">
-            <CButton
-              variant="outline"
-              color="secondary"
-              onClick={() => setIsDelete(false)}
-            >
-              Cancel
-            </CButton>
-            <CButton
-              className="ms-2"
-              variant="outline"
-              color="danger"
-              disabled={name !== inputName}
-              onClick={handleDelete}
-            >
-              Delete
-            </CButton>
-          </div>
+          <CButton
+            variant="outline"
+            color="danger"
+            disabled={name !== inputName}
+            onClick={handleDelete}
+          >
+            Delete
+          </CButton>
+          <CButton
+            className="ms-2"
+            variant="outline"
+            color="secondary"
+            onClick={() => setIsDelete(false)}
+          >
+            Cancel
+          </CButton>
         </CForm>
       </CModalBody>
     );
