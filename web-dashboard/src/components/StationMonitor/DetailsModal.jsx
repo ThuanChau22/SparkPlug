@@ -11,6 +11,7 @@ import LoadingIndicator from "components/LoadingIndicator";
 import StationMonitorEventList from "components/StationMonitor/EventList";
 import StationMonitorEvseList from "components/StationMonitor/EvseList";
 import useFetchData from "hooks/useFetchData";
+import useMapZoom from "hooks/useMapZoom";
 import useStationEventSocket, { Action } from "hooks/useStationEventSocket";
 import { selectAuthRoleIsStaff } from "redux/auth/authSlice";
 import {
@@ -22,19 +23,24 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const station = useSelector((state) => selectStationById(state, stationId));
 
-  useStationEventSocket({
-    action: Action.WatchAllEvent,
-    payload: { stationId },
-  });
-
-  const hasDetails = useMemo(() => {
-    const { name, owner_id } = station || {};
-    return name && owner_id
+  const fetchOnLoad = useMemo(() => {
+    const { name, owner_id, latitude, longitude } = station || {};
+    return !name || !owner_id || !latitude || !longitude;
   }, [station]);
 
   const { loadState } = useFetchData({
-    condition: !hasDetails,
+    condition: fetchOnLoad,
     action: useCallback(() => stationGetById(stationId), [stationId]),
+  });
+
+  useMapZoom({
+    lat: station.latitude,
+    lng: station.longitude,
+  });
+
+  useStationEventSocket({
+    action: Action.WatchAllEvent,
+    payload: { stationId },
   });
 
   return (

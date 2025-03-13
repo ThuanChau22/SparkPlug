@@ -14,8 +14,8 @@ import FormInput from "components/FormInput";
 import EvseManagement from "components/StationManagement/EvseManagement";
 import LoadingIndicator from "components/LoadingIndicator";
 import useFetchData from "hooks/useFetchData";
+import useMapZoom from "hooks/useMapZoom";
 import { selectAuthRoleIsStaff } from "redux/auth/authSlice";
-import { mapStateSet } from "redux/map/mapSlice";
 import {
   StationFields,
   stationGetById,
@@ -23,7 +23,6 @@ import {
   stationDeleteById,
   selectStationById,
 } from "redux/station/stationSlice";
-import utils from "utils";
 
 const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
@@ -42,17 +41,12 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
     action: useCallback(() => stationGetById(stationId), [stationId]),
   });
 
-  const dispatch = useDispatch();
+  useMapZoom({
+    lat: station.latitude,
+    lng: station.longitude,
+  });
 
-  useEffect(() => {
-    const { latitude: lat, longitude: lng } = station;
-    if (utils.hasLatLngValue({ lat, lng })) {
-      dispatch(mapStateSet({
-        center: { lat, lng },
-        zoom: 20,
-      }))
-    }
-  }, [station, dispatch]);
+  const dispatch = useDispatch();
 
   const InfoModal = () => (
     <>

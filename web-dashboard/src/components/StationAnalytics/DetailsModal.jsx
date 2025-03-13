@@ -14,7 +14,12 @@ import {
 
 import LoadingIndicator from "components/LoadingIndicator";
 import useFetchData from "hooks/useFetchData";
-import { apiInstance, handleError } from "redux/api";
+import useMapZoom from "hooks/useMapZoom";
+import {
+  apiInstance,
+  toUrlParams,
+  handleError,
+} from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   stationGetById,
@@ -35,43 +40,50 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
   const [startDate, setStartDate] = useState("2020-01-01");
   const [endDate, setEndDate] = useState("2020-12-31");
 
+  const fetchOnLoad = useMemo(() => {
+    const { name, latitude, longitude } = station || {};
+    return !name || !latitude || !longitude;
+  }, [station]);
+
   const { loadState } = useFetchData({
-    condition: !station?.name,
+    condition: fetchOnLoad,
     action: useCallback(() => stationGetById(stationId), [stationId]),
+  });
+
+  useMapZoom({
+    lat: station.latitude,
+    lng: station.longitude,
   });
 
   const dispatch = useDispatch();
 
-  const apiConfig = useMemo(() => {
-    return { headers: { Authorization: `Bearer ${token}` } };
-  }, [token]);
-
   const fetchAnalyticsData = useCallback(async () => {
     try {
       const endpoint = `${StationAnalyticsAPI}/charts/all/${stationId}`;
-      const params = Object.entries({
+      const params = toUrlParams({
         start_date: startDate,
         end_date: endDate,
-      }).map(([key, value]) => value ? `${key}=${value}` : "")
-        .filter((param) => param).join("&");
-      const query = `${endpoint}${params ? `?${params}` : ""}`
-      const { data } = await apiInstance.get(query, apiConfig);
+      });
+      const query = `${endpoint}${params ? `?${params}` : ""}`;
+      const headers = { Authorization: `Bearer ${token}` };
+      const { data } = await apiInstance.get(query, { headers });
       setAnalyticsData(data);
     } catch (error) {
       handleError({ error, dispatch });
     }
-  }, [StationAnalyticsAPI, stationId, startDate, endDate, apiConfig, dispatch]);
+  }, [StationAnalyticsAPI, stationId, startDate, endDate, token, dispatch]);
 
   const fetchEnergyForecastData = useCallback(async () => {
     try {
       const query = `${EnergyForecastAPI}/${stationId}`;
-      const { data } = await apiInstance.get(query, apiConfig);
+      const headers = { Authorization: `Bearer ${token}` };
+      const { data } = await apiInstance.get(query, { headers });
       setEnergyForecastData(data);
     } catch (error) {
       handleError({ error, dispatch });
       setEnergyForecastData({ data: [] });
     }
-  }, [EnergyForecastAPI, stationId, apiConfig, dispatch]);
+  }, [EnergyForecastAPI, stationId, token, dispatch]);
 
   useEffect(() => {
     fetchAnalyticsData();
