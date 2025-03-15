@@ -25,7 +25,7 @@ import {
 import ErrorToast from "components/ErrorToast";
 import FormInput from "components/FormInput";
 import LoadingIndicator from "components/LoadingIndicator";
-import useLayoutTheme from "hooks/useLayoutTheme";
+import useTheme from "hooks/useTheme";
 import {
   AuthRoles,
   authSignup,
@@ -50,7 +50,7 @@ const Register = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  useLayoutTheme();
+  useTheme();
 
   useEffect(() => {
     if (token) {

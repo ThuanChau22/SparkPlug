@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import { CCol, CContainer, CRow } from "@coreui/react";
 
-import useLayoutTheme from "hooks/useLayoutTheme";
+import useTheme from "hooks/useTheme";
 
 const NotFound = () => {
-  useLayoutTheme();
+  useTheme();
   return (
     <div className="min-vh-100 position-relative">
       <CContainer className="position-absolute top-50 start-50 translate-middle">
