@@ -169,7 +169,6 @@ const StationListView = ({ refHeight, handleViewStation }) => {
             </div>
           )
         }
-
       </CListGroup>
     ));
 };

@@ -71,7 +71,7 @@ const SiteManagement = () => {
           <CCardBody className="d-flex flex-column h-100 p-0">
             <StickyContainer ref={titleRef} style={{ top: `${headerHeight}px` }}>
               <CCardTitle
-                className="d-flex justify-content-between align-items-center px-3 py-2 shadow-sm"
+                className="d-flex justify-content-between align-items-center px-3 py-2 m-0 shadow-sm"
                 style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
               >
                 Sites Management
