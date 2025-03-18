@@ -30,7 +30,11 @@ const router = createBrowserRouter([
   {
     path: routes.Root.path,
     element: routes.Root.element,
-    errorElement: <ErrorBoundary />,
+    errorElement: (
+      <div className="min-vh-100 d-flex align-items-center">
+        <ErrorBoundary />
+      </div>
+    ),
     children: [
       {
         errorElement: <ErrorBoundary />,
