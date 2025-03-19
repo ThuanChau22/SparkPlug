@@ -13,7 +13,7 @@ else:
     dotenv_path = ".env"
 dotenv.load_dotenv(dotenv_path=dotenv_path)
 PORT = os.environ["PORT"]
-WEB_DOMAIN = os.environ["WEB_DOMAIN"]
+WEB_DOMAINS = os.environ["WEB_DOMAINS"].split(",")
 AUTH_API_ENDPOINT = os.environ["AUTH_API_ENDPOINT"]
 MYSQL_URI = os.environ["MYSQL_URI"]
 GEOIP_ACCOUNT_ID = os.environ["GEOIP_ACCOUNT_ID"]
