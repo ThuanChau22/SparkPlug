@@ -93,6 +93,14 @@ def where_fields_equal(statement, values, params={}, table_fields=[]):
     return statement
 
 
+def where_search_match(statement, values, search_fields, search_term):
+    if search_fields and search_term:
+        condition = f"MATCH ({','.join(search_fields)}) AGAINST(%s)"
+        statement = append_condition(statement, condition)
+        values.append(search_term)
+    return statement
+
+
 def where_lat_lng_range(statement, values, lat_lng_min, lat_lng_max):
     if lat_lng_min and len(lat_lng_min.split(",")) == 2:
         condition = "(latitude >= %s AND longitude >= %s)"

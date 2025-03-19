@@ -5,6 +5,7 @@ from src.repositories.utils import (
     select_fields,
     select_distance,
     where_fields_equal,
+    where_search_match,
     where_lat_lng_range,
     where_cursor_at,
     sort_by_fields,
@@ -21,6 +22,9 @@ def get_evses(connection, filter={}, select={}, sort={}, limit=None, cursor=None
     query = select_distance(query, query_values, lat_lng_origin, field_list)
     query = f"{query} FROM {Table.EvseView.value}"
     query = where_fields_equal(query, query_values, filter, field_list)
+    search_fields = ["site_name", "street_address", "city"]
+    search_term = filter.get("search")
+    query = where_search_match(query, query_values, search_fields, search_term)
     query = where_lat_lng_range(
         query,
         query_values,

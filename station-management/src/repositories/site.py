@@ -5,6 +5,7 @@ from src.repositories.utils import (
     select_fields,
     select_distance,
     where_fields_equal,
+    where_search_match,
     where_lat_lng_range,
     where_cursor_at,
     sort_by_fields,
@@ -21,6 +22,9 @@ def get_sites(connection, filter={}, select={}, sort={}, limit=None, cursor=None
     query = select_distance(query, query_values, lat_lng_origin, field_list)
     query = f"{query} FROM {Table.Site.value}"
     query = where_fields_equal(query, query_values, filter, field_list)
+    search_fields = ["name", "street_address", "city"]
+    search_term = filter.get("search")
+    query = where_search_match(query, query_values, search_fields, search_term)
     query = where_lat_lng_range(
         query,
         query_values,
@@ -62,7 +66,7 @@ def get_site_locations(connection, location={}, limit=None):
         return []
 
     query = f"SELECT DISTINCT {field} FROM {Table.Site.value}"
-    query = f"{query} WHERE LOWER({field}) LIKE %s"
+    query = f"{query} WHERE {field} LIKE %s"
     query = sort_by_fields(query, {f"{field}": 1}, location_fields)
     query = limit_at(query, limit)
     query_values = f"{value}%"
