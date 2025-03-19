@@ -9,10 +9,10 @@ import {
 import {
   stationEventStateSetById,
 } from "redux/station/stationEventSlice";
-import { selectEvseIds } from "redux/evse/evseSlice";
 import {
   evseStatusStateUpsertMany,
   evseStatusStateUpsertById,
+  selectEvseStatusIds,
 } from "redux/evse/evseStatusSlice";
 
 export const Action = {
@@ -26,7 +26,7 @@ const useStationEventSocket = ({ action, payload: { stationId, stationIds } = {}
   const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
 
   const token = useSelector(selectAuthAccessToken);
-  const evseIds = useSelector(selectEvseIds);
+  const evseStatusIds = useSelector(selectEvseStatusIds);
 
   const {
     readyState,
@@ -82,14 +82,14 @@ const useStationEventSocket = ({ action, payload: { stationId, stationIds } = {}
 
   // Handle load data for WatchStatusEvent
   const evseIdsByStation = useMemo(() => (
-    evseIds.reduce((data, { station_id, evse_id }) => {
+    evseStatusIds.reduce((data, { station_id, evse_id }) => {
       if (!data[station_id]) {
         data[station_id] = [];
       }
       data[station_id].push(evse_id);
       return data;
     }, {})
-  ), [evseIds]);
+  ), [evseStatusIds]);
 
   // Handle subscribe WatchStatusEvent
   useEffect(() => {
@@ -114,7 +114,7 @@ const useStationEventSocket = ({ action, payload: { stationId, stationIds } = {}
           evse_id: evseId,
           status: connectorStatus,
         }));
-      } else {
+      } else if (evseIdsByStation[stationId]) {
         dispatch(evseStatusStateUpsertMany(
           evseIdsByStation[stationId].map((evseId) => ({
             station_id: stationId,
