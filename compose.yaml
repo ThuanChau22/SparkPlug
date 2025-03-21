@@ -58,7 +58,7 @@ services:
     build:
       target: development
     environment:
-      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
+      WEB_DOMAINS: ${WEB_DASHBOARD_DOMAIN},${SIMULATOR_CLIENT_DOMAIN}
       AUTH_API_ENDPOINT: ${STATION_AUTH_API_ENDPOINT}
       MYSQL_URI: ${MYSQL_URI}
       GEOIP_ACCOUNT_ID: ${STATION_GEOIP_ACCOUNT_ID}
@@ -150,9 +150,10 @@ services:
       target: development
     environment:
       REACT_APP_WS_ENDPOINT: ${SIMULATOR_CLIENT_SERVER_WS}
-      REACT_APP_STATION_IDENTITY: ${SIMULATOR_STATION_IDENTITY}
+      REACT_APP_STATION_API_ENDPOINT: ${SIMULATOR_CLIENT_STATION_API_ENDPOINT}
     depends_on:
       - simulator-server
+      - station-management
     develop:
       watch:
         - action: sync
