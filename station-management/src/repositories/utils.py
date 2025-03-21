@@ -77,7 +77,7 @@ def select_fields(params={}, table_fields=[]):
 
 def select_search(statement, values, search_fields, search_term, table_fields=[]):
     if search_fields and search_term:
-        statement += f", MATCH ({','.join(search_fields)}) AGAINST(%s) as search_score"
+        statement += f", MATCH ({','.join(search_fields)}) AGAINST(%s IN BOOLEAN MODE) as search_score"
         values.append(search_term)
         table_fields.append("search_score")
     return statement
@@ -103,7 +103,7 @@ def where_fields_equal(statement, values, params={}, table_fields=[]):
 
 def where_search_match(statement, values, search_fields, search_term):
     if search_fields and search_term:
-        condition = f"MATCH ({','.join(search_fields)}) AGAINST(%s)"
+        condition = f"MATCH ({','.join(search_fields)}) AGAINST(%s IN BOOLEAN MODE)"
         statement = append_condition(statement, condition)
         values.append(search_term)
     return statement

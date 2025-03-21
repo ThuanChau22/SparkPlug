@@ -12,6 +12,16 @@ def is_exclude(s):
     return re.search("^-(.*)+$", s)
 
 
+def extract_args_search(args):
+    if args.get("search"):
+      search = []
+      words = args.get("search").split()
+      for word in words:
+        search.append(f"{'+' if len(words) > 1 else ''}{word}*")
+      return {"search": " ".join(search)}
+    return {}
+
+
 def extract_args_lat_lng(args):
     lat_lng_data = {}
     if args.get("lat_lng_origin") == "default":
