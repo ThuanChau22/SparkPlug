@@ -111,7 +111,7 @@ schema.loadClass(class {
         { fullDocument: "updateLookup" },
       );
       changeStream.on("error", (error) => {
-        console.log(error);
+        console.log({ source: "WatchEvent", error });
       });
       return changeStream;
     } catch (error) {

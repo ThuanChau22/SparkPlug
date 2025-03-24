@@ -17,6 +17,7 @@ import transactions from "./handlers/transactions.js";
  * @property {RPCServerClient} station
  * @property {Map.<string, string>} idTokenToTransactionId
  * @property {Map.<number, string>} evseIdToTransactionId
+ * @property {ChangeStream} changeStream
  */
 /**
  * @type {Map.<string, Client>}
@@ -45,27 +46,37 @@ server.on("client", async (client) => {
       station: client,
       idTokenToTransactionId: new Map(),
       evseIdToTransactionId: new Map(),
+      changeStream: null,
     });
 
-    const changeStream = await StationEvent.watchEvent({
-      stationId: parseInt(client.identity),
-      source: StationEvent.Sources.Central,
-      event: [
-        "RequestStartTransaction",
-        "RequestStopTransaction",
-      ],
-    })
-    changeStream.on("change", async ({ fullDocument }) => {
-      const { event, payload } = fullDocument;
-      const properties = { client, params: payload };
-      const isConnected = client.state === WebSocket.OPEN;
-      if (isConnected && event === "RequestStartTransaction") {
-        return await remoteControl.requestStartTransactionRequest(properties);
-      }
-      if (isConnected && event === "RequestStopTransaction") {
-        return await remoteControl.requestStopTransactionRequest(properties);
-      }
-    });
+    const watchRequestTransactionEvent = async () => {
+      clients.get(client.identity).changeStream?.close();
+      const changeStream = await StationEvent.watchEvent({
+        stationId: parseInt(client.identity),
+        source: StationEvent.Sources.Central,
+        event: [
+          "RequestStartTransaction",
+          "RequestStopTransaction",
+        ],
+      })
+      changeStream.on("change", async ({ fullDocument }) => {
+        const { event, payload } = fullDocument;
+        const properties = { client, params: payload };
+        const isConnected = client.state === WebSocket.OPEN;
+        if (isConnected && event === "RequestStartTransaction") {
+          return await remoteControl.requestStartTransactionRequest(properties);
+        }
+        if (isConnected && event === "RequestStopTransaction") {
+          return await remoteControl.requestStopTransactionRequest(properties);
+        }
+      });
+      changeStream.on("error", (error) => {
+        console.log({ source: "WatchRequestTransactionEvent", error });
+        watchRequestTransactionEvent();
+      });
+      clients.get(client.identity).changeStream = changeStream;
+    };
+    await watchRequestTransactionEvent();
 
     client.handle(async (properties) => {
       const { method, params } = properties;
@@ -142,7 +153,7 @@ server.on("client", async (client) => {
           })
         );
         await Promise.all(requests);
-        changeStream.close();
+        clients.get(client.identity).changeStream?.close();
         clients.delete(client.identity);
         console.log(`Disconnected with station: ${client.identity}`);
       } catch (error) {
