@@ -34,13 +34,16 @@ const router = createBrowserRouter([
           {
             path: "stations/:stationId",
             element: <Station />,
+            hydrateFallbackElement: <LoadingIndicator />,
             loader: StationLoader,
-            hydrateFallbackElement: <LoadingIndicator />
-          }
+            shouldRevalidate: ({ currentUrl, nextUrl }) => {
+              return currentUrl.pathname !== nextUrl.pathname;
+            },
+          },
         ],
       }
     ],
-  }
+  },
 ]);
 
 const container = document.getElementById("root");

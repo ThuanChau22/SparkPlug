@@ -2,11 +2,12 @@ import { useEffect } from "react";
 import useWebSocket from "react-use-websocket";
 import ms from "ms";
 
-const useSocket = (url) => {
+const useSocket = (url, options= {}) => {
   const socket = useWebSocket(url, {
     shouldReconnect: ({ code }) => code === 1005 || code === 1006,
     filter: ({ data }) => data !== "pong",
     share: true,
+    ...options,
   });
   const { sendMessage } = socket;
 

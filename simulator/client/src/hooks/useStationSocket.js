@@ -46,6 +46,7 @@ const useStationSocket = (stationId, {
   const [isCSMSConnected, setIsCSMSConnected] = useState(false);
 
   useEffect(() => {
+    setSocketLost(false);
     setIsCSMSConnected(false);
   }, [stationId]);
 

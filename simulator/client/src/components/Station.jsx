@@ -139,9 +139,7 @@ const Station = () => {
               <span>Station ID: {stationId}</span>
               <CCloseButton
                 className="d-block d-md-none"
-                onClick={() => {
-                  navigate("/stations");
-                }}
+                onClick={() => navigate("/stations")}
               />
             </div>
             <CInputGroup className="w-auto mt-3 m-md-0">

@@ -5,7 +5,11 @@ import {
   useState,
   useRef,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useParams,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import {
   CInputGroup,
   CInputGroupText,
@@ -23,7 +27,9 @@ import useWindowResize from "hooks/useWindowResize";
 import { LayoutContext } from "contexts";
 
 const StationList = () => {
+  const params = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const ListLimit = 50;
   const listRef = useRef({});
@@ -40,12 +46,27 @@ const StationList = () => {
     setListHeight(window.innerHeight - headerHeight - titleHeight - footerHeight);
   });
 
-  const [searchInput, setSearchInput, searchTerm] = useTypeInput("", { delay: 300 });
+  const [
+    searchInput,
+    setSearchInput,
+    searchTerm,
+  ] = useTypeInput(searchParams.get("search") || "", { delay: 350 });
 
   const [stationList, setStationList] = useState([]);
   const [listCursor, setListCursor] = useState({});
   const [loadingOnLoad, setLoadingOnLoad] = useState(false);
   const [loadingOnScroll, setLoadingOnScroll] = useState(false);
+
+  useEffect(() => {
+    setSearchParams((searchParams) => {
+      if (searchTerm) {
+        searchParams.set("search", searchTerm);
+      } else {
+        searchParams.delete("search");
+      }
+      return searchParams;
+    });
+  }, [searchTerm, setSearchParams]);
 
   const fetchOnLoad = useCallback(async () => {
     setLoadingOnLoad(true);
@@ -131,22 +152,29 @@ const StationList = () => {
               ? (
                 <>
                   {
-                    stationList.map(({ id, name, street_address, city }) => (
-                      <CListGroupItem
-                        key={id}
-                        className="border rounded py-3 my-1 shadow-sm"
-                        as="button"
-                        onClick={() => navigate(`/stations/${id}`)}
-                      >
-                        <p className="mb-0 text-secondary">
-                          {`ID: ${id}`}
-                        </p>
-                        <p className="mb-0 text-secondary small">
-                          {street_address}, {city}
-                        </p>
-                        <p className="mb-0">{name}</p>
-                      </CListGroupItem>
-                    ))}
+                    stationList.map(({ id, name, street_address, city }) => {
+                      const isActive = `${id}` === params.stationId;
+                      return (
+                        <CListGroupItem
+                          key={id}
+                          className={`border rounded py-3 my-1 shadow-sm${isActive ? " border-primary" : ""}`}
+                          as="button"
+                          disabled={isActive}
+                          onClick={() => navigate(`/stations/${id}`)}
+                        >
+                          <p className={`mb-0${isActive ? "" : " text-secondary"}`}>
+                            {`ID: ${id}`}
+                          </p>
+                          <p className={`mb-0${isActive ? "" : " text-secondary"}`}>
+                            {street_address}, {city}
+                          </p>
+                          <p className={`mb-0${isActive ? " text-primary" : ""}`}>
+                            {name}
+                          </p>
+                        </CListGroupItem>
+                      );
+                    })
+                  }
                   {loadingOnScroll && (
                     <LoadingIndicator loading={loadingOnScroll} />
                   )}
