@@ -1,4 +1,4 @@
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
   NavLink,
 } from "react-router-dom";
@@ -21,16 +21,13 @@ import {
 import CIcon from "@coreui/icons-react";
 
 import defaultAvatar from "assets/default-avatar.jpg";
+import useTheme from "hooks/useTheme";
 import routes from "routes";
 import { authLogout } from "redux/auth/authSlice";
-import {
-  ThemeModes,
-  layoutStateSetTheme,
-  selectLayoutTheme,
-} from "redux/layout/layoutSlice";
 
 const HeaderDropdown = () => {
-  const theme = useSelector(selectLayoutTheme);
+
+  const { ThemeModes, theme, setTheme } = useTheme();
 
   const dispatch = useDispatch();
 
@@ -41,10 +38,6 @@ const HeaderDropdown = () => {
         ? cilMoon
         : cilContrast
   );
-
-  const handleThemeChange = (selectedTheme) => {
-    dispatch(layoutStateSetTheme(selectedTheme));
-  };
 
   const handleLogout = () => {
     dispatch(authLogout());
@@ -65,7 +58,7 @@ const HeaderDropdown = () => {
             <CDropdownItem
               key={label}
               active={theme === value}
-              onClick={() => handleThemeChange(value)}
+              onClick={() => setTheme(value)}
             >
               <CIcon icon={ThemeIcon(value)} className="me-2" />
               {label}

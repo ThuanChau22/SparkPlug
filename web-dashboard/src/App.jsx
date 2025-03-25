@@ -11,7 +11,7 @@ import Sidebar from "components/Sidebar";
 import Footer from "components/Footer";
 import ErrorToast from "components/ErrorToast";
 import LoadingIndicator from "components/LoadingIndicator";
-import useLayoutTheme from "hooks/useLayoutTheme";
+import useTheme from "hooks/useTheme";
 import { clearHeader } from "redux/api";
 import {
   authStateSet,
@@ -24,7 +24,6 @@ import {
   selectAuthSecureStorage,
 } from "redux/auth/authSlice";
 import routes from "routes";
-import "scss/style.scss";
 
 const App = () => {
   const authenticated = useSelector(selectAuthAuthenticated);
@@ -37,7 +36,7 @@ const App = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  useLayoutTheme();
+  useTheme();
 
   useEffect(() => {
     if (token) {

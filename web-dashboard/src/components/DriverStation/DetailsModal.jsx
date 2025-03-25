@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { CChart } from "@coreui/react-chartjs";
 import {
   CForm,
   CFormInput,
@@ -11,19 +10,23 @@ import {
   CModalTitle,
   CModalBody,
 } from "@coreui/react";
+import { CChart } from "@coreui/react-chartjs";
 
 import EvseAvailabilityStatus from "components/EvseAvailabilityStatus";
 import LoadingIndicator from "components/LoadingIndicator";
 import useFetchData from "hooks/useFetchData";
-import { apiInstance, handleError } from "redux/api";
+import useMapZoom from "hooks/useMapZoom";
+import {
+  apiInstance,
+  toUrlParams,
+  handleError,
+} from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
-import { mapStateSet } from "redux/map/mapSlice";
 import {
   stationGetById,
   selectStationById,
   selectStationStatusById
 } from "redux/station/stationSlice";
-import utils from "utils";
 
 const DriverStationDetailsModal = ({ isOpen, onClose, stationId }) => {
   const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
@@ -36,42 +39,38 @@ const DriverStationDetailsModal = ({ isOpen, onClose, stationId }) => {
   const [startDate, setStartDate] = useState("2020-01-01");
   const [endDate, setEndDate] = useState("2020-12-31");
 
+  const fetchOnLoad = useMemo(() => {
+    const { name, latitude, longitude } = station || {};
+    return !name || !latitude || !longitude;
+  }, [station]);
+
   const { loadState } = useFetchData({
-    condition: !station?.name,
+    condition: fetchOnLoad,
     action: useCallback(() => stationGetById(stationId), [stationId]),
+  });
+
+  useMapZoom({
+    lat: station.latitude,
+    lng: station.longitude,
   });
 
   const dispatch = useDispatch();
 
-  useEffect(() => {
-      const { latitude: lat, longitude: lng } = station;
-      if (utils.hasLatLngValue({ lat, lng })) {
-        dispatch(mapStateSet({
-          center: { lat, lng },
-          zoom: 20,
-        }))
-      }
-    }, [station, dispatch]);
-
-  const apiConfig = useMemo(() => {
-    return { headers: { Authorization: `Bearer ${token}` } };
-  }, [token]);
-
   const fetchAnalyticsData = useCallback(async () => {
     try {
       const endpoint = `${StationAnalyticsAPI}/charts/peak-time/${stationId}`;
-      const params = Object.entries({
+      const params = toUrlParams({
         start_date: startDate,
         end_date: endDate,
-      }).map(([key, value]) => value ? `${key}=${value}` : "")
-        .filter((param) => param).join("&");
+      });
       const query = `${endpoint}${params ? `?${params}` : ""}`;
-      const { data } = await apiInstance.get(query, apiConfig);
+      const headers = { Authorization: `Bearer ${token}` };
+      const { data } = await apiInstance.get(query, { headers });
       setAnalyticsData(data);
     } catch (error) {
       handleError({ error, dispatch });
     }
-  }, [StationAnalyticsAPI, stationId, startDate, endDate, apiConfig, dispatch]);
+  }, [StationAnalyticsAPI, stationId, startDate, endDate, token, dispatch]);
 
   useEffect(() => {
     fetchAnalyticsData();

@@ -75,6 +75,14 @@ def select_fields(params={}, table_fields=[]):
     return f"SELECT {statement}"
 
 
+def select_search(statement, values, search_fields, search_term, table_fields=[]):
+    if search_fields and search_term:
+        statement += f", MATCH ({','.join(search_fields)}) AGAINST(%s IN BOOLEAN MODE) as search_score"
+        values.append(search_term)
+        table_fields.append("search_score")
+    return statement
+
+
 def select_distance(statement, values, lat_lng_origin, table_fields=[]):
     if lat_lng_origin and len(lat_lng_origin.split(",")) == 2:
         statement += ", haversine(%s, %s, latitude, longitude) as distance"
@@ -93,6 +101,14 @@ def where_fields_equal(statement, values, params={}, table_fields=[]):
     return statement
 
 
+def where_search_match(statement, values, search_fields, search_term):
+    if search_fields and search_term:
+        condition = f"MATCH ({','.join(search_fields)}) AGAINST(%s IN BOOLEAN MODE)"
+        statement = append_condition(statement, condition)
+        values.append(search_term)
+    return statement
+
+
 def where_lat_lng_range(statement, values, lat_lng_min, lat_lng_max):
     if lat_lng_min and len(lat_lng_min.split(",")) == 2:
         condition = "(latitude >= %s AND longitude >= %s)"
@@ -105,7 +121,7 @@ def where_lat_lng_range(statement, values, lat_lng_min, lat_lng_max):
     return statement
 
 
-def where_cursor_at(statement, values, sort, cursor, lat_lng_origin):
+def having_cursor_at(statement, values, sort, cursor):
     if sort and cursor:
         payload = urlsafe_b64_json_decode(cursor)
         params = [(field, payload.get(field)) for field in sort.keys()]
@@ -113,22 +129,14 @@ def where_cursor_at(statement, values, sort, cursor, lat_lng_origin):
         condition = ""
         condition_values = []
         for field, value in params[::-1]:
+            operator = "<" if sort.get(field) == -1 else ">"
             if not condition:
-                condition = f"{field} > %s"
+                condition = f"{field} {operator} %s"
                 condition_values.append(value)
-            elif (
-                field == "distance"
-                and lat_lng_origin
-                and len(lat_lng_origin.split(",")) == 2
-            ):
-                field = "haversine(%s, %s, latitude, longitude)"
-                value = lat_lng_origin.split(",") + [value]
-                condition = f"({field} > %s OR ({field} = %s AND {condition}))"
-                condition_values = value + value + condition_values
             else:
-                condition = f"({field} > %s OR ({field} = %s AND {condition}))"
+                condition = f"({field} {operator} %s OR ({field} = %s AND {condition}))"
                 condition_values = [value, value] + condition_values
-        statement = append_condition(statement, condition)
+        statement = f"{statement} HAVING {condition}"
         values.extend(condition_values)
     return statement
 

@@ -1,6 +1,16 @@
 @import "@coreui/coreui/scss/coreui";
 
-.accordion-button:focus {
-  outline: none;
-  box-shadow: none;
+@import "variables";
+@import "theme";
+
+.accordion-button {
+  --cui-accordion-btn-focus-box-shadow: none;
+}
+
+.btn {
+  --cui-btn-focus-box-shadow: none;
+}
+
+.btn-close {
+  --cui-btn-close-focus-shadow: none;
 }

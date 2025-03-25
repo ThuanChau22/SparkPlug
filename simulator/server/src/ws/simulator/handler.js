@@ -1,4 +1,5 @@
 export const Action = {
+  CONNECT_SIM: "ConnectSim",
   CONNECT_CSMS: "ConnectCSMS",
   DISCONNECT_CSMS: "DisconnectCSMS",
   SCAN_RFID: "ScanRFID",
@@ -15,13 +16,13 @@ const handler = {};
 handler.stateSync = (station) => {
   const messages = [];
   if (station.isConnected) {
+    const status = "Accepted";
     messages.push({
       action: Action.CONNECT_CSMS,
-      payload: {},
+      payload: { status },
     });
     const authorizedFilter = (obj) => obj.isAuthorized;
     for (const evse of station.evses.filter(authorizedFilter)) {
-      const status = "Accepted";
       const evseId = evse.id;
       const isAuthorized = evse.isAuthorized;
       messages.push({
@@ -29,10 +30,9 @@ handler.stateSync = (station) => {
         payload: { status, evseId, isAuthorized },
       });
     }
-    const availabilityFilter = (obj) => obj.availabilityState === "Occupied";
-    for (const evse of station.evses.filter(availabilityFilter)) {
-      for (const connector of evse.connectors.filter(availabilityFilter)) {
-        const status = "Accepted";
+    const occupiedFilter = (obj) => obj.availabilityState === "Occupied";
+    for (const evse of station.evses.filter(occupiedFilter)) {
+      for (const connector of evse.connectors.filter(occupiedFilter)) {
         const evseId = evse.id;
         const connectorId = connector.id;
         messages.push({

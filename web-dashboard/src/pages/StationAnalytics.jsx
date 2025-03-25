@@ -67,10 +67,10 @@ const StationAnalytics = () => {
     <CCard className="flex-grow-1 border border-0 rounded-0">
       <CRow className="flex-grow-1" xs={{ gutterX: 0 }}>
         <CCol md={6} lg={5}>
-          <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
+          <CCardBody className="d-flex flex-column h-100 p-0">
             <StickyContainer ref={titleRef} style={{ top: `${headerHeight}px` }}>
               <CCardTitle
-                className="p-3 shadow-sm"
+                className="p-3 m-0 shadow-sm"
                 style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
               >
                 Stations Analytics

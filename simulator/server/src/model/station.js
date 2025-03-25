@@ -215,6 +215,14 @@ class Station {
     if (!this.isConnected) {
       throw new Error("Station is not connected");
     }
+    const requests = [];
+    for (const evse of this._evses) {
+      requests.push(this.#stopTransaction(evse, {
+        triggerReason: "EVCommunicationLost",
+        stoppedReason: "EVDisconnected",
+      }));
+    }
+    await Promise.all(requests);
     await this._rpcClient.close();
     this._isBooted = false;
     clearTimeout(this._heartbeatTimeoutId);
@@ -380,16 +388,18 @@ class Station {
   }
 
   async #statusNotificationRequest() {
+    const requests = [];
     for (const evse of Object.values(this.evses)) {
       for (const connector of Object.values(evse.connectors)) {
-        await this.#rpcClientCall("StatusNotification", {
+        requests.push(this.#rpcClientCall("StatusNotification", {
           evseId: evse.id,
           connectorId: connector.id,
           connectorStatus: evse.availabilityState,
           timestamp: new Date().toISOString(),
-        });
+        }));
       }
     }
+    await Promise.all(requests);
   };
 
   async #rpcClientCall(action, payload) {
@@ -416,6 +426,7 @@ class Station {
     clearTimeout(this._evseIdToConnectionTimeOutId.get(evse.id) || 0);
     this._evseIdToConnectionTimeOutId.set(evse.id, setTimeout(() => {
       evse.deauthorized();
+      this._evseIdToRemoteInfo.delete(evse.id);
     }, ms(`${this._txCtrlr.evConnectionTimeOut}s`)));
   }
 

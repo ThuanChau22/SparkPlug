@@ -3,10 +3,12 @@ from src.repositories.utils import (
     get_fields,
     fetch_by_id,
     select_fields,
+    select_search,
     select_distance,
     where_fields_equal,
+    where_search_match,
     where_lat_lng_range,
-    where_cursor_at,
+    having_cursor_at,
     sort_by_fields,
     limit_at,
     create_cursor,
@@ -16,19 +18,33 @@ from src.repositories.utils import (
 def get_stations(connection, filter={}, select={}, sort={}, limit=None, cursor=None):
     query_values = []
     field_list = get_fields(connection, Table.StationView.value)
+
     query = select_fields(select, field_list)
+
+    search_fields = ["site_name", "street_address", "city"]
+    search_term = filter.get("search")
+    query = select_search(query, query_values, search_fields, search_term, field_list)
+
     lat_lng_origin = filter.get("lat_lng_origin")
     query = select_distance(query, query_values, lat_lng_origin, field_list)
+
     query = f"{query} FROM {Table.StationView.value}"
+
     query = where_fields_equal(query, query_values, filter, field_list)
+
+    query = where_search_match(query, query_values, search_fields, search_term)
+
     query = where_lat_lng_range(
         query,
         query_values,
         filter.get("lat_lng_min"),
         filter.get("lat_lng_max"),
     )
-    query = where_cursor_at(query, query_values, sort, cursor, lat_lng_origin)
+
+    query = having_cursor_at(query, query_values, sort, cursor)
+
     query = sort_by_fields(query, sort, field_list)
+
     query = limit_at(query, limit)
 
     with connection.cursor() as cursor:

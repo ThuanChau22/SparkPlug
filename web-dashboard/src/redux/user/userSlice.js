@@ -7,6 +7,7 @@ import {
 
 import {
   apiInstance,
+  toUrlParams,
   tokenConfig,
   handleError,
 } from "redux/api";
@@ -57,20 +58,20 @@ export const {
 
 export const userGetList = createAsyncThunk(
   `${userSlice.name}/getList`,
-  async (query = {}, { dispatch, getState }) => {
+  async ({
+    email, name,
+    staff, owner, driver,
+    cursor, limit,
+  }, { dispatch, getState }) => {
     try {
-      const { email, name, staff, owner, driver, cursor, limit } = query;
-      const params = [
-        email ? `email=${email}` : "",
-        name ? `name=${name}` : "",
-        staff ? `staff=${staff}` : "",
-        owner ? `owner=${owner}` : "",
-        driver ? `driver=${driver}` : "",
-        cursor ? `cursor=${cursor}` : "",
-        limit ? `limit=${limit > 0 ? limit : ""}` : "",
-      ].filter((s) => s).reduce((p, s) => `${p}${p === "" ? "?" : "&"}${s}`, "");
+      const params = toUrlParams({
+        email, name,
+        staff, owner, driver,
+        cursor, limit,
+      });
+      const query = `${UserAPI}${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.get(`${UserAPI}${params}`, config);
+      const { data } = await apiInstance.get(query, config);
       dispatch(userStateSetMany(data.users));
       return data;
     } catch (error) {

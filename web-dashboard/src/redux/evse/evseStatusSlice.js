@@ -7,6 +7,7 @@ import {
 
 import {
   apiInstance,
+  toUrlParams,
   tokenConfig,
   handleError,
 } from "redux/api";
@@ -70,12 +71,11 @@ export const evseStatusGetList = createAsyncThunk(
     cursor,
   } = {}, { dispatch, getState }) => {
     try {
-      const params = Object.entries({
+      const params = toUrlParams({
         site_id, owner_id,
         lat_lng_origin, lat_lng_min, lat_lng_max,
         sort_by, cursor, limit,
-      }).map(([key, value]) => value ? `${key}=${value}` : "")
-        .filter((param) => param).join("&");
+      });
       const query = `${StationStatusAPI}/latest${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(query, config);

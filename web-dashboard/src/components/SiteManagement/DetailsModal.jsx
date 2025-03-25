@@ -13,12 +13,12 @@ import {
 import FormInput from "components/FormInput";
 import LoadingIndicator from "components/LoadingIndicator";
 import useFetchData from "hooks/useFetchData";
+import useMapZoom from "hooks/useMapZoom";
 import {
   selectAuthUserId,
   selectAuthRoleIsStaff,
   selectAuthRoleIsOwner,
 } from "redux/auth/authSlice";
-import { mapStateSet } from "redux/map/mapSlice";
 import {
   SiteFields,
   siteGetById,
@@ -26,7 +26,6 @@ import {
   siteDeleteById,
   selectSiteById,
 } from "redux/site/siteSlice";
-import utils from "utils";
 
 const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
   const authUserId = useSelector(selectAuthUserId);
@@ -47,17 +46,12 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
     action: useCallback(() => siteGetById(siteId), [siteId]),
   });
 
-  const dispatch = useDispatch();
+  useMapZoom({
+    lat: site.latitude,
+    lng: site.longitude,
+  });
 
-  useEffect(() => {
-    const { latitude: lat, longitude: lng } = site;
-    if (utils.hasLatLngValue({ lat, lng })) {
-      dispatch(mapStateSet({
-        center: { lat, lng },
-        zoom: 20,
-      }))
-    }
-  }, [site, dispatch]);
+  const dispatch = useDispatch();
 
   const InfoModal = () => (
     <>

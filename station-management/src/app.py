@@ -2,7 +2,7 @@ from flask import Flask, request
 from flask_cors import CORS
 
 # Internal Modules
-from src.config import WEB_DOMAIN
+from src.config import WEB_DOMAINS
 from src.middlewares import auth
 from src.controllers import site
 from src.controllers import station
@@ -12,7 +12,7 @@ from src.controllers import evse
 # Flash App
 app = Flask(__name__)
 app.json.sort_keys = False
-CORS(app, resources={r"/api/*": {"origins": WEB_DOMAIN}})
+CORS(app, resources={r"/api/*": {"origins": WEB_DOMAINS}})
 
 
 ########## Site Management Routes

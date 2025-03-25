@@ -27,4 +27,7 @@ export const store = configureStore({
     [userSlice.name]: userSlice.reducer,
     [errorSlice.name]: errorSlice.reducer,
   },
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware({
+    serializableCheck: false,
+  }),
 });

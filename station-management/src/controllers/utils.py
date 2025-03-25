@@ -12,6 +12,16 @@ def is_exclude(s):
     return re.search("^-(.*)+$", s)
 
 
+def extract_args_search(args):
+    if args.get("search"):
+      search = []
+      words = args.get("search").split()
+      for word in words:
+        search.append(f"{'+' if len(words) > 1 else ''}{word}*")
+      return {"search": " ".join(search)}
+    return {}
+
+
 def extract_args_lat_lng(args):
     lat_lng_data = {}
     if args.get("lat_lng_origin") == "default":
@@ -47,16 +57,19 @@ def extract_args_select(fields):
     return select
 
 
-def extract_args_sort_by(field):
-    sort = {"created_at": 1, "id": 1}
-    if field:
-        is_include = not is_exclude(field)
-        field = field if is_include else field[1:]
-        value = 1 if is_include else -1
-        if field == "id":
-            sort = {field: value}
-        elif field == "created_at":
+def extract_args_sort_by(fields):
+    if fields:
+        sort = {}
+        for field in fields.split(","):
+            is_include = not is_exclude(field)
+            field = field if is_include else field[1:]
+            value = 1 if is_include else -1
             sort[field] = value
-        else:
-            sort = {field: value, **sort}
-    return sort
+        has_id = "id" in sort
+        has_created_at = "created_at" in sort
+        if not has_created_at and not has_id:
+            sort["created_at"] = 1
+        if not has_id:
+            sort["id"] = 1
+        return sort
+    return {"created_at": 1, "id": 1}

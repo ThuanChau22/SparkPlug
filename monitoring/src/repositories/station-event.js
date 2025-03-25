@@ -103,13 +103,17 @@ schema.loadClass(class {
           })
         });
       }
-      return await StationEvent.watch(
+      const changeStream = await StationEvent.watch(
         [
           { $match: filter },
           { $project: { fullDocument: 1 } },
         ],
         { fullDocument: "updateLookup" },
       );
+      changeStream.on("error", (error) => {
+        console.log({ source: "WatchEvent", error });
+      });
+      return changeStream;
     } catch (error) {
       console.log(error);
     }
