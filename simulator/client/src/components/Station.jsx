@@ -67,20 +67,6 @@ const Station = () => {
     pluginCable,
     unplugCable,
   } = useStationSocket(stationId, {
-    onConnect: useCallback(() => {
-      setEvseList((evseList) => {
-        const changes = [...evseList];
-        changes.forEach((evse) => evse.isConnected = true);
-        return changes;
-      });
-    }, []),
-    onDisConnect: useCallback(() => {
-      setEvseList((evseList) => {
-        const changes = [...evseList];
-        changes.forEach((evse) => evse.isConnected = false);
-        return changes;
-      });
-    }, []),
     onMeterValue: useCallback(({ evseId, meterValue }) => {
       setEvseList((evseList) => {
         const changes = [...evseList];
@@ -125,6 +111,14 @@ const Station = () => {
       unplugCable: () => unplugCable(evse_id),
     })));
   }, [evses, scanRFID, pluginCable, unplugCable]);
+
+  useEffect(()=>{
+    setEvseList((evseList) => {
+      const changes = [...evseList];
+      changes.forEach((evse) => evse.isConnected = isCSMSConnected);
+      return changes;
+    });
+  },[isCSMSConnected]);
 
   return (state === "loading"
     ? <LoadingIndicator />
