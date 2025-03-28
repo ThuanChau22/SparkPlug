@@ -113,18 +113,12 @@ server.on("client", async (client) => {
     client.on("close", async () => {
       try {
         const requests = [];
-        const [
-          { data: station },
-          { data: evses },
-        ] = await Promise.all([
-          axios.get(`${STATION_API_ENDPOINT}/${client.identity}`),
-          axios.get(`${STATION_API_ENDPOINT}/${client.identity}/evses`),
-        ]);
-        if (evses.length === 0) {
+        const { data } = await axios.get(`${STATION_API_ENDPOINT}/${client.identity}/evses`);
+        if (data.length === 0) {
           const message = `Evses from station ${client.identity} not found`;
           throw { code: 404, message };
         }
-        for (const evse of evses) {
+        for (const evse of data) {
           for (const index of evse.connector_type.split(" ").keys()) {
             requests.push(
               StationStatus.addStationStatus({
@@ -132,11 +126,11 @@ server.on("client", async (client) => {
                 evseId: evse.evse_id,
                 connectorId: index + 1,
                 status: StationStatus.Status.Unavailable,
-                site_id: station.site_id,
-                owner_id: station.owner_id,
-                latitude: station.latitude,
-                longitude: station.longitude,
-                created_at: station.created_at,
+                site_id: evse.site_id,
+                owner_id: evse.owner_id,
+                latitude: evse.latitude,
+                longitude: evse.longitude,
+                created_at: evse.created_at,
               })
             );
           }

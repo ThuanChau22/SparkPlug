@@ -1,5 +1,5 @@
 export const Action = {
-  CONNECT_SIM: "ConnectSim",
+  SYNCED: "Synced",
   CONNECT_CSMS: "ConnectCSMS",
   DISCONNECT_CSMS: "DisconnectCSMS",
   SCAN_RFID: "ScanRFID",

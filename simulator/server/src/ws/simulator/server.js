@@ -80,66 +80,45 @@ server.on("connection", async (ws, req) => {
     const { station, sockets } = stations.get(id);
     sockets.add(ws);
 
-    // Sync station state
+    // Syncing station state
     handler.stateSync(station).forEach((payload) => {
       ws.sendJson(payload);
     });
 
-    ws.sendJson({
-      action: Action.CONNECT_SIM,
-      payload: { status: "Accepted" },
-    });
+    // Sync completed signal
+    ws.sendJson({ action: Action.SYNCED, payload: {} });
 
     // Handle incoming message
-    ws.on("message", async (data) => {
-      try {
-        if (data.toString() === "ping") {
-          return ws.send("pong");
-        }
-        let message = {};
-        try {
-          message = JSON.parse(data);
-        } catch (error) {
-          const status = "Rejected";
-          const message = "Invalid message";
-          return ws.sendJson({ payload: { status, message } });
-        }
-        const { action, payload } = message;
-        const { station, sockets } = stations.get(id) || {};
-        if (!station || !sockets?.has(ws)) {
-          return ws.close(1000, "Connection lost");
-        }
-        let response = {
-          status: "Rejected",
-          message: "Action not supported",
-        };
-        if (action === Action.CONNECT_CSMS) {
-          response = await handler.connectCSMS(station);
-        }
-        if (action === Action.DISCONNECT_CSMS) {
-          response = await handler.disconnectCSMS(station);
-        }
-        if (action === Action.SCAN_RFID) {
-          response = await handler.scanRFID(station, payload);
-        }
-        if (action === Action.PLUGIN_CABLE) {
-          response = await handler.pluginCable(station, payload);
-        }
-        if (action === Action.UNPLUG_CABLE) {
-          response = await handler.unplugCable(station, payload);
-        }
-        if (response.status === "Rejected") {
-          return ws.sendJson({ action, payload: response });
-        }
-        sockets.forEach((socket) => {
-          socket.sendJson({ action, payload: response });
-        });
-      } catch (error) {
-        const status = "Rejected";
-        const message = "An unknown error occurred";
-        ws.sendJson({ payload: { status, message } });
-        console.log(error);
+    ws.onMessage(async ({ action, payload }) => {
+      const { station, sockets } = stations.get(id) || {};
+      if (!station || !sockets?.has(ws)) {
+        return ws.close(1000, "Connection lost");
       }
+      let response = {
+        status: "Rejected",
+        message: "Action not supported",
+      };
+      if (action === Action.CONNECT_CSMS) {
+        response = await handler.connectCSMS(station);
+      }
+      if (action === Action.DISCONNECT_CSMS) {
+        response = await handler.disconnectCSMS(station);
+      }
+      if (action === Action.SCAN_RFID) {
+        response = await handler.scanRFID(station, payload);
+      }
+      if (action === Action.PLUGIN_CABLE) {
+        response = await handler.pluginCable(station, payload);
+      }
+      if (action === Action.UNPLUG_CABLE) {
+        response = await handler.unplugCable(station, payload);
+      }
+      if (response.status === "Rejected") {
+        return ws.sendJson({ action, payload: response });
+      }
+      sockets.forEach((socket) => {
+        socket.sendJson({ action, payload: response });
+      });
     });
 
     // Handle socket on close
