@@ -1,3 +1,4 @@
+import demoServer from "./demo/server.js";
 import simulatorServer from "./simulator/server.js";
 
 const webSocketApp = () => {
@@ -42,6 +43,7 @@ const webSocketApp = () => {
 };
 
 const app = webSocketApp();
+app.use("/ws/simulator/demo", demoServer);
 app.use("/ws/simulator/:id", simulatorServer);
 
 export default app;

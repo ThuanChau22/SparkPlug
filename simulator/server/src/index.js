@@ -1,7 +1,6 @@
 import apiApp from "./api/app.js";
 import wsApp from "./ws/app.js";
 import { PORT } from "./config.js";
-import "./simulate.js";
 
 const main = async () => {
   try {
