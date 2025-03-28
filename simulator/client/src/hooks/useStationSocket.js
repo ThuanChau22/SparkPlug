@@ -30,7 +30,7 @@ const useStationSocket = (stationId, {
     sendJsonMessage,
   } = useSocket(`${WS_ENDPOINT}/${stationId}`);
 
-  const WebSocketAction = useMemo(() => ({
+  const StationAction = useMemo(() => ({
     METER_VALUE: "MeterValue",
     SCAN_RFID: "ScanRFID",
     AUTHORIZE: "Authorize",
@@ -72,44 +72,44 @@ const useStationSocket = (stationId, {
 
   const connectCSMS = useCallback(() => {
     if (readyState === ReadyState.OPEN) {
-      const action = WebSocketAction.CONNECT_CSMS;
+      const action = StationAction.CONNECT_CSMS;
       sendJsonMessage({ action, payload: {} });
     }
-  }, [WebSocketAction, readyState, sendJsonMessage]);
+  }, [StationAction, readyState, sendJsonMessage]);
 
   const disconnectCSMS = useCallback(() => {
     if (readyState === ReadyState.OPEN) {
-      const action = WebSocketAction.DISCONNECT_CSMS;
+      const action = StationAction.DISCONNECT_CSMS;
       sendJsonMessage({ action, payload: {} });
     }
-  }, [WebSocketAction, readyState, sendJsonMessage]);
+  }, [StationAction, readyState, sendJsonMessage]);
 
   const scanRFID = useCallback((evseId, rfid) => {
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
-        action: WebSocketAction.SCAN_RFID,
+        action: StationAction.SCAN_RFID,
         payload: { evseId, idToken: rfid },
       });
     }
-  }, [WebSocketAction, readyState, sendJsonMessage]);
+  }, [StationAction, readyState, sendJsonMessage]);
 
   const pluginCable = useCallback((evseId) => {
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
-        action: WebSocketAction.PLUGIN_CABLE,
+        action: StationAction.PLUGIN_CABLE,
         payload: { evseId, connectorId: 1 },
       });
     }
-  }, [WebSocketAction, readyState, sendJsonMessage]);
+  }, [StationAction, readyState, sendJsonMessage]);
 
   const unplugCable = useCallback((evseId) => {
     if (readyState === ReadyState.OPEN) {
       sendJsonMessage({
-        action: WebSocketAction.UNPLUG_CABLE,
+        action: StationAction.UNPLUG_CABLE,
         payload: { evseId, connectorId: 1 },
       });
     }
-  }, [WebSocketAction, readyState, sendJsonMessage]);
+  }, [StationAction, readyState, sendJsonMessage]);
 
   useEffect(() => {
     const { action, payload } = lastJsonMessage || {};
@@ -120,56 +120,55 @@ const useStationSocket = (stationId, {
       });
       return;
     }
-    if (action === WebSocketAction.CONNECT_CSMS) {
+    if (action === StationAction.CONNECT_CSMS) {
       setIsCSMSConnected(true);
       if (onConnect) {
         onConnect(payload);
       }
     };
-    if (action === WebSocketAction.DISCONNECT_CSMS) {
+    if (action === StationAction.DISCONNECT_CSMS) {
       setIsCSMSConnected(false);
       if (onDisConnect) {
         onDisConnect(payload);
       }
     };
-    if (action === WebSocketAction.METER_VALUE) {
+    if (action === StationAction.METER_VALUE) {
       if (onMeterValue) {
         onMeterValue(payload);
       }
     }
-    if (action === WebSocketAction.AUTHORIZE) {
+    if (action === StationAction.AUTHORIZE) {
       if (onAuthorize) {
         onAuthorize(payload);
       }
     }
-    if (action === WebSocketAction.SCAN_RFID) {
+    if (action === StationAction.SCAN_RFID) {
       if (onScanRfid) {
         onScanRfid(payload);
       }
     }
-    if (action === WebSocketAction.PLUGIN_CABLE) {
+    if (action === StationAction.PLUGIN_CABLE) {
       if (onPluginCable) {
         onPluginCable(payload);
       }
     }
-    if (action === WebSocketAction.UNPLUG_CABLE) {
+    if (action === StationAction.UNPLUG_CABLE) {
       if (onUnplugCable) {
         onUnplugCable(payload);
       }
     }
-    if (action === WebSocketAction.REMOTE_START) {
+    if (action === StationAction.REMOTE_START) {
       if (onRemoteStart) {
         onRemoteStart(payload);
       }
     }
-    if (action === WebSocketAction.REMOTE_STOP) {
+    if (action === StationAction.REMOTE_STOP) {
       if (onRemoteStop) {
         onRemoteStop(payload);
       }
     }
-
   }, [
-    WebSocketAction,
+    StationAction,
     lastJsonMessage,
     setToastMessage,
     onConnect,

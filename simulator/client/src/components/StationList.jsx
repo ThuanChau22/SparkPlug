@@ -20,6 +20,7 @@ import {
 import { Search } from "@mui/icons-material";
 
 import { getStationList } from "api/stations";
+import Demo from "components/Demo";
 import StickyContainer from "components/StickyContainer";
 import LoadingIndicator from "components/LoadingIndicator";
 import useTypeInput from "hooks/useTypeInput";
@@ -118,6 +119,18 @@ const StationList = () => {
     };
   }, [listCursor.next, loadingOnScroll, fetchOnScroll]);
 
+  useEffect(() => {
+    const handleOnKeydown = ({ code }) => {
+      if (code === "Escape") {
+        navigate("/stations")
+      }
+    };
+    document.addEventListener("keydown", handleOnKeydown);
+    return () => {
+      document.removeEventListener("keydown", handleOnKeydown);
+    }
+  });
+
   return (
     <div className="d-flex flex-column h-100">
       <StickyContainer ref={titleRef} style={{ top: `${headerHeight}px` }}>
@@ -151,6 +164,9 @@ const StationList = () => {
             {stationList.length > 0
               ? (
                 <>
+                  <CListGroupItem className="border rounded py-3 my-1 shadow-sm">
+                    <Demo search={searchTerm} />
+                  </CListGroupItem>
                   {
                     stationList.map(({ id, name, street_address, city }) => {
                       const isActive = `${id}` === params.stationId;
