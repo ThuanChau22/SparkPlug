@@ -71,27 +71,27 @@ const StationList = () => {
 
   const fetchOnLoad = useCallback(async () => {
     setLoadingOnLoad(true);
-    const { stations, cursor } = await getStationList({
+    const { data, cursor } = await getStationList({
       fields: "name,street_address,city",
       search: searchTerm,
       sortBy: "-search_score",
       limit: ListLimit,
     });
-    setStationList(stations);
+    setStationList(data);
     setListCursor(cursor);
     setLoadingOnLoad(false);
   }, [searchTerm]);
 
   const fetchOnScroll = useCallback(async () => {
     setLoadingOnScroll(true);
-    const { stations, cursor } = await getStationList({
+    const { data, cursor } = await getStationList({
       fields: "name,street_address,city",
       search: searchTerm,
       sortBy: "-search_score",
       limit: ListLimit,
       cursor: listCursor.next,
     });
-    setStationList((stationList) => [...stationList, ...stations]);
+    setStationList((stationList) => [...stationList, ...data]);
     setListCursor(cursor);
     setLoadingOnScroll(false);
   }, [searchTerm, listCursor.next]);

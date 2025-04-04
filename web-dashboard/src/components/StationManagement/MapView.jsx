@@ -81,7 +81,7 @@ const StationMapView = ({ handleViewStation }) => {
         refHeight={headerHeight}
       >
         <MapSetView delay={1000} />
-        <MapFitBound bounds={data?.stations || []} />
+        <MapFitBound bounds={data?.data || []} />
         <StationMarkerCluster
           stationList={stationList}
           loading={loadStateOnMapView.loading}

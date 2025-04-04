@@ -37,7 +37,7 @@ def get_evses_by_station(station_id):
         filter = {"station_id": station_id}
         if request.auth["role"] == "owner":
             filter["owner_id"] = request.auth["user_id"]
-        return evse.get_evses(connection, filter).get("evses")
+        return evse.get_evses(connection, filter).get("data")
 
     try:
         return transaction(session), 200

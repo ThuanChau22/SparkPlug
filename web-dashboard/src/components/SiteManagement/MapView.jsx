@@ -81,7 +81,7 @@ const SiteMapView = ({ handleViewSite }) => {
         refHeight={headerHeight}
       >
         <MapSetView delay={1000} />
-        <MapFitBound bounds={data?.sites || []} />
+        <MapFitBound bounds={data?.data || []} />
         <SiteMarkerCluster
           siteList={siteList}
           loading={loadStateOnMapView.loading}

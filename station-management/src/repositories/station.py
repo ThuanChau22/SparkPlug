@@ -52,7 +52,7 @@ def get_stations(connection, filter={}, select={}, sort={}, limit=None, cursor=N
         stations = cursor.fetchall()
 
     return {
-        "stations": stations or [],
+        "data": stations or [],
         "cursor": create_cursor(stations, sort, limit),
     }
 

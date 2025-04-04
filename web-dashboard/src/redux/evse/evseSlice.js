@@ -103,7 +103,7 @@ export const evseGetList = createAsyncThunk(
       const query = `${StationAPI}/evses${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(query, config);
-      dispatch(evseStateUpsertMany(data.evses));
+      dispatch(evseStateUpsertMany(data.data));
       return data;
     } catch (error) {
       handleError({ error, dispatch });

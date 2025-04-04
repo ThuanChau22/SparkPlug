@@ -52,7 +52,7 @@ def get_evses(connection, filter={}, select={}, sort={}, limit=None, cursor=None
         evses = cursor.fetchall()
 
     return {
-        "evses": evses or [],
+        "data": evses or [],
         "cursor": create_cursor(evses, sort, limit),
     }
 

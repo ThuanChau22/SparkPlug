@@ -105,9 +105,8 @@ handler.starting = async (payload) => {
     });
     const filtered = entries.filter(([_, value]) => value);
     const params = filtered.map(([key, value]) => `${key}=${value}`).join("&");
-    const query = `${endpoint}${params ? `?${params}` : ""}`;
-    const { data: { evses } } = await axios.get(query);
-
+    const { data } = await axios.get(`${endpoint}${params ? `?${params}` : ""}`);
+    const { data: evses } = data;
     state.totalCount = evses.length;
 
     const evsesByStations = new Map();

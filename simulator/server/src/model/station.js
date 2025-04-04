@@ -136,6 +136,9 @@ class Station {
         return { status: "Rejected" };
       }
     });
+    this._rpcClient.on("error", (error) => {
+      console.log(error);
+    });
   }
 
   get id() {

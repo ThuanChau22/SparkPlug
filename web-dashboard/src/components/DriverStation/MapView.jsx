@@ -142,7 +142,7 @@ const DriverStationMapView = ({ handleViewStation }) => {
       >
         <MapSetView delay={1000} />
         <MapUserLocation />
-        <MapFitBound bounds={data?.stations || []} />
+        <MapFitBound bounds={data?.data || []} />
         <StationStatusMarkerCluster
           stationList={stationStatusList}
           loading={

@@ -153,7 +153,10 @@ repository.getUsers = async ({ filter, select, sort, limit, cursor } = {}) => {
     }
   }
 
-  return { users, cursor: { next } };
+  return {
+    data: users || [],
+    cursor: { next },
+  };
 };
 
 repository.getUserById = async (userId, { select = { password: 0 } } = {}) => {

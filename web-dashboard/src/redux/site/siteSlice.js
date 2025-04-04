@@ -95,7 +95,7 @@ export const siteGetList = createAsyncThunk(
       const query = `${SiteAPI}${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(query, config);
-      dispatch(siteStateUpsertMany(data.sites));
+      dispatch(siteStateUpsertMany(data.data));
       return data;
     } catch (error) {
       handleError({ error, dispatch });
