@@ -7,17 +7,15 @@ const availability = {};
 
 availability.statusNotificationResponse = async ({ client, params }) => {
   const { data } = await axios.get(`${STATION_API_ENDPOINT}/${client.identity}`);
-  await StationStatus.addStationStatus({
-    stationId: client.identity,
+  await StationStatus.upsertStatus({
+    stationId: data.id,
     evseId: params.evseId,
     connectorId: params.connectorId,
     status: params.connectorStatus,
-    timestamp: params.timestamp,
-    site_id: data.site_id,
-    owner_id: data.owner_id,
     latitude: data.latitude,
     longitude: data.longitude,
-    created_at: data.created_at,
+    createdAt: data.created_at,
+    updatedAt: params.timestamp,
   });
   return {};
 };

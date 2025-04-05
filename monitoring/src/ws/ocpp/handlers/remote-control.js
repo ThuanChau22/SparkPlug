@@ -22,7 +22,7 @@ remoteControl.requestStartTransactionRequest = async ({ client, params }) => {
     idToken,
   });
   await StationEvent.addEvent({
-    stationId: client.identity,
+    stationId: parseInt(client.identity),
     source: StationEvent.Sources.Station,
     event: method,
     payload: response,
@@ -41,7 +41,7 @@ remoteControl.requestStopTransactionRequest = async ({ client, params }) => {
   const method = "RequestStopTransaction";
   const response = await client.call(method, { transactionId });
   await StationEvent.addEvent({
-    stationId: client.identity,
+    stationId: parseInt(client.identity),
     source: StationEvent.Sources.Station,
     event: method,
     payload: response,

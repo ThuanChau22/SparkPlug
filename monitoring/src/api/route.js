@@ -45,26 +45,12 @@ router.get(
   "/station-status",
   authenticate,
   authorizeRole(["staff", "owner", "driver"]),
-  async (_, res) => {
-    try {
-      const stationStatus = await StationStatus.getStationStatuses();
-      res.status(200).json(utils.toClient(stationStatus));
-    } catch (error) {
-      const { message } = error;
-      res.status(400).json({ message });
-    }
-  }
-);
-
-router.get(
-  "/station-status/latest",
-  authenticate,
-  authorizeRole(["staff", "owner", "driver"]),
   async (req, res) => {
     try {
       const { sort_by, cursor, limit, ...filter } = req.query;
-      const params = { filter, sort: sort_by, cursor, limit };
-      const stationStatus = await StationStatus.getStationStatusesLatest(params);
+      const params = { filter, sort: sort_by, cursor, limit: parseInt(limit) };
+      params.limit = Number.isNaN(params.limit) ? 0 : params.limit;
+      const stationStatus = await StationStatus.getStatuses(params);
       res.status(200).json(utils.toClient(stationStatus));
     } catch (error) {
       const { message } = error;
@@ -74,15 +60,13 @@ router.get(
 );
 
 router.get(
-  "/station-status/latest/:id",
+  "/station-status/count",
   authenticate,
   authorizeRole(["staff", "owner", "driver"]),
-  async (req, res) => {
+  async (_, res) => {
     try {
-      const { id } = req.params;
-      const params = { filter: { station_id: parseInt(id) } };
-      const stationStatus = await StationStatus.getStationStatusesLatest(params);
-      res.status(200).json(utils.toClient(stationStatus));
+      const count = await StationStatus.getStatusCount();
+      res.status(200).json(utils.toClient(count));
     } catch (error) {
       const { message } = error;
       res.status(400).json({ message });
@@ -97,10 +81,9 @@ router.get(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const filter = { station_id: id }
-      const sort = { createdAt: 1 };
-      const stationStatus = await StationStatus.getStationStatuses({ filter, sort });
-      res.status(200).json(utils.toClient(stationStatus));
+      const params = { filter: { stationId: id } };
+      const { data } = await StationStatus.getStatuses(params);
+      res.status(200).json(utils.toClient(data));
     } catch (error) {
       const { message } = error;
       res.status(400).json({ message });

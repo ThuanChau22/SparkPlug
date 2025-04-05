@@ -49,17 +49,22 @@ server.on("client", async (client) => {
       changeStream: null,
     });
 
+    let resumeAfter;
     const watchRequestTransactionEvent = async () => {
       clients.get(client.identity).changeStream?.close();
-      const changeStream = await StationEvent.watchEvent({
-        stationId: parseInt(client.identity),
-        source: StationEvent.Sources.Central,
-        event: [
-          "RequestStartTransaction",
-          "RequestStopTransaction",
-        ],
-      })
-      changeStream.on("change", async ({ fullDocument }) => {
+      const changeStream = await StationEvent.watchEvent(
+        {
+          stationId: parseInt(client.identity),
+          source: StationEvent.Sources.Central,
+          event: [
+            "RequestStartTransaction",
+            "RequestStopTransaction",
+          ],
+        },
+        { resumeAfter },
+      )
+      changeStream.on("change", async ({ _id, fullDocument }) => {
+        resumeAfter = _id;
         const { event, payload } = fullDocument;
         const properties = { client, params: payload };
         const isConnected = client.state === WebSocket.OPEN;
@@ -71,7 +76,7 @@ server.on("client", async (client) => {
         }
       });
       changeStream.on("error", (error) => {
-        console.log({ source: "WatchRequestTransactionEvent", error });
+        console.log({ name: "WatchRequestTransactionEvent", error });
         watchRequestTransactionEvent();
       });
       clients.get(client.identity).changeStream = changeStream;
@@ -79,34 +84,37 @@ server.on("client", async (client) => {
     await watchRequestTransactionEvent();
 
     client.handle(async (properties) => {
-      const { method, params } = properties;
-      await StationEvent.addEvent({
-        stationId: client.identity,
-        source: StationEvent.Sources.Station,
-        event: method,
-        payload: params,
-      });
-
-      properties = { client, ...properties };
-      switch (method) {
-        case "BootNotification":
-          return await provisioning.bootNotificationResponse(properties);
-
-        case "Heartbeat":
-          return await availability.heartbeatResponse(properties);
-
-        case "StatusNotification":
-          return await availability.statusNotificationResponse(properties);
-
-        case "Authorize":
-          return await authorization.authorizeResponse(properties);
-
-        case "TransactionEvent":
-          return await transactions.transactionEventResponse(properties);
-
-        default:
+      try {
+        const { method, params } = properties;
+        properties = { client, ...properties };
+        const requests = [];
+        if (method === "BootNotification") {
+          requests.push(provisioning.bootNotificationResponse(properties));
+        } else if (method === "Heartbeat") {
+          requests.push(availability.heartbeatResponse(properties));
+        } else if (method === "StatusNotification") {
+          requests.push(availability.statusNotificationResponse(properties));
+        } else if (method === "Authorize") {
+          requests.push(authorization.authorizeResponse(properties));
+        } else if (method === "TransactionEvent") {
+          requests.push(transactions.transactionEventResponse(properties));
+        } else {
           console.log(`${method} from ${client.identity}:`, params);
           throw createRPCError("NotImplemented");
+        }
+        requests.push(
+          StationEvent.addEvent({
+            stationId: parseInt(client.identity),
+            source: StationEvent.Sources.Station,
+            event: method,
+            payload: params,
+          })
+        );
+        const [response] = await Promise.all(requests);
+        return response;
+      } catch (error) {
+        console.log({ name: "ClientHandle", error });
+        throw error;
       }
     });
 
@@ -118,30 +126,29 @@ server.on("client", async (client) => {
           const message = `Evses from station ${client.identity} not found`;
           throw { code: 404, message };
         }
+        const { Unavailable } = StationStatus.Status;
         for (const evse of data) {
           for (const index of evse.connector_type.split(" ").keys()) {
             requests.push(
-              StationStatus.addStationStatus({
-                stationId: client.identity,
+              StationStatus.upsertStatus({
+                stationId: evse.station_id,
                 evseId: evse.evse_id,
                 connectorId: index + 1,
-                status: StationStatus.Status.Unavailable,
-                site_id: evse.site_id,
-                owner_id: evse.owner_id,
+                status: Unavailable,
                 latitude: evse.latitude,
                 longitude: evse.longitude,
-                created_at: evse.created_at,
+                createdAt: evse.created_at,
               })
             );
           }
         }
         requests.push(
           StationEvent.addEvent({
-            stationId: client.identity,
+            stationId: parseInt(client.identity),
             source: StationEvent.Sources.Central,
             event: "StatusNotification",
             payload: {
-              connectorStatus: StationStatus.Status.Unavailable,
+              connectorStatus: Unavailable,
               timestamp: new Date().toISOString(),
             },
           })
@@ -151,7 +158,7 @@ server.on("client", async (client) => {
         clients.delete(client.identity);
         console.log(`Disconnected with station: ${client.identity}`);
       } catch (error) {
-        console.log(error);
+        console.log({ name: "ClientClose", error });
       }
     });
   } catch (error) {

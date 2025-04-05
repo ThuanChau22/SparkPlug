@@ -74,4 +74,15 @@ utils.toArray = (value) => {
   return Array.isArray(value) ? value : [value];
 };
 
+/**
+ * Convert string
+ * from snake_case to camelCase
+ * @param value (String)
+ * @return A camelCase string
+ */
+utils.snakeToCamel = (s) => {
+  const convert = (_, c) => c.toUpperCase();
+  return s.replace(/[^a-zA-Z0-9]+(.)/g, convert);
+};
+
 export default utils;

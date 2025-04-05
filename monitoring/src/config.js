@@ -26,8 +26,11 @@ export const mysql = mysql2.createPool({
   database: mysqlCredential.endpoint,
 });
 
+export const mongo = mongoose.connection;
+
 export const connectMongoDB = async () => {
   try {
+    mongoose.set("transactionAsyncLocalStorage", true);
     await mongoose.connect(MONGODB_URI, { maxPoolSize: 250 });
   } catch (error) {
     console.log(error);
@@ -65,6 +68,6 @@ export const setGracefulShutdown = (httpServer, wsServers = []) => {
       });
     }, ms("5s"));
   };
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
 };

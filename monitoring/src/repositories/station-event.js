@@ -52,18 +52,13 @@ schema.index({
   event: 1,
 });
 
-// Indexing TransactionEvent Request for all stations
-// schema.index({
-//   event: 1,
-//   "payload.eventType": 1,
-// }, { sparse: true });
-
 schema.loadClass(class {
   static async getEvents({ filter, sort, limit } = {}) {
     try {
       return await this.find(filter).sort(sort).limit(limit).lean();
     } catch (error) {
-      console.log(error);
+      console.log({ name: "StationEventGet", error });
+      throw error;
     }
   }
   static async addEvent(data) {
@@ -72,10 +67,11 @@ schema.loadClass(class {
       const expireAt = new Date(Date.now() + ms("1h"));
       await StationEvent.create({ stationId, source, event, payload, expireAt });
     } catch (error) {
-      console.log(error);
+      console.log({ name: "StationEventAdd", error });
+      throw error;
     }
   }
-  static async watchEvent(data = {}) {
+  static async watchEvent(data = {}, options = {}) {
     try {
       const { stationId, source, event } = data;
       const filter = {
@@ -103,19 +99,25 @@ schema.loadClass(class {
           })
         });
       }
+      options = Object.entries(options).filter(([_, value]) => value);
+      options = Object.fromEntries(options);
       const changeStream = await StationEvent.watch(
         [
           { $match: filter },
           { $project: { fullDocument: 1 } },
         ],
-        { fullDocument: "updateLookup" },
+        {
+          fullDocument: "updateLookup",
+          ...options,
+        },
       );
       changeStream.on("error", (error) => {
-        console.log({ source: "WatchEvent", error });
+        console.log({ name: "WatchEvent", error });
       });
       return changeStream;
     } catch (error) {
-      console.log(error);
+      console.log({ name: "StationEventWatch", error });
+      throw error;
     }
   }
 });
