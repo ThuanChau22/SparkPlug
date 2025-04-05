@@ -71,9 +71,8 @@ schema.loadClass(class {
       // Filter
       const $match = {};
       if (filter) {
-        const { lat_lng_origin, lat_lng_min, lat_lng_max, ...remain } = filter;
-
         // Distance
+        const { lat_lng_origin, lat_lng_min, lat_lng_max, ...remain } = filter;
         const [latOrigin, lngOrigin] = lat_lng_origin?.split(",") || [];
         if (latOrigin && lngOrigin) {
           const coordinates = [parseFloat(lngOrigin), parseFloat(latOrigin)];
@@ -97,20 +96,17 @@ schema.loadClass(class {
           $match.location = { $geoWithin: { $box: [lowerBound, upperBound] } };
         }
 
-        // Remaining Field
+        // Remaining
         for (const [field, value] of Object.entries(remain)) {
-          const key = utils.snakeToCamel(field);
-          $match[key] = utils.isInteger(value) ? parseInt(value) : value;
+          $match[field] = utils.isInteger(value) ? parseInt(value) : value;
         }
       }
 
       // Sort
       const $sort = {};
       if (sort) {
-        for (const field of sort.split(",")) {
-          const isDesc = /^-(.*)+$/.test(field);
-          const key = isDesc ? field.substring(1) : field;
-          $sort[utils.snakeToCamel(key)] = isDesc ? -1 : 1;
+        for (const [field, value] of Object.entries(sort)) {
+          $sort[field] = value;
         }
         const hasId = "stationId" in $sort;
         const hasCreatedAt = "createdAt" in $sort;

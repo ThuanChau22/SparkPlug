@@ -53,24 +53,91 @@ schema.index({
 });
 
 schema.loadClass(class {
-  static async getEvents({ filter, sort, limit } = {}) {
+  static async getEvents({ filter, sort, limit, cursor } = {}) {
     try {
-      return await this.find(filter).sort(sort).limit(limit).lean();
+      const pipeline = [];
+
+      // Select
+      const $project = {
+        id: "$_id",
+        stationId: "$stationId",
+        source: "$source",
+        event: "$event",
+        payload: "$payload",
+        createdAt: "$createdAt",
+      };
+
+      // Filter
+      const $match = {};
+      if (filter) {
+        for (const [field, value] of Object.entries(filter)) {
+          $match[field] = utils.isInteger(value) ? parseInt(value) : value;
+        }
+      }
+
+      // Sort
+      const $sort = {};
+      if (sort) {
+        for (const [field, value] of Object.entries(sort)) {
+          $sort[field] = value;
+        }
+        const hasId = "id" in $sort;
+        const hasCreatedAt = "createdAt" in $sort;
+        if (!hasId && !hasCreatedAt) {
+          $sort["createdAt"] = 1;
+        }
+        if (!hasId) {
+          $sort["id"] = 1;
+        }
+      } else {
+        Object.assign($sort, { createdAt: 1, id: 1 });
+      }
+
+      // Paging Read
+      if (cursor) {
+        Object.assign($match, utils.extractCursor(cursor, $sort));
+      }
+
+      pipeline.push(
+        { $match },
+        { $project },
+        { $sort },
+      );
+
+      // Limit
+      if (limit) {
+        pipeline.push({ $limit: limit });
+      }
+
+      // Query
+      const data = await this.aggregate(pipeline);
+
+      // Paging Write
+      let next = "";
+      if (data.length === limit) {
+        const lastItem = data[data.length - 1];
+        next = utils.createCursor(lastItem, $sort);
+      }
+
+      return { data, cursor: { next } };
     } catch (error) {
       console.log({ name: "StationEventGet", error });
       throw error;
     }
   }
+
   static async addEvent(data) {
     try {
       const { stationId, source, event, payload } = data;
       const expireAt = new Date(Date.now() + ms("1h"));
-      await StationEvent.create({ stationId, source, event, payload, expireAt });
+      const params = { stationId, source, event, payload, expireAt };
+      await StationEvent.create(params);
     } catch (error) {
       console.log({ name: "StationEventAdd", error });
       throw error;
     }
   }
+
   static async watchEvent(data = {}, options = {}) {
     try {
       const { stationId, source, event } = data;

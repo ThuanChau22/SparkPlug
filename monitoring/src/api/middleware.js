@@ -4,6 +4,7 @@ import {
   AUTH_API_ENDPOINT,
   STATION_API_ENDPOINT,
 } from "../config.js";
+import utils from "../utils/utils.js";
 
 export const authenticate = async (req, res, next) => {
   try {
@@ -46,4 +47,28 @@ export const authorizeResource = async (req, res, next) => {
     const { code, message } = error;
     return res.status(code || 400).json({ message });
   }
+};
+
+export const handleParameters = async (req, _, next) => {
+  const { lat_lng_min, lat_lng_max, ...remain } = req.query;
+  const { lat_lng_origin, sort_by, limit, ...filter } = remain;
+
+  for (const [field, value] of Object.entries(filter)) {
+    req.query[utils.snakeToCamel(field)] = value;
+  }
+
+  if (sort_by) {
+    req.query.sort_by = {};
+    for (const field of sort_by.split(",")) {
+      const isDesc = /^-(.*)+$/.test(field);
+      const key = isDesc ? field.substring(1) : field;
+      req.query.sort_by[utils.snakeToCamel(key)] = isDesc ? -1 : 1;
+    }
+  }
+
+  if (limit) {
+    const value = parseInt(limit);
+    req.query.limit = Number.isNaN(value) ? 0 : value;
+  }
+  next();
 };

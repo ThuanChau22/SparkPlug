@@ -7,6 +7,7 @@ import {
   authenticate,
   authorizeRole,
   authorizeResource,
+  handleParameters,
 } from "./middleware.js";
 
 const router = express.Router();
@@ -24,15 +25,14 @@ router.get(
   authenticate,
   authorizeRole(["staff", "owner"]),
   authorizeResource,
+  handleParameters,
   async (req, res) => {
     try {
       const { id } = req.params;
-      const filter = {
-        stationId: id,
-        source: StationEvent.Sources.Station,
-      };
-      const sort = { createdAt: 1 };
-      const events = await StationEvent.getEvents({ filter, sort });
+      const { sort_by, cursor, limit, ...filter } = req.query;
+      filter.stationId = id;
+      const params = { filter, sort: sort_by, cursor, limit };
+      const events = await StationEvent.getEvents(params);
       res.status(200).json(utils.toClient(events));
     } catch (error) {
       const { message } = error;
@@ -45,11 +45,11 @@ router.get(
   "/station-status",
   authenticate,
   authorizeRole(["staff", "owner", "driver"]),
+  handleParameters,
   async (req, res) => {
     try {
       const { sort_by, cursor, limit, ...filter } = req.query;
-      const params = { filter, sort: sort_by, cursor, limit: parseInt(limit) };
-      params.limit = Number.isNaN(params.limit) ? 0 : params.limit;
+      const params = { filter, sort: sort_by, cursor, limit };
       const stationStatus = await StationStatus.getStatuses(params);
       res.status(200).json(utils.toClient(stationStatus));
     } catch (error) {
