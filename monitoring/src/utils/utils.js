@@ -1,3 +1,5 @@
+import { encode, decode } from "safe-base64";
+
 const utils = {};
 
 /**
@@ -83,6 +85,51 @@ utils.toArray = (value) => {
 utils.snakeToCamel = (s) => {
   const convert = (_, c) => c.toUpperCase();
   return s.replace(/[^a-zA-Z0-9]+(.)/g, convert);
+};
+
+/**
+ * Extract conditions from cursor
+ * @param cursor (String)
+ * @param sort (Object)
+ * @return MongoDB filter conditions
+ */
+utils.extractCursor = (cursor, sort) => {
+  let condition = {};
+  const payload = utils.toJSON(decode(cursor).toString()) || {};
+  const params = Object.keys(sort)
+    .filter((field) => payload[field])
+    .map((field) => [field, payload[field]]);
+  for (let [field, value] of params.reverse()) {
+    value = utils.isIsoDate(value) ? new Date(value) : value;
+    condition = utils.isObjectEmpty(condition)
+      ? { field: value }
+      : {
+        $or: [
+          { [field]: { $gt: value } },
+          {
+            $and: [
+              { [field]: { $eq: value } },
+              { ...condition },
+            ],
+          }
+        ],
+      };
+  }
+  return condition;
+};
+
+/**
+ * create cursor from last document
+ * @param doc (Object)
+ * @param sort (Object)
+ * @return new cursor
+ */
+utils.createCursor = (doc, sort) => {
+  const payload = Object.keys(sort)
+    .filter((field) => doc[field])
+    .map((field) => [field, doc[field]])
+    .reduce((obj, [field, value]) => ({ ...obj, [field]: value }), {});
+  return encode(Buffer.from(JSON.stringify(payload)));
 };
 
 export default utils;

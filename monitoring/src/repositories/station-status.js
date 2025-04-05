@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { encode, decode } from "safe-base64";
 
 import utils from "../utils/utils.js";
 
@@ -127,28 +126,7 @@ schema.loadClass(class {
 
       // Paging Read
       if (cursor) {
-        let condition = {};
-        const payload = utils.toJSON(decode(cursor).toString()) || {};
-        const params = Object.keys($sort)
-          .filter((field) => payload[field])
-          .map((field) => [field, payload[field]]);
-        for (let [field, value] of params.reverse()) {
-          value = utils.isIsoDate(value) ? new Date(value) : value;
-          condition = utils.isObjectEmpty(condition)
-            ? { field: value }
-            : {
-              $or: [
-                { [field]: { $gt: value } },
-                {
-                  $and: [
-                    { [field]: { $eq: value } },
-                    { ...condition },
-                  ],
-                }
-              ],
-            };
-        }
-        Object.assign($match, condition);
+        Object.assign($match, utils.extractCursor(cursor, $sort));
       }
 
       pipeline.push(
@@ -169,11 +147,7 @@ schema.loadClass(class {
       let next = "";
       if (data.length === limit) {
         const lastItem = data[data.length - 1];
-        const payload = Object.keys($sort)
-          .filter((field) => lastItem[field])
-          .map((field) => [field, lastItem[field]])
-          .reduce((obj, [field, value]) => ({ ...obj, [field]: value }), {});
-        next = encode(Buffer.from(JSON.stringify(payload)));
+        next = utils.createCursor(lastItem, $sort);
       }
 
       return { data, cursor: { next } };
