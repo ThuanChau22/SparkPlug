@@ -22,12 +22,9 @@ export const setGracefulShutdown = (httpServer) => {
   });
   const shutdown = () => {
     httpServer.WebSocketServers?.forEach((wss) => {
-      console.log(wss);
-      
       wss.close({ code: 1000 });
     });
     httpServer.close(() => {
-      console.log("HTTP");
       process.exit(0);
     });
     setTimeout(() => {

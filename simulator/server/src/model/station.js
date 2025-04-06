@@ -399,7 +399,7 @@ class Station {
 
   async #statusNotificationRequest() {
     const requests = [];
-    for (const evse of Object.values(this.evses)) {
+    for (const evse of Object.values(this._evses)) {
       for (const connector of Object.values(evse.connectors)) {
         requests.push(this.#rpcClientCall("StatusNotification", {
           evseId: evse.id,
