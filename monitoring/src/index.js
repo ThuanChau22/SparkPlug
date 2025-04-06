@@ -15,7 +15,8 @@ const main = async () => {
       wsApp.handleUpgrade(request, socket, head);
     });
     const wsServers = wsApp.routes.map(({ server }) => server);
-    setGracefulShutdown(httpServer, wsServers);
+    httpServer.WebSocketServers = wsServers;
+    setGracefulShutdown(httpServer);
   } catch (error) {
     console.log(error);
   }

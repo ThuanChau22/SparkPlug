@@ -38,7 +38,7 @@ export const connectMongoDB = async () => {
   }
 };
 
-export const setGracefulShutdown = (httpServer, wsServers = []) => {
+export const setGracefulShutdown = (httpServer) => {
   const connections = new Set();
   httpServer.on("connection", (connection) => {
     connections.add(connection);
@@ -50,7 +50,7 @@ export const setGracefulShutdown = (httpServer, wsServers = []) => {
   const shutdown = () => {
     mysql.end();
     mongoose.connection.close();
-    wsServers.forEach((wss) => {
+    httpServer.WebSocketServers?.forEach((wss) => {
       wss.close({ code: 1000 });
     });
     httpServer.close(() => {
