@@ -1,53 +1,9 @@
 import axios from "axios";
-import ms from "ms";
-import WebSocket, { WebSocketServer } from "ws";
+import WebSocket from "ws";
 
 import { AUTH_API_ENDPOINT } from "../../config.js";
+import utils from "../../utils/utils.js";
 import handler, { Action } from "./handler.js";
-
-const webSocketServer = () => {
-  const wss = new WebSocketServer({ noServer: true });
-  const pingInterval = setInterval(() => {
-    for (const ws of wss.clients) {
-      if (ws.isAlive) {
-        ws.isAlive = false;
-        ws.ping();
-      } else {
-        ws.terminate();
-      };
-    }
-  }, ms("30s"));
-  wss.on("close", () => {
-    clearInterval(pingInterval);
-  });
-  const handleUpgrade = (request, socket, head) => {
-    wss.handleUpgrade(request, socket, head, (ws) => {
-      ws.sendJson = (payload) => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify(payload));
-        }
-      };
-      ws.on("pong", () => ws.isAlive = true);
-      ws.ping();
-      wss.emit("connection", ws, request);
-    });
-  };
-  const on = (event, handler) => {
-    wss.on(event, handler);
-  };
-  const close = ({ code }) => {
-    wss.close();
-    wss.clients.forEach((ws) => {
-      ws.close(code);
-    });
-    setTimeout(() => {
-      wss.clients.forEach((ws) => {
-        ws.terminate();
-      });
-    }, ms("5s"));
-  };
-  return { wss, handleUpgrade, on, close };
-};
 
 /**
  * @typedef {Object} Instance
@@ -59,7 +15,7 @@ const webSocketServer = () => {
  */
 export const sockets = new Map();
 
-const server = webSocketServer();
+const server = utils.createWebSocketServer();
 server.on("connection", async (ws, req) => {
   try {
     const { query: { token } } = req;
@@ -71,20 +27,8 @@ server.on("connection", async (ws, req) => {
     sockets.set(ws, { user: { id, role, ...remain, token }, changeStream: {} });
 
     // Handle incoming message
-    ws.on("message", async (data) => {
+    ws.onJsonMessage(async ({ action, payload }) => {
       try {
-        if (data.toString() === "ping") {
-          return ws.send("pong");
-        }
-        let message = {};
-        try {
-          message = JSON.parse(data);
-        } catch (error) {
-          const status = "Rejected";
-          const message = "Invalid message";
-          return ws.sendJson({ payload: { status, message } });
-        }
-        const { action, payload } = message;
         let response = {
           status: "Rejected",
           message: "Action not supported",

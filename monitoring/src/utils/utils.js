@@ -1,6 +1,98 @@
+import ms from "ms";
+import { EventEmitter } from "events";
 import { encode, decode } from "safe-base64";
+import WebSocket, { WebSocketServer } from "ws";
 
 const utils = {};
+
+/**
+ * Handle socket common setup with wrapper functions
+ * i.e ping/pong message, send/receive message in Json
+ * @param {WebSocket} ws
+ */
+utils.prepareWebSocket = (ws) => {
+  const eventEmitter = new EventEmitter();
+  ws.isAlive = true;
+  ws.sendJson = (payload) => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(payload));
+    }
+  };
+  ws.onJsonMessage = (listener) => {
+    eventEmitter.on("message", listener);
+  };
+  ws.on("pong", () => ws.isAlive = true);
+  ws.on("message", (data) => {
+    try {
+      if (data.toString() === "ping") {
+        return ws.send("pong");
+      }
+      let message = {};
+      try {
+        message = JSON.parse(data);
+      } catch (error) {
+        const status = "Rejected";
+        const message = "Invalid message";
+        return ws.sendJson({ payload: { status, message } });
+      }
+      eventEmitter.emit("message", message);
+    } catch (error) {
+      const status = "Rejected";
+      const message = "An unknown error occurred";
+      ws.sendJson({ payload: { status, message } });
+      console.log(error);
+    }
+  });
+  ws.on("close", () => {
+    eventEmitter.removeAllListeners("message");
+  });
+};
+
+/**
+ * Instantiate WebSocketServer and
+ * handle common setup with wrapper functions
+ * (i.e ping interval, handle upgrade, and close)
+ * @returns WebSocketServer wrapper
+ */
+utils.createWebSocketServer = () => {
+  const wss = new WebSocketServer({ noServer: true });
+  const pingInterval = setInterval(() => {
+    for (const ws of wss.clients) {
+      if (ws.isAlive) {
+        ws.isAlive = false;
+        ws.ping();
+      } else {
+        ws.terminate();
+      };
+    }
+  }, ms("30s"));
+  wss.on("close", () => {
+    clearInterval(pingInterval);
+  });
+  const handleUpgrade = (request, socket, head) => {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      utils.prepareWebSocket(ws);
+      wss.emit("connection", ws, request);
+    });
+  };
+  const on = (event, handler) => {
+    wss.on(event, handler);
+  };
+  const close = ({ code }) => {
+    wss.close();
+    wss.clients.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close(code);
+      }
+    });
+    setTimeout(() => {
+      wss.clients.forEach((ws) => {
+        ws.terminate();
+      });
+    }, ms("5s"));
+  };
+  return { wss, handleUpgrade, on, close };
+};
 
 /**
  * @param {Object} obj
