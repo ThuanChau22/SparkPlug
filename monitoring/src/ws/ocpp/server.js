@@ -29,12 +29,17 @@ const server = new RPCServer({
   strictMode: true,
 });
 
-server.auth((accept, reject, handshake) => {
-  console.log(`Connection request from station: ${handshake.identity}`);
-  if (handshake.identity) {
+server.auth(async (accept, reject, handshake) => {
+  try {
+    console.log(`Connection request from station: ${handshake.identity}`);
+    await axios.get(`${STATION_API_ENDPOINT}/${handshake.identity}`);
     accept({ sessionId: uuid() });
-  } else {
-    reject(401);
+  } catch (error) {
+    const { status } = error.response || {};
+    if (status === 404) {
+      return reject(status, `Station ${handshake.identity} not found`);
+    }
+    reject(status || 400);
   }
 });
 
@@ -166,7 +171,7 @@ server.on("client", async (client) => {
       console.log(error);
       error.message = "An unknown error occurred";
     }
-    server.close(1000, error.message);
+    client.close({ code: 1000, reason: error.message });
   }
 });
 
