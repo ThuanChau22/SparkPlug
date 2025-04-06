@@ -376,6 +376,13 @@ class Station {
     }
   }
 
+  /**
+   * Clear station state
+   */
+  clear() {
+    this._eventEmitter.removeAllListeners();
+  }
+
   #validateEVSEId(evseId) {
     if (!evseId || evseId < 1 || evseId > this._evses.length) {
       throw new Error(`EVSE ID out of range: ${evseId}`);

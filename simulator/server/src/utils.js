@@ -5,15 +5,15 @@ import WebSocket, { WebSocketServer } from "ws";
 const utils = {};
 
 utils.prepareWebSocket = (ws) => {
-  const event = new EventEmitter();
+  const eventEmitter = new EventEmitter();
   ws.isAlive = true;
   ws.sendJson = (payload) => {
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(payload));
     }
   };
-  ws.onMessage = (listener) => {
-    event.on("message", listener);
+  ws.onJsonMessage = (listener) => {
+    eventEmitter.on("message", listener);
   };
   ws.on("pong", () => ws.isAlive = true);
   ws.on("message", (data) => {
@@ -29,13 +29,16 @@ utils.prepareWebSocket = (ws) => {
         const message = "Invalid message";
         return ws.sendJson({ payload: { status, message } });
       }
-      event.emit("message", message);
+      eventEmitter.emit("message", message);
     } catch (error) {
       const status = "Rejected";
       const message = "An unknown error occurred";
       ws.sendJson({ payload: { status, message } });
       console.log(error);
     }
+  });
+  ws.on("close", () => {
+    eventEmitter.removeAllListeners("message");
   });
 };
 
@@ -66,7 +69,9 @@ utils.createWebSocketServer = () => {
   const close = ({ code }) => {
     wss.close();
     wss.clients.forEach((ws) => {
-      ws.close(code);
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close(code);
+      }
     });
     setTimeout(() => {
       wss.clients.forEach((ws) => {

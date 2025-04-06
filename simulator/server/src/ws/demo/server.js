@@ -14,7 +14,7 @@ import handler, { Action } from "./handler.js";
  * @property {Number} evseCount
  * @property {Number} totalCount
  * @property {Map.<string, WebSocket>} stations
- * @property {EventEmitter} event
+ * @property {EventEmitter} eventEmitter
  * @property {Object} flowCtrl
  */
 /**
@@ -29,7 +29,7 @@ export const state = {
   evseCount: 0,
   totalCount: 0,
   stations: new Map(),
-  event: new EventEmitter(),
+  eventEmitter: new EventEmitter(),
   flowCtrl: {
     count: 0,
     limit: 50,
@@ -37,9 +37,9 @@ export const state = {
   },
 };
 
-state.event.on("starting", handler.starting);
-state.event.on("stopping", handler.stopping);
-state.event.on("progress", (payload) => {
+state.eventEmitter.on("starting", handler.starting);
+state.eventEmitter.on("stopping", handler.stopping);
+state.eventEmitter.on("progress", (payload) => {
   server.wss.clients.forEach((socket) => {
     socket.sendJson({ action: Action.PROGRESS, payload });
   });
@@ -60,7 +60,7 @@ server.on("connection", async (ws) => {
     });
 
     // Handle incoming message
-    ws.onMessage(async ({ action, payload }) => {
+    ws.onJsonMessage(({ action, payload }) => {
       let response = {
         status: "Rejected",
         message: "Action not supported",

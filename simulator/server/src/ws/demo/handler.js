@@ -17,28 +17,28 @@ const handler = {};
 
 handler.simulate = (stationId, evseIds) => {
   const { IDLE, STARTING, STARTED, STOPPING } = state;
-  const { stations, event, flowCtrl } = state;
+  const { stations, eventEmitter, flowCtrl } = state;
 
   const url = `ws://localhost:${PORT}/ws/simulator/${stationId}`;
-  const socket = new WebSocket(url);
-  utils.prepareWebSocket(socket);
-  socket.onMessage(({ action, payload: { status } }) => {
+  const ws = new WebSocket(url);
+  utils.prepareWebSocket(ws);
+  ws.onJsonMessage(({ action, payload: { status } }) => {
     const { SYNCED, CONNECT_CSMS, DISCONNECT_CSMS, PLUGIN_CABLE } = SimulatorAction;
     if (action === SYNCED) {
-      socket.sendJson({ action: CONNECT_CSMS, payload: {} });
+      ws.sendJson({ action: CONNECT_CSMS, payload: {} });
     }
     if (action === CONNECT_CSMS && status === "Accepted") {
       flowCtrl.count -= flowCtrl.count - 1 < 0 ? 0 : 1;
 
-      stations.set(stationId, socket);
+      stations.set(stationId, ws);
       state.evseCount += evseIds.length;
       if (state.status === STOPPING) {
         flowCtrl.count++;
-        return socket.sendJson({ action: DISCONNECT_CSMS, payload: {} });
+        return ws.sendJson({ action: DISCONNECT_CSMS, payload: {} });
       }
       const isDone = state.evseCount === state.totalCount;
       state.status = isDone ? STARTED : STARTING;
-      event.emit("progress", {
+      eventEmitter.emit("progress", {
         status: state.status,
         evseCount: state.evseCount,
         totalCount: state.totalCount,
@@ -50,7 +50,7 @@ handler.simulate = (stationId, evseIds) => {
         });
         if (availability === "Occupied") {
           flowCtrl.count++;
-          socket.sendJson({
+          ws.sendJson({
             action: PLUGIN_CABLE,
             payload: { evseId, connectorId: 1 },
           });
@@ -59,13 +59,13 @@ handler.simulate = (stationId, evseIds) => {
     }
     if (action === DISCONNECT_CSMS && status === "Accepted") {
       flowCtrl.count -= flowCtrl.count - 1 < 0 ? 0 : 1;
-      socket.close();
+      ws.close();
       stations.delete(stationId);
       state.evseCount -= evseIds.length;
       const isDone = flowCtrl.count === 0 && state.evseCount === 0;
       state.status = isDone ? IDLE : STOPPING;
       state.totalCount = isDone ? 0 : state.totalCount;
-      event.emit("progress", {
+      eventEmitter.emit("progress", {
         status: state.status,
         evseCount: state.evseCount,
         totalCount: state.totalCount,
@@ -79,11 +79,11 @@ handler.simulate = (stationId, evseIds) => {
 
 handler.start = (payload) => {
   try {
-    const { IDLE, status, event } = state;
+    const { IDLE, status, eventEmitter } = state;
     if (status !== IDLE) {
       throw new Error("Invalid state to start");
     }
-    event.emit("starting", payload);
+    eventEmitter.emit("starting", payload);
     return { status: "Accepted" };
   } catch (error) {
     const status = "Rejected";
@@ -141,11 +141,11 @@ handler.starting = async (payload) => {
 
 handler.stop = () => {
   try {
-    const { IDLE, STOPPING, status, event } = state;
+    const { IDLE, STOPPING, status, eventEmitter } = state;
     if (status === IDLE || status === STOPPING) {
       throw new Error("Invalid state to stop");
     }
-    event.emit("stopping");
+    eventEmitter.emit("stopping");
     return { status: "Accepted" };
   } catch (error) {
     const status = "Rejected";
