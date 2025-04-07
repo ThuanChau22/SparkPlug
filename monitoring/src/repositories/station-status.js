@@ -169,6 +169,7 @@ schema.loadClass(class {
             count: "$count",
           },
         },
+        { $sort: { status: 1 } },
       ];
       return await this.aggregate(pipeline);
     } catch (error) {

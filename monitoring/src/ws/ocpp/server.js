@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import { RPCServer, createRPCError } from "ocpp-rpc";
 import { v4 as uuid } from "uuid";
 import WebSocket from "ws";
@@ -12,34 +12,37 @@ import provisioning from "./handlers/provisioning.js";
 import remoteControl from "./handlers/remote-control.js";
 import transactions from "./handlers/transactions.js";
 
-/**
- * @typedef {Object} Client
- * @property {RPCServerClient} station
- * @property {Map.<string, string>} idTokenToTransactionId
- * @property {Map.<number, string>} evseIdToTransactionId
- * @property {ChangeStream} changeStream
- */
-/**
- * @type {Map.<string, Client>}
- */
-export const clients = new Map();
-
 const server = new RPCServer({
   protocols: ["ocpp2.0.1"],
   strictMode: true,
 });
 
-server.auth(async (accept, reject, handshake) => {
+server.auth(async (accept, reject, { identity }) => {
   try {
-    console.log(`Connection request from station: ${handshake.identity}`);
-    await axios.get(`${STATION_API_ENDPOINT}/${handshake.identity}`);
-    accept({ sessionId: uuid() });
-  } catch (error) {
-    const { status } = error.response || {};
-    if (status === 404) {
-      return reject(status, `Station ${handshake.identity} not found`);
+    console.log(`Connection request from station: ${identity}`);
+    const [{ data: station }, { data: evses }] = await Promise.all([
+      axios.get(`${STATION_API_ENDPOINT}/${identity}`),
+      axios.get(`${STATION_API_ENDPOINT}/${identity}/evses`),
+    ]);
+    if (evses.length === 0) {
+      const message = `Evses from station ${identity} not found`;
+      throw { code: 404, message };
     }
-    reject(status || 400);
+    accept({
+      sessionId: uuid(),
+      ready: false,
+      waitTime: 1,
+      station, evses,
+      idTokenToTransactionId: new Map(),
+      evseIdToTransactionId: new Map(),
+      changeStream: null,
+    });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      const { status, data } = error.response;
+      return reject(status, data.message);
+    }
+    reject(401);
   }
 });
 
@@ -47,46 +50,42 @@ server.on("client", async (client) => {
   try {
     console.log(`Connected with station: ${client.identity}`);
 
-    clients.set(client.identity, {
-      station: client,
-      idTokenToTransactionId: new Map(),
-      evseIdToTransactionId: new Map(),
-      changeStream: null,
-    });
-
-    let resumeAfter;
-    const watchRequestTransactionEvent = async () => {
-      clients.get(client.identity).changeStream?.close();
-      const changeStream = await StationEvent.watchEvent(
-        {
+    const initialize = async () => {
+      const { session } = client;
+      let resumeAfter;
+      const watchRequestTransactionEvent = async () => {
+        session.changeStream?.close();
+        const changeStream = await StationEvent.watchEvent({
           stationId: parseInt(client.identity),
           source: StationEvent.Sources.Central,
           event: [
             "RequestStartTransaction",
             "RequestStopTransaction",
           ],
-        },
-        { resumeAfter },
-      )
-      changeStream.on("change", async ({ _id, fullDocument }) => {
-        resumeAfter = _id;
-        const { event, payload } = fullDocument;
-        const properties = { client, params: payload };
-        const isConnected = client.state === WebSocket.OPEN;
-        if (isConnected && event === "RequestStartTransaction") {
-          return await remoteControl.requestStartTransactionRequest(properties);
-        }
-        if (isConnected && event === "RequestStopTransaction") {
-          return await remoteControl.requestStopTransactionRequest(properties);
-        }
-      });
-      changeStream.on("error", (error) => {
-        console.log({ name: "WatchRequestTransactionEvent", error });
-        watchRequestTransactionEvent();
-      });
-      clients.get(client.identity).changeStream = changeStream;
+        }, { resumeAfter });
+        changeStream.on("change", async ({ _id, fullDocument }) => {
+          resumeAfter = _id;
+          const { event, payload } = fullDocument;
+          const properties = { client, params: payload };
+          const isConnected = client.state === WebSocket.OPEN;
+          if (isConnected && event === "RequestStartTransaction") {
+            return await remoteControl.requestStartTransactionRequest(properties);
+          }
+          if (isConnected && event === "RequestStopTransaction") {
+            return await remoteControl.requestStopTransactionRequest(properties);
+          }
+        });
+        changeStream.on("error", (error) => {
+          console.log({ name: "WatchRequestTransactionEvent", error });
+          watchRequestTransactionEvent();
+        });
+        session.changeStream = changeStream;
+      };
+      await watchRequestTransactionEvent();
+      session.ready = true;
+      session.waitTime = 1;
     };
-    await watchRequestTransactionEvent();
+    initialize();
 
     client.handle(async (properties) => {
       try {
@@ -126,20 +125,14 @@ server.on("client", async (client) => {
     client.on("close", async () => {
       try {
         const requests = [];
-        const { data } = await axios.get(`${STATION_API_ENDPOINT}/${client.identity}/evses`);
-        if (data.length === 0) {
-          const message = `Evses from station ${client.identity} not found`;
-          throw { code: 404, message };
-        }
-        const { Unavailable } = StationStatus.Status;
-        for (const evse of data) {
+        for (const evse of client.session.evses) {
           for (const index of evse.connector_type.split(" ").keys()) {
             requests.push(
               StationStatus.upsertStatus({
                 stationId: evse.station_id,
                 evseId: evse.evse_id,
                 connectorId: index + 1,
-                status: Unavailable,
+                status: StationStatus.Status.Unavailable,
                 latitude: evse.latitude,
                 longitude: evse.longitude,
                 createdAt: evse.created_at,
@@ -153,16 +146,16 @@ server.on("client", async (client) => {
             source: StationEvent.Sources.Central,
             event: "StatusNotification",
             payload: {
-              connectorStatus: Unavailable,
+              connectorStatus: StationStatus.Status.Unavailable,
               timestamp: new Date().toISOString(),
             },
           })
         );
         await Promise.all(requests);
-        clients.get(client.identity).changeStream?.close();
-        clients.delete(client.identity);
+        client.session.changeStream?.close();
         console.log(`Disconnected with station: ${client.identity}`);
       } catch (error) {
+        error = isAxiosError(error) ? error.response : error;
         console.log({ name: "ClientClose", error });
       }
     });

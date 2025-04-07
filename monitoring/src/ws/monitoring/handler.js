@@ -60,13 +60,10 @@ handler.watchAllEvent = async (ws, payload, response) => {
     const watchAllEvent = async () => {
       const Event = Action.WATCH_ALL_EVENT;
       changeStream[Event]?.close();
-      changeStream[Event] = await StationEvent.watchEvent(
-        {
-          stationId,
-          source: StationEvent.Sources.Station,
-        },
-        { resumeAfter },
-      );
+      changeStream[Event] = await StationEvent.watchEvent({
+        stationId,
+        source: StationEvent.Sources.Station,
+      }, { resumeAfter });
       changeStream[Event].on("change", ({ _id, fullDocument }) => {
         resumeAfter = _id;
         fullDocument = utils.toClient(fullDocument);
@@ -104,13 +101,10 @@ handler.watchStatusEvent = async (ws, payload, response) => {
     const watchStatusEvent = async () => {
       const Event = Action.WATCH_STATUS_EVENT;
       changeStream[Event]?.close();
-      changeStream[Event] = await StationEvent.watchEvent(
-        {
-          stationId: stationIds,
-          event: "StatusNotification",
-        },
-        { resumeAfter },
-      );
+      changeStream[Event] = await StationEvent.watchEvent({
+        stationId: stationIds,
+        event: "StatusNotification",
+      }, { resumeAfter });
       changeStream[Event].on("change", ({ _id, fullDocument }) => {
         resumeAfter = _id;
         fullDocument = utils.toClient(fullDocument);

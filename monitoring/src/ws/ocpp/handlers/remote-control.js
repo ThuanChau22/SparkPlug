@@ -2,7 +2,6 @@ import cryptoJs from "crypto-js";
 import { v4 as uuid } from "uuid";
 
 import StationEvent from "../../../repositories/station-event.js";
-import { clients } from "../server.js";
 
 const remoteControl = {};
 
@@ -13,7 +12,7 @@ remoteControl.requestStartTransactionRequest = async ({ client, params }) => {
     type: "Central",
   };
   const hashedIdToken = cryptoJs.SHA256(JSON.stringify(idToken)).toString();
-  const { idTokenToTransactionId } = clients.get(client.identity);
+  const { idTokenToTransactionId } = client.session;
   idTokenToTransactionId.set(hashedIdToken, "");
   const method = "RequestStartTransaction";
   const response = await client.call(method, {
@@ -36,7 +35,7 @@ remoteControl.requestStartTransactionRequest = async ({ client, params }) => {
 
 remoteControl.requestStopTransactionRequest = async ({ client, params }) => {
   const { evseId } = params;
-  const { evseIdToTransactionId } = clients.get(client.identity);
+  const { evseIdToTransactionId } = client.session;
   const transactionId = evseIdToTransactionId.get(evseId) || "";
   const method = "RequestStopTransaction";
   const response = await client.call(method, { transactionId });
