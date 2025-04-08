@@ -1,13 +1,13 @@
 import axios from "axios";
 import WebSocket from "ws";
+import ms from "ms";
 
 import { PORT, STATION_API_ENDPOINT } from "../../config.js";
 import utils from "../../utils.js";
-import { Action as SimulatorAction } from "../simulator/handler.js";
-import { state } from "./server.js";
+import { Action as Simulator } from "../simulator/handler.js";
+import server, { state } from "./server.js";
 
 export const Action = {
-  SYNCED: "Synced",
   START: "Start",
   PROGRESS: "Progress",
   STOP: "Stop",
@@ -16,74 +16,86 @@ export const Action = {
 const handler = {};
 
 handler.simulate = (stationId, evseIds) => {
-  const { IDLE, STARTING, STARTED, STOPPING } = state;
-  const { stations, eventEmitter, flowCtrl } = state;
+  const { stations, evses, flowCtrl } = state;
 
-  const url = `ws://localhost:${PORT}/ws/simulator/${stationId}`;
-  const ws = new WebSocket(url);
+  const ws = new WebSocket(`ws://localhost:${PORT}/ws/simulator/${stationId}`);
   utils.prepareWebSocket(ws);
-  ws.onJsonMessage(({ action, payload: { status } }) => {
-    const { SYNCED, CONNECT_CSMS, DISCONNECT_CSMS, PLUGIN_CABLE } = SimulatorAction;
-    if (action === SYNCED) {
-      ws.sendJson({ action: CONNECT_CSMS, payload: {} });
-    }
-    if (action === CONNECT_CSMS && status === "Accepted") {
-      flowCtrl.count -= flowCtrl.count - 1 < 0 ? 0 : 1;
-
-      stations.set(stationId, ws);
-      state.evseCount += evseIds.length;
-      if (state.status === STOPPING) {
-        flowCtrl.count++;
-        return ws.sendJson({ action: DISCONNECT_CSMS, payload: {} });
-      }
-      const isDone = state.evseCount === state.totalCount;
-      state.status = isDone ? STARTED : STARTING;
-      eventEmitter.emit("progress", {
-        status: state.status,
-        evseCount: state.evseCount,
-        totalCount: state.totalCount,
+  ws.onJsonMessage(({ action, payload: { status, ...data } }) => {
+    if (action === Simulator.SYNCED) {
+      ws.sendJson({
+        action: Simulator.CONNECT_CSMS,
+        payload: {},
       });
+    }
+
+    if (action === Simulator.CONNECT_CSMS && status === "Accepted") {
+      if (state.status === state.STOPPING) {
+        for (const evseId of evseIds) {
+          flowCtrl.queue.delete(`${stationId},${evseId}`);
+        }
+        flowCtrl.queue.add(stationId);
+        return ws.sendJson({
+          action: Simulator.DISCONNECT_CSMS,
+          payload: {},
+        });
+      }
+      stations.set(stationId, ws);
       for (const evseId of evseIds) {
         const availability = utils.randomize({
           "Available": 0.8,
           "Occupied": 0.2,
         });
         if (availability === "Occupied") {
-          flowCtrl.count++;
           ws.sendJson({
-            action: PLUGIN_CABLE,
+            action: Simulator.PLUGIN_CABLE,
             payload: { evseId, connectorId: 1 },
           });
+          continue;
         }
+        flowCtrl.queue.delete(`${stationId},${evseId}`);
+        evses.add(`${stationId},${evseId}`);
+        const isStarted = evses.size === state.totalCount;
+        state.status = isStarted ? state.STARTED : state.STARTING;
+        server.wss.emit("progress");
       }
     }
-    if (action === DISCONNECT_CSMS && status === "Accepted") {
-      flowCtrl.count -= flowCtrl.count - 1 < 0 ? 0 : 1;
-      ws.close();
-      stations.delete(stationId);
-      state.evseCount -= evseIds.length;
-      const isDone = flowCtrl.count === 0 && state.evseCount === 0;
-      state.status = isDone ? IDLE : STOPPING;
-      state.totalCount = isDone ? 0 : state.totalCount;
-      eventEmitter.emit("progress", {
-        status: state.status,
-        evseCount: state.evseCount,
-        totalCount: state.totalCount,
-      });
+
+    if (action === Simulator.PLUGIN_CABLE && status === "Accepted") {
+      flowCtrl.queue.delete(`${stationId},${data.evseId}`);
+      state.evses.add(`${stationId},${data.evseId}`);
+      const isStarted = state.evses.size === state.totalCount;
+      state.status = isStarted ? state.STARTED : state.STARTING;
+      server.wss.emit("progress");
     }
-    if (action === PLUGIN_CABLE && status === "Accepted") {
-      flowCtrl.count -= flowCtrl.count - 1 < 0 ? 0 : 1;
+
+    if (action === Simulator.DISCONNECT_CSMS && status === "Accepted") {
+      stations.delete(stationId);
+      for (const evseId of evseIds) {
+        evses.delete(`${stationId},${evseId}`);
+      }
+      const isDeleted = flowCtrl.queue.delete(stationId);
+      state.status = state.STOPPING;
+      if (flowCtrl.queue.size === 0) {
+        if (evses.size === 0) {
+          state.status = state.IDLE;
+          state.totalCount = 0;
+        } else if (!isDeleted) {
+          state.status = state.STARTED;
+          state.totalCount = evses.size;
+        }
+      }
+      server.wss.emit("progress");
+      ws.close();
     }
   });
 };
 
 handler.start = (payload) => {
   try {
-    const { IDLE, status, eventEmitter } = state;
-    if (status !== IDLE) {
+    if (state.status !== state.IDLE) {
       throw new Error("Invalid state to start");
     }
-    eventEmitter.emit("starting", payload);
+    server.wss.emit("starting", payload);
     return { status: "Accepted" };
   } catch (error) {
     const status = "Rejected";
@@ -94,8 +106,8 @@ handler.start = (payload) => {
 
 handler.starting = async (payload) => {
   try {
-    const { STARTING, flowCtrl } = state;
-    state.status = STARTING;
+    state.status = state.STARTING;
+    server.wss.emit("progress");
 
     const endpoint = `${STATION_API_ENDPOINT}/evses`;
     const entries = Object.entries({
@@ -117,35 +129,39 @@ handler.starting = async (payload) => {
       evsesByStations.get(station_id).push(evse_id);
     }
 
+    const { flowCtrl } = state;
     const iterator = evsesByStations.entries();
     let entry = iterator.next();
-    while (!entry.done && state.status === STARTING) {
-      if (flowCtrl.count > flowCtrl.limit) {
-        await utils.sleep(flowCtrl.waitMs);
-        flowCtrl.waitMs *= 2;
+    while (!entry.done && state.status === state.STARTING) {
+      if (flowCtrl.queue.size > flowCtrl.limit) {
+        await utils.sleep(ms(`${flowCtrl.waitTime}s`));
+        flowCtrl.waitTime *= 2;
         continue;
       }
-      flowCtrl.waitMs = 1000;
-      flowCtrl.count++;
+      flowCtrl.waitTime = 1;
 
       const [stationId, evseIds] = entry.value;
+      for (const evseId of evseIds) {
+        flowCtrl.queue.add(`${stationId},${evseId}`);
+      }
       handler.simulate(stationId, evseIds);
 
       entry = iterator.next();
     }
   } catch (error) {
     state.status = state.STARTED;
+    server.wss.emit("progress");
     console.log(error);
   }
 }
 
 handler.stop = () => {
   try {
-    const { IDLE, STOPPING, status, eventEmitter } = state;
+    const { IDLE, STOPPING, status } = state;
     if (status === IDLE || status === STOPPING) {
       throw new Error("Invalid state to stop");
     }
-    eventEmitter.emit("stopping");
+    server.wss.emit("stopping");
     return { status: "Accepted" };
   } catch (error) {
     const status = "Rejected";
@@ -156,30 +172,32 @@ handler.stop = () => {
 
 handler.stopping = async () => {
   try {
-    const { STOPPING, stations, flowCtrl } = state;
-    state.status = STOPPING;
-    let isInit = true;
+    state.status = state.STOPPING;
+    server.wss.emit("progress");
 
-    const iterator = stations.values();
+    const { stations, flowCtrl } = state;
+    const iterator = stations.entries();
     let entry = iterator.next();
+    let isInitialized = false;
     while (!entry.done) {
-      if (!isInit && flowCtrl.count > flowCtrl.limit) {
-        await utils.sleep(flowCtrl.waitMs);
-        flowCtrl.waitMs *= 2;
+      if (isInitialized && flowCtrl.queue.size > flowCtrl.limit) {
+        await utils.sleep(ms(`${flowCtrl.waitTime}s`));
+        flowCtrl.waitTime *= 2;
         continue;
       }
-      isInit = false;
-      flowCtrl.waitMs = 1000;
-      flowCtrl.count++;
+      isInitialized = true;
+      flowCtrl.waitTime = 1;
 
-      const socket = entry.value;
-      const action = SimulatorAction.DISCONNECT_CSMS;
+      const [stationId, socket] = entry.value;
+      flowCtrl.queue.add(stationId);
+      const action = Simulator.DISCONNECT_CSMS;
       socket.sendJson({ action, payload: {} });
 
       entry = iterator.next();
     }
   } catch (error) {
     state.status = state.IDLE;
+    server.wss.emit("progress");
     console.log(error);
   }
 };

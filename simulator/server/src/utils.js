@@ -1,11 +1,9 @@
 import ms from "ms";
-import { EventEmitter } from "events";
 import WebSocket, { WebSocketServer } from "ws";
 
 const utils = {};
 
 utils.prepareWebSocket = (ws) => {
-  const eventEmitter = new EventEmitter();
   ws.isAlive = true;
   ws.sendJson = (payload) => {
     if (ws.readyState === WebSocket.OPEN) {
@@ -13,7 +11,7 @@ utils.prepareWebSocket = (ws) => {
     }
   };
   ws.onJsonMessage = (listener) => {
-    eventEmitter.on("message", listener);
+    ws.on("message-json", listener);
   };
   ws.on("pong", () => ws.isAlive = true);
   ws.on("message", (data) => {
@@ -29,16 +27,13 @@ utils.prepareWebSocket = (ws) => {
         const message = "Invalid message";
         return ws.sendJson({ payload: { status, message } });
       }
-      eventEmitter.emit("message", message);
+      ws.emit("message-json", message);
     } catch (error) {
       const status = "Rejected";
       const message = "An unknown error occurred";
       ws.sendJson({ payload: { status, message } });
       console.log(error);
     }
-  });
-  ws.on("close", () => {
-    eventEmitter.removeAllListeners("message");
   });
 };
 

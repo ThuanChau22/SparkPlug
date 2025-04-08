@@ -14,7 +14,7 @@ import handler, { Action } from "./handler.js";
  * @property {Set<WebSocket>} sockets
  */
 /**
- * @type {Map.<string, Instance>}
+ * @type {Map<string, Instance>}
  */
 const stations = new Map();
 

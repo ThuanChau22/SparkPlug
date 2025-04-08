@@ -1,24 +1,25 @@
-import { EventEmitter } from "events";
 import WebSocket from "ws";
 
 import utils from "../../utils.js";
 import handler, { Action } from "./handler.js";
 
 /**
- * @typedef {Object} State
+ * @typedef {Object} ServerState
  * @property {String} IDLE
  * @property {String} STARTING
  * @property {String} STARTED
  * @property {String} STOPPING
  * @property {String} status
- * @property {Number} evseCount
  * @property {Number} totalCount
- * @property {Map.<string, WebSocket>} stations
- * @property {EventEmitter} eventEmitter
+ * @property {Map<String, WebSocket>} stations
+ * @property {Set<String>} evses
  * @property {Object} flowCtrl
+ * @property {Set<String>} flowCtrl.queue
+ * @property {Number} flowCtrl.limit
+ * @property {Number} flowCtrl.waitTime
  */
 /**
- * @type {State}
+ * @type {ServerState}
  */
 export const state = {
   IDLE: "Idle",
@@ -26,37 +27,41 @@ export const state = {
   STARTED: "Started",
   STOPPING: "Stopping",
   status: "Idle",
-  evseCount: 0,
   totalCount: 0,
   stations: new Map(),
-  eventEmitter: new EventEmitter(),
+  evses: new Set(),
   flowCtrl: {
-    count: 0,
+    queue: new Set(),
     limit: 50,
-    waitMs: 1000,
+    waitTime: 1,
   },
 };
 
-state.eventEmitter.on("starting", handler.starting);
-state.eventEmitter.on("stopping", handler.stopping);
-state.eventEmitter.on("progress", (payload) => {
-  server.wss.clients.forEach((socket) => {
-    socket.sendJson({ action: Action.PROGRESS, payload });
-  });
-});
-
 const server = utils.createWebSocketServer();
+server.on("starting", handler.starting);
+server.on("stopping", handler.stopping);
+server.on("progress", () => {
+  for (const ws of server.wss.clients) {
+    ws.sendJson({
+      action: Action.PROGRESS,
+      payload: {
+        status: state.status,
+        evseCount: state.evses.size,
+        totalCount: state.totalCount,
+      }
+    });
+  }
+});
 server.on("connection", async (ws) => {
   try {
     // Syncing state
-    const { status, evseCount, totalCount } = state;
     ws.sendJson({
-      action: Action.SYNCED,
+      action: Action.PROGRESS,
       payload: {
-        status,
-        evseCount,
-        totalCount,
-      },
+        status: state.status,
+        evseCount: state.evses.size,
+        totalCount: state.totalCount,
+      }
     });
 
     // Handle incoming message
