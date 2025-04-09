@@ -177,6 +177,28 @@ export const siteDeleteById = createAsyncThunk(
   },
 );
 
+export const siteSearchLocation = createAsyncThunk(
+  `${siteSlice.name}/locations`,
+  async ({
+    city, state, country, limit,
+    zipCode: zip_code,
+  } = {}, { dispatch, getState }) => {
+    try {
+      const endpoint = `${SiteAPI}/locations`;
+      const params = toUrlParams({
+        limit, city, state,
+        zip_code, country,
+      });
+      const query = `${endpoint}${params ? `?${params}` : ""}`;
+      const config = await tokenConfig({ dispatch, getState });
+      const { data } = await apiInstance.get(query, config);
+      return data;
+    } catch (error) {
+      handleError({ error, dispatch });
+    }
+  },
+);
+
 export const selectSite = (state) => state[siteSlice.name];
 
 const siteSelectors = siteEntityAdapter.getSelectors(selectSite);

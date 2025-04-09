@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -15,8 +15,7 @@ import {
 
 import FormInput from "components/FormInput";
 import FormInputAutocomplete from "components/FormInputAutocomplete";
-import { apiInstance, toUrlParams, handleError } from "redux/api";
-import { selectAuthAccessToken } from "redux/auth/authSlice";
+import { siteSearchLocation } from "redux/site/siteSlice";
 import {
   filterDashboardStateSetAll,
   filterDashboardStateClearAll,
@@ -24,35 +23,11 @@ import {
 } from "redux/filter/dashboardSlice";
 
 const FilterModal = ({ isOpen, onClose }) => {
-  const SiteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
-
-  const token = useSelector(selectAuthAccessToken);
-
   const filter = useSelector(selectFilterDashboardEntities);
 
   const [formInput, setFormInput] = useState(filter);
 
   const dispatch = useDispatch();
-
-  const fetchLocations = useCallback(async ({
-    city, state, country,
-    zipCode: zip_code,
-  }) => {
-    try {
-      const endpoint = `${SiteAPI}/locations`;
-      const params = toUrlParams({
-        city, state,
-        zip_code, country,
-        limit: 5,
-      });
-      const query = `${endpoint}${params ? `?${params}` : ""}`;
-      const headers = { Authorization: `Bearer ${token}` };
-      const { data } = await apiInstance.get(query, { headers });
-      return data.map((value) => ({ value, label: value.toString() }));
-    } catch (error) {
-      handleError(error, dispatch);
-    }
-  }, [SiteAPI, token, dispatch]);
 
   const isViewByInterval = () => {
     const { text, options } = formInput.viewBy;
@@ -62,6 +37,12 @@ const FilterModal = ({ isOpen, onClose }) => {
   const isViewByStation = () => {
     const { text, options } = formInput.viewBy;
     return text === options.station;
+  };
+
+  const handleSearchLocation = async (params) => {
+    params = { ...params, limit: 5 };
+    const locations = await dispatch(siteSearchLocation(params)).unwrap();
+    return locations.map((value) => ({ value, label: value.toString() }));
   };
 
   const handleInputChange = ({ target }) => {
@@ -134,7 +115,7 @@ const FilterModal = ({ isOpen, onClose }) => {
                 placeholder="Enter city"
                 label={formInput.city.label}
                 defaultInputValue={formInput.city.value}
-                onSearch={(city) => fetchLocations({ city })}
+                onSearch={(city) => handleSearchLocation({ city })}
                 onChange={([selected]) => handleInputChange({
                   target: {
                     name: "city",
@@ -150,7 +131,7 @@ const FilterModal = ({ isOpen, onClose }) => {
                 placeholder="Enter state"
                 label={formInput.state.label}
                 defaultInputValue={formInput.state.value}
-                onSearch={(state) => fetchLocations({ state })}
+                onSearch={(state) => handleSearchLocation({ state })}
                 onChange={([selected]) => handleInputChange({
                   target: {
                     name: "state",
@@ -166,7 +147,7 @@ const FilterModal = ({ isOpen, onClose }) => {
                 placeholder="Enter zip code"
                 label={formInput.zipCode.label}
                 defaultInputValue={formInput.zipCode.value}
-                onSearch={(zipCode) => fetchLocations({ zipCode })}
+                onSearch={(zipCode) => handleSearchLocation({ zipCode })}
                 onChange={([selected]) => handleInputChange({
                   target: {
                     name: "zipCode",
@@ -182,7 +163,7 @@ const FilterModal = ({ isOpen, onClose }) => {
                 placeholder="Enter country"
                 label={formInput.country.label}
                 defaultInputValue={formInput.country.value}
-                onSearch={(country) => fetchLocations({ country })}
+                onSearch={(country) => handleSearchLocation({ country })}
                 onChange={([selected]) => handleInputChange({
                   target: {
                     name: "country",
