@@ -161,7 +161,7 @@ repository.getUsers = async ({ filter, select, sort, limit, cursor } = {}) => {
 
 repository.getUserById = async (userId, { select = { password: 0 } } = {}) => {
   const params = { filter: { id: userId }, select, limit: 1 };
-  const { users: [user] } = await repository.getUsers(params);
+  const { data: [user] } = await repository.getUsers(params);
   return user;
 };
 

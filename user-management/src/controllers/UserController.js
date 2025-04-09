@@ -11,10 +11,10 @@ export const getUsers = async (req, res) => {
     select.password = 0;
     const sort = { created_at: 1, id: 1 };
     const options = { filter, select, sort, limit, cursor };
-    const data = await User.getUsers(options);
+    const users = await User.getUsers(options);
     res.status(200).json({
-      users: data.users,
-      cursor: data.cursor,
+      data: users.data,
+      cursor: users.cursor,
     });
   } catch (error) {
     return utils.handleError(res, error);
