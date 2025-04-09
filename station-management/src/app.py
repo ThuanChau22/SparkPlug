@@ -90,6 +90,12 @@ def get_evses():
     return evse.get_evses()
 
 
+@app.route("/api/stations/evses/count", methods=["GET"])
+@auth.require_permission("anonymous", "staff", "owner", "driver")
+def get_evse_count():
+    return evse.get_evse_count()
+
+
 @app.route("/api/stations/<int:station_id>/evses", methods=["GET"])
 @auth.require_permission("anonymous", "staff", "owner", "driver")
 def get_evses_by_station(station_id):

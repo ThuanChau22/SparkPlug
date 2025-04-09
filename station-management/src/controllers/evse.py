@@ -32,6 +32,21 @@ def get_evses():
         return handle_error(e)
 
 
+def get_evse_count():
+    def session(connection):
+        filter = request.args.to_dict()
+        if request.auth["role"] == "owner":
+            filter["owner_id"] = request.auth["user_id"]
+        filter.update(extract_args_search(filter))
+        filter.update(extract_args_lat_lng(filter))
+        return evse.get_evse_count(connection, filter)
+
+    try:
+        return transaction(session), 200
+    except Exception as e:
+        return handle_error(e)
+
+
 def get_evses_by_station(station_id):
     def session(connection):
         filter = {"station_id": station_id}

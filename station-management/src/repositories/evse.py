@@ -31,7 +31,7 @@ def get_evses(connection, filter={}, select={}, sort={}, limit=None, cursor=None
     query = f"{query} FROM {Table.EvseView.value}"
 
     query = where_fields_equal(query, query_values, filter, field_list)
-    
+
     query = where_search_match(query, query_values, search_fields, search_term)
 
     query = where_lat_lng_range(
@@ -55,6 +55,32 @@ def get_evses(connection, filter={}, select={}, sort={}, limit=None, cursor=None
         "data": evses or [],
         "cursor": create_cursor(evses, sort, limit),
     }
+
+
+def get_evse_count(connection, filter={}):
+    query_values = []
+
+    query = f"SELECT count(*) as count FROM {Table.EvseView.value}"
+
+    field_list = get_fields(connection, Table.EvseView.value)
+    query = where_fields_equal(query, query_values, filter, field_list)
+
+    search_fields = ["site_name", "street_address", "city"]
+    search_term = filter.get("search")
+    query = where_search_match(query, query_values, search_fields, search_term)
+
+    query = where_lat_lng_range(
+        query,
+        query_values,
+        filter.get("lat_lng_min"),
+        filter.get("lat_lng_max"),
+    )
+
+    with connection.cursor() as cursor:
+        cursor.execute(query, query_values)
+        evse = cursor.fetchone()
+
+    return evse
 
 
 def get_evse_by_id(connection, entry_id):
