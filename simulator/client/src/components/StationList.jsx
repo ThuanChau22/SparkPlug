@@ -43,9 +43,9 @@ const StationList = () => {
   }, []);
 
   const [listHeight, setListHeight] = useState(0);
-  useWindowResize(() => {
+  useWindowResize(useCallback(() => {
     setListHeight(window.innerHeight - headerHeight - titleHeight - footerHeight);
-  });
+  }, [headerHeight, titleHeight, footerHeight]));
 
   const [
     searchInput,
