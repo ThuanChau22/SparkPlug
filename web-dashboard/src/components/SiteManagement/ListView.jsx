@@ -42,9 +42,9 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
   const [listCursor, setListCursor] = useState({});
 
   const [listHeight, setListHeight] = useState(0);
-  useWindowResize(() => {
+  useWindowResize(useCallback(() => {
     setListHeight(window.innerHeight - refHeight);
-  });
+  }, [refHeight]));
 
   const { latLngMin, latLngMax } = useMemo(() => {
     const latLngMin = utils.toLatLngString(mapLowerBound);

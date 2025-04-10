@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useCallback, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { CFooter } from "@coreui/react";
 
@@ -8,9 +8,9 @@ import { layoutStateSetFooterHeight } from "redux/layout/layoutSlice";
 const Footer = () => {
   const footerRef = useRef({});
   const dispatch = useDispatch();
-  useWindowResize(() => {
+  useWindowResize(useCallback(() => {
     dispatch(layoutStateSetFooterHeight(footerRef.current.offsetHeight));
-  });
+  }, [dispatch]));
   return (
     <CFooter ref={footerRef} className="d-inline text-center">
       <small>SparkPlug &copy; {new Date().getFullYear()} by CMPE-295A</small>
