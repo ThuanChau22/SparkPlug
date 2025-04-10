@@ -24,7 +24,6 @@ const Evse = ({ evse }) => {
   const meterTimeoutRef = useRef(0);
   const [meterValue, setMeterValue] = useState(0);
   const [rfid, setRFID] = useState("");
-
   useEffect(() => {
     setMeterValue(evse.meterValue);
     clearTimeout(meterTimeoutRef.current);
@@ -32,7 +31,7 @@ const Evse = ({ evse }) => {
       setMeterValue(0);
     }, ms("5s"));
   }, [evse.meterValue]);
-
+  useEffect(() => () => clearTimeout(meterTimeoutRef.current), []);
   return (
     <CCard className="px-3 pb-3 shadow-sm">
       <CCardBody>
