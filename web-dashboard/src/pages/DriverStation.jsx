@@ -7,12 +7,14 @@ import {
   CCardTitle,
   CCardBody,
 } from "@coreui/react";
+import ms from "ms";
 
 import StickyContainer from "components/StickyContainer";
 import DriverStationListView from "components/DriverStation/ListView";
 import DriverStationMapView from "components/DriverStation/MapView";
 import DriverStationDetailsModal from "components/DriverStation/DetailsModal";
-import useStationEventSocket, { Action } from "hooks/useStationEventSocket";
+import useBatchUpdate from "hooks/useBatchUpdate";
+import useStationEventSocket from "hooks/useStationEventSocket";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
   selectMapLowerBound,
@@ -30,9 +32,12 @@ import {
   selectEvseList,
 } from "redux/evse/evseSlice";
 import {
+  evseStatusStateUpsertMany,
+  evseStatusStateUpsertById,
   evseStatusStateDeleteMany,
   evseStatusStateClear,
   selectEvseStatusList,
+  selectEvseStatusEntities,
 } from "redux/evse/evseStatusSlice";
 import utils from "utils";
 
@@ -46,6 +51,7 @@ const DriverStation = () => {
   const stationList = useSelector(selectStationList);
   const evseList = useSelector(selectEvseList);
   const evseStatusList = useSelector(selectEvseStatusList);
+  const evseStatusEntities = useSelector(selectEvseStatusEntities);
 
   const [titleHeight, setTitleHeight] = useState(0);
   const titleRef = useCallback((node) => {
@@ -59,12 +65,43 @@ const DriverStation = () => {
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [stationId, setStationId] = useState(null);
 
-  useStationEventSocket({
-    action: Action.WatchStatusEvent,
-    payload: { stationIds },
+  const dispatch = useDispatch();
+
+  const [updates, setUpdateTimeout] = useBatchUpdate({
+    callback: useCallback(({ stationId, payload }) => {
+      const { evseId, connectorStatus } = payload;
+      if (evseId) {
+        dispatch(evseStatusStateUpsertById({
+          stationId, evseId,
+          status: connectorStatus,
+        }));
+      } else if (evseStatusEntities[stationId]) {
+        dispatch(evseStatusStateUpsertMany(
+          evseStatusEntities[stationId].map(({ evseId }) => ({
+            stationId, evseId,
+            status: connectorStatus,
+          }))
+        ));
+      }
+    }, [evseStatusEntities, dispatch]),
+    delay: ms("5s"),
   });
 
-  const dispatch = useDispatch();
+  const { watchStatusEvent } = useStationEventSocket({
+    onWatchStatusEvent: useCallback((payload) => {
+      updates.current.push(payload);
+    }, [updates]),
+  });
+
+  useEffect(() => {
+    if (stationIds.length !== 0) {
+      watchStatusEvent(stationIds);
+    }
+  }, [watchStatusEvent, stationIds]);
+
+  useEffect(() => {
+    setUpdateTimeout();
+  }, [setUpdateTimeout]);
 
   useEffect(() => {
     const stationIds = utils.outOfBoundResources(stationList, {
@@ -86,7 +123,7 @@ const DriverStation = () => {
     const evseStatusIds = utils.outOfBoundResources(evseStatusList, {
       lowerBound: mapLowerBound,
       upperBound: mapUpperBound,
-    }).map(({ station_id, evse_id }) => ({ station_id, evse_id }));
+    }).map(({ stationId, evseId }) => ({ stationId, evseId }));
     dispatch(evseStatusStateDeleteMany(evseStatusIds));
   }, [evseStatusList, mapLowerBound, mapUpperBound, dispatch]);
 

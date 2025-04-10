@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   CCard,
   CCardBody,
@@ -10,11 +10,14 @@ import {
 import LoadingIndicator from "components/LoadingIndicator";
 import MonitorEvseListItem from "components/StationMonitor/EvseListItem";
 import useFetchData from "hooks/useFetchData";
+import useStationEventSocket from "hooks/useStationEventSocket";
 import {
   evseGetByStation,
   selectEvseByStation,
 } from "redux/evse/evseSlice";
 import {
+  evseStatusStateUpsertMany,
+  evseStatusStateUpsertById,
   evseStatusGetByStation,
   selectEvseStatusByStation,
 } from "redux/evse/evseStatusSlice";
@@ -37,6 +40,27 @@ const StationMonitorEvseList = ({ stationId }) => {
     evseLoadState.loading
     && evseStatusLoadState.loading
   ), [evseLoadState, evseStatusLoadState]);
+
+  const dispatch = useDispatch();
+
+  useStationEventSocket({
+    onWatchStatusEvent: useCallback(({ stationId, payload }) => {
+      const { evseId, connectorStatus } = payload;
+      if (evseId) {
+        dispatch(evseStatusStateUpsertById({
+          stationId, evseId,
+          status: connectorStatus,
+        }));
+      } else {
+        dispatch(evseStatusStateUpsertMany(
+          evseStatusList.map(({ evseId }) => ({
+            stationId, evseId,
+            status: connectorStatus,
+          }))
+        ));
+      }
+    }, [evseStatusList, dispatch]),
+  });
 
   return (
     <CCard

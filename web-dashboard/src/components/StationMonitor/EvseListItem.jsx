@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import ms from "ms";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSelector } from "react-redux";
 import { CButton } from "@coreui/react";
 import { EvStation } from "@mui/icons-material";
+import ms from "ms";
 
 import EvseAvailabilityStatus from "components/EvseAvailabilityStatus";
 import useStationEventSocket from "hooks/useStationEventSocket";
 import {
   EvseStatus,
-  evseStatusStateUpsertById,
   selectEvseStatusById,
 } from "redux/evse/evseStatusSlice";
 
@@ -18,9 +17,7 @@ const StationMonitorEvseListItem = ({ stationId, evseId }) => {
     evseId,
   }));
 
-  const { remoteStart, remoteStop } = useStationEventSocket();
-
-  const meterTimeout = useRef({});
+  const meterTimeoutRef = useRef({});
 
   const [meterValue, setMeterValue] = useState(evseStatus?.meterValue || 0);
 
@@ -29,22 +26,31 @@ const StationMonitorEvseListItem = ({ stationId, evseId }) => {
     return ![Available, Occupied].includes(evseStatus?.status);
   }, [evseStatus]);
 
-  const dispatch = useDispatch();
+  const { remoteStart, remoteStop } = useStationEventSocket({
+    onWatchAllEvent: useCallback((payload) => {
+      if (
+        payload.event === "TransactionEvent"
+        && stationId === payload.stationId
+        && evseId === payload.payload.evse.id
+        && payload.payload.meterValue
+      ) {
+        const [meter] = payload.payload.meterValue;
+        const [sample] = meter.sampledValue;
+        setMeterValue(sample.value);
+      }
+    }, [stationId, evseId]),
+  });
 
   useEffect(() => {
-    if (evseStatus?.meterValue) {
-      setMeterValue(evseStatus.meterValue);
-      clearTimeout(meterTimeout.current);
-      meterTimeout.current = setTimeout(() => {
+    if (meterValue) {
+      clearTimeout(meterTimeoutRef.current);
+      meterTimeoutRef.current = setTimeout(() => {
         setMeterValue(0);
-        dispatch(evseStatusStateUpsertById({
-          station_id: evseStatus.station_id,
-          evse_id: evseStatus.evse_id,
-          meterValue: 0,
-        }));
       }, ms("5s"));
     }
-  }, [evseStatus, meterTimeout, dispatch]);
+  }, [meterValue, meterTimeoutRef]);
+
+  useEffect(() => () => clearTimeout(meterTimeoutRef.current), []);
 
   return (
     <div className="d-flex justify-content-between">
