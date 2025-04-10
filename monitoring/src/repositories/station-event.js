@@ -69,10 +69,8 @@ schema.loadClass(class {
 
       // Filter
       const $match = {};
-      if (filter) {
-        for (const [field, value] of Object.entries(filter)) {
-          $match[field] = utils.isInteger(value) ? parseInt(value) : value;
-        }
+      for (const [field, value] of Object.entries(filter || {})) {
+        $match[field] = value;
       }
 
       // Sort
@@ -179,7 +177,7 @@ schema.loadClass(class {
         },
       );
       changeStream.on("error", (error) => {
-        console.log({ name: "WatchEvent", error });
+        console.log({ name: "WatchEventChange", error });
       });
       return changeStream;
     } catch (error) {

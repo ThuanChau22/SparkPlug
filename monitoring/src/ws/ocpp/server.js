@@ -20,11 +20,11 @@ const server = new RPCServer({
 server.auth(async (accept, reject, { identity }) => {
   try {
     console.log(`Connection request from station: ${identity}`);
-    const [{ data: station }, { data: evses }] = await Promise.all([
+    const [_, { data }] = await Promise.all([
       axios.get(`${STATION_API_ENDPOINT}/${identity}`),
       axios.get(`${STATION_API_ENDPOINT}/${identity}/evses`),
     ]);
-    if (evses.length === 0) {
+    if (data.length === 0) {
       const message = `Evses from station ${identity} not found`;
       throw { code: 404, message };
     }
@@ -32,17 +32,20 @@ server.auth(async (accept, reject, { identity }) => {
       sessionId: uuid(),
       ready: false,
       waitTime: 1,
-      station, evses,
+      evses: data,
       idTokenToTransactionId: new Map(),
       evseIdToTransactionId: new Map(),
       changeStream: null,
     });
   } catch (error) {
-    if (isAxiosError(error)) {
+    if (error.response) {
       const { status, data } = error.response;
       return reject(status, data.message);
+    } else if (error.code) {
+      return reject(error.code, error.message);
     }
-    reject(401);
+    console.log({ name: "ClientAuth", error });
+    reject(400, "An unknown error occurred");
   }
 });
 
@@ -133,6 +136,9 @@ server.on("client", async (client) => {
                 evseId: evse.evse_id,
                 connectorId: index + 1,
                 status: StationStatus.Status.Unavailable,
+                rdbId: evse.id,
+                siteId: evse.site_id,
+                ownerId: evse.owner_id,
                 latitude: evse.latitude,
                 longitude: evse.longitude,
                 createdAt: evse.created_at,
@@ -161,7 +167,7 @@ server.on("client", async (client) => {
     });
   } catch (error) {
     if (!error.code) {
-      console.log(error);
+      console.log({ name: "ClientConnect", error });
       error.message = "An unknown error occurred";
     }
     client.close({ code: 1000, reason: error.message });

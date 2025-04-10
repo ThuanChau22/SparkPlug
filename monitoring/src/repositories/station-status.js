@@ -30,6 +30,21 @@ const schema = mongoose.Schema({
     enum: Object.values(Status),
     required: true,
   },
+  rdbId: {
+    type: Number,
+    required: true,
+    index: true,
+  },
+  siteId: {
+    type: Number,
+    required: true,
+    index: true,
+  },
+  ownerId: {
+    type: Number,
+    required: true,
+    index: true,
+  },
   location: {
     type: {
       type: String,
@@ -63,6 +78,7 @@ schema.loadClass(class {
         evseId: "$evseId",
         connectorId: "$connectorId",
         status: "$status",
+        rdbId: "$rdbId",
         latitude: { $arrayElemAt: ["$location.coordinates", 1] },
         longitude: { $arrayElemAt: ["$location.coordinates", 0] },
         createdAt: "$createdAt",
@@ -72,8 +88,8 @@ schema.loadClass(class {
       const $match = {};
       if (filter) {
         // Distance
-        const { lat_lng_origin, lat_lng_min, lat_lng_max, ...remain } = filter;
-        const [latOrigin, lngOrigin] = lat_lng_origin?.split(",") || [];
+        const { latLngOrigin, latLngMin, latLngMax, ...remain } = filter;
+        const [latOrigin, lngOrigin] = latLngOrigin?.split(",") || [];
         if (latOrigin && lngOrigin) {
           const coordinates = [parseFloat(lngOrigin), parseFloat(latOrigin)];
           pipeline.push({
@@ -88,8 +104,8 @@ schema.loadClass(class {
         }
 
         // Location
-        const [latMin, lngMin] = lat_lng_min?.split(",") || [];
-        const [latMax, lngMax] = lat_lng_max?.split(",") || [];
+        const [latMin, lngMin] = latLngMin?.split(",") || [];
+        const [latMax, lngMax] = latLngMax?.split(",") || [];
         if ((latMin && lngMin) || (latMax && lngMax)) {
           const lowerBound = [parseFloat(lngMin || -180), parseFloat(latMin || -90)];
           const upperBound = [parseFloat(lngMax || 180), parseFloat(latMax || 90)];
@@ -98,7 +114,8 @@ schema.loadClass(class {
 
         // Remaining
         for (const [field, value] of Object.entries(remain)) {
-          $match[field] = utils.isInteger(value) ? parseInt(value) : value;
+          $match[field] = value;
+          $project[field] = `$${field}`;
         }
       }
 
@@ -108,16 +125,16 @@ schema.loadClass(class {
         for (const [field, value] of Object.entries(sort)) {
           $sort[field] = value;
         }
-        const hasId = "stationId" in $sort;
+        const hasRdbId = "rdbId" in $sort;
         const hasCreatedAt = "createdAt" in $sort;
-        if (!hasId && !hasCreatedAt) {
+        if (!hasRdbId && !hasCreatedAt) {
           $sort["createdAt"] = 1;
         }
-        if (!hasId) {
-          $sort["stationId"] = 1;
+        if (!hasRdbId) {
+          $sort["rdbId"] = 1;
         }
       } else {
-        Object.assign($sort, { createdAt: 1, stationId: 1 });
+        Object.assign($sort, { createdAt: 1, rdbId: 1 });
       }
 
       // Paging Read
@@ -153,9 +170,14 @@ schema.loadClass(class {
     }
   }
 
-  static async getStatusCount() {
+  static async getStatusCount({ filter } = {}) {
     try {
+      const $match = {};
+      for (const [field, value] of Object.entries(filter || {})) {
+        $match[field] = value;
+      }
       const pipeline = [
+        { $match },
         {
           $group: {
             _id: "$status",

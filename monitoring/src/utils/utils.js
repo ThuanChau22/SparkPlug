@@ -189,7 +189,7 @@ utils.extractCursor = (cursor, sort) => {
   for (let [field, value] of params.reverse()) {
     value = utils.isIsoDate(value) ? new Date(value) : value;
     condition = utils.isObjectEmpty(condition)
-      ? { field: value }
+      ? { [field]: { $gt: value } }
       : {
         $or: [
           { [field]: { $gt: value } },

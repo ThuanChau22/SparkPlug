@@ -30,7 +30,7 @@ router.get(
     try {
       const { id } = req.params;
       const { sort_by, cursor, limit, ...filter } = req.query;
-      filter.stationId = id;
+      filter.stationId = parseInt(id);
       const params = { filter, sort: sort_by, cursor, limit };
       const events = await StationEvent.getEvents(params);
       res.status(200).json(utils.toClient(events));
@@ -63,9 +63,11 @@ router.get(
   "/station-status/count",
   authenticate,
   authorizeRole(["staff", "owner", "driver"]),
-  async (_, res) => {
+  handleParameters,
+  async (req, res) => {
     try {
-      const count = await StationStatus.getStatusCount();
+      const filter = req.query;
+      const count = await StationStatus.getStatusCount({ filter });
       res.status(200).json(utils.toClient(count));
     } catch (error) {
       const { message } = error;

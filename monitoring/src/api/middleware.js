@@ -50,11 +50,12 @@ export const authorizeResource = async (req, res, next) => {
 };
 
 export const handleParameters = async (req, _, next) => {
-  const { lat_lng_min, lat_lng_max, ...remain } = req.query;
-  const { lat_lng_origin, sort_by, limit, ...filter } = remain;
+  const { sort_by, limit, ...filter } = req.query;
 
   for (const [field, value] of Object.entries(filter)) {
-    req.query[utils.snakeToCamel(field)] = value;
+    delete req.query[field];
+    const key = utils.snakeToCamel(field);
+    req.query[key] = utils.isInteger(value) ? parseInt(value) : value;
   }
 
   if (sort_by) {

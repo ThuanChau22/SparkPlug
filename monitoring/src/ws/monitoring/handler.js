@@ -57,12 +57,14 @@ handler.watchAllEvent = async (ws, payload, response) => {
     await axios.get(`${STATION_API_ENDPOINT}/${stationId}`, { headers });
 
     let resumeAfter;
+    let requestAttempts = 0;
     const watchAllEvent = async () => {
+      requestAttempts++;
       const Event = Action.WATCH_ALL_EVENT;
       changeStream[Event]?.close();
       changeStream[Event] = await StationEvent.watchEvent({
         stationId,
-        source: StationEvent.Sources.Station,
+        // source: StationEvent.Sources.Station,
       }, { resumeAfter });
       changeStream[Event].on("change", ({ _id, fullDocument }) => {
         resumeAfter = _id;
@@ -71,9 +73,13 @@ handler.watchAllEvent = async (ws, payload, response) => {
         response({ id, stationId, event, payload, createdAt });
       });
       changeStream[Event].on("error", (error) => {
-        console.log({ name: "WatchAllEvent", error });
+        if (requestAttempts === 3) {
+          throw error;
+        }
+        console.log({ name: "WatchAllEventChange", error });
         watchAllEvent();
       });
+      requestAttempts = 0;
     };
     await watchAllEvent();
 
@@ -84,25 +90,27 @@ handler.watchAllEvent = async (ws, payload, response) => {
       const message = error.response.data;
       return { status, message };
     }
-    if (error.code === 403) {
-      const { message } = error;
-      return { status, message };
-    }
-    console.log(error);
+    console.log({ name: "WatchStatusEventRequest", error });
   }
 };
 
 handler.watchStatusEvent = async (ws, payload, response) => {
   try {
-    const { stationIds } = payload;
+    const { stationId } = payload;
+    if (stationId && utils.toArray(stationId).length === 0) {
+      const message = "stationId list cannot be empty";
+      throw { code: 400, message };
+    }
     const { changeStream } = sockets.get(ws);
 
     let resumeAfter;
+    let requestAttempts = 0;
     const watchStatusEvent = async () => {
+      requestAttempts++;
       const Event = Action.WATCH_STATUS_EVENT;
       changeStream[Event]?.close();
       changeStream[Event] = await StationEvent.watchEvent({
-        stationId: stationIds,
+        stationId,
         event: "StatusNotification",
       }, { resumeAfter });
       changeStream[Event].on("change", ({ _id, fullDocument }) => {
@@ -112,9 +120,13 @@ handler.watchStatusEvent = async (ws, payload, response) => {
         response({ id, stationId, event, payload, createdAt });
       });
       changeStream[Event].on("error", (error) => {
-        console.log({ name: "WatchStatusEvent", error });
+        if (requestAttempts === 3) {
+          throw error;
+        }
+        console.log({ name: "WatchStatusEventChange", error });
         watchStatusEvent();
       });
+      requestAttempts = 0;
     };
     await watchStatusEvent();
 
@@ -125,11 +137,11 @@ handler.watchStatusEvent = async (ws, payload, response) => {
       const message = error.response.data;
       return { status, message };
     }
-    if (error.code === 403) {
-      const { message } = error;
+    if (error.code) {
+      const message = error.message;
       return { status, message };
     }
-    console.log(error);
+    console.log({ name: "WatchStatusEventRequest", error });
   }
 }
 

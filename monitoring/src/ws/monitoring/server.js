@@ -11,7 +11,7 @@ import handler, { Action } from "./handler.js";
  * @property {Object.<String, ChangeStream>} changeStream
  */
 /**
- * @type {Map.<WebSocket, Instance>}
+ * @type {Map<WebSocket, Instance>}
  */
 export const sockets = new Map();
 
@@ -40,13 +40,12 @@ server.on("connection", async (ws, req) => {
           response = await handler.remoteStop(payload);
         }
         if (action === Action.WATCH_ALL_EVENT) {
-          if (role !== "staff" && role !== "owner") {
-            response.message = "Access denied";
-            return ws.sendJson({ action, payload: response });
+          response.message = "Access denied";
+          if (role === "staff" || role === "owner") {
+            response = await handler.watchAllEvent(ws, payload, (payload) => {
+              ws.sendJson({ action, payload });
+            });
           }
-          response = await handler.watchAllEvent(ws, payload, (payload) => {
-            ws.sendJson({ action, payload });
-          });
         }
         if (action === Action.WATCH_STATUS_EVENT) {
           response = await handler.watchStatusEvent(ws, payload, (payload) => {
@@ -58,22 +57,33 @@ server.on("connection", async (ws, req) => {
         const status = "Rejected";
         const message = "An unknown error occurred";
         ws.sendJson({ payload: { status, message } });
-        console.log(error);
+        console.log({ name: "SocketOnMessage", error });
       }
     });
 
     // Handle socket on close
     ws.on("close", () => {
-      Object.values(sockets.get(ws).changeStream)
-        .forEach((changeStream) => changeStream.close());
-      sockets.delete(ws);
-      console.log(`Disconnected with user: ${id}`);
+      try {
+        const changeStreams = sockets.get(ws).changeStream;
+        for (const changeStream of Object.values(changeStreams)) {
+          changeStream.close()
+        }
+        sockets.delete(ws);
+        console.log(`Disconnected with user: ${id}`);
+      } catch (error) {
+        console.log({ name: "SocketClose", error });
+      }
     });
   } catch (error) {
-    if (error.response?.status === 401) {
-      error.message = error.response.data.message;
-    } else if (!error.code) {
-      console.log(error);
+    if (error.response) {
+      const { status, data } = error.response;
+      if (status === 401) {
+        error.code = status;
+        error.message = data.message;
+      }
+    }
+    if (!error.code) {
+      console.log({ name: "SocketConnect", error });
       error.message = "An unknown error occurred";
     }
     ws.close(1000, error.message);
