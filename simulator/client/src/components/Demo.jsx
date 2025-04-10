@@ -15,6 +15,8 @@ import useSocket from "hooks/useSocket";
 import { ToastContext } from "contexts";
 
 const Demo = ({ search }) => {
+  const DemoLimit = 150;
+
   const { setToastMessage } = useContext(ToastContext);
 
   const WS_ENDPOINT = process.env.REACT_APP_WS_ENDPOINT;
@@ -74,10 +76,10 @@ const Demo = ({ search }) => {
     }
   }, [readyState, isSocketLost, setToastMessage]);
 
-  const startDemo = (search) => {
+  const startDemo = () => {
     if (readyState === ReadyState.OPEN) {
       const action = DemoAction.START;
-      const payload = {};
+      const payload = { limit: DemoLimit };
       if (search) {
         payload.search = search;
         payload.sort_by = "-search_score";
@@ -101,12 +103,6 @@ const Demo = ({ search }) => {
         text: payload.message,
       });
       return;
-    }
-    if (action === DemoAction.SYNCED) {
-      const { status, evseCount, totalCount } = payload;
-      setStatus(status);
-      setEvseCount(evseCount);
-      setTotalCount(totalCount);
     }
     if (action === DemoAction.START) {
       setStatus(DemoStatus.STARTING);
@@ -146,14 +142,12 @@ const Demo = ({ search }) => {
         </CInputGroupText>
         <CButton
           className="flex-grow-1"
-          color={isStopping ? "danger" : "info"}
           variant="outline"
-          onClick={isIdle
-            ? () => startDemo(search)
-            : stopDemo
-          }
+          color={isStopping ? "danger" : "info"}
+          disabled={isStopping}
+          onClick={isIdle ? startDemo : stopDemo}
         >
-          {isIdle ? "Start" : "Stop"}
+          {isStopping ? "Stopping" : isIdle ? "Start" : "Stop"}
         </CButton>
       </CInputGroup>
     </>
