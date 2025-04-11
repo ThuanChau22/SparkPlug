@@ -13,8 +13,8 @@ const useBatchUpdate = ({ callback, delay = ms("5s") } = {}) => {
           callback(payload);
         }
       }
-      setUpdateTimeout();
       updatesRef.current = [];
+      setUpdateTimeout();
     }, delay);
   }, [callback, delay]);
 
