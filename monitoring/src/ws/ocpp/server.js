@@ -17,6 +17,7 @@ const server = new RPCServer({
   strictMode: true,
 });
 
+server.changeStreamRetry = 0;
 server.stationIdToCLient = new Map();
 
 server.auth(async (accept, reject, { identity }) => {
@@ -79,8 +80,13 @@ server.on("client", async (client) => {
       });
       server.changeStream.on("error", (error) => {
         console.log({ name: "WatchRequestTransactionEvent", error });
+        if (server.changeStreamRetry > 10) {
+          throw error;
+        }
+        server.changeStreamRetry++;
         watchRequestTransactionEvent();
       });
+      server.changeStreamRetry = 0;
     };
 
     const initialize = async () => {
