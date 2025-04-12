@@ -17,6 +17,8 @@ const server = new RPCServer({
   strictMode: true,
 });
 
+server.stationIdToCLient = new Map();
+
 server.auth(async (accept, reject, { identity }) => {
   try {
     console.log(`Connection request from station: ${identity}`);
@@ -35,7 +37,6 @@ server.auth(async (accept, reject, { identity }) => {
       evses: data,
       idTokenToTransactionId: new Map(),
       evseIdToTransactionId: new Map(),
-      changeStream: null,
     });
   } catch (error) {
     if (error.response) {
@@ -53,38 +54,41 @@ server.on("client", async (client) => {
   try {
     console.log(`Connected with station: ${client.identity}`);
 
+    const watchRequestTransactionEvent = async () => {
+      server.changeStream?.close();
+      const resumeAfter = server.resumeToken;
+      server.changeStream = await StationEvent.watchEvent({
+        source: StationEvent.Sources.Central,
+        event: [
+          "RequestStartTransaction",
+          "RequestStopTransaction",
+        ],
+      }, { resumeAfter });
+      server.changeStream.on("change", async ({ _id, fullDocument }) => {
+        server.resumeToken = _id;
+        const { stationId, event, payload } = fullDocument;
+        const client = server.stationIdToCLient.get(stationId.toString());
+        const properties = { client, params: payload };
+        const isConnected = client?.state === WebSocket.OPEN;
+        if (isConnected && event === "RequestStartTransaction") {
+          return await remoteControl.requestStartTransactionRequest(properties);
+        }
+        if (isConnected && event === "RequestStopTransaction") {
+          return await remoteControl.requestStopTransactionRequest(properties);
+        }
+      });
+      server.changeStream.on("error", (error) => {
+        console.log({ name: "WatchRequestTransactionEvent", error });
+        watchRequestTransactionEvent();
+      });
+    };
+
     const initialize = async () => {
+      server.stationIdToCLient.set(client.identity, client);
       const { session } = client;
-      let resumeAfter;
-      const watchRequestTransactionEvent = async () => {
-        session.changeStream?.close();
-        const changeStream = await StationEvent.watchEvent({
-          stationId: parseInt(client.identity),
-          source: StationEvent.Sources.Central,
-          event: [
-            "RequestStartTransaction",
-            "RequestStopTransaction",
-          ],
-        }, { resumeAfter });
-        changeStream.on("change", async ({ _id, fullDocument }) => {
-          resumeAfter = _id;
-          const { event, payload } = fullDocument;
-          const properties = { client, params: payload };
-          const isConnected = client.state === WebSocket.OPEN;
-          if (isConnected && event === "RequestStartTransaction") {
-            return await remoteControl.requestStartTransactionRequest(properties);
-          }
-          if (isConnected && event === "RequestStopTransaction") {
-            return await remoteControl.requestStopTransactionRequest(properties);
-          }
-        });
-        changeStream.on("error", (error) => {
-          console.log({ name: "WatchRequestTransactionEvent", error });
-          watchRequestTransactionEvent();
-        });
-        session.changeStream = changeStream;
-      };
-      await watchRequestTransactionEvent();
+      if (!server.changeStream) {
+        await watchRequestTransactionEvent();
+      }
       session.ready = true;
       session.waitTime = 1;
     };
@@ -158,7 +162,11 @@ server.on("client", async (client) => {
           })
         );
         await Promise.all(requests);
-        client.session.changeStream?.close();
+        server.stationIdToCLient.delete(client.identity);
+        if (server.stationIdToCLient.size === 0) {
+          server.changeStream?.close();
+          delete server.changeStream;
+        }
         console.log(`Disconnected with station: ${client.identity}`);
       } catch (error) {
         error = isAxiosError(error) ? error.response : error;
