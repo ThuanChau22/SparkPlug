@@ -157,7 +157,7 @@ handler.starting = async (payload) => {
       entry = iterator.next();
     }
 
-    let retry = 3;
+    let retry = 0;
     let currentSize = 0;
     while (state.status === state.STARTING) {
       if (currentSize !== evses.size) {
@@ -165,8 +165,8 @@ handler.starting = async (payload) => {
         await utils.sleep(ms("5s"));
         continue;
       }
-      if (evses.size !== state.totalCount && retry !== 0) {
-        retry--;
+      if (evses.size !== state.totalCount && retry <= 3) {
+        retry++;
         await utils.sleep(ms("5s"));
         continue;
       }
@@ -192,7 +192,7 @@ handler.starting = async (payload) => {
             handler.simulate(stationId, evseIds);
           }
         }
-        retry = 3;
+        retry = 0;
         await utils.sleep(ms("5s"));
         continue;
       }
