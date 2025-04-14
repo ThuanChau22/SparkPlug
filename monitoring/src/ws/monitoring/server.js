@@ -8,7 +8,7 @@ import handler, { Action } from "./handler.js";
 /**
  * @typedef {Object} Instance
  * @property {User} user
- * @property {Object.<String, ChangeStream>} changeStream
+ * @property {Object<String, ChangeStream>} changeStream
  */
 /**
  * @type {Map<WebSocket, Instance>}
@@ -66,7 +66,7 @@ server.on("connection", async (ws, req) => {
       try {
         const changeStreams = sockets.get(ws).changeStream;
         for (const changeStream of Object.values(changeStreams)) {
-          changeStream.close()
+          changeStream.close();
         }
         sockets.delete(ws);
         console.log(`Disconnected with user: ${id}`);
