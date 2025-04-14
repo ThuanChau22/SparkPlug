@@ -13,6 +13,11 @@ import {
 
 const StationEventAPI = process.env.REACT_APP_STATION_EVENT_API_ENDPOINT;
 
+export const StationEventSources = {
+  Central: "Central",
+  Station: "Station",
+};
+
 const stationEventEntityAdapter = createEntityAdapter({
   sortComparer: (a, b) => {
     const result = new Date(b.createdAt) - new Date(a.createdAt);

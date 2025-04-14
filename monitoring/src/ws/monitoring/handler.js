@@ -74,7 +74,7 @@ handler.watchAllEvent = async (ws, payload, response) => {
         cursor?.close();
         cursor = await StationEvent.watchEvent({
           stationId,
-          // source: StationEvent.Sources.Station,
+          source: StationEvent.Sources.Station,
         }, { resumeAfter });
         cursor.on("change", ({ _id, fullDocument }) => {
           resumeAfter = _id;
