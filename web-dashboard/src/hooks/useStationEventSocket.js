@@ -1,8 +1,10 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { ReadyState } from "react-use-websocket";
+import ms from "ms";
 
 import useSocket from "hooks/useSocket";
+import useBatchUpdate from "hooks/useBatchUpdate";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 
 export const Action = {
@@ -15,6 +17,8 @@ export const Action = {
 const useStationEventSocket = ({
   onWatchAllEvent,
   onWatchStatusEvent,
+  batchUpdate = false,
+  batchDelay = ms("5s"),
 } = {}) => {
   const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
@@ -24,8 +28,11 @@ const useStationEventSocket = ({
     sendJsonMessage,
   } = useSocket(StationEventWS, { queryParams: { token } });
 
-  useEffect(() => {
-    const { action, payload } = lastJsonMessage || {};
+  const isSocketOpen = useMemo(() => {
+    return readyState === ReadyState.OPEN;
+  }, [readyState]);
+
+  const handleMessage = useCallback(({ action, payload }) => {
     if (action === Action.WatchAllEvent && payload.event) {
       if (onWatchAllEvent) {
         onWatchAllEvent(payload);
@@ -36,45 +43,68 @@ const useStationEventSocket = ({
         onWatchStatusEvent(payload);
       }
     }
-  }, [lastJsonMessage, onWatchAllEvent, onWatchStatusEvent]);
+  }, [onWatchAllEvent, onWatchStatusEvent]);
+
+  const [updates, setUpdateTimeout] = useBatchUpdate({
+    callback: useCallback((message) => {
+      handleMessage(message);
+    }, [handleMessage]),
+    delay: batchDelay,
+  });
+
+  useEffect(() => {
+    if (batchUpdate) {
+      setUpdateTimeout();
+    }
+  }, [batchUpdate, setUpdateTimeout]);
+
+  useEffect(() => {
+    const message = lastJsonMessage || {};
+    if (batchUpdate) {
+      updates.current.push(message);
+    } else {
+      handleMessage(message);
+    }
+  }, [batchUpdate, lastJsonMessage, updates, handleMessage]);
 
   const remoteStart = useCallback((stationId, evseId) => {
-    if (readyState === ReadyState.OPEN) {
+    if (isSocketOpen) {
       sendJsonMessage({
         action: Action.RemoteStart,
         payload: { stationId, evseId },
       });
     }
-  }, [readyState, sendJsonMessage]);
+  }, [isSocketOpen, sendJsonMessage]);
 
   const remoteStop = useCallback((stationId, evseId) => {
-    if (readyState === ReadyState.OPEN) {
+    if (isSocketOpen) {
       sendJsonMessage({
         action: Action.RemoteStop,
         payload: { stationId, evseId },
       });
     }
-  }, [readyState, sendJsonMessage]);
+  }, [isSocketOpen, sendJsonMessage]);
 
   const watchAllEvent = useCallback((stationId) => {
-    if (readyState === ReadyState.OPEN) {
+    if (isSocketOpen) {
       sendJsonMessage({
         action: Action.WatchAllEvent,
         payload: { stationId },
       });
     }
-  }, [readyState, sendJsonMessage]);
+  }, [isSocketOpen, sendJsonMessage]);
 
   const watchStatusEvent = useCallback((stationId) => {
-    if (readyState === ReadyState.OPEN) {
+    if (isSocketOpen) {
       sendJsonMessage({
         action: Action.WatchStatusEvent,
         payload: { stationId },
       });
     }
-  }, [readyState, sendJsonMessage]);
+  }, [isSocketOpen, sendJsonMessage]);
 
   return {
+    isSocketOpen,
     remoteStart,
     remoteStop,
     watchAllEvent,

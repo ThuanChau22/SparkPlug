@@ -26,7 +26,7 @@ const StationMonitorEvseListItem = ({ stationId, evseId }) => {
     return ![Available, Occupied].includes(evseStatus?.status);
   }, [evseStatus]);
 
-  const { remoteStart, remoteStop } = useStationEventSocket({
+  const { isSocketOpen, remoteStart, remoteStop } = useStationEventSocket({
     onWatchAllEvent: useCallback((payload) => {
       if (
         payload.event === "TransactionEvent"
@@ -72,7 +72,7 @@ const StationMonitorEvseListItem = ({ stationId, evseId }) => {
           variant="outline"
           color="success"
           onClick={() => remoteStart(stationId, evseId)}
-          disabled={isDisabled}
+          disabled={!isSocketOpen || isDisabled}
         >
           Remote Start
         </CButton>
@@ -80,7 +80,7 @@ const StationMonitorEvseListItem = ({ stationId, evseId }) => {
           variant="outline"
           color="info"
           onClick={() => remoteStop(stationId, evseId)}
-          disabled={isDisabled}
+          disabled={!isSocketOpen || isDisabled}
         >
           Remote Stop
         </CButton>

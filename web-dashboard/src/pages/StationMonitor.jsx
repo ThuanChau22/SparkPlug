@@ -7,13 +7,11 @@ import {
   CCardTitle,
   CCardBody,
 } from "@coreui/react";
-import ms from "ms";
 
 import StickyContainer from "components/StickyContainer";
 import StationMonitorDetailsModal from "components/StationMonitor/DetailsModal";
 import StationMonitorListView from "components/StationMonitor/ListView";
 import StationMonitorMapView from "components/StationMonitor/MapView";
-import useBatchUpdate from "hooks/useBatchUpdate";
 import useStationEventSocket from "hooks/useStationEventSocket";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
@@ -67,8 +65,8 @@ const StationMonitor = () => {
 
   const dispatch = useDispatch();
 
-  const [updates, setUpdateTimeout] = useBatchUpdate({
-    callback: useCallback(({ stationId, payload }) => {
+  const { isSocketOpen, watchStatusEvent } = useStationEventSocket({
+    onWatchStatusEvent: useCallback(({ stationId, payload }) => {
       const { evseId, connectorStatus } = payload;
       if (evseId) {
         dispatch(evseStatusStateUpsertById({
@@ -84,24 +82,14 @@ const StationMonitor = () => {
         ));
       }
     }, [evseStatusEntities, dispatch]),
-    delay: ms("5s"),
-  });
-
-  const { watchStatusEvent } = useStationEventSocket({
-    onWatchStatusEvent: useCallback((payload) => {
-      updates.current.push(payload);
-    }, [updates]),
+    batchUpdate: true,
   });
 
   useEffect(() => {
-    if (stationIds.length !== 0) {
+    if (isSocketOpen && stationIds.length !== 0) {
       watchStatusEvent(stationIds);
     }
-  }, [watchStatusEvent, stationIds]);
-
-  useEffect(() => {
-    setUpdateTimeout();
-  }, [setUpdateTimeout]);
+  }, [stationIds, isSocketOpen, watchStatusEvent]);
 
   useEffect(() => {
     const stationIds = utils.outOfBoundResources(stationList, {

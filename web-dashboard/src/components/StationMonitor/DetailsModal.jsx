@@ -38,11 +38,13 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
     lng: station.longitude,
   });
 
-  const { watchAllEvent } = useStationEventSocket();
+  const { isSocketOpen, watchAllEvent } = useStationEventSocket();
 
   useEffect(() => {
-    watchAllEvent(stationId);
-  }, [watchAllEvent, stationId]);
+    if (isSocketOpen) {
+      watchAllEvent(stationId);
+    }
+  }, [isSocketOpen, watchAllEvent, stationId]);
 
   return (
     <CModal

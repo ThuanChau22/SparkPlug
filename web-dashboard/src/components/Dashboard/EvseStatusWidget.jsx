@@ -8,10 +8,8 @@ import {
   CCardTitle,
   CProgress,
 } from "@coreui/react";
-import ms from "ms";
 
 import LoadingIndicator from "components/LoadingIndicator";
-import useBatchUpdate from "hooks/useBatchUpdate";
 import useFetchData from "hooks/useFetchData";
 import useStationEventSocket from "hooks/useStationEventSocket";
 import {
@@ -51,29 +49,24 @@ const EvseStatusWidget = ({ className = "" }) => {
     }), [authIsOwner, authUserId]),
   });
 
-  const [updates, setUpdateTimeout] = useBatchUpdate({
-    callback: useCallback(() => setRefresh(true), []),
-    delay: ms("5s"),
-  });
-
-  const { watchStatusEvent } = useStationEventSocket({
+  const { isSocketOpen, watchStatusEvent } = useStationEventSocket({
     onWatchStatusEvent: useCallback(() => {
-      if (updates.current.length === 0) {
-        updates.current.push(true);
-      }
-    }, [updates]),
+      setRefresh(true);
+    }, []),
+    batchUpdate: true,
   });
 
   useEffect(() => {
-    watchStatusEvent();
-  }, [watchStatusEvent]);
+    if (isSocketOpen) {
+      watchStatusEvent();
+    }
+  }, [isSocketOpen, watchStatusEvent]);
 
   useEffect(() => {
     if (evseStatusCount) {
       setRefresh(false);
-      setUpdateTimeout();
     }
-  }, [evseStatusCount, setUpdateTimeout]);
+  }, [evseStatusCount]);
 
   const evseStatusData = useMemo(() => {
     const data = {
