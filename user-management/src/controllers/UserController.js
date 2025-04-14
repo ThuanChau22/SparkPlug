@@ -11,11 +11,8 @@ export const getUsers = async (req, res) => {
     select.password = 0;
     const sort = { created_at: 1, id: 1 };
     const options = { filter, select, sort, limit, cursor };
-    const users = await User.getUsers(options);
-    res.status(200).json({
-      data: users.data,
-      cursor: users.cursor,
-    });
+    const data = await User.getUsers(options);
+    res.status(200).json(data);
   } catch (error) {
     return utils.handleError(res, error);
   }
