@@ -65,7 +65,11 @@ const DriverStation = () => {
 
   const dispatch = useDispatch();
 
-  const { isSocketOpen, watchStatusEvent } = useStationEventSocket({
+  const {
+    isSocketOpen,
+    watchStatusEventStart,
+    watchStatusEventStop,
+  } = useStationEventSocket({
     onWatchStatusEvent: useCallback(({ stationId, payload }) => {
       const { evseId, connectorStatus } = payload;
       if (evseId) {
@@ -87,9 +91,14 @@ const DriverStation = () => {
 
   useEffect(() => {
     if (isSocketOpen && stationIds.length !== 0) {
-      watchStatusEvent(stationIds);
+      watchStatusEventStart(stationIds);
     }
-  }, [stationIds, isSocketOpen, watchStatusEvent]);
+    return () => {
+      if (isSocketOpen) {
+        watchStatusEventStop();
+      }
+    };
+  }, [stationIds, isSocketOpen, watchStatusEventStart, watchStatusEventStop]);
 
   useEffect(() => {
     const stationIds = utils.outOfBoundResources(stationList, {

@@ -49,7 +49,11 @@ const EvseStatusWidget = ({ className = "" }) => {
     }), [authIsOwner, authUserId]),
   });
 
-  const { isSocketOpen, watchStatusEvent } = useStationEventSocket({
+  const {
+    isSocketOpen,
+    watchStatusEventStart,
+    watchStatusEventStop,
+  } = useStationEventSocket({
     onWatchStatusEvent: useCallback(() => {
       setRefresh(true);
     }, []),
@@ -58,9 +62,14 @@ const EvseStatusWidget = ({ className = "" }) => {
 
   useEffect(() => {
     if (isSocketOpen) {
-      watchStatusEvent();
+      watchStatusEventStart();
     }
-  }, [isSocketOpen, watchStatusEvent]);
+    return () => {
+      if (isSocketOpen) {
+        watchStatusEventStop();
+      }
+    };
+  }, [isSocketOpen, watchStatusEventStart, watchStatusEventStop]);
 
   useEffect(() => {
     if (evseStatusCount) {

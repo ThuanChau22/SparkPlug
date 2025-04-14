@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { ReadyState } from "react-use-websocket";
 import ms from "ms";
 
 import useSocket from "hooks/useSocket";
 import useBatchUpdate from "hooks/useBatchUpdate";
+import { handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 
 export const Action = {
@@ -32,18 +33,25 @@ const useStationEventSocket = ({
     return readyState === ReadyState.OPEN;
   }, [readyState]);
 
+  const dispatch = useDispatch();
+
   const handleMessage = useCallback(({ action, payload }) => {
-    if (action === Action.WatchAllEvent && payload.event) {
+    const { status, data } = payload || {};
+    if (status === "Rejected") {
+      const message = `${action} Request: ${status}`;
+      return handleError({ error: { message }, dispatch });
+    }
+    if (action === Action.WatchAllEvent && data) {
       if (onWatchAllEvent) {
-        onWatchAllEvent(payload);
+        onWatchAllEvent(data);
       }
     }
-    if (action === Action.WatchStatusEvent && payload.event) {
+    if (action === Action.WatchStatusEvent && data) {
       if (onWatchStatusEvent) {
-        onWatchStatusEvent(payload);
+        onWatchStatusEvent(data);
       }
     }
-  }, [onWatchAllEvent, onWatchStatusEvent]);
+  }, [onWatchAllEvent, onWatchStatusEvent, dispatch]);
 
   const [updates, setUpdateTimeout] = useBatchUpdate({
     callback: useCallback((message) => {
@@ -59,12 +67,11 @@ const useStationEventSocket = ({
   }, [batchUpdate, setUpdateTimeout]);
 
   useEffect(() => {
-    const message = lastJsonMessage || {};
-    if (batchUpdate) {
-      updates.current.push(message);
-    } else {
-      handleMessage(message);
+    if (!lastJsonMessage) return;
+    if (!batchUpdate) {
+      return handleMessage(lastJsonMessage);
     }
+    updates.current.push(lastJsonMessage);
   }, [batchUpdate, lastJsonMessage, updates, handleMessage]);
 
   const remoteStart = useCallback((stationId, evseId) => {
@@ -85,20 +92,44 @@ const useStationEventSocket = ({
     }
   }, [isSocketOpen, sendJsonMessage]);
 
-  const watchAllEvent = useCallback((stationId) => {
+  const watchAllEventStart = useCallback((stationId) => {
     if (isSocketOpen) {
       sendJsonMessage({
         action: Action.WatchAllEvent,
-        payload: { stationId },
+        payload: {
+          type: "Start",
+          data: { stationId },
+        },
       });
     }
   }, [isSocketOpen, sendJsonMessage]);
 
-  const watchStatusEvent = useCallback((stationId) => {
+  const watchAllEventStop = useCallback(() => {
+    if (isSocketOpen) {
+      sendJsonMessage({
+        action: Action.WatchAllEvent,
+        payload: { type: "Stop" },
+      });
+    }
+  }, [isSocketOpen, sendJsonMessage]);
+
+  const watchStatusEventStart = useCallback((stationId) => {
     if (isSocketOpen) {
       sendJsonMessage({
         action: Action.WatchStatusEvent,
-        payload: { stationId },
+        payload: {
+          type: "Start",
+          data: { stationId },
+        },
+      });
+    }
+  }, [isSocketOpen, sendJsonMessage]);
+
+  const watchStatusEventStop = useCallback(() => {
+    if (isSocketOpen) {
+      sendJsonMessage({
+        action: Action.WatchStatusEvent,
+        payload: { type: "Stop" },
       });
     }
   }, [isSocketOpen, sendJsonMessage]);
@@ -107,8 +138,10 @@ const useStationEventSocket = ({
     isSocketOpen,
     remoteStart,
     remoteStop,
-    watchAllEvent,
-    watchStatusEvent,
+    watchAllEventStart,
+    watchAllEventStop,
+    watchStatusEventStart,
+    watchStatusEventStop,
   };
 }
 

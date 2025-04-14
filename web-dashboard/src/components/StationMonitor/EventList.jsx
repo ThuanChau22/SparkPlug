@@ -30,8 +30,8 @@ const StationMonitorEventList = ({ stationId }) => {
   });
 
   useStationEventSocket({
-    onWatchAllEvent: useCallback((payload) => {
-      dispatch(stationEventStateSetById(payload));
+    onWatchAllEvent: useCallback((stationEvent) => {
+      dispatch(stationEventStateSetById(stationEvent));
     }, [dispatch]),
   });
 

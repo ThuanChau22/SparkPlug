@@ -27,14 +27,14 @@ const StationMonitorEvseListItem = ({ stationId, evseId }) => {
   }, [evseStatus]);
 
   const { isSocketOpen, remoteStart, remoteStop } = useStationEventSocket({
-    onWatchAllEvent: useCallback((payload) => {
+    onWatchAllEvent: useCallback((stationEvent) => {
       if (
-        payload.event === "TransactionEvent"
-        && stationId === payload.stationId
-        && evseId === payload.payload.evse.id
-        && payload.payload.meterValue
+        stationEvent.event === "TransactionEvent"
+        && stationEvent.stationId === stationId
+        && stationEvent.payload.evse.id === evseId
+        && stationEvent.payload.meterValue
       ) {
-        const [meter] = payload.payload.meterValue;
+        const [meter] = stationEvent.payload.meterValue;
         const [sample] = meter.sampledValue;
         setMeterValue(sample.value);
       }
