@@ -59,6 +59,7 @@ schema.loadClass(class {
 
       // Select
       const $project = {
+        _id: 0,
         id: "$_id",
         stationId: "$stationId",
         source: "$source",
@@ -139,43 +140,48 @@ schema.loadClass(class {
   static async watchEvent(data = {}, options = {}) {
     try {
       const { stationId, source, event } = data;
-      const filter = {
+      const $match = {
         operationType: "insert",
         $and: [],
       };
       if (stationId) {
-        filter.$and.push({
+        $match.$and.push({
           $or: utils.toArray(stationId).map((id) => {
             return { "fullDocument.stationId": id };
           })
         });
       }
       if (source) {
-        filter.$and.push({
+        $match.$and.push({
           $or: utils.toArray(source).map((src) => {
             return { "fullDocument.source": src };
           })
         });
       }
       if (event) {
-        filter.$and.push({
+        $match.$and.push({
           $or: utils.toArray(event).map((e) => {
             return { "fullDocument.event": e }
           })
         });
       }
-      options = Object.entries(options).filter(([_, value]) => value);
+
+      const $project = {
+        "fullDocument.id": "$fullDocument._id",
+        "fullDocument.stationId": "$fullDocument.stationId",
+        "fullDocument.source": "$fullDocument.source",
+        "fullDocument.event": "$fullDocument.event",
+        "fullDocument.payload": "$fullDocument.payload",
+        "fullDocument.createdAt": "$fullDocument.createdAt",
+      };
+
+      const pipeline = [{ $match }, { $project }];
+
+      options = Object.entries(options).filter(([_, v]) => v);
       options = Object.fromEntries(options);
-      const changeStream = await StationEvent.watch(
-        [
-          { $match: filter },
-          { $project: { fullDocument: 1 } },
-        ],
-        {
-          fullDocument: "updateLookup",
-          ...options,
-        },
-      );
+      options = { fullDocument: "updateLookup", ...options };
+
+      const changeStream = await StationEvent.watch(pipeline, options);
       changeStream.on("error", (error) => {
         console.log({ name: "WatchEventChange", error });
       });

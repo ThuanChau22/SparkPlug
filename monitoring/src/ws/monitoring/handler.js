@@ -59,7 +59,6 @@ handler.watchAllEvent = async (ws, payload, response) => {
     let resumeAfter;
     let requestAttempts = 0;
     const watchAllEvent = async () => {
-      requestAttempts++;
       const Event = Action.WATCH_ALL_EVENT;
       changeStream[Event]?.close();
       changeStream[Event] = await StationEvent.watchEvent({
@@ -68,18 +67,18 @@ handler.watchAllEvent = async (ws, payload, response) => {
       }, { resumeAfter });
       changeStream[Event].on("change", ({ _id, fullDocument }) => {
         resumeAfter = _id;
-        fullDocument = utils.toClient(fullDocument);
         const { id, stationId, event, payload, createdAt } = fullDocument;
         response({ id, stationId, event, payload, createdAt });
+        requestAttempts = 0;
       });
       changeStream[Event].on("error", (error) => {
-        if (requestAttempts === 3) {
+        console.log({ name: "WatchAllEventChange", error });
+        if (requestAttempts > 3) {
           throw error;
         }
-        console.log({ name: "WatchAllEventChange", error });
+        requestAttempts++;
         watchAllEvent();
       });
-      requestAttempts = 0;
     };
     await watchAllEvent();
 
@@ -106,7 +105,6 @@ handler.watchStatusEvent = async (ws, payload, response) => {
     let resumeAfter;
     let requestAttempts = 0;
     const watchStatusEvent = async () => {
-      requestAttempts++;
       const Event = Action.WATCH_STATUS_EVENT;
       changeStream[Event]?.close();
       changeStream[Event] = await StationEvent.watchEvent({
@@ -115,18 +113,18 @@ handler.watchStatusEvent = async (ws, payload, response) => {
       }, { resumeAfter });
       changeStream[Event].on("change", ({ _id, fullDocument }) => {
         resumeAfter = _id;
-        fullDocument = utils.toClient(fullDocument);
         const { id, stationId, event, payload, createdAt } = fullDocument;
         response({ id, stationId, event, payload, createdAt });
+        requestAttempts = 0;
       });
       changeStream[Event].on("error", (error) => {
-        if (requestAttempts === 3) {
+        console.log({ name: "WatchStatusEventChange", error });
+        if (requestAttempts > 3) {
           throw error;
         }
-        console.log({ name: "WatchStatusEventChange", error });
+        requestAttempts++;
         watchStatusEvent();
       });
-      requestAttempts = 0;
     };
     await watchStatusEvent();
 

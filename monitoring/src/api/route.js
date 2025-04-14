@@ -2,7 +2,6 @@ import express from "express";
 
 import StationEvent from "../repositories/station-event.js";
 import StationStatus from "../repositories/station-status.js";
-import utils from "../utils/utils.js";
 import {
   authenticate,
   authorizeRole,
@@ -32,8 +31,8 @@ router.get(
       const { sort_by, cursor, limit, ...filter } = req.query;
       filter.stationId = parseInt(id);
       const params = { filter, sort: sort_by, cursor, limit };
-      const events = await StationEvent.getEvents(params);
-      res.status(200).json(utils.toClient(events));
+      const data = await StationEvent.getEvents(params);
+      res.status(200).json(data);
     } catch (error) {
       const { message } = error;
       res.status(400).json({ message });
@@ -50,8 +49,8 @@ router.get(
     try {
       const { sort_by, cursor, limit, ...filter } = req.query;
       const params = { filter, sort: sort_by, cursor, limit };
-      const stationStatus = await StationStatus.getStatuses(params);
-      res.status(200).json(utils.toClient(stationStatus));
+      const data = await StationStatus.getStatuses(params);
+      res.status(200).json(data);
     } catch (error) {
       const { message } = error;
       res.status(400).json({ message });
@@ -67,8 +66,8 @@ router.get(
   async (req, res) => {
     try {
       const filter = req.query;
-      const count = await StationStatus.getStatusCount({ filter });
-      res.status(200).json(utils.toClient(count));
+      const data = await StationStatus.getStatusCount({ filter });
+      res.status(200).json(data);
     } catch (error) {
       const { message } = error;
       res.status(400).json({ message });
@@ -83,9 +82,9 @@ router.get(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const params = { filter: { stationId: id } };
+      const params = { filter: { stationId: parseInt(id) } };
       const { data } = await StationStatus.getStatuses(params);
-      res.status(200).json(utils.toClient(data));
+      res.status(200).json(data);
     } catch (error) {
       const { message } = error;
       res.status(400).json({ message });

@@ -73,6 +73,7 @@ schema.loadClass(class {
 
       // Select
       const $project = {
+        _id: 0,
         id: "$_id",
         stationId: "$stationId",
         evseId: "$evseId",

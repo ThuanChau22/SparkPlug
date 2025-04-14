@@ -72,11 +72,12 @@ server.on("client", async (client) => {
         const properties = { client, params: payload };
         const isConnected = client?.state === WebSocket.OPEN;
         if (isConnected && event === "RequestStartTransaction") {
-          return await remoteControl.requestStartTransactionRequest(properties);
+          await remoteControl.requestStartTransactionRequest(properties);
         }
         if (isConnected && event === "RequestStopTransaction") {
-          return await remoteControl.requestStopTransactionRequest(properties);
+          await remoteControl.requestStopTransactionRequest(properties);
         }
+        server.changeStreamRetry = 0;
       });
       server.changeStream.on("error", (error) => {
         console.log({ name: "WatchRequestTransactionEvent", error });
@@ -86,7 +87,6 @@ server.on("client", async (client) => {
         server.changeStreamRetry++;
         watchRequestTransactionEvent();
       });
-      server.changeStreamRetry = 0;
     };
 
     const initialize = async () => {
