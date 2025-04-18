@@ -66,7 +66,7 @@ const DriverStation = () => {
   const dispatch = useDispatch();
 
   const {
-    isSocketOpen,
+    isSocketReady,
     watchStatusEventStart,
     watchStatusEventStop,
   } = useStationEventSocket({
@@ -90,15 +90,15 @@ const DriverStation = () => {
   });
 
   useEffect(() => {
-    if (isSocketOpen && stationIds.length !== 0) {
+    if (isSocketReady && stationIds.length !== 0) {
       watchStatusEventStart(stationIds);
     }
     return () => {
-      if (isSocketOpen) {
+      if (isSocketReady) {
         watchStatusEventStop();
       }
     };
-  }, [stationIds, isSocketOpen, watchStatusEventStart, watchStatusEventStop]);
+  }, [stationIds, isSocketReady, watchStatusEventStart, watchStatusEventStop]);
 
   useEffect(() => {
     const stationIds = utils.outOfBoundResources(stationList, {

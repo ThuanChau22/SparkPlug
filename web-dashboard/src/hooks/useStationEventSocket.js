@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ReadyState } from "react-use-websocket";
 import ms from "ms";
@@ -9,6 +9,7 @@ import { handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 
 export const Action = {
+  Connect: "Connect",
   RemoteStart: "RemoteStart",
   RemoteStop: "RemoteStop",
   WatchAllEvent: "WatchAllEvent",
@@ -29,9 +30,11 @@ const useStationEventSocket = ({
     sendJsonMessage,
   } = useSocket(StationEventWS, { queryParams: { token } });
 
-  const isSocketOpen = useMemo(() => {
-    return readyState === ReadyState.OPEN;
-  }, [readyState]);
+  const [isConnected, setConnected] = useState(false);
+
+  const isSocketReady = useMemo(() => (
+    readyState === ReadyState.OPEN && isConnected
+  ), [readyState, isConnected]);
 
   const dispatch = useDispatch();
 
@@ -40,6 +43,9 @@ const useStationEventSocket = ({
     if (status === "Rejected") {
       const message = `${action} Request: ${status}`;
       return handleError({ error: { message }, dispatch });
+    }
+    if (action === Action.Connect) {
+      setConnected(status === "Accepted");
     }
     if (action === Action.WatchAllEvent && data) {
       if (onWatchAllEvent) {
@@ -67,33 +73,40 @@ const useStationEventSocket = ({
   }, [batchUpdate, setUpdateTimeout]);
 
   useEffect(() => {
+    if (readyState === ReadyState.OPEN && !isConnected) {
+      sendJsonMessage({ action: Action.Connect, payload: {} });
+    }
+  }, [readyState, isConnected, sendJsonMessage]);
+
+  useEffect(() => {
     if (!lastJsonMessage) return;
-    if (!batchUpdate) {
+    const { action } = lastJsonMessage;
+    if (action === Action.Connect || !batchUpdate) {
       return handleMessage(lastJsonMessage);
     }
     updates.current.push(lastJsonMessage);
   }, [batchUpdate, lastJsonMessage, updates, handleMessage]);
 
   const remoteStart = useCallback((stationId, evseId) => {
-    if (isSocketOpen) {
+    if (isSocketReady) {
       sendJsonMessage({
         action: Action.RemoteStart,
         payload: { stationId, evseId },
       });
     }
-  }, [isSocketOpen, sendJsonMessage]);
+  }, [isSocketReady, sendJsonMessage]);
 
   const remoteStop = useCallback((stationId, evseId) => {
-    if (isSocketOpen) {
+    if (isSocketReady) {
       sendJsonMessage({
         action: Action.RemoteStop,
         payload: { stationId, evseId },
       });
     }
-  }, [isSocketOpen, sendJsonMessage]);
+  }, [isSocketReady, sendJsonMessage]);
 
   const watchAllEventStart = useCallback((stationId) => {
-    if (isSocketOpen) {
+    if (isSocketReady) {
       sendJsonMessage({
         action: Action.WatchAllEvent,
         payload: {
@@ -102,19 +115,19 @@ const useStationEventSocket = ({
         },
       });
     }
-  }, [isSocketOpen, sendJsonMessage]);
+  }, [isSocketReady, sendJsonMessage]);
 
   const watchAllEventStop = useCallback(() => {
-    if (isSocketOpen) {
+    if (isSocketReady) {
       sendJsonMessage({
         action: Action.WatchAllEvent,
         payload: { type: "Stop" },
       });
     }
-  }, [isSocketOpen, sendJsonMessage]);
+  }, [isSocketReady, sendJsonMessage]);
 
   const watchStatusEventStart = useCallback((stationId) => {
-    if (isSocketOpen) {
+    if (isSocketReady) {
       sendJsonMessage({
         action: Action.WatchStatusEvent,
         payload: {
@@ -123,19 +136,19 @@ const useStationEventSocket = ({
         },
       });
     }
-  }, [isSocketOpen, sendJsonMessage]);
+  }, [isSocketReady, sendJsonMessage]);
 
   const watchStatusEventStop = useCallback(() => {
-    if (isSocketOpen) {
+    if (isSocketReady) {
       sendJsonMessage({
         action: Action.WatchStatusEvent,
         payload: { type: "Stop" },
       });
     }
-  }, [isSocketOpen, sendJsonMessage]);
+  }, [isSocketReady, sendJsonMessage]);
 
   return {
-    isSocketOpen,
+    isSocketReady,
     remoteStart,
     remoteStop,
     watchAllEventStart,

@@ -1,6 +1,9 @@
 import axios from "axios";
 
-import { AUTH_API_ENDPOINT, STATION_API_ENDPOINT } from "../../config.js";
+import {
+  AUTH_API_ENDPOINT,
+  STATION_API_ENDPOINT,
+} from "../../config.js";
 import StationEvent from "../../repositories/station-event.js";
 import utils from "../../utils/utils.js";
 import server from "./server.js";
@@ -15,10 +18,30 @@ export const Action = {
 
 const handler = {};
 
-handler.connect = async ({ token }) => {
-  const url = `${AUTH_API_ENDPOINT}/verify`;
-  const { data } = await axios.post(url, { token });
-  return data;
+handler.connect = async (payload) => {
+  try {
+    const { socket } = payload;
+    if (socket.session.authenticating) {
+      return { status: "Pending" };
+    }
+    if (!socket.session.authenticated) {
+      socket.session.authenticating = true;
+      const endpoint = `${AUTH_API_ENDPOINT}/verify`;
+      const body = { token: socket.session.token };
+      const { data } = await axios.post(endpoint, body);
+      Object.assign(socket.session, data);
+      socket.session.authenticated = true;
+      socket.session.authenticating = false;
+    }
+    return { status: "Accepted" };
+  } catch (error) {
+    const status = "Rejected";
+    if (error.response?.status === 401) {
+      error.message = error.response.data.message;
+    }
+    const message = error.message;
+    return { status, message };
+  }
 };
 
 handler.remoteStart = async (payload) => {
@@ -126,10 +149,6 @@ handler.watchStatusEvent = async (payload, response) => {
     return { status: "Accepted" };
   } catch (error) {
     const status = "Rejected";
-    if (error.response) {
-      const message = error.response.data;
-      return { status, message };
-    }
     if (error.code) {
       const message = error.message;
       return { status, message };

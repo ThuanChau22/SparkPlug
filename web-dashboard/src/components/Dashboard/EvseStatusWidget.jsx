@@ -50,7 +50,7 @@ const EvseStatusWidget = ({ className = "" }) => {
   });
 
   const {
-    isSocketOpen,
+    isSocketReady,
     watchStatusEventStart,
     watchStatusEventStop,
   } = useStationEventSocket({
@@ -61,15 +61,15 @@ const EvseStatusWidget = ({ className = "" }) => {
   });
 
   useEffect(() => {
-    if (isSocketOpen) {
+    if (isSocketReady) {
       watchStatusEventStart();
     }
     return () => {
-      if (isSocketOpen) {
+      if (isSocketReady) {
         watchStatusEventStop();
       }
     };
-  }, [isSocketOpen, watchStatusEventStart, watchStatusEventStop]);
+  }, [isSocketReady, watchStatusEventStart, watchStatusEventStop]);
 
   useEffect(() => {
     if (evseStatusCount) {
