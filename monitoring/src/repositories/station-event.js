@@ -137,33 +137,34 @@ schema.loadClass(class {
     }
   }
 
-  static async watchEvent(data = {}, options = {}) {
+  static async watchEvent(filter = {}, options = {}) {
     try {
-      const { stationId, source, event } = data;
-      const $match = {
-        operationType: "insert",
-        $and: [],
-      };
+      const $match = { operationType: "insert" };
+      const extraFilter = [];
+      const { stationId, source, event } = filter;
       if (stationId) {
-        $match.$and.push({
+        extraFilter.push({
           $or: utils.toArray(stationId).map((id) => {
             return { "fullDocument.stationId": id };
           })
         });
       }
       if (source) {
-        $match.$and.push({
+        extraFilter.push({
           $or: utils.toArray(source).map((src) => {
             return { "fullDocument.source": src };
           })
         });
       }
       if (event) {
-        $match.$and.push({
+        extraFilter.push({
           $or: utils.toArray(event).map((e) => {
             return { "fullDocument.event": e }
           })
         });
+      }
+      if (extraFilter.length !== 0) {
+        $match.$and = extraFilter;
       }
 
       const $project = {

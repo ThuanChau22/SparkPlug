@@ -1,11 +1,12 @@
 import axios from "axios";
 
-import { STATION_API_ENDPOINT } from "../../config.js";
+import { AUTH_API_ENDPOINT, STATION_API_ENDPOINT } from "../../config.js";
 import StationEvent from "../../repositories/station-event.js";
 import utils from "../../utils/utils.js";
-import { sockets } from "./server.js";
+import server from "./server.js";
 
 export const Action = {
+  CONNECT: "Connect",
   REMOTE_START: "RemoteStart",
   REMOTE_STOP: "RemoteStop",
   WATCH_ALL_EVENT: "WatchAllEvent",
@@ -13,6 +14,12 @@ export const Action = {
 };
 
 const handler = {};
+
+handler.connect = async ({ token }) => {
+  const url = `${AUTH_API_ENDPOINT}/verify`;
+  const { data } = await axios.post(url, { token });
+  return data;
+};
 
 handler.remoteStart = async (payload) => {
   try {
@@ -48,59 +55,33 @@ handler.remoteStop = async (payload) => {
   }
 };
 
-handler.watchAllEvent = async (ws, payload, response) => {
+handler.watchAllEvent = async (payload, response) => {
   try {
-    if (payload.type !== "Start" && payload.type !== "Stop") {
-      const message = `Unrecognized payload.type: ${payload.type}`;
+    const { socket, type, data } = payload;
+    if (type !== "Start" && type !== "Stop") {
+      const message = `Unrecognized payload.type: ${type}`;
       throw { code: 400, message };
     }
-
-    const { user: { token }, changeStream } = sockets.get(ws);
-
-    if (payload.type === "Start") {
-      const stationId = payload?.data?.stationId;
+    const eventName = Action.WATCH_ALL_EVENT;
+    if (type === "Start") {
+      const stationId = data?.stationId;
       if (!stationId) {
-        const message = "Field 'payload.stationId' is required";
+        const message = "Field payload.data.stationId is required";
         throw { code: 400, message };
       }
-
-      const headers = { Authorization: `Bearer ${token}` };
+      const headers = { Authorization: `Bearer ${socket.session.token}` };
       await axios.get(`${STATION_API_ENDPOINT}/${stationId}`, { headers });
-
-      let resumeAfter;
-      let requestAttempts = 0;
-      const watchAllEvent = async () => {
-        let cursor = changeStream[Action.WATCH_ALL_EVENT];
-        cursor?.close();
-        cursor = await StationEvent.watchEvent({
-          stationId,
-          source: StationEvent.Sources.Station,
-        }, { resumeAfter });
-        cursor.on("change", ({ _id, fullDocument }) => {
-          resumeAfter = _id;
-          const { id, stationId, event, payload, createdAt } = fullDocument;
-          const data = { id, stationId, event, payload, createdAt };
+      await server.stream.addEvent(socket, eventName, (data) => {
+        const isStationId = data.stationId === stationId;
+        const fromStation = data.source === StationEvent.Sources.Station;
+        if (isStationId && fromStation) {
           response({ type: "Update", data });
-          requestAttempts = 0;
-        });
-        cursor.on("error", (error) => {
-          console.log({ name: "WatchAllEventChange", error });
-          if (requestAttempts > 3) {
-            throw error;
-          }
-          requestAttempts++;
-          watchAllEvent();
-        });
-        changeStream[Action.WATCH_ALL_EVENT] = cursor;
-      };
-      await watchAllEvent();
+        }
+      });
     }
-
-    if (payload.type === "Stop") {
-      changeStream[Action.WATCH_ALL_EVENT]?.close();
-      delete changeStream[Action.WATCH_ALL_EVENT];
+    if (type === "Stop") {
+      await server.stream.removeEvent(socket, eventName);
     }
-
     return { status: "Accepted" };
   } catch (error) {
     const status = "Rejected";
@@ -116,56 +97,32 @@ handler.watchAllEvent = async (ws, payload, response) => {
   }
 };
 
-handler.watchStatusEvent = async (ws, payload, response) => {
+handler.watchStatusEvent = async (payload, response) => {
   try {
-    if (payload.type !== "Start" && payload.type !== "Stop") {
-      const message = `Unrecognized payload.type: ${payload.type}`;
+    const { socket, type, data } = payload;
+    if (type !== "Start" && type !== "Stop") {
+      const message = `Unrecognized payload.type: ${type}`;
       throw { code: 400, message };
     }
-
-    const { changeStream } = sockets.get(ws);
-
-    if (payload.type === "Start") {
-      const stationId = payload?.data?.stationId;
-      if (stationId && utils.toArray(stationId).length === 0) {
-        const message = "Field 'payload.stationId' cannot be an empty list";
+    const eventName = Action.WATCH_STATUS_EVENT;
+    if (type === "Start") {
+      const stationIdSet = new Set(utils.toArray(data?.stationId));
+      if (data?.stationId && stationIdSet.size === 0) {
+        const message = "StationId cannot be an empty list";
         throw { code: 400, message };
       }
-
-      let resumeAfter;
-      let requestAttempts = 0;
-      const watchStatusEvent = async () => {
-        let cursor = changeStream[Action.WATCH_STATUS_EVENT];
-        cursor?.close();
-        cursor = await StationEvent.watchEvent({
-          stationId,
-          event: "StatusNotification",
-        }, { resumeAfter });
-        cursor.on("change", ({ _id, fullDocument }) => {
-          resumeAfter = _id;
-          const { id, stationId, event, payload, createdAt } = fullDocument;
-          const data = { id, stationId, event, payload, createdAt };
+      await server.stream.addEvent(socket, eventName, (data) => {
+        const isSetEmpty = stationIdSet.size === 0;
+        const hasStationId = stationIdSet.has(data.stationId);
+        const isStatusNotification = data.event === "StatusNotification";
+        if ((isSetEmpty || hasStationId) && isStatusNotification) {
           response({ type: "Update", data });
-          requestAttempts = 0;
-        });
-        cursor.on("error", (error) => {
-          console.log({ name: "WatchStatusEventChange", error });
-          if (requestAttempts > 3) {
-            throw error;
-          }
-          requestAttempts++;
-          watchStatusEvent();
-        });
-        changeStream[Action.WATCH_STATUS_EVENT] = cursor;
-      };
-      await watchStatusEvent();
+        }
+      });
     }
-
-    if (payload.type === "Stop") {
-      changeStream[Action.WATCH_STATUS_EVENT]?.close();
-      delete changeStream[Action.WATCH_STATUS_EVENT];
+    if (type === "Stop") {
+      await server.stream.removeEvent(socket, eventName);
     }
-
     return { status: "Accepted" };
   } catch (error) {
     const status = "Rejected";

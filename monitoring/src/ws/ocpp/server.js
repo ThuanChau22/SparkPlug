@@ -4,6 +4,7 @@ import { v4 as uuid } from "uuid";
 import WebSocket from "ws";
 
 import { STATION_API_ENDPOINT } from "../../config.js";
+import StreamManager from "../../model/stream-manager.js";
 import StationEvent from "../../repositories/station-event.js";
 import StationStatus from "../../repositories/station-status.js";
 import authorization from "./handlers/authorization.js";
@@ -17,8 +18,7 @@ const server = new RPCServer({
   strictMode: true,
 });
 
-server.changeStreamRetry = 0;
-server.stationIdToCLient = new Map();
+server.stream = new StreamManager({ limitPerStream: 1000 });
 
 server.auth(async (accept, reject, { identity }) => {
   try {
@@ -55,48 +55,23 @@ server.on("client", async (client) => {
   try {
     console.log(`Connected with station: ${client.identity}`);
 
-    const watchRequestTransactionEvent = async () => {
-      server.changeStream?.close();
-      const resumeAfter = server.resumeToken;
-      server.changeStream = await StationEvent.watchEvent({
-        source: StationEvent.Sources.Central,
-        event: [
-          "RequestStartTransaction",
-          "RequestStopTransaction",
-        ],
-      }, { resumeAfter });
-      server.changeStream.on("change", async ({ _id, fullDocument }) => {
-        server.resumeToken = _id;
-        const { stationId, event, payload } = fullDocument;
-        const client = server.stationIdToCLient.get(stationId.toString());
-        const properties = { client, params: payload };
-        const isConnected = client?.state === WebSocket.OPEN;
-        if (isConnected && event === "RequestStartTransaction") {
-          await remoteControl.requestStartTransactionRequest(properties);
-        }
-        if (isConnected && event === "RequestStopTransaction") {
-          await remoteControl.requestStopTransactionRequest(properties);
-        }
-        server.changeStreamRetry = 0;
-      });
-      server.changeStream.on("error", (error) => {
-        console.log({ name: "WatchRequestTransactionEvent", error });
-        if (server.changeStreamRetry > 10) {
-          throw error;
-        }
-        server.changeStreamRetry++;
-        watchRequestTransactionEvent();
-      });
-    };
-
     const initialize = async () => {
-      server.stationIdToCLient.set(client.identity, client);
-      const { session } = client;
-      if (!server.changeStream) {
-        await watchRequestTransactionEvent();
-      }
-      session.ready = true;
-      session.waitTime = 1;
+      const eventName = "WatchRequestTransactionEvent";
+      await server.stream.addEvent(client.identity, eventName, async (data) => {
+        const { stationId, source, event, payload } = data;
+        const properties = { client, params: payload };
+        const isTarget = client.state === WebSocket.OPEN
+          && parseInt(client.identity) === stationId
+          && source === StationEvent.Sources.Central;
+        if (isTarget && event === "RequestStartTransaction") {
+          return await remoteControl.requestStartTransactionRequest(properties);
+        }
+        if (isTarget && event === "RequestStopTransaction") {
+          return await remoteControl.requestStopTransactionRequest(properties);
+        }
+      });
+      client.session.ready = true;
+      client.session.waitTime = 1;
     };
     initialize();
 
@@ -168,11 +143,7 @@ server.on("client", async (client) => {
           })
         );
         await Promise.all(requests);
-        server.stationIdToCLient.delete(client.identity);
-        if (server.stationIdToCLient.size === 0) {
-          server.changeStream?.close();
-          delete server.changeStream;
-        }
+        await server.stream.removeAllEvents(client.identity);
         console.log(`Disconnected with station: ${client.identity}`);
       } catch (error) {
         error = isAxiosError(error) ? error.response : error;

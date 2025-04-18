@@ -1,30 +1,19 @@
-import axios from "axios";
-import WebSocket from "ws";
-
-import { AUTH_API_ENDPOINT } from "../../config.js";
+import StreamManager from "../../model/stream-manager.js";
 import utils from "../../utils/utils.js";
 import handler, { Action } from "./handler.js";
 
-/**
- * @typedef {Object} Instance
- * @property {User} user
- * @property {Object<String, ChangeStream>} changeStream
- */
-/**
- * @type {Map<WebSocket, Instance>}
- */
-export const sockets = new Map();
-
 const server = utils.createWebSocketServer();
+
+server.stream = new StreamManager();
+
 server.on("connection", async (ws, req) => {
   try {
-    const { query: { token } } = req;
-    const { data } = await axios.post(`${AUTH_API_ENDPOINT}/verify`, { token });
-    const { id, role, ...remain } = data;
-
-    console.log(`Connected with user: ${id}`);
-
-    sockets.set(ws, { user: { id, role, ...remain, token }, changeStream: {} });
+    const { token } = req.query;
+    const data = await handler.connect({ token });
+    const { id: userId, ...remain } = data;
+    ws.session = { userId, ...remain, token };
+    console.log(`Connected with user: ${userId}`);
+    ws.sendJson({ action: Action.CONNECT, payload: {} });
 
     // Handle incoming message
     ws.onJsonMessage(async ({ action, payload }) => {
@@ -41,14 +30,17 @@ server.on("connection", async (ws, req) => {
         }
         if (action === Action.WATCH_ALL_EVENT) {
           response.message = "Access denied";
+          const { role } = ws.session;
           if (role === "staff" || role === "owner") {
-            response = await handler.watchAllEvent(ws, payload, (payload) => {
+            const params = { socket: ws, ...payload };
+            response = await handler.watchAllEvent(params, (payload) => {
               ws.sendJson({ action, payload });
             });
           }
         }
         if (action === Action.WATCH_STATUS_EVENT) {
-          response = await handler.watchStatusEvent(ws, payload, (payload) => {
+          const params = { socket: ws, ...payload };
+          response = await handler.watchStatusEvent(params, (payload) => {
             ws.sendJson({ action, payload });
           });
         }
@@ -62,14 +54,11 @@ server.on("connection", async (ws, req) => {
     });
 
     // Handle socket on close
-    ws.on("close", () => {
+    ws.on("close", async () => {
       try {
-        const changeStreams = sockets.get(ws).changeStream;
-        for (const changeStream of Object.values(changeStreams)) {
-          changeStream.close();
-        }
-        sockets.delete(ws);
-        console.log(`Disconnected with user: ${id}`);
+        const { userId } = ws.session;
+        await server.stream.removeAllEvents(ws);
+        console.log(`Disconnected with user: ${userId}`);
       } catch (error) {
         console.log({ name: "SocketClose", error });
       }

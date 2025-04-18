@@ -8,6 +8,7 @@
     "dev": "nodemon -w src/ src/index.js"
   },
   "dependencies": {
+    "@datastructures-js/heap": "^4.3.3",
     "axios": "^1.6.2",
     "connection-string-parser": "^1.0.4",
     "cors": "^2.8.5",
