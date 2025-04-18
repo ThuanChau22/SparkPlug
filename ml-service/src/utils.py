@@ -18,7 +18,7 @@ def get_stations_by_zip_code(zip_code):
     data = response.json()
     if not response.status_code == 200:
         raise Exception(data, response.status_code)
-    return data.get("stations")
+    return data.get("data")
 
 
 def handle_error(error):

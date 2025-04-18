@@ -22,7 +22,7 @@ export const signup = async (req, res) => {
     } catch (error) {
       if (error.errno === 1062) {
         const filter = { email };
-        const { users: [existedUser] } = await User.getUsers({ filter });
+        const { data: [existedUser] } = await User.getUsers({ filter });
         if (existedUser[assignedRole]) {
           throw { code: 409, message: "User already existed" };
         }
@@ -50,7 +50,7 @@ export const login = async (req, res) => {
   try {
     const { email, password, role = User.Role.Driver } = req.body;
     const filter = { email, [role]: 1 };
-    const { users: [user] } = await User.getUsers({ filter });
+    const { data: [user] } = await User.getUsers({ filter });
     if (!user
       || !Object.values(User.Role).includes(role)
       || !(await bcrypt.compare(password, user.password))

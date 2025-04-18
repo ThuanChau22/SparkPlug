@@ -24,7 +24,11 @@ import {
   stationStateClear,
   selectStationList,
 } from "redux/station/stationSlice";
-import { evseStateClear } from "redux/evse/evseSlice";
+import {
+  evseStateDeleteMany,
+  evseStateClear,
+  selectEvseList,
+} from "redux/evse/evseSlice";
 import utils from "utils";
 
 const StationManagement = () => {
@@ -34,6 +38,7 @@ const StationManagement = () => {
   const mapUpperBound = useSelector(selectMapUpperBound);
 
   const stationList = useSelector(selectStationList);
+  const evseList = useSelector(selectEvseList);
 
   const [titleHeight, setTitleHeight] = useState(0);
   const titleRef = useCallback((node) => {
@@ -57,6 +62,14 @@ const StationManagement = () => {
     }).map(({ id }) => id);
     dispatch(stationStateDeleteMany(stationIds));
   }, [stationList, mapLowerBound, mapUpperBound, dispatch]);
+
+  useEffect(() => {
+    const evseIds = utils.outOfBoundResources(evseList, {
+      lowerBound: mapLowerBound,
+      upperBound: mapUpperBound,
+    }).map(({ station_id, evse_id }) => ({ station_id, evse_id }));
+    dispatch(evseStateDeleteMany(evseIds));
+  }, [evseList, mapLowerBound, mapUpperBound, dispatch]);
 
   useEffect(() => () => {
     dispatch(stationStateClear());

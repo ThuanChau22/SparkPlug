@@ -23,8 +23,8 @@ export const EvseStatus = {
 };
 
 const evseStatusEntityAdapter = createEntityAdapter({
-  selectId: ({ station_id, evse_id }) => `${station_id},${evse_id}`,
-  sortComparer: (a, b) => a.station_id - b.station_id || a.evse_id - b.evse_id,
+  selectId: ({ stationId, evseId }) => `${stationId},${evseId}`,
+  sortComparer: (a, b) => a.stationId - b.stationId || a.evseId - b.evseId,
 });
 
 const initialState = evseStatusEntityAdapter.getInitialState();
@@ -40,8 +40,8 @@ export const evseStatusSlice = createSlice({
       evseStatusEntityAdapter.upsertOne(state, payload);
     },
     evseStatusStateDeleteMany(state, { payload }) {
-      const evseStatusIds = (payload || []).map(({ station_id, evse_id }) => {
-        return evseStatusEntityAdapter.selectId({ station_id, evse_id });
+      const evseStatusIds = (payload || []).map(({ stationId, evseId }) => {
+        return evseStatusEntityAdapter.selectId({ stationId, evseId });
       });
       evseStatusEntityAdapter.removeMany(state, evseStatusIds);
     },
@@ -59,27 +59,43 @@ export const {
 } = evseStatusSlice.actions;
 
 export const evseStatusGetList = createAsyncThunk(
-  `${evseStatusSlice.name}/getAllStatus`,
+  `${evseStatusSlice.name}/getStatusList`,
   async ({
+    limit, cursor,
     siteId: site_id,
     ownerId: owner_id,
     latLngOrigin: lat_lng_origin,
     latLngMin: lat_lng_min,
     latLngMax: lat_lng_max,
     sortBy: sort_by,
-    limit,
-    cursor,
   } = {}, { dispatch, getState }) => {
     try {
       const params = toUrlParams({
-        site_id, owner_id,
         lat_lng_origin, lat_lng_min, lat_lng_max,
-        sort_by, cursor, limit,
+        site_id, owner_id, sort_by, cursor, limit,
       });
-      const query = `${StationStatusAPI}/latest${params ? `?${params}` : ""}`;
+      const query = `${StationStatusAPI}${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(query, config);
       dispatch(evseStatusStateUpsertMany(data.data));
+      return data;
+    } catch (error) {
+      handleError({ error, dispatch });
+    }
+  }
+);
+
+export const evseStatusGetCount = createAsyncThunk(
+  `${evseStatusSlice.name}/getStatusCount`,
+  async ({
+    siteId: site_id,
+    ownerId: owner_id,
+  } = {}, { dispatch, getState }) => {
+    try {
+      const params = toUrlParams({ site_id, owner_id });
+      const query = `${StationStatusAPI}/count${params ? `?${params}` : ""}`;
+      const config = await tokenConfig({ dispatch, getState });
+      const { data } = await apiInstance.get(query, config);
       return data;
     } catch (error) {
       handleError({ error, dispatch });
@@ -91,7 +107,7 @@ export const evseStatusGetByStation = createAsyncThunk(
   `${evseStatusSlice.name}/getStatusByStation`,
   async (stationId, { dispatch, getState }) => {
     try {
-      const baseUrl = `${StationStatusAPI}/latest/${stationId}`;
+      const baseUrl = `${StationStatusAPI}/${stationId}`;
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(baseUrl, config);
       dispatch(evseStatusStateUpsertById(data));
@@ -111,10 +127,10 @@ export const selectEvseStatusList = evseStatusSelectors.selectAll;
 export const selectEvseStatusIds = createSelector(
   [evseStatusSelectors.selectIds],
   (evseIds) => evseIds.map((compoundId) => {
-    const [station_id, evse_id] = compoundId.split(",");
+    const [stationId, evseId] = compoundId.split(",");
     return {
-      station_id: parseInt(station_id),
-      evse_id: parseInt(evse_id),
+      stationId: parseInt(stationId),
+      evseId: parseInt(evseId),
     };
   }),
 );
@@ -123,9 +139,9 @@ export const selectEvseStatusEntities = createSelector(
   [selectEvseStatusList],
   (evseStatusList) => {
     const entities = {};
-    for (const { station_id, ...remain } of evseStatusList) {
-      entities[station_id] = entities[station_id] || [];
-      entities[station_id].push(remain);
+    for (const { stationId, ...remain } of evseStatusList) {
+      entities[stationId] = entities[stationId] || [];
+      entities[stationId].push(remain);
     }
     return entities;
   },
@@ -133,14 +149,14 @@ export const selectEvseStatusEntities = createSelector(
 
 export const selectEvseStatusByStation = createSelector(
   [selectEvseStatusList, (_, stationId) => stationId],
-  (evseStatusList, stationId) => evseStatusList.filter(({ station_id }) => {
-    return station_id === stationId;
+  (evseStatusList, selectedId) => evseStatusList.filter(({ stationId }) => {
+    return selectedId === stationId;
   }),
 );
 
 export const selectEvseStatusById = (state, compoundId) => {
-  const { stationId: station_id, evseId: evse_id } = compoundId;
-  const id = evseStatusEntityAdapter.selectId({ station_id, evse_id });
+  const { stationId, evseId } = compoundId;
+  const id = evseStatusEntityAdapter.selectId({ stationId, evseId });
   return evseStatusSelectors.selectById(state, id);
 };
 

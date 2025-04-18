@@ -25,7 +25,7 @@ import StickyContainer from "components/StickyContainer";
 import LoadingIndicator from "components/LoadingIndicator";
 import useTypeInput from "hooks/useTypeInput";
 import useWindowResize from "hooks/useWindowResize";
-import { LayoutContext } from "contexts";
+import { LayoutContext, ToastContext } from "contexts";
 
 const StationList = () => {
   const params = useParams();
@@ -36,6 +36,7 @@ const StationList = () => {
   const listRef = useRef({});
 
   const { headerHeight, footerHeight } = useContext(LayoutContext);
+  const { setToastMessage } = useContext(ToastContext);
 
   const [titleHeight, setTitleHeight] = useState(0);
   const titleRef = useCallback((node) => {
@@ -43,9 +44,9 @@ const StationList = () => {
   }, []);
 
   const [listHeight, setListHeight] = useState(0);
-  useWindowResize(() => {
+  useWindowResize(useCallback(() => {
     setListHeight(window.innerHeight - headerHeight - titleHeight - footerHeight);
-  });
+  }, [headerHeight, titleHeight, footerHeight]));
 
   const [
     searchInput,
@@ -71,30 +72,44 @@ const StationList = () => {
 
   const fetchOnLoad = useCallback(async () => {
     setLoadingOnLoad(true);
-    const { stations, cursor } = await getStationList({
-      fields: "name,street_address,city",
-      search: searchTerm,
-      sortBy: "-search_score",
-      limit: ListLimit,
-    });
-    setStationList(stations);
-    setListCursor(cursor);
+    try {
+      const { data, cursor } = await getStationList({
+        fields: "name,street_address,city",
+        search: searchTerm,
+        sortBy: "-search_score",
+        limit: ListLimit,
+      });
+      setStationList(data);
+      setListCursor(cursor);
+    } catch (error) {
+      setToastMessage({
+        color: "danger",
+        text: error.message,
+      });
+    }
     setLoadingOnLoad(false);
-  }, [searchTerm]);
+  }, [searchTerm, setToastMessage]);
 
   const fetchOnScroll = useCallback(async () => {
     setLoadingOnScroll(true);
-    const { stations, cursor } = await getStationList({
-      fields: "name,street_address,city",
-      search: searchTerm,
-      sortBy: "-search_score",
-      limit: ListLimit,
-      cursor: listCursor.next,
-    });
-    setStationList((stationList) => [...stationList, ...stations]);
-    setListCursor(cursor);
+    try {
+      const { data, cursor } = await getStationList({
+        fields: "name,street_address,city",
+        search: searchTerm,
+        sortBy: "-search_score",
+        limit: ListLimit,
+        cursor: listCursor.next,
+      });
+      setStationList((stationList) => [...stationList, ...data]);
+      setListCursor(cursor);
+    } catch (error) {
+      setToastMessage({
+        color: "danger",
+        text: error.message,
+      });
+    }
     setLoadingOnScroll(false);
-  }, [searchTerm, listCursor.next]);
+  }, [searchTerm, listCursor.next, setToastMessage]);
 
   useEffect(() => {
     fetchOnLoad();

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import {
   CModal,
@@ -12,7 +12,7 @@ import StationMonitorEventList from "components/StationMonitor/EventList";
 import StationMonitorEvseList from "components/StationMonitor/EvseList";
 import useFetchData from "hooks/useFetchData";
 import useMapZoom from "hooks/useMapZoom";
-import useStationEventSocket, { Action } from "hooks/useStationEventSocket";
+import useStationEventSocket from "hooks/useStationEventSocket";
 import { selectAuthRoleIsStaff } from "redux/auth/authSlice";
 import {
   stationGetById,
@@ -38,10 +38,22 @@ const StationMonitorDetailsModal = ({ isOpen, onClose, stationId }) => {
     lng: station.longitude,
   });
 
-  useStationEventSocket({
-    action: Action.WatchAllEvent,
-    payload: { stationId },
-  });
+  const {
+    isSocketReady,
+    watchAllEventStart,
+    watchAllEventStop,
+  } = useStationEventSocket();
+
+  useEffect(() => {
+    if (isSocketReady) {
+      watchAllEventStart(stationId);
+    }
+    return () => {
+      if (isSocketReady) {
+        watchAllEventStop();
+      }
+    };
+  }, [stationId, isSocketReady, watchAllEventStart, watchAllEventStop]);
 
   return (
     <CModal

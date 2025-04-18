@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CCard,
   CCol,
@@ -43,10 +43,10 @@ const App = () => {
     !isMobile || (isMobile && params.stationId)
   ), [isMobile, params]);
 
-  useWindowResize(() => {
+  useWindowResize(useCallback(() => {
     const medium = "only screen and (min-width: 768px)";
     setIsMobile(!window.matchMedia(medium).matches)
-  });
+  }, []));
 
   useEffect(() => {
     if (location.pathname === "/") {

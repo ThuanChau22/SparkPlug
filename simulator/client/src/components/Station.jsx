@@ -53,9 +53,9 @@ const Station = () => {
   }, []);
 
   const [gridHeight, setGridHeight] = useState(0);
-  useWindowResize(() => {
+  useWindowResize(useCallback(() => {
     setGridHeight(window.innerHeight - headerHeight - titleHeight - footerHeight);
-  });
+  }, [headerHeight, titleHeight, footerHeight]));
 
   const [evseList, setEvseList] = useState([]);
 
@@ -112,13 +112,13 @@ const Station = () => {
     })));
   }, [evses, scanRFID, pluginCable, unplugCable]);
 
-  useEffect(()=>{
+  useEffect(() => {
     setEvseList((evseList) => {
       const changes = [...evseList];
       changes.forEach((evse) => evse.isConnected = isCSMSConnected);
       return changes;
     });
-  },[isCSMSConnected]);
+  }, [isCSMSConnected]);
 
   return (state === "loading"
     ? <LoadingIndicator />

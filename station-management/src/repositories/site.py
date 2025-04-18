@@ -52,7 +52,7 @@ def get_sites(connection, filter={}, select={}, sort={}, limit=None, cursor=None
         sites = conn_cursor.fetchall()
 
     return {
-        "sites": sites or [],
+        "data": sites or [],
         "cursor": create_cursor(sites, sort, limit),
     }
 

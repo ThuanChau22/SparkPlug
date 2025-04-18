@@ -1,6 +1,6 @@
 import { CRow, CCol, CCard } from "@coreui/react";
 
-import DriverStatusWidget from "components/DriverDashboard/DriverStatusChartWidget";
+import DriverStatusWidget from "components/DriverDashboard/DriverStatusWidget";
 import DriverEnergyConsumptionByStationChartWidget from "components/DriverDashboard/EnergyConsumptionByStationChartWidget";
 import DriverEnergyConsumptionByTimeChartWidget from "components/DriverDashboard/EnergyConsumptionByTimeChartWidget";
 import DriverRevenueByStationChartWidget from "components/DriverDashboard/RevenueByStationChartWidget";

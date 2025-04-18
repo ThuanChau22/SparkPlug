@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -88,14 +88,14 @@ const Sidebar = () => {
 
   const dispatch = useDispatch();
 
-  useWindowResize(() => {
+  useWindowResize(useCallback(() => {
     const medium = "only screen and (min-width: 768px)";
     dispatch(layoutStateSetMobile(!window.matchMedia(medium).matches));
     const extraLarge = "only screen and (min-width: 1200px)";
     if (!window.matchMedia(extraLarge).matches) {
       dispatch(layoutStateSetSidebarFold(true));
     }
-  });
+  }, [dispatch]));
 
   useEffect(() => {
     const newNavigation = [];

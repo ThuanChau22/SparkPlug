@@ -2,6 +2,7 @@ import {
   useEffect,
   useState,
   useRef,
+  useCallback,
 } from "react";
 import {
   useDispatch,
@@ -50,10 +51,10 @@ const Header = () => {
 
   const dispatch = useDispatch();
 
-  useWindowResize(() => {
+  useWindowResize(useCallback(() => {
     const headerHeight = headerRef.current?.offsetHeight;
     dispatch(layoutStateSetHeaderHeight(headerHeight));
-  });
+  }, [dispatch]));
 
   useEffect(() => {
     setComponents([]);

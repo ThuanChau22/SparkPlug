@@ -1,4 +1,93 @@
+import ms from "ms";
+import { encode, decode } from "safe-base64";
+import WebSocket, { WebSocketServer } from "ws";
+
 const utils = {};
+
+/**
+ * Handle socket common setup with wrapper functions
+ * i.e ping/pong message, send/receive message in Json
+ * @param {WebSocket} ws
+ */
+utils.prepareWebSocket = (ws) => {
+  ws.isAlive = true;
+  ws.sendJson = (payload) => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(payload));
+    }
+  };
+  ws.onJsonMessage = (listener) => {
+    ws.on("message-json", listener);
+  };
+  ws.on("pong", () => ws.isAlive = true);
+  ws.on("message", (data) => {
+    try {
+      if (data.toString() === "ping") {
+        return ws.send("pong");
+      }
+      let message = {};
+      try {
+        message = JSON.parse(data);
+      } catch (error) {
+        const status = "Rejected";
+        const message = "Invalid message";
+        return ws.sendJson({ payload: { status, message } });
+      }
+      ws.emit("message-json", message);
+    } catch (error) {
+      const status = "Rejected";
+      const message = "An unknown error occurred";
+      ws.sendJson({ payload: { status, message } });
+      console.log(error);
+    }
+  });
+};
+
+/**
+ * Instantiate WebSocketServer and
+ * handle common setup with wrapper functions
+ * (i.e ping interval, handle upgrade, and close)
+ * @returns WebSocketServer wrapper
+ */
+utils.createWebSocketServer = () => {
+  const wss = new WebSocketServer({ noServer: true });
+  const pingInterval = setInterval(() => {
+    for (const ws of wss.clients) {
+      if (ws.isAlive) {
+        ws.isAlive = false;
+        ws.ping();
+      } else {
+        ws.terminate();
+      };
+    }
+  }, ms("30s"));
+  wss.on("close", () => {
+    clearInterval(pingInterval);
+  });
+  const handleUpgrade = (request, socket, head) => {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      utils.prepareWebSocket(ws);
+      wss.emit("connection", ws, request);
+    });
+  };
+  const on = (event, handler) => {
+    wss.on(event, handler);
+  };
+  const close = ({ code }) => {
+    wss.close();
+    wss.clients.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close(code);
+      }
+    });
+    setTimeout(() => {
+      wss.clients.forEach((ws) => {
+        ws.terminate();
+      });
+    }, ms("5s"));
+  };
+  return { wss, handleUpgrade, on, close };
+};
 
 /**
  * @param {Object} obj
@@ -72,6 +161,62 @@ utils.toClient = (doc) => {
 utils.toArray = (value) => {
   if (!value) return [];
   return Array.isArray(value) ? value : [value];
+};
+
+/**
+ * Convert string
+ * from snake_case to camelCase
+ * @param value (String)
+ * @return A camelCase string
+ */
+utils.snakeToCamel = (s) => {
+  const convert = (_, c) => c.toUpperCase();
+  return s.replace(/[^a-zA-Z0-9]+(.)/g, convert);
+};
+
+/**
+ * Extract conditions from cursor
+ * @param cursor (String)
+ * @param sort (Object)
+ * @return MongoDB filter conditions
+ */
+utils.extractCursor = (cursor, sort) => {
+  let condition = {};
+  const payload = utils.toJSON(decode(cursor).toString()) || {};
+  const params = Object.keys(sort)
+    .filter((field) => payload[field])
+    .map((field) => [field, payload[field]]);
+  for (let [field, value] of params.reverse()) {
+    value = utils.isIsoDate(value) ? new Date(value) : value;
+    condition = utils.isObjectEmpty(condition)
+      ? { [field]: { $gt: value } }
+      : {
+        $or: [
+          { [field]: { $gt: value } },
+          {
+            $and: [
+              { [field]: { $eq: value } },
+              { ...condition },
+            ],
+          }
+        ],
+      };
+  }
+  return condition;
+};
+
+/**
+ * create cursor from last document
+ * @param doc (Object)
+ * @param sort (Object)
+ * @return new cursor
+ */
+utils.createCursor = (doc, sort) => {
+  const payload = Object.keys(sort)
+    .filter((field) => doc[field])
+    .map((field) => [field, doc[field]])
+    .reduce((obj, [field, value]) => ({ ...obj, [field]: value }), {});
+  return encode(Buffer.from(JSON.stringify(payload)));
 };
 
 export default utils;

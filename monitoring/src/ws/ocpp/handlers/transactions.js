@@ -1,15 +1,9 @@
 import cryptoJs from "crypto-js";
 
-import { clients } from "../server.js";
-
 const transactionStart = (client, params) => {
+  const { idTokenToTransactionId, evseIdToTransactionId } = client.session;
   const { transactionInfo: { transactionId }, idToken, evse } = params;
   const response = { idTokenInfo: { status: "Unknown" } };
-  const {
-    idTokenToTransactionId,
-    evseIdToTransactionId,
-  } = clients.get(client.identity);
-
   const hashedIdToken = cryptoJs.SHA256(JSON.stringify(idToken)).toString();
   if (idTokenToTransactionId.has(hashedIdToken)) {
     if (idTokenToTransactionId.get(hashedIdToken) !== "") {
@@ -27,14 +21,9 @@ const transactionStart = (client, params) => {
 };
 
 const transactionStop = (client, params) => {
+  const { idTokenToTransactionId, evseIdToTransactionId } = client.session;
   const { transactionInfo: { transactionId }, idToken, evse } = params;
   const response = { idTokenInfo: { status: "Unknown" } };
-
-  const {
-    idTokenToTransactionId,
-    evseIdToTransactionId,
-  } = clients.get(client.identity);
-
   const hashedIdToken = cryptoJs.SHA256(JSON.stringify(idToken)).toString();
   if (idTokenToTransactionId.get(hashedIdToken) === transactionId) {
     idTokenToTransactionId.delete(hashedIdToken);

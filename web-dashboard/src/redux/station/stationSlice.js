@@ -102,7 +102,7 @@ export const stationGetList = createAsyncThunk(
       const query = `${StationAPI}${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(query, config);
-      dispatch(stationStateUpsertMany(data.stations));
+      dispatch(stationStateUpsertMany(data.data));
       return data;
     } catch (error) {
       handleError({ error, dispatch });

@@ -103,12 +103,44 @@ export const evseGetList = createAsyncThunk(
       const query = `${StationAPI}/evses${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(query, config);
-      dispatch(evseStateUpsertMany(data.evses));
+      dispatch(evseStateUpsertMany(data.data));
       return data;
     } catch (error) {
       handleError({ error, dispatch });
     }
   }
+);
+
+export const evseGetCount = createAsyncThunk(
+  `${evseSlice.name}/getCount`,
+  async ({
+    price, city, state, country,
+    latitude, longitude,
+    ownerId: owner_id,
+    siteId: site_id,
+    connectorType: connector_type,
+    chargeLevel: charge_level,
+    streetAddress: street_address,
+    zipCode: zip_code,
+    latLngOrigin: lat_lng_origin,
+    latLngMin: lat_lng_min,
+    latLngMax: lat_lng_max,
+  } = {}, { dispatch, getState }) => {
+    try {
+      const params = toUrlParams({
+        site_id, owner_id, latitude, longitude,
+        connector_type, charge_level, price,
+        street_address, city, state, country, zip_code,
+        lat_lng_origin, lat_lng_min, lat_lng_max,
+      });
+      const query = `${StationAPI}/evses/count${params ? `?${params}` : ""}`;
+      const config = await tokenConfig({ dispatch, getState });
+      const { data } = await apiInstance.get(query, config);
+      return data.count;
+    } catch (error) {
+      handleError({ error, dispatch });
+    }
+  },
 );
 
 export const evseGetByStation = createAsyncThunk(

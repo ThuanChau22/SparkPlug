@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { encode, decode } from "safe-base64";
 
 import utils from "../utils/utils.js";
 
@@ -12,36 +11,39 @@ const Status = {
 }
 
 const schema = mongoose.Schema({
-  station_id: {
+  stationId: {
     type: Number,
     required: true,
     index: true,
     immutable: true,
   },
-  evse_id: {
+  evseId: {
     type: Number,
     required: true,
-    immutable: true,
   },
-  connector_id: {
+  connectorId: {
     type: Number,
     required: true,
-    immutable: true,
   },
   status: {
     type: String,
     enum: Object.values(Status),
     required: true,
   },
-  site_id: {
+  rdbId: {
     type: Number,
     required: true,
-    immutable: true,
+    index: true,
   },
-  owner_id: {
+  siteId: {
     type: Number,
     required: true,
-    immutable: true,
+    index: true,
+  },
+  ownerId: {
+    type: Number,
+    required: true,
+    index: true,
   },
   location: {
     type: {
@@ -54,203 +56,170 @@ const schema = mongoose.Schema({
       required: true,
     },
   },
-  station_created_at: {
-    type: Date,
-    required: true,
-  },
-  created_at: {
-    type: Date,
-    default: Date.now,
-    required: true,
-  }
-});
+}, { timestamps: true });
 
-schema.index({ station_id: 1, evse_id: 1 });
+schema.index({ stationId: 1, evseId: 1 });
+schema.index({
+  stationId: 1,
+  evseId: 1,
+  connectorId: 1,
+}, { unique: true });
 schema.index({ location: "2dsphere" });
 
 schema.loadClass(class {
-  static async getStationStatuses({ filter, sort, limit } = {}) {
+  static async getStatuses({ filter, sort, limit, cursor } = {}) {
     try {
-      return await this.find(filter).sort(sort).limit(limit).lean();
-    } catch (error) {
-      console.log(error);
-    }
-  }
-  static async getStationStatusesLatest({ filter, sort, limit, cursor } = {}) {
-    try {
-      const aggregate = [];
-      let hasDistance = false;
+      const pipeline = [];
+
+      // Select
+      const $project = {
+        _id: 0,
+        id: "$_id",
+        stationId: "$stationId",
+        evseId: "$evseId",
+        connectorId: "$connectorId",
+        status: "$status",
+        rdbId: "$rdbId",
+        latitude: { $arrayElemAt: ["$location.coordinates", 1] },
+        longitude: { $arrayElemAt: ["$location.coordinates", 0] },
+        createdAt: "$createdAt",
+      };
 
       // Filter
-      let $match = {};
+      const $match = {};
       if (filter) {
-        const { lat_lng_origin, lat_lng_min, lat_lng_max, ...remain } = filter;
-        const [latOrigin, lngOrigin] = lat_lng_origin?.split(",") || [];
+        // Distance
+        const { latLngOrigin, latLngMin, latLngMax, ...remain } = filter;
+        const [latOrigin, lngOrigin] = latLngOrigin?.split(",") || [];
         if (latOrigin && lngOrigin) {
-          aggregate.push({
+          const coordinates = [parseFloat(lngOrigin), parseFloat(latOrigin)];
+          pipeline.push({
             $geoNear: {
-              near: {
-                type: "Point",
-                coordinates: [
-                  parseFloat(lngOrigin),
-                  parseFloat(latOrigin),
-                ],
-              },
+              near: { type: "Point", coordinates },
               distanceField: "distance",
               distanceMultiplier: 0.001,
               spherical: true,
             }
           });
-          hasDistance = true;
+          $project.distance = "$distance";
         }
-        const [latMin, lngMin] = lat_lng_min?.split(",") || [];
-        const [latMax, lngMax] = lat_lng_max?.split(",") || [];
+
+        // Location
+        const [latMin, lngMin] = latLngMin?.split(",") || [];
+        const [latMax, lngMax] = latLngMax?.split(",") || [];
         if ((latMin && lngMin) || (latMax && lngMax)) {
           const lowerBound = [parseFloat(lngMin || -180), parseFloat(latMin || -90)];
           const upperBound = [parseFloat(lngMax || 180), parseFloat(latMax || 90)];
           $match.location = { $geoWithin: { $box: [lowerBound, upperBound] } };
         }
-        for (const [key, value] of Object.entries(remain)) {
-          $match[key] = utils.isInteger(value) ? parseInt(value) : value;
+
+        // Remaining
+        for (const [field, value] of Object.entries(remain)) {
+          $match[field] = value;
+          $project[field] = `$${field}`;
         }
       }
 
-      const sortDefault = { station_created_at: 1, _id: 1 };
+      // Sort
+      const $sort = {};
       if (sort) {
-        const isDesc = /^-(.*)+$/.test(sort);
-        const field = isDesc ? sort.substring(1) : sort;
-        const value = isDesc ? -1 : 1;
-        if (field === "id") {
-          sort = { _id: value };
-        } else if (field === "created_at") {
-          sort = { ...sortDefault };
-          sort[field] = value;
-        } else {
-          sort = { [field]: value, ...sortDefault };
+        for (const [field, value] of Object.entries(sort)) {
+          $sort[field] = value;
+        }
+        const hasRdbId = "rdbId" in $sort;
+        const hasCreatedAt = "createdAt" in $sort;
+        if (!hasRdbId && !hasCreatedAt) {
+          $sort["createdAt"] = 1;
+        }
+        if (!hasRdbId) {
+          $sort["rdbId"] = 1;
         }
       } else {
-        sort = sortDefault;
+        Object.assign($sort, { createdAt: 1, rdbId: 1 });
       }
 
       // Paging Read
       if (cursor) {
-        const payload = utils.toJSON(decode(cursor).toString()) || {};
-        let condition = {};
-        const params = Object.keys(sort)
-          .filter((field) => payload[field])
-          .map((field) => [field, payload[field]]);
-        for (let [field, value] of params.reverse()) {
-          if (utils.isIsoDate(value)) {
-            value = new Date(value);
-          }
-          if (utils.isObjectEmpty(condition)) {
-            condition = { field: value }
-          } else {
-            condition = {
-              $or: [
-                { [field]: { $gt: value } },
-                {
-                  $and: [
-                    { [field]: { $eq: value } },
-                    { ...condition },
-                  ],
-                }
-              ],
-            };
-          }
-        }
-        $match = { ...$match, ...condition }
+        Object.assign($match, utils.extractCursor(cursor, $sort));
       }
 
-      aggregate.push(
+      pipeline.push(
         { $match },
-        { // Latest
-          $group: {
-            _id: {
-              station_id: "$station_id",
-              evse_id: "$evse_id",
-            },
-            id: { $last: "$_id" },
-            connector_id: { $last: "$connector_id" },
-            status: { $last: "$status" },
-            site_id: { $last: "$site_id" },
-            owner_id: { $last: "$owner_id" },
-            location: { $last: "$location" },
-            station_created_at: { $last: "$station_created_at" },
-            created_at: { $last: "$created_at" },
-            ...hasDistance ? { distance: { $last: "$distance" } } : {},
-          }
-        },
-        { // Select
-          $project: {
-            _id: "$id",
-            station_id: "$_id.station_id",
-            evse_id: "$_id.evse_id",
-            connector_id: "$connector_id",
-            status: "$status",
-            site_id: "$site_id",
-            owner_id: "$owner_id",
-            latitude: { $arrayElemAt: ["$location.coordinates", 1] },
-            longitude: { $arrayElemAt: ["$location.coordinates", 0] },
-            station_created_at: "$station_created_at",
-            created_at: "$created_at",
-            distance: "$distance",
-            ...hasDistance ? { distance: "$distance" } : {},
-          }
-        },
-        { $sort: sort },
+        { $project },
+        { $sort },
       );
 
       // Limit
       if (limit) {
-        aggregate.push({ $limit: parseInt(limit) });
+        pipeline.push({ $limit: limit });
       }
 
       // Query
-      const stationStatuses = await StationStatus.aggregate(aggregate);
+      const data = await this.aggregate(pipeline);
 
       // Paging Write
       let next = "";
-      if (stationStatuses.length === parseInt(limit)) {
-        const lastItem = stationStatuses[stationStatuses.length - 1];
-        const payload = Object.keys(sort)
-          .filter((field) => lastItem[field])
-          .map((field) => [field, lastItem[field]])
-          .reduce((obj, [field, value]) => ({ ...obj, [field]: value }), {});
-        next = encode(Buffer.from(JSON.stringify(payload)));
+      if (data.length === limit) {
+        const lastItem = data[data.length - 1];
+        next = utils.createCursor(lastItem, $sort);
       }
-      return {
-        data: stationStatuses,
-        cursor: { next },
-      };
+
+      return { data, cursor: { next } };
     } catch (error) {
-      console.log(error);
+      console.log({ name: "StationStatusGet", error });
+      throw error;
     }
   }
-  static async addStationStatus(data) {
+
+  static async getStatusCount({ filter } = {}) {
     try {
-      const model = {
-        station_id: data.stationId,
-        evse_id: data.evseId,
-        connector_id: data.connectorId,
-        status: data.status,
-        site_id: data.site_id,
-        owner_id: data.owner_id,
-        location: {
-          type: "Point",
-          coordinates: [
-            data.longitude,
-            data.latitude,
-          ],
-        },
-        station_created_at: data.created_at,
-      };
-      if (data.timestamp) {
-        model.created_at = data.timestamp;
+      const $match = {};
+      for (const [field, value] of Object.entries(filter || {})) {
+        $match[field] = value;
       }
-      await this.create(model);
+      const pipeline = [
+        { $match },
+        {
+          $group: {
+            _id: "$status",
+            count: { $count: {} },
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            status: "$_id",
+            count: "$count",
+          },
+        },
+        { $sort: { status: 1 } },
+      ];
+      return await this.aggregate(pipeline);
     } catch (error) {
-      console.log(error);
+      console.log({ name: "StationStatusCount", error });
+      throw error
+    }
+  }
+
+  static async upsertStatus(data) {
+    try {
+      const { stationId, evseId, connectorId } = data;
+      const filter = { stationId, evseId, connectorId };
+
+      const { longitude, latitude, ...remain } = data;
+      const coordinates = [longitude, latitude];
+      const location = { type: "Point", coordinates };
+      const update = { ...remain, location };
+
+      const options = { upsert: true, new: true, lean: true };
+      options.timestamps = {
+        createdAt: !remain.createdAt,
+        updatedAt: !remain.updatedAt,
+      };
+      return await this.findOneAndUpdate(filter, update, options);
+    } catch (error) {
+      console.log({ name: "StationStatusUpsert", error });
+      throw error;
     }
   }
 });

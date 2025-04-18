@@ -6,14 +6,23 @@ import {
 
 import {
   apiInstance,
+  toUrlParams,
   tokenConfig,
   handleError,
 } from "redux/api";
 
 const StationEventAPI = process.env.REACT_APP_STATION_EVENT_API_ENDPOINT;
 
+export const StationEventSources = {
+  Central: "Central",
+  Station: "Station",
+};
+
 const stationEventEntityAdapter = createEntityAdapter({
-  sortComparer: (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+  sortComparer: (a, b) => {
+    const result = new Date(b.createdAt) - new Date(a.createdAt);
+    return result || b.id.localeCompare(a.id);
+  },
 });
 
 const initialState = stationEventEntityAdapter.getInitialState();
@@ -42,12 +51,22 @@ export const {
 
 export const stationEventGetById = createAsyncThunk(
   `${stationEventSlice.name}/getById`,
-  async (stationId, { dispatch, getState }) => {
+  async ({
+    stationId,
+    source, event,
+    limit, cursor,
+    sortBy: sort_by,
+  } = {}, { dispatch, getState }) => {
     try {
       const baseUrl = `${StationEventAPI}/${stationId}`;
+      const params = toUrlParams({
+        source, event,
+        sort_by, cursor, limit,
+      });
+      const query = `${baseUrl}${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
-      const { data } = await apiInstance.get(baseUrl, config);
-      dispatch(stationEventStateSetMany(data));
+      const { data } = await apiInstance.get(query, config);
+      dispatch(stationEventStateSetMany(data.data));
     } catch (error) {
       handleError({ error, dispatch });
     }

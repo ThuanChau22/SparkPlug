@@ -20,7 +20,7 @@ const useStationSocket = (stationId, {
   onUnplugCable,
   onRemoteStart,
   onRemoteStop,
-}) => {
+} = {}) => {
   const { setToastMessage } = useContext(ToastContext);
 
   const WS_ENDPOINT = process.env.REACT_APP_WS_ENDPOINT;

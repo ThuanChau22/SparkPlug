@@ -11,7 +11,10 @@ import {
 
 import LoadingIndicator from "components/LoadingIndicator";
 import useFetchData from "hooks/useFetchData";
+import useStationEventSocket from "hooks/useStationEventSocket";
 import {
+  StationEventSources,
+  stationEventStateSetById,
   stationEventGetById,
   stationEventStateClear,
   selectStationEventList,
@@ -24,7 +27,16 @@ const StationMonitorEventList = ({ stationId }) => {
 
   const { loadState } = useFetchData({
     condition: stationEventList.length === 0,
-    action: useCallback(() => stationEventGetById(stationId), [stationId]),
+    action: useCallback(() => stationEventGetById({
+      stationId,
+      source: StationEventSources.Station,
+    }), [stationId]),
+  });
+
+  useStationEventSocket({
+    onWatchAllEvent: useCallback((stationEvent) => {
+      dispatch(stationEventStateSetById(stationEvent));
+    }, [dispatch]),
   });
 
   useEffect(() => () => dispatch(stationEventStateClear()), [dispatch]);

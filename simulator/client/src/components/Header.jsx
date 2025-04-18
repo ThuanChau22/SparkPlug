@@ -1,4 +1,4 @@
-import { useContext, useRef } from "react";
+import { useCallback, useContext, useRef } from "react";
 import {
   CContainer,
   CDropdown,
@@ -36,9 +36,9 @@ const Header = () => {
         : cilContrast
   );
 
-  useWindowResize(() => {
+  useWindowResize(useCallback(() => {
     setHeaderHeight(headerRef.current?.offsetHeight);
-  });
+  }, [setHeaderHeight]));
 
   return (
     <CHeader ref={headerRef} position="sticky" className="p-0">

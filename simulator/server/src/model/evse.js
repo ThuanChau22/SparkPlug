@@ -278,6 +278,13 @@ class EVSE {
   }
 
   /**
+   * Clear evse state
+   */
+  clear() {
+    this._eventEmitter.removeAllListeners();
+  }
+
+  /**
    * Simulate meter value
    * @return {number}
    */

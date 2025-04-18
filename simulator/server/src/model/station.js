@@ -5,6 +5,7 @@ import { RPCClient } from "ocpp-rpc";
 import WebSocket from "ws";
 
 import { CSMS_WS_ENDPOINT } from "../config.js";
+import utils from "../utils.js";
 
 class Station {
   _model;
@@ -136,6 +137,9 @@ class Station {
         return { status: "Rejected" };
       }
     });
+    this._rpcClient.on("error", (error) => {
+      console.log(error);
+    });
   }
 
   get id() {
@@ -190,21 +194,30 @@ class Station {
       throw new Error("Station is already connected");
     }
     await this._rpcClient.connect();
-    const response = await this._rpcClient.call(
-      "BootNotification",
-      {
+
+    let shouldRetry = true;
+    let retryAttempts = 15;
+    while (shouldRetry) {
+      const response = await this._rpcClient.call(
+        "BootNotification", {
         reason: "PowerUp",
         chargingStation: {
           vendorName: this._securityCtrlr.organizationName,
           model: this._model,
         },
+      });
+      if (response.status === "Pending") {
+        await utils.sleep(ms(`${response.interval}s`));
+        retryAttempts--;
+        shouldRetry = retryAttempts !== 0;
       }
-    );
-    if (response.status === "Accepted") {
-      this._isBooted = true;
-      this._ocppCommCtrlr.heartbeatInterval = response.interval;
-      console.log(`Station ${this.id} - Server time: ${response.currentTime}`);
-      await this.#statusNotificationRequest();
+      if (response.status === "Accepted") {
+        this._isBooted = true;
+        this._ocppCommCtrlr.heartbeatInterval = response.interval;
+        console.log(`Station ${this.id} - Server time: ${response.currentTime}`);
+        await this.#statusNotificationRequest();
+        shouldRetry = false;
+      }
     }
   }
 
@@ -373,6 +386,13 @@ class Station {
     }
   }
 
+  /**
+   * Clear station state
+   */
+  clear() {
+    this._eventEmitter.removeAllListeners();
+  }
+
   #validateEVSEId(evseId) {
     if (!evseId || evseId < 1 || evseId > this._evses.length) {
       throw new Error(`EVSE ID out of range: ${evseId}`);
@@ -389,7 +409,7 @@ class Station {
 
   async #statusNotificationRequest() {
     const requests = [];
-    for (const evse of Object.values(this.evses)) {
+    for (const evse of Object.values(this._evses)) {
       for (const connector of Object.values(evse.connectors)) {
         requests.push(this.#rpcClientCall("StatusNotification", {
           evseId: evse.id,

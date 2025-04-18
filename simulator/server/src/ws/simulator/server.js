@@ -14,7 +14,7 @@ import handler, { Action } from "./handler.js";
  * @property {Set<WebSocket>} sockets
  */
 /**
- * @type {Map.<string, Instance>}
+ * @type {Map<string, Instance>}
  */
 const stations = new Map();
 
@@ -89,7 +89,7 @@ server.on("connection", async (ws, req) => {
     ws.sendJson({ action: Action.SYNCED, payload: {} });
 
     // Handle incoming message
-    ws.onMessage(async ({ action, payload }) => {
+    ws.onJsonMessage(async ({ action, payload }) => {
       const { station, sockets } = stations.get(id) || {};
       if (!station || !sockets?.has(ws)) {
         return ws.close(1000, "Connection lost");
@@ -126,6 +126,7 @@ server.on("connection", async (ws, req) => {
       const { station, sockets } = stations.get(id) || {};
       sockets?.delete(ws);
       if (sockets?.size === 0 && !station?.isConnected) {
+        station.clear();
         stations.delete(id);
       }
     });

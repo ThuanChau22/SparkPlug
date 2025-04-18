@@ -12,7 +12,7 @@ import StickyContainer from "components/StickyContainer";
 import StationMonitorDetailsModal from "components/StationMonitor/DetailsModal";
 import StationMonitorListView from "components/StationMonitor/ListView";
 import StationMonitorMapView from "components/StationMonitor/MapView";
-import useStationEventSocket, { Action } from "hooks/useStationEventSocket";
+import useStationEventSocket from "hooks/useStationEventSocket";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
   selectMapLowerBound,
@@ -24,11 +24,18 @@ import {
   selectStationIds,
   selectStationList,
 } from "redux/station/stationSlice";
-import { evseStateClear } from "redux/evse/evseSlice";
 import {
+  evseStateDeleteMany,
+  evseStateClear,
+  selectEvseList,
+} from "redux/evse/evseSlice";
+import {
+  evseStatusStateUpsertMany,
+  evseStatusStateUpsertById,
   evseStatusStateDeleteMany,
   evseStatusStateClear,
   selectEvseStatusList,
+  selectEvseStatusEntities,
 } from "redux/evse/evseStatusSlice";
 import utils from "utils";
 
@@ -40,7 +47,9 @@ const StationMonitor = () => {
 
   const stationIds = useSelector(selectStationIds);
   const stationList = useSelector(selectStationList);
+  const evseList = useSelector(selectEvseList);
   const evseStatusList = useSelector(selectEvseStatusList);
+  const evseStatusEntities = useSelector(selectEvseStatusEntities);
 
   const [titleHeight, setTitleHeight] = useState(0);
   const titleRef = useCallback((node) => {
@@ -54,12 +63,42 @@ const StationMonitor = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [stationId, setStationId] = useState(null);
 
-  useStationEventSocket({
-    action: Action.WatchStatusEvent,
-    payload: { stationIds },
+  const dispatch = useDispatch();
+
+  const {
+    isSocketReady,
+    watchStatusEventStart,
+    watchStatusEventStop,
+  } = useStationEventSocket({
+    onWatchStatusEvent: useCallback(({ stationId, payload }) => {
+      const { evseId, connectorStatus } = payload;
+      if (evseId) {
+        dispatch(evseStatusStateUpsertById({
+          stationId, evseId,
+          status: connectorStatus,
+        }));
+      } else if (evseStatusEntities[stationId]) {
+        dispatch(evseStatusStateUpsertMany(
+          evseStatusEntities[stationId].map(({ evseId }) => ({
+            stationId, evseId,
+            status: connectorStatus,
+          }))
+        ));
+      }
+    }, [evseStatusEntities, dispatch]),
+    batchUpdate: true,
   });
 
-  const dispatch = useDispatch();
+  useEffect(() => {
+    if (isSocketReady && stationIds.length !== 0) {
+      watchStatusEventStart(stationIds);
+    }
+    return () => {
+      if (isSocketReady) {
+        watchStatusEventStop();
+      }
+    };
+  }, [stationIds, isSocketReady, watchStatusEventStart, watchStatusEventStop]);
 
   useEffect(() => {
     const stationIds = utils.outOfBoundResources(stationList, {
@@ -70,10 +109,18 @@ const StationMonitor = () => {
   }, [stationList, mapLowerBound, mapUpperBound, dispatch]);
 
   useEffect(() => {
-    const evseStatusIds = utils.outOfBoundResources(evseStatusList, {
+    const evseIds = utils.outOfBoundResources(evseList, {
       lowerBound: mapLowerBound,
       upperBound: mapUpperBound,
     }).map(({ station_id, evse_id }) => ({ station_id, evse_id }));
+    dispatch(evseStateDeleteMany(evseIds));
+  }, [evseList, mapLowerBound, mapUpperBound, dispatch]);
+
+  useEffect(() => {
+    const evseStatusIds = utils.outOfBoundResources(evseStatusList, {
+      lowerBound: mapLowerBound,
+      upperBound: mapUpperBound,
+    }).map(({ stationId, evseId }) => ({ stationId, evseId }));
     dispatch(evseStatusStateDeleteMany(evseStatusIds));
   }, [evseStatusList, mapLowerBound, mapUpperBound, dispatch]);
 

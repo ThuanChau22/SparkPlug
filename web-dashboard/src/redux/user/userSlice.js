@@ -72,7 +72,7 @@ export const userGetList = createAsyncThunk(
       const query = `${UserAPI}${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(query, config);
-      dispatch(userStateSetMany(data.users));
+      dispatch(userStateSetMany(data.data));
       return data;
     } catch (error) {
       handleError({ error, dispatch });

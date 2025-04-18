@@ -1,12 +1,11 @@
 import cryptoJs from "crypto-js";
 
 import User from "../../../repositories/user.js";
-import { clients } from "../server.js";
 
 const authorizeWithRFID = async (client, idToken) => {
   const response = { idTokenInfo: { status: "Invalid" } };
   if (await User.hasRFID(idToken.idToken)) {
-    const { idTokenToTransactionId } = clients.get(client.identity);
+    const { idTokenToTransactionId } = client.session;
     const hashedIdToken = cryptoJs.SHA256(JSON.stringify(idToken)).toString();
     if (idTokenToTransactionId.has(hashedIdToken)) {
       idTokenToTransactionId.delete(hashedIdToken);

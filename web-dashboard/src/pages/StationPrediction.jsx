@@ -54,18 +54,17 @@ const StationPrediction = () => {
   ), [existedStationList, predictedStationList]);
 
   const fetchData = async (apiEndpoint) => {
-    const base = `${apiEndpoint}`;
-    const zipCode = parseInt(input);
-    const query = `?zip_code=${zipCode}`;
+    const endpoint = `${apiEndpoint}`;
+    const params = `?zip_code=${parseInt(input)}`;
     const headers = { Authorization: `Bearer ${token}` };
-    const { data } = await apiInstance(`${base}${query}`, { headers });
+    const { data } = await apiInstance(`${endpoint}${params}`, { headers });
     return data;
   }
 
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const [{ stations: existedStations }, newStations] = await Promise.all([
+      const [{ data: existedStations }, newStations] = await Promise.all([
         fetchData(StationAPI),
         fetchData(StationPredictionAPI),
       ]);
