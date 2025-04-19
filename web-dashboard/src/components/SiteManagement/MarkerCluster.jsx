@@ -64,6 +64,7 @@ const SiteMarkerCluster = ({
 }) => (
   <MapMarkerCluster
     data={utils.toGeoJSON(siteList)}
+    options={{ disableRefresh: loading }}
     createMarker={({ properties: { id } }) => (
       <SiteMarker
         key={id}
@@ -71,13 +72,6 @@ const SiteMarkerCluster = ({
         eventHandlers={{ click: () => onClick(id) }}
       />
     )}
-    options={{
-      disableRefresh: loading,
-      map: (properties) => ({ id: properties.id, test: "here" }),
-      reduce: (accumulated, properties) => {
-        accumulated.test += properties.test;
-      }
-    }}
   />
 );
 

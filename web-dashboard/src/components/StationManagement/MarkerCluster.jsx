@@ -65,8 +65,8 @@ const StationMarkerCluster = ({
   onClick = () => { },
 }) => (
   <MapMarkerCluster
-    disableRefresh={loading}
     data={utils.toGeoJSON(stationList)}
+    options={{ disableRefresh: loading }}
     createMarker={({ properties: { id } }) => (
       <StationMarker
         key={id}
