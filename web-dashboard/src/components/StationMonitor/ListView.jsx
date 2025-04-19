@@ -15,6 +15,7 @@ import useWindowResize from "hooks/useWindowResize";
 import {
   selectMapLowerBound,
   selectMapUpperBound,
+  selectMapIsZoomInLimit,
 } from "redux/map/mapSlice";
 import {
   StationFields,
@@ -29,6 +30,7 @@ const StationMonitorListView = ({ refHeight, handleViewStation }) => {
 
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
+  const mapIsZoomInLimit = useSelector(selectMapIsZoomInLimit);
 
   const stationSelectedFields = useMemo(() => ([
     StationFields.name,
@@ -76,7 +78,7 @@ const StationMonitorListView = ({ refHeight, handleViewStation }) => {
     data: dataOnMapView,
     loadState: loadStateOnMapView,
   } = useFetchDataOnMapView({
-    condition: !loadState.loading,
+    condition: !loadState.loading && mapIsZoomInLimit,
     action: useCallback(() => stationGetList({
       fields: stationSelectedFields.join(),
       latLngMin, latLngMax,
@@ -155,11 +157,19 @@ const StationMonitorListView = ({ refHeight, handleViewStation }) => {
                   </CListGroupItem>
                 )
               })}
+              {loadStateOnScroll.loading && (
+                <LoadingIndicator loading={loadStateOnScroll.loading} />
+              )}
             </>
           )
           : (
             <div className="d-flex flex-grow-1 justify-content-center align-items-center">
-              <span className="text-secondary">No stations found</span>
+              <span className="text-secondary">
+                {mapIsZoomInLimit
+                  ? "No stations found"
+                  : "Zoom in on map to display information"
+                }
+              </span>
             </div>
           )
         }

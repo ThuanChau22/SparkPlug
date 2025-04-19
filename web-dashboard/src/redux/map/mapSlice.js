@@ -1,5 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+export const MapZoomLimit = 10;
+
 const initialState = {
   center: { lat: null, lng: null },
   lowerBound: { lat: null, lng: null },
@@ -39,6 +41,15 @@ export const selectMapLowerBound = (state) => selectMap(state).lowerBound;
 export const selectMapUpperBound = (state) => selectMap(state).upperBound;
 
 export const selectMapZoom = (state) => selectMap(state).zoom;
+
+export const selectMapExist = (state) => {
+  const { center: { lat, lng }, zoom } = selectMap(state);
+  return [lat, lng, zoom].filter((v) => v === null).length === 0;
+};
+
+export const selectMapIsZoomInLimit = (state) => {
+  return selectMapZoom(state) >= MapZoomLimit;
+};
 
 export const selectMapLocation = (state) => selectMap(state).location;
 

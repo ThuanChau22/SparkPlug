@@ -17,6 +17,7 @@ import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
   selectMapLowerBound,
   selectMapUpperBound,
+  selectMapIsZoomInLimit,
 } from "redux/map/mapSlice";
 import {
   StationFields,
@@ -37,6 +38,7 @@ const StationMonitorMapView = ({ handleViewStation }) => {
 
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
+  const mapIsZoomInLimit = useSelector(selectMapIsZoomInLimit);
 
   const stationSelectedFields = useMemo(() => ([
     StationFields.latitude,
@@ -76,7 +78,7 @@ const StationMonitorMapView = ({ handleViewStation }) => {
   const {
     loadState: stationLoadStateOnMapView,
   } = useFetchDataOnMapView({
-    condition: !loadState.loading,
+    condition: !loadState.loading && mapIsZoomInLimit,
     action: useCallback(() => stationGetList({
       fields: stationSelectedFields.join(),
       latLngMin, latLngMax,
@@ -86,7 +88,7 @@ const StationMonitorMapView = ({ handleViewStation }) => {
   const {
     loadState: evseStatusLoadStateOnMapView,
   } = useFetchDataOnMapView({
-    condition: latLngMin || latLngMax,
+    condition: (latLngMin || latLngMax) && mapIsZoomInLimit,
     action: useCallback(() => evseStatusGetList({
       latLngMin, latLngMax,
       ...(authIsOwner ? { ownerId: authUserId } : {}),

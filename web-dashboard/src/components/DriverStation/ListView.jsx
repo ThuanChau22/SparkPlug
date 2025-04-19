@@ -17,6 +17,7 @@ import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   selectMapLowerBound,
   selectMapUpperBound,
+  selectMapIsZoomInLimit,
   selectMapLocation,
 } from "redux/map/mapSlice";
 import {
@@ -39,6 +40,7 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
 
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
+  const mapIsZoomInLimit = useSelector(selectMapIsZoomInLimit);
   const mapLocation = useSelector(selectMapLocation);
 
   const stationSelectedFields = useMemo(() => ([
@@ -101,7 +103,7 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
     data: dataOnMapView,
     loadState: loadStateOnMapView,
   } = useFetchDataOnMapView({
-    condition: !loadState.loading,
+    condition: !loadState.loading && mapIsZoomInLimit,
     action: useCallback(() => stationGetList({
       fields: stationSelectedFields.join(),
       latLngMin, latLngMax,
@@ -225,7 +227,12 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
           )
           : (
             <div className="d-flex flex-grow-1 justify-content-center align-items-center">
-              <span className="text-secondary">No stations found</span>
+              <span className="text-secondary">
+                {mapIsZoomInLimit
+                  ? "No stations found"
+                  : "Zoom in on map to display information"
+                }
+              </span>
             </div>
           )}
       </CListGroup>

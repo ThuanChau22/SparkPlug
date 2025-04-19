@@ -13,6 +13,7 @@ import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
   selectMapLowerBound,
   selectMapUpperBound,
+  selectMapIsZoomInLimit,
 } from "redux/map/mapSlice";
 import {
   SiteFields,
@@ -26,6 +27,7 @@ const SiteMapView = ({ handleViewSite }) => {
 
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
+  const mapIsZoomInLimit = useSelector(selectMapIsZoomInLimit);
 
   const siteSelectedFields = useMemo(() => ([
     SiteFields.latitude,
@@ -57,7 +59,7 @@ const SiteMapView = ({ handleViewSite }) => {
   const {
     loadState: loadStateOnMapView,
   } = useFetchDataOnMapView({
-    condition: !loadState.loading,
+    condition: !loadState.loading && mapIsZoomInLimit,
     action: useCallback(() => siteGetList({
       fields: siteSelectedFields.join(),
       latLngMin, latLngMax,

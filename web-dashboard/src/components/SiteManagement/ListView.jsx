@@ -14,6 +14,7 @@ import useWindowResize from "hooks/useWindowResize";
 import {
   selectMapLowerBound,
   selectMapUpperBound,
+  selectMapIsZoomInLimit,
 } from "redux/map/mapSlice";
 import {
   SiteFields,
@@ -28,6 +29,7 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
 
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
+  const mapIsZoomInLimit = useSelector(selectMapIsZoomInLimit);
 
   const siteSelectedFields = useMemo(() => ([
     SiteFields.name,
@@ -75,7 +77,7 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
     data: dataOnMapView,
     loadState: loadStateOnMapView,
   } = useFetchDataOnMapView({
-    condition: !loadState.loading,
+    condition: !loadState.loading && mapIsZoomInLimit,
     action: useCallback(() => siteGetList({
       fields: siteSelectedFields.join(),
       latLngMin, latLngMax,
@@ -166,7 +168,12 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
           )
           : (
             <div className="d-flex flex-grow-1 justify-content-center align-items-center">
-              <span className="text-secondary">No sites found</span>
+              <span className="text-secondary">
+                {mapIsZoomInLimit
+                  ? "No sites found"
+                  : "Zoom in on map to display information"
+                }
+              </span>
             </div>
           )
         }
