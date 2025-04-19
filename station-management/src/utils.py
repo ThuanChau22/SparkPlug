@@ -7,6 +7,7 @@ from base64 import (
 from flask import request
 from geoip2.errors import GeoIP2Error
 import json
+import traceback
 
 # Internal Modules
 from src.config import geo_client
@@ -60,5 +61,6 @@ def handle_error(error):
         return {"message": message}, status_code
     except Exception as error:
         print(f"ServerError: {error}", file=stderr)
+        print(traceback.format_exc())
         message = "An unknown error occurred"
         return {"message": message}, 500
