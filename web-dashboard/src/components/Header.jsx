@@ -101,7 +101,7 @@ const Header = () => {
           <HeaderDropdown />
         </CHeaderNav>
       </CContainer >
-      <CContainer fluid>
+      <CContainer className="d-none d-md-flex" fluid>
         <Breadcrumb />
       </CContainer>
     </CHeader >
