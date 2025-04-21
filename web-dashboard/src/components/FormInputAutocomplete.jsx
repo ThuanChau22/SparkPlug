@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AsyncTypeahead } from "react-bootstrap-typeahead";
+import "react-bootstrap-typeahead/css/Typeahead.css";
 
 import FormInput from "components/FormInput";
 

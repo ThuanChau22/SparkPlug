@@ -12,7 +12,6 @@ import {
   Outlet,
   RouterProvider,
 } from "react-router-dom";
-import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 import { store } from "redux/store";
 import routes from "routes";
