@@ -5,6 +5,7 @@ import {
   CListGroupItem,
 } from "@coreui/react";
 
+import { StationEstWaitTimeAPI } from "api-endpoints";
 import LoadingIndicator from "components/LoadingIndicator";
 import DriverStationListItem from "components/DriverStation/StationListItem";
 import useFetchData from "hooks/useFetchData";
@@ -31,8 +32,6 @@ import { EvseStatus } from "redux/evse/evseStatusSlice";
 import utils from "utils";
 
 const DriverStationListView = ({ refHeight, handleViewStation }) => {
-  const StationWaitTimeEstimationAPI = process.env.REACT_APP_STATION_WAIT_TIME_ESTIMATION_API;
-
   const ListLimit = 50;
   const listRef = useRef({});
 
@@ -171,7 +170,7 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
 
   const fetchWaitTimes = useCallback(async (body) => {
     try {
-      const baseURL = StationWaitTimeEstimationAPI;
+      const baseURL = StationEstWaitTimeAPI;
       const headers = { Authorization: `Bearer ${authToken}` };
       const { data } = await apiInstance.post(baseURL, body, { headers });
       const waitTimes = {};
@@ -183,7 +182,7 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
     } catch (error) {
       handleError({ error, dispatch });
     }
-  }, [StationWaitTimeEstimationAPI, authToken, dispatch]);
+  }, [authToken, dispatch]);
 
   useEffect(() => {
     const currentDateTime = new Date();

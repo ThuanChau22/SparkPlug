@@ -12,6 +12,7 @@ import {
 } from "@coreui/react";
 import { CChart } from "@coreui/react-chartjs";
 
+import { StationAnalyticsAPI } from "api-endpoints";
 import EvseAvailabilityStatus from "components/EvseAvailabilityStatus";
 import LoadingIndicator from "components/LoadingIndicator";
 import useFetchData from "hooks/useFetchData";
@@ -29,8 +30,6 @@ import {
 } from "redux/station/stationSlice";
 
 const DriverStationDetailsModal = ({ isOpen, onClose, stationId }) => {
-  const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
-
   const station = useSelector((state) => selectStationById(state, stationId));
   const stationStatus = useSelector((state) => selectStationStatusById(state, stationId));
   const token = useSelector(selectAuthAccessToken);
@@ -70,7 +69,7 @@ const DriverStationDetailsModal = ({ isOpen, onClose, stationId }) => {
     } catch (error) {
       handleError({ error, dispatch });
     }
-  }, [StationAnalyticsAPI, stationId, startDate, endDate, token, dispatch]);
+  }, [stationId, startDate, endDate, token, dispatch]);
 
   useEffect(() => {
     fetchAnalyticsData();

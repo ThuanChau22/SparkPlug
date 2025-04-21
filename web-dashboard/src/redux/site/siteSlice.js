@@ -5,14 +5,13 @@ import {
   createSelector,
 } from "@reduxjs/toolkit";
 
+import { SiteAPI } from "api-endpoints";
 import {
   apiInstance,
   tokenConfig,
   toUrlParams,
   handleError,
 } from "redux/api";
-
-const SiteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
 
 export const SiteFields = {
   id: "id",

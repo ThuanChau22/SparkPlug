@@ -12,6 +12,10 @@ import {
   CModalBody,
 } from "@coreui/react";
 
+import {
+  StationAnalyticsAPI,
+  StationEnergyForecastAPI,
+} from "api-endpoints";
 import LoadingIndicator from "components/LoadingIndicator";
 import useFetchData from "hooks/useFetchData";
 import useMapZoom from "hooks/useMapZoom";
@@ -27,9 +31,6 @@ import {
 } from "redux/station/stationSlice";
 
 const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
-  const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
-  const EnergyForecastAPI = process.env.REACT_APP_ENERGY_FORECAST_API_ENDPOINT;
-
   const station = useSelector((state) => selectStationById(state, stationId));
   const token = useSelector(selectAuthAccessToken);
 
@@ -71,11 +72,11 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
     } catch (error) {
       handleError({ error, dispatch });
     }
-  }, [StationAnalyticsAPI, stationId, startDate, endDate, token, dispatch]);
+  }, [stationId, startDate, endDate, token, dispatch]);
 
   const fetchEnergyForecastData = useCallback(async () => {
     try {
-      const query = `${EnergyForecastAPI}/${stationId}`;
+      const query = `${StationEnergyForecastAPI}/${stationId}`;
       const headers = { Authorization: `Bearer ${token}` };
       const { data } = await apiInstance.get(query, { headers });
       setEnergyForecastData(data);
@@ -83,7 +84,7 @@ const StationAnalyticsDetailsModal = ({ isOpen, onClose, stationId }) => {
       handleError({ error, dispatch });
       setEnergyForecastData({ data: [] });
     }
-  }, [EnergyForecastAPI, stationId, token, dispatch]);
+  }, [stationId, token, dispatch]);
 
   useEffect(() => {
     fetchAnalyticsData();

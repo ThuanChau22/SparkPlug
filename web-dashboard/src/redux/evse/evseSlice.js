@@ -5,14 +5,13 @@ import {
   createSelector,
 } from "@reduxjs/toolkit";
 
+import { StationAPI } from "api-endpoints";
 import {
   apiInstance,
   toUrlParams,
   tokenConfig,
   handleError,
 } from "redux/api";
-
-const StationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
 
 export const EvseFields = {
   id: "id",

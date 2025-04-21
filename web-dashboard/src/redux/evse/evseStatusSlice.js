@@ -5,14 +5,13 @@ import {
   createSelector,
 } from "@reduxjs/toolkit";
 
+import { StationStatusAPI } from "api-endpoints";
 import {
   apiInstance,
   toUrlParams,
   tokenConfig,
   handleError,
 } from "redux/api";
-
-const StationStatusAPI = process.env.REACT_APP_STATION_STATUS_API_ENDPOINT;
 
 export const EvseStatus = {
   Available: "Available",

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import { StationAnalyticsAPI } from "api-endpoints";
 import ChartWidgetContainer from "components/ChartWidgetContainer";
 import { apiInstance, toUrlParams, handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import { selectFilterDashboardValues } from "redux/filter/dashboardSlice";
 
 const OwnerGrowthChartWidget = ({ className = "", style = {} }) => {
-  const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
   const filter = useSelector(selectFilterDashboardValues);
 
@@ -31,7 +31,7 @@ const OwnerGrowthChartWidget = ({ className = "", style = {} }) => {
     } catch (error) {
       handleError({ error, dispatch });
     }
-  }, [StationAnalyticsAPI, params, token, dispatch]);
+  }, [params, token, dispatch]);
 
   useEffect(() => {
     fetchData();

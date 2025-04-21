@@ -1,0 +1,12 @@
+export const APIDomain = process.env.REACT_APP_API_DOMAIN
+export const AuthAPI = process.env.REACT_APP_AUTH_API;
+export const UserAPI = process.env.REACT_APP_USER_API;
+export const SiteAPI = process.env.REACT_APP_SITE_API;
+export const StationAPI = process.env.REACT_APP_STATION_API;
+export const StationAnalyticsAPI = process.env.REACT_APP_STATION_ANALYTICS_API;
+export const StationStatusAPI = process.env.REACT_APP_STATION_STATUS_API;
+export const StationEventAPI = process.env.REACT_APP_STATION_EVENT_API;
+export const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS;
+export const StationPredictionAPI = process.env.REACT_APP_STATION_PREDICTION_API;
+export const StationEnergyForecastAPI = process.env.REACT_APP_STATION_ENERGY_FORECAST_API;
+export const StationEstWaitTimeAPI = process.env.REACT_APP_STATION_WAIT_TIME_ESTIMATION_API;

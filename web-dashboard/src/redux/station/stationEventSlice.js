@@ -4,14 +4,13 @@ import {
   createEntityAdapter,
 } from "@reduxjs/toolkit";
 
+import { StationEventAPI } from "api-endpoints";
 import {
   apiInstance,
   toUrlParams,
   tokenConfig,
   handleError,
 } from "redux/api";
-
-const StationEventAPI = process.env.REACT_APP_STATION_EVENT_API_ENDPOINT;
 
 export const StationEventSources = {
   Central: "Central",

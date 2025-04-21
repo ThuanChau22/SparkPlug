@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import secureStorage from "react-secure-storage";
 import { jwtDecode } from "jwt-decode";
 
+import { AuthAPI } from "api-endpoints";
 import {
   apiInstance,
   clearHeader,
@@ -14,8 +15,6 @@ import { stationEventStateClear } from "redux/station/stationEventSlice";
 import { evseStateClear } from "redux/evse/evseSlice";
 import { evseStatusStateClear } from "redux/evse/evseStatusSlice";
 import { userStateClear } from "redux/user/userSlice";
-
-const AuthAPI = process.env.REACT_APP_AUTH_API_ENDPOINT;
 
 export const AuthRoles = {
   Staff: "staff",

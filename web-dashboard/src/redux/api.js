@@ -1,5 +1,6 @@
 import axios from "axios";
 
+import { APIDomain } from "api-endpoints";
 import {
   authStateClear,
   selectAuthAuthenticated,
@@ -11,7 +12,7 @@ import {
 } from "redux/error/errorSlice";
 
 // Create Axios API instance with base URL
-export const apiInstance = axios.create({ baseURL: process.env.REACT_APP_API_DOMAIN || "/" });
+export const apiInstance = axios.create({ baseURL: APIDomain || "/" });
 
 // Retrieve/Attach access token
 export const tokenConfig = async ({ config = apiInstance.defaults, getState }) => {
