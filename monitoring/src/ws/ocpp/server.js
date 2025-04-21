@@ -3,7 +3,7 @@ import { RPCServer, createRPCError } from "ocpp-rpc";
 import { v4 as uuid } from "uuid";
 import WebSocket from "ws";
 
-import { STATION_API_ENDPOINT } from "../../config.js";
+import { STATION_API } from "../../config.js";
 import StreamManager from "../../model/stream-manager.js";
 import StationEvent from "../../repositories/station-event.js";
 import StationStatus from "../../repositories/station-status.js";
@@ -24,8 +24,8 @@ server.auth(async (accept, reject, { identity }) => {
   try {
     console.log(`Connection request from station: ${identity}`);
     const [_, { data }] = await Promise.all([
-      axios.get(`${STATION_API_ENDPOINT}/${identity}`),
-      axios.get(`${STATION_API_ENDPOINT}/${identity}/evses`),
+      axios.get(`${STATION_API}/${identity}`),
+      axios.get(`${STATION_API}/${identity}/evses`),
     ]);
     if (data.length === 0) {
       const message = `Evses from station ${identity} not found`;

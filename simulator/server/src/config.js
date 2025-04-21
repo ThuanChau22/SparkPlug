@@ -6,10 +6,11 @@ dotenvExpand.expand(dotenv.config());
 
 export const {
   PORT,
-  WEB_DOMAIN,
-  CSMS_WS_ENDPOINT,
-  STATION_API_ENDPOINT,
+  CSMS_WS,
+  STATION_API,
 } = process.env;
+
+export const WEB_DOMAINS = process.env.WEB_DOMAINS?.split(",") || "*";
 
 export const setGracefulShutdown = (httpServer) => {
   const connections = new Set();

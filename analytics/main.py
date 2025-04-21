@@ -8,8 +8,8 @@ from typing import Optional
 
 from src.config import (
     PORT,
-    WEB_DOMAIN,
-    AUTH_API_ENDPOINT,
+    WEB_DOMAINS,
+    AUTH_API,
 )
 from src.forecast_app import forecast
 from src.mongo_app import fetch_transactions, fetch_evse_status, TransactionQueryParams
@@ -25,7 +25,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[WEB_DOMAIN],
+    allow_origins=WEB_DOMAINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -70,7 +70,7 @@ def get_user_with_permission(request: Request, allowed_roles: tuple):
             status_code=401, detail="Invalid Authorization header format"
         )
 
-    res = requests.post(f"{AUTH_API_ENDPOINT}/verify", json={"token": token})
+    res = requests.post(f"{AUTH_API}/verify", json={"token": token})
     data = res.json()
     if res.status_code != 200:
         raise HTTPException(status_code=res.status_code, detail=data)

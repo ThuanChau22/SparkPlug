@@ -1,8 +1,8 @@
 import axios from "axios";
 
 import {
-  AUTH_API_ENDPOINT,
-  STATION_API_ENDPOINT,
+  AUTH_API,
+  STATION_API,
 } from "../../config.js";
 import StationEvent from "../../repositories/station-event.js";
 import utils from "../../utils/utils.js";
@@ -26,7 +26,7 @@ handler.connect = async (payload) => {
     }
     if (!socket.session.authenticated) {
       socket.session.authenticating = true;
-      const endpoint = `${AUTH_API_ENDPOINT}/verify`;
+      const endpoint = `${AUTH_API}/verify`;
       const body = { token: socket.session.token };
       const { data } = await axios.post(endpoint, body);
       Object.assign(socket.session, data);
@@ -93,7 +93,7 @@ handler.watchAllEvent = async (payload, response) => {
         throw { code: 400, message };
       }
       const headers = { Authorization: `Bearer ${socket.session.token}` };
-      await axios.get(`${STATION_API_ENDPOINT}/${stationId}`, { headers });
+      await axios.get(`${STATION_API}/${stationId}`, { headers });
       await server.stream.addEvent(socket, eventName, (data) => {
         const isStationId = data.stationId === stationId;
         const fromStation = data.source === StationEvent.Sources.Station;

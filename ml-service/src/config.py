@@ -5,10 +5,10 @@ import pymongo
 # Load environment variables
 dotenv.load_dotenv(dotenv_path=".env")
 PORT = os.getenv("PORT")
-WEB_DOMAIN = os.getenv("WEB_DOMAIN") or "*"
+WEB_DOMAINS = os.environ["WEB_DOMAINS"].split(",") or "*"
 MONGODB_URI = os.environ["MONGODB_URI"]
-AUTH_API_ENDPOINT = os.environ["AUTH_API_ENDPOINT"]
-STATION_API_ENDPOINT = os.environ["STATION_API_ENDPOINT"]
+AUTH_API = os.environ["AUTH_API"]
+STATION_API = os.environ["STATION_API"]
 STATION_PREDICTION_MODEL_PATH = os.environ["STATION_PREDICTION_MODEL_PATH"]
 WAIT_TIME_MODEL_PATH = os.environ["WAIT_TIME_MODEL_PATH"]
 

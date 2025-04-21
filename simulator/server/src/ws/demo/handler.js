@@ -2,7 +2,7 @@ import axios from "axios";
 import WebSocket from "ws";
 import ms from "ms";
 
-import { PORT, STATION_API_ENDPOINT } from "../../config.js";
+import { PORT, STATION_API } from "../../config.js";
 import utils from "../../utils.js";
 import { Action as Simulator } from "../simulator/handler.js";
 import server, { state } from "./server.js";
@@ -117,7 +117,7 @@ handler.starting = async (payload) => {
     state.status = state.STARTING;
     server.wss.emit("progress");
 
-    const endpoint = `${STATION_API_ENDPOINT}/evses`;
+    const endpoint = `${STATION_API}/evses`;
     const entries = Object.entries({
       limit: 100,
       ...payload,

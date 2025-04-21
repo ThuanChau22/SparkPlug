@@ -2,7 +2,7 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 
-import { WEB_DOMAIN } from "../config.js";
+import { WEB_DOMAINS } from "../config.js";
 
 // Initiate express app
 const app = express();
@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Set CORS Policy
-app.use(cors({ origin: WEB_DOMAIN }));
+app.use(cors({ origin: WEB_DOMAINS }));
 
 // Set security-related HTTP response headers
 app.use(helmet());

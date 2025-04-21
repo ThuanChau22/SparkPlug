@@ -3,7 +3,7 @@ from flask import request
 from functools import wraps
 
 # Internal Modules
-from src.config import AUTH_API_ENDPOINT
+from src.config import AUTH_API
 
 
 def require_permission(*allowed_roles):
@@ -14,7 +14,7 @@ def require_permission(*allowed_roles):
             if "Authorization" in request.headers:
                 _, token = request.headers["Authorization"].split(" ")
                 body = {"token": token}
-                response = requests.post(f"{AUTH_API_ENDPOINT}/verify", json=body)
+                response = requests.post(f"{AUTH_API}/verify", json=body)
                 data = response.json()
                 if not response.status_code == 200:
                     return data, response.status_code
