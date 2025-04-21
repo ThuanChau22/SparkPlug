@@ -15,7 +15,7 @@ import {
 import {
   StationAnalyticsAPI,
   StationEnergyForecastAPI,
-} from "api-endpoints";
+} from "configs";
 import LoadingIndicator from "components/LoadingIndicator";
 import useFetchData from "hooks/useFetchData";
 import useMapZoom from "hooks/useMapZoom";

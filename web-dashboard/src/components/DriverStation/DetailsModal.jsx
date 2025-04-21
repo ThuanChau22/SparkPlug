@@ -12,7 +12,7 @@ import {
 } from "@coreui/react";
 import { CChart } from "@coreui/react-chartjs";
 
-import { StationAnalyticsAPI } from "api-endpoints";
+import { StationAnalyticsAPI } from "configs";
 import EvseAvailabilityStatus from "components/EvseAvailabilityStatus";
 import LoadingIndicator from "components/LoadingIndicator";
 import useFetchData from "hooks/useFetchData";

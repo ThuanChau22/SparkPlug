@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ReadyState } from "react-use-websocket";
 import ms from "ms";
 
-import { StationEventWS } from "api-endpoints";
+import { StationEventWS } from "configs";
 import useSocket from "hooks/useSocket";
 import useBatchUpdate from "hooks/useBatchUpdate";
 import { handleError } from "redux/api";

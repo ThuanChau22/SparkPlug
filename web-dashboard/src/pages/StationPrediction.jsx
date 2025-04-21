@@ -12,7 +12,7 @@ import {
 import {
   StationAPI,
   StationPredictionAPI,
-} from "api-endpoints";
+} from "configs";
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
 import StationPredictionMarkerCluster from "components/StationPrediction/MarkerCluster";

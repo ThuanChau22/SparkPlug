@@ -5,7 +5,7 @@ import {
   createSelector,
 } from "@reduxjs/toolkit";
 
-import { SiteAPI } from "api-endpoints";
+import { SiteAPI } from "configs";
 import {
   apiInstance,
   tokenConfig,
@@ -54,7 +54,7 @@ export const siteSlice = createSlice({
     siteStateDeleteById(state, { payload }) {
       siteEntityAdapter.removeOne(state, payload);
     },
-    siteStateClear(_) {
+    siteStateClear() {
       return initialState;
     },
   },

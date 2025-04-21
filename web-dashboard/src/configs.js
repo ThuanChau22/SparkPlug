@@ -1,4 +1,4 @@
-export const APIDomain = import.meta.env.VITE_API_DOMAIN
+export const APIDomain = import.meta.env.VITE_API_DOMAIN;
 export const AuthAPI = import.meta.env.VITE_AUTH_API;
 export const UserAPI = import.meta.env.VITE_USER_API;
 export const SiteAPI = import.meta.env.VITE_SITE_API;

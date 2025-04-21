@@ -4,7 +4,7 @@ import {
   createEntityAdapter,
 } from "@reduxjs/toolkit";
 
-import { StationEventAPI } from "api-endpoints";
+import { StationEventAPI } from "configs";
 import {
   apiInstance,
   toUrlParams,
@@ -36,7 +36,7 @@ export const stationEventSlice = createSlice({
     stationEventStateSetById(state, { payload }) {
       stationEventEntityAdapter.setOne(state, payload);
     },
-    stationEventStateClear(_) {
+    stationEventStateClear() {
       return initialState;
     },
   },

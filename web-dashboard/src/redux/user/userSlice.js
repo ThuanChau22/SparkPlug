@@ -5,7 +5,7 @@ import {
   createSelector,
 } from "@reduxjs/toolkit";
 
-import { UserAPI } from "api-endpoints";
+import { UserAPI } from "configs";
 import {
   apiInstance,
   toUrlParams,
@@ -41,7 +41,7 @@ export const userSlice = createSlice({
     userStateDeleteById(state, { payload }) {
       userEntityAdapter.removeOne(state, payload);
     },
-    userStateClear(_) {
+    userStateClear() {
       return initialState;
     },
   },

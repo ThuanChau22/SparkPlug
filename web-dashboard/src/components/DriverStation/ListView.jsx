@@ -5,7 +5,7 @@ import {
   CListGroupItem,
 } from "@coreui/react";
 
-import { StationEstWaitTimeAPI } from "api-endpoints";
+import { StationEstWaitTimeAPI } from "configs";
 import LoadingIndicator from "components/LoadingIndicator";
 import DriverStationListItem from "components/DriverStation/StationListItem";
 import useFetchData from "hooks/useFetchData";

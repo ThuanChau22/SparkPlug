@@ -5,7 +5,7 @@ import {
   createSelector,
 } from "@reduxjs/toolkit";
 
-import { StationStatusAPI } from "api-endpoints";
+import { StationStatusAPI } from "configs";
 import {
   apiInstance,
   toUrlParams,
@@ -44,7 +44,7 @@ export const evseStatusSlice = createSlice({
       });
       evseStatusEntityAdapter.removeMany(state, evseStatusIds);
     },
-    evseStatusStateClear(_) {
+    evseStatusStateClear() {
       return initialState;
     },
   },
