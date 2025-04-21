@@ -12,5 +12,5 @@ FROM nginx:stable-alpine
 COPY --from=build /app/nginx /etc/nginx/templates
 WORKDIR /usr/share/nginx/html
 RUN rm -rf ./*
-COPY --from=build /app/build .
+COPY --from=build /app/dist .
 CMD ["nginx", "-g", "daemon off;"]

@@ -7,6 +7,7 @@ import {
 } from "react";
 import { ReadyState } from "react-use-websocket";
 
+import { SimulatorServerWS } from "configs";
 import useSocket from "hooks/useSocket";
 import { ToastContext } from "contexts";
 
@@ -22,13 +23,11 @@ const useStationSocket = (stationId, {
   onRemoteStop,
 } = {}) => {
   const { setToastMessage } = useContext(ToastContext);
-
-  const WS_ENDPOINT = process.env.REACT_APP_WS_ENDPOINT;
   const {
     readyState,
     lastJsonMessage,
     sendJsonMessage,
-  } = useSocket(`${WS_ENDPOINT}/${stationId}`);
+  } = useSocket(`${SimulatorServerWS}/${stationId}`);
 
   const StationAction = useMemo(() => ({
     METER_VALUE: "MeterValue",

@@ -149,8 +149,8 @@ services:
     build:
       target: development
     environment:
-      REACT_APP_WS_ENDPOINT: ${SIMULATOR_CLIENT_SERVER_WS}
-      REACT_APP_STATION_API_ENDPOINT: ${SIMULATOR_CLIENT_STATION_API_ENDPOINT}
+      VITE_APP_SIMULATOR_SERVER_WS: ${SIMULATOR_CLIENT_SERVER_WS}
+      VITE_APP_STATION_API: ${SIMULATOR_CLIENT_STATION_API_ENDPOINT}
     depends_on:
       - simulator-server
       - station-management

@@ -44,12 +44,15 @@ const router = createBrowserRouter([
       }
     ],
   },
-]);
+], { future: { v7_relativeSplatPath: true } });
 
 const container = document.getElementById("root");
 const root = createRoot(container);
 root.render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <RouterProvider
+      router={router}
+      future={{ v7_startTransition: true }}
+    />
   </React.StrictMode>
 );
