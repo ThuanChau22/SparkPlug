@@ -7,7 +7,7 @@ services:
     ports:
       - ${WEB_DASHBOARD_PORT}:${WEB_DASHBOARD_PORT}
     environment:
-      PORT: ${WEB_DASHBOARD_PORT}
+      VITE_PORT: ${WEB_DASHBOARD_PORT}
       NGINX_PORT: ${WEB_DASHBOARD_PORT}
 
   user-management:
