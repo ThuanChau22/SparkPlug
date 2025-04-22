@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useMapEvents } from "react-leaflet";
 
@@ -18,6 +18,8 @@ const MapSetView = ({ delay = 0 }) => {
   const mapZoom = useSelector(selectMapZoom);
 
   const [mapParams, setMapParams] = useMapParams();
+
+  const [onLoad, setOnLoad] = useState(true);
 
   const dispatch = useDispatch();
 
@@ -48,10 +50,11 @@ const MapSetView = ({ delay = 0 }) => {
       lng: map.getCenter().lng.toFixed(6),
       zoom: map.getZoom(),
     }).join();
-    if (exist && `${lat},${lng},${zoom}` !== current) {
+    if (onLoad && exist && `${lat},${lng},${zoom}` !== current) {
       map.setView([lat, lng], zoom);
+      setOnLoad(false);
     }
-  }, [map, mapParams]);
+  }, [map, mapParams, onLoad]);
 
   useEffect(() => {
     if (mapExist) {
