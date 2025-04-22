@@ -77,3 +77,7 @@ body {
 .btn-close {
   --cui-btn-close-focus-shadow: none;
 }
+
+.footer {
+  --cui-footer-bg: var(--cui-body-bg);
+}
