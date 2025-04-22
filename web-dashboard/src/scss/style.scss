@@ -80,22 +80,6 @@ body {
   box-shadow: none;
 }
 
-// (CoreUI Bug) Undone
-// .sidebar-narrow-unfoldable:not(.sidebar-end) ~ * {
-//   --cui-sidebar-occupy-start: 4rem !important;
-// }
-.sidebar {
-  &.hide:not(.sidebar-end)~* {
-    --cui-sidebar-occupy-start: 0 !important;
-  }
-
-  @media (max-width: 991.98px) {
-    &:not(.sidebar-end)~* {
-      --cui-sidebar-occupy-start: 0 !important;
-    }
-  }
-}
-
 .footer {
   --cui-footer-bg: var(--cui-body-bg);
 }
@@ -159,4 +143,9 @@ body {
 
 .react-multiple-carousel__arrow--right {
   right: 0 !important;
+}
+
+// Typeahead
+.rbt-input-hint {
+  display: none !important;
 }

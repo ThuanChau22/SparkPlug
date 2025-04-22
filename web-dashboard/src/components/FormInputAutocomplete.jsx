@@ -12,7 +12,7 @@ const FormInputAutocomplete = ({ id, onSearch, ...remain }) => {
       InputForm={AsyncTypeahead}
       id={id}
       filterBy={() => true}
-      minLength={0}
+      minLength={1}
       isLoading={loading}
       onSearch={async (query) => {
         setLoading(true);
