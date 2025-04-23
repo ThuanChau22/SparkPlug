@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CButton,
@@ -16,7 +16,7 @@ import {
   selectAuthRoleIsStaff,
   selectAuthRoleIsOwner,
 } from "redux/auth/authSlice";
-import { mapStateSet } from "redux/map/mapSlice";
+import useMapZoom from "hooks/useMapZoom";
 import { siteAdd } from "redux/site/siteSlice";
 import utils from "utils";
 
@@ -25,7 +25,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
 
-  const initialFormData = {
+  const initialFormData = useMemo(() => ({
     name: "",
     ownerId: "",
     latitude: "",
@@ -35,9 +35,12 @@ const SiteAddModal = ({ isOpen, onClose }) => {
     state: "",
     zipCode: "",
     country: "",
-  };
+  }), []);
+
   const [formData, setFormData] = useState(initialFormData);
   const [validated, setValidated] = useState(false);
+
+  const [mapZoom, setMapZoom] = useMapZoom();
 
   const dispatch = useDispatch();
 
@@ -67,22 +70,21 @@ const SiteAddModal = ({ isOpen, onClose }) => {
     const site = await dispatch(siteAdd(data)).unwrap();
     if (site) {
       const { latitude: lat, longitude: lng } = site;
-      if (utils.hasLatLngValue({ lat, lng })) {
-        dispatch(mapStateSet({
-          center: { lat, lng },
-          lowerBound: { lat, lng },
-          upperBound: { lat, lng },
-          zoom: 20,
-        }));
-      }
+      setMapZoom({ lat, lng });
     }
-    handleClose();
   };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setFormData(initialFormData);
     onClose();
-  };
+  }, [initialFormData, onClose]);
+
+  useEffect(() => {
+    const { lat, lng } = mapZoom;
+    if (utils.hasLatLngValue({ lat, lng })) {
+      handleClose();
+    }
+  }, [mapZoom, handleClose]);
 
   return (
     <CModal
