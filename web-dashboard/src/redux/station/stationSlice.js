@@ -33,8 +33,9 @@ export const StationFields = {
 
 const stationEntityAdapter = createEntityAdapter({
   sortComparer: (a, b) => {
-    const result = new Date(a.created_at) - new Date(b.created_at);
-    return result || a.id - b.id;
+    const byDistance = a.distance - b.distance || 0;
+    const byCreatedAt = new Date(a.created_at) - new Date(b.created_at);
+    return byDistance || byCreatedAt || a.id - b.id;
   }
 });
 

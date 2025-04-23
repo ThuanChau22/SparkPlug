@@ -138,9 +138,10 @@ export const selectEvseStatusEntities = createSelector(
   [selectEvseStatusList],
   (evseStatusList) => {
     const entities = {};
-    for (const { stationId, ...remain } of evseStatusList) {
+    for (const evseStatus of evseStatusList) {
+      const { stationId } = evseStatus;
       entities[stationId] = entities[stationId] || [];
-      entities[stationId].push(remain);
+      entities[stationId].push(evseStatus);
     }
     return entities;
   },

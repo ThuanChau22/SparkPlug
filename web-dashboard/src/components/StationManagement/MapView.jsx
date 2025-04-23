@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import MapContainer from "components/Map/MapContainer";
@@ -6,11 +6,12 @@ import MapFitBound from "components/Map/MapFitBound";
 import MapSetView from "components/Map/MapSetView";
 import StickyContainer from "components/StickyContainer";
 import StationMarkerCluster from "components/StationManagement/MarkerCluster";
-import useFetchData from "hooks/useFetchData";
-import useFetchDataOnMapView from "hooks/useFetchDataOnMapView";
 import useMapParams from "hooks/useMapParams";
+import useFetchData from "hooks/useFetchData";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
+import { selectAuthRoleIsOwner } from "redux/auth/authSlice";
 import {
+  selectMapExist,
   selectMapLowerBound,
   selectMapUpperBound,
   selectMapIsZoomInLimit
@@ -25,6 +26,9 @@ import utils from "utils";
 const StationMapView = ({ handleViewStation }) => {
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
+  const authIsOwner = useSelector(selectAuthRoleIsOwner);
+
+  const mapExist = useSelector(selectMapExist);
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
   const mapIsZoomInLimit = useSelector(selectMapIsZoomInLimit);
@@ -33,48 +37,41 @@ const StationMapView = ({ handleViewStation }) => {
     StationFields.latitude,
     StationFields.longitude,
   ]), []);
+
   const stationList = useSelector((state) => {
     return selectStationListByFields(state, stationSelectedFields);
   });
 
-  const { latLngMin, latLngMax } = useMemo(() => ({
-    latLngMin: utils.toLatLngString(mapLowerBound),
-    latLngMax: utils.toLatLngString(mapUpperBound),
-  }), [mapLowerBound, mapUpperBound]);
-
   const [mapParams] = useMapParams();
 
-  const fetchOnLoad = useMemo(() => (
-    !mapParams.exist && !latLngMin && !latLngMax
-  ), [latLngMin, latLngMax, mapParams]);
+  const { latLngOrigin, latLngMin, latLngMax } = useMemo(() => ({
+    latLngOrigin: authIsOwner || mapExist ? "" : "default",
+    latLngMin: utils.toLatLngString(mapLowerBound),
+    latLngMax: utils.toLatLngString(mapUpperBound),
+  }), [authIsOwner, mapExist, mapLowerBound, mapUpperBound]);
+
+  const limit = useMemo(() => (
+    authIsOwner && !mapExist ? 5 : 0
+  ), [authIsOwner, mapExist]);
+
+  const fetchParams = useMemo(() => ({
+    fields: stationSelectedFields.join(),
+    latLngOrigin, latLngMin, latLngMax, limit,
+  }), [stationSelectedFields, latLngOrigin, latLngMin, latLngMax, limit]);
 
   const { data, loadState } = useFetchData({
-    condition: fetchOnLoad,
-    action: useCallback(() => stationGetList({
-      fields: stationSelectedFields.join(),
-      latLngOrigin: "default",
-    }), [stationSelectedFields]),
-  });
-
-  const {
-    loadState: loadStateOnMapView,
-  } = useFetchDataOnMapView({
-    condition: !loadState.loading && mapIsZoomInLimit,
-    action: useCallback(() => stationGetList({
-      fields: stationSelectedFields.join(),
-      latLngMin, latLngMax,
-    }), [stationSelectedFields, latLngMin, latLngMax]),
+    condition: !mapParams.exist || mapIsZoomInLimit,
+    action: useCallback(() => stationGetList(fetchParams), [fetchParams]),
   });
 
   const loading = useMemo(() => (
-    loadState.loading || (loadState.idle && loadStateOnMapView.loading)
-  ), [loadState, loadStateOnMapView]);
+    !data && loadState.loading
+  ), [data, loadState]);
 
-  useEffect(() => {
-    if (loadState.idle && loadStateOnMapView.done) {
-      loadState.setDone();
-    }
-  }, [loadState, loadStateOnMapView]);
+  const bounds = useMemo(() => {
+    const hasData = data?.data.length > 0;
+    return !mapExist && hasData ? data.data : [];
+  }, [mapExist, data]);
 
   return (
     <StickyContainer style={{ top: `${headerHeight}px` }}>
@@ -83,10 +80,10 @@ const StationMapView = ({ handleViewStation }) => {
         refHeight={headerHeight}
       >
         <MapSetView delay={1000} />
-        <MapFitBound bounds={data?.data || []} />
+        <MapFitBound bounds={bounds} />
         <StationMarkerCluster
           stationList={stationList}
-          loading={loadStateOnMapView.loading}
+          loading={loadState.loading}
           onClick={handleViewStation}
         />
       </MapContainer>

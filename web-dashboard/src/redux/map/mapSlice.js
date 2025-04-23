@@ -21,7 +21,7 @@ export const mapSlice = createSlice({
         }
       }
     },
-    mapStateClear(_) {
+    mapStateClear() {
       return initialState;
     },
   },

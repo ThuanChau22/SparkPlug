@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import MapContainer from "components/Map/MapContainer";
@@ -7,24 +7,21 @@ import MapSetView from "components/Map/MapSetView";
 import MapUserLocation from "components/Map/MapUserLocation";
 import StickyContainer from "components/StickyContainer";
 import StationStatusMarkerCluster from "components/StationMonitor/MarkerCluster";
-import useFetchData from "hooks/useFetchData";
-import useFetchDataOnMapView from "hooks/useFetchDataOnMapView";
 import useMapParams from "hooks/useMapParams";
+import useFetchData from "hooks/useFetchData";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
+  selectMapExist,
   selectMapLowerBound,
   selectMapUpperBound,
   selectMapIsZoomInLimit,
+  selectMapLocation,
 } from "redux/map/mapSlice";
 import {
   StationFields,
   stationGetList,
   selectStationListByFields,
 } from "redux/station/stationSlice";
-import {
-  EvseFields,
-  evseGetList,
-} from "redux/evse/evseSlice";
 import {
   evseStatusGetList,
   selectEvseStatusEntities,
@@ -34,14 +31,17 @@ import utils from "utils";
 const DriverStationMapView = ({ handleViewStation }) => {
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
+  const mapExist = useSelector(selectMapExist);
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
   const mapIsZoomInLimit = useSelector(selectMapIsZoomInLimit);
+  const mapLocation = useSelector(selectMapLocation);
 
   const stationSelectedFields = useMemo(() => ([
     StationFields.latitude,
     StationFields.longitude,
   ]), []);
+
   const stationList = useSelector((state) => {
     return selectStationListByFields(state, stationSelectedFields);
   });
@@ -49,92 +49,57 @@ const DriverStationMapView = ({ handleViewStation }) => {
   const evseStatusEntities = useSelector(selectEvseStatusEntities);
 
   const stationStatusList = useMemo(() => (
-    stationList.map((station) => (
-      { ...station, evses: evseStatusEntities[station.id] }
-    ))
+    stationList.map((station) => ({
+      ...station,
+      evses: evseStatusEntities[station.id]
+    }))
   ), [stationList, evseStatusEntities]);
+
+  const [mapParams] = useMapParams();
+
+  const latLngOrigin = useMemo(() => {
+    const latLng = utils.toLatLngString(mapLocation);
+    return mapLocation.located ? latLng : mapExist ? "" : "default";
+  }, [mapExist, mapLocation]);
 
   const { latLngMin, latLngMax } = useMemo(() => ({
     latLngMin: utils.toLatLngString(mapLowerBound),
     latLngMax: utils.toLatLngString(mapUpperBound),
   }), [mapLowerBound, mapUpperBound]);
 
-  const [mapParams] = useMapParams();
+  const limit = useMemo(() => (
+    !mapExist ? 5 : 0
+  ), [mapExist]);
 
-  const fetchOnLoad = useMemo(() => (
-    !mapParams.exist && !latLngMin && !latLngMax
-  ), [latLngMin, latLngMax, mapParams]);
+  const fetchParams = useMemo(() => ({
+    fields: stationSelectedFields.join(),
+    latLngOrigin, latLngMin, latLngMax, limit
+  }), [stationSelectedFields, latLngOrigin, latLngMin, latLngMax, limit]);
 
   const { data, loadState } = useFetchData({
-    condition: fetchOnLoad,
-    action: useCallback(() => stationGetList({
-      fields: stationSelectedFields.join(),
-      latLngOrigin: "default",
-    }), [stationSelectedFields]),
+    condition: !mapParams.exist || mapIsZoomInLimit,
+    action: useCallback(() => stationGetList(fetchParams), [fetchParams]),
   });
 
   const {
-    loadState: stationLoadStateOnMapView,
-  } = useFetchDataOnMapView({
-    condition: !loadState.loading && mapIsZoomInLimit,
-    action: useCallback(() => stationGetList({
-      fields: stationSelectedFields.join(),
-      latLngMin, latLngMax,
-    }), [stationSelectedFields, latLngMin, latLngMax]),
-  });
-
-  const evseSelectedFields = useMemo(() => ([
-    EvseFields.stationId,
-    EvseFields.evseId,
-    EvseFields.latitude,
-    EvseFields.longitude,
-  ]), []);
-
-  const {
-    loadState: evseLoadStateOnMapView,
-  } = useFetchDataOnMapView({
-    condition: !loadState.loading && mapIsZoomInLimit,
-    action: useCallback(() => evseGetList({
-      fields: evseSelectedFields.join(),
-      latLngMin, latLngMax,
-    }), [evseSelectedFields, latLngMin, latLngMax]),
-  });
-
-  const {
-    loadState: evseStatusLoadStateOnMapView,
-  } = useFetchDataOnMapView({
-    condition: (latLngMin || latLngMax) && mapIsZoomInLimit,
+    data: evseStatusData,
+    loadState: evseStatusLoadState,
+  } = useFetchData({
+    condition: mapExist && mapIsZoomInLimit,
     action: useCallback(() => evseStatusGetList({
       latLngMin, latLngMax,
     }), [latLngMin, latLngMax]),
   });
 
   const loading = useMemo(() => (
-    loadState.loading
-    || (loadState.idle && stationLoadStateOnMapView.loading)
-    || (loadState.idle && evseLoadStateOnMapView.loading)
-    || (loadState.idle && evseStatusLoadStateOnMapView.loading)
-  ), [
-    loadState,
-    stationLoadStateOnMapView,
-    evseLoadStateOnMapView,
-    evseStatusLoadStateOnMapView,
-  ]);
+    (!data && loadState.loading)
+    || (!evseStatusData && evseStatusLoadState.loading)
+  ), [data, loadState, evseStatusData, evseStatusLoadState]);
 
-  useEffect(() => {
-    if (loadState.idle
-      && stationLoadStateOnMapView.done
-      && evseLoadStateOnMapView.done
-      && evseStatusLoadStateOnMapView.done
-    ) {
-      loadState.setDone();
-    }
-  }, [
-    loadState,
-    stationLoadStateOnMapView,
-    evseLoadStateOnMapView,
-    evseStatusLoadStateOnMapView,
-  ]);
+  const bounds = useMemo(() => {
+    const hasData = data?.data.length > 0;
+    return !mapExist && hasData ? data.data : [];
+  }, [mapExist, data]);
 
   return (
     <StickyContainer style={{ top: `${headerHeight}px` }}>
@@ -144,13 +109,10 @@ const DriverStationMapView = ({ handleViewStation }) => {
       >
         <MapSetView delay={1000} />
         <MapUserLocation />
-        <MapFitBound bounds={data?.data || []} />
+        <MapFitBound bounds={bounds} />
         <StationStatusMarkerCluster
           stationList={stationStatusList}
-          loading={
-            stationLoadStateOnMapView.loading
-            || evseStatusLoadStateOnMapView.loading
-          }
+          loading={loadState.loading || evseStatusLoadState.loading}
           onClick={handleViewStation}
         />
       </MapContainer>
