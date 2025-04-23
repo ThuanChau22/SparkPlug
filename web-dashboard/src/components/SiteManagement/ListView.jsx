@@ -6,14 +6,16 @@ import {
 } from "@coreui/react";
 
 import LoadingIndicator from "components/LoadingIndicator";
-import useFetchData from "hooks/useFetchData";
-import useFetchDataOnMapView from "hooks/useFetchDataOnMapView";
-import useFetchDataOnScroll from "hooks/useFetchDataOnScroll";
 import useMapParams from "hooks/useMapParams";
+import useFetchData from "hooks/useFetchData";
+import useFetchDataOnScroll from "hooks/useFetchDataOnScroll";
 import useWindowResize from "hooks/useWindowResize";
+import { selectAuthRoleIsOwner } from "redux/auth/authSlice";
 import {
+  selectMapExist,
   selectMapLowerBound,
   selectMapUpperBound,
+  selectMapIsZoomInLimit,
 } from "redux/map/mapSlice";
 import {
   SiteFields,
@@ -23,64 +25,52 @@ import {
 import utils from "utils";
 
 const SiteListView = ({ refHeight, handleViewSite }) => {
-  const ListLimit = 50;
+  const ListLimit = 25;
   const listRef = useRef({});
 
+  const authIsOwner = useSelector(selectAuthRoleIsOwner);
+
+  const mapExist = useSelector(selectMapExist);
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
+  const mapIsZoomInLimit = useSelector(selectMapIsZoomInLimit);
 
   const siteSelectedFields = useMemo(() => ([
     SiteFields.name,
     SiteFields.streetAddress,
     SiteFields.city,
   ]), []);
+
   const siteList = useSelector((state) => {
     return selectSiteListByFields(state, siteSelectedFields);
   });
 
   const [listPage, setListPage] = useState(0);
   const [listCursor, setListCursor] = useState({});
-
-  const [listHeight, setListHeight] = useState(0);
-  useWindowResize(useCallback(() => {
-    setListHeight(window.innerHeight - refHeight);
-  }, [refHeight]));
-
-  const { latLngMin, latLngMax } = useMemo(() => {
-    const latLngMin = utils.toLatLngString(mapLowerBound);
-    const latLngMax = utils.toLatLngString(mapUpperBound);
-    return { latLngMin, latLngMax };
-  }, [mapLowerBound, mapUpperBound]);
-
   const siteListByPage = useMemo(() => (
     siteList.filter((_, index) => index < ListLimit * listPage)
   ), [siteList, listPage]);
 
   const [mapParams] = useMapParams();
 
-  const fetchOnLoad = useMemo(() => (
-    !mapParams.exist && !latLngMin && !latLngMax
-  ), [latLngMin, latLngMax, mapParams]);
+  const { latLngOrigin, latLngMin, latLngMax } = useMemo(() => ({
+    latLngOrigin: authIsOwner || mapExist ? "" : "default",
+    latLngMin: utils.toLatLngString(mapLowerBound),
+    latLngMax: utils.toLatLngString(mapUpperBound),
+  }), [authIsOwner, mapExist, mapLowerBound, mapUpperBound]);
+
+  const limit = useMemo(() => (
+    authIsOwner && !mapExist ? 5 : ListLimit
+  ), [authIsOwner, mapExist]);
+
+  const fetchParams = useMemo(() => ({
+    fields: siteSelectedFields.join(),
+    latLngOrigin, latLngMin, latLngMax, limit,
+  }), [siteSelectedFields, latLngOrigin, latLngMin, latLngMax, limit]);
 
   const { data, loadState } = useFetchData({
-    condition: fetchOnLoad,
-    action: useCallback(() => siteGetList({
-      fields: siteSelectedFields.join(),
-      latLngOrigin: "default",
-      limit: ListLimit,
-    }), [siteSelectedFields]),
-  });
-
-  const {
-    data: dataOnMapView,
-    loadState: loadStateOnMapView,
-  } = useFetchDataOnMapView({
-    condition: !loadState.loading,
-    action: useCallback(() => siteGetList({
-      fields: siteSelectedFields.join(),
-      latLngMin, latLngMax,
-      limit: ListLimit,
-    }), [siteSelectedFields, latLngMin, latLngMax]),
+    condition: !mapParams.exist || mapIsZoomInLimit,
+    action: useCallback(() => siteGetList(fetchParams), [fetchParams]),
   });
 
   const {
@@ -98,31 +88,18 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
   });
 
   const loading = useMemo(() => (
-    loadState.loading || (loadState.idle && loadStateOnMapView.loading)
-  ), [loadState, loadStateOnMapView]);
-
-  useEffect(() => {
-    if (loadState.idle && loadStateOnMapView.done) {
-      loadState.setDone();
-    }
-  }, [loadState, loadStateOnMapView]);
+    !data && loadState.loading
+  ), [data, loadState]);
 
   useEffect(() => {
     if (data && loadState.done) {
       setListCursor(data.cursor);
       setListPage(1);
-    }
-  }, [data, loadState]);
-
-  useEffect(() => {
-    if (dataOnMapView && loadStateOnMapView.done) {
-      setListCursor(dataOnMapView.cursor);
-      setListPage(1);
       if (listRef.current) {
         listRef.current.scrollTop = 0;
       }
     }
-  }, [dataOnMapView, loadStateOnMapView]);
+  }, [data, loadState]);
 
   useEffect(() => {
     if (dataOnScroll && loadStateOnScroll.done) {
@@ -130,6 +107,11 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
       setListPage((state) => state + 1);
     }
   }, [dataOnScroll, loadStateOnScroll]);
+
+  const [listHeight, setListHeight] = useState(0);
+  useWindowResize(useCallback(() => {
+    setListHeight(window.innerHeight - refHeight);
+  }, [refHeight]));
 
   return (loading
     ? <LoadingIndicator loading={loading} />
@@ -166,7 +148,12 @@ const SiteListView = ({ refHeight, handleViewSite }) => {
           )
           : (
             <div className="d-flex flex-grow-1 justify-content-center align-items-center">
-              <span className="text-secondary">No sites found</span>
+              <span className="text-secondary">
+                {mapIsZoomInLimit
+                  ? "No sites found"
+                  : "Zoom in on map to display information"
+                }
+              </span>
             </div>
           )
         }

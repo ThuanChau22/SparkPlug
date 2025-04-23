@@ -6,19 +6,19 @@ services:
     build:
       target: development
     environment:
-      REACT_APP_AUTH_API_ENDPOINT: ${WEB_DASHBOARD_AUTH_API}
-      REACT_APP_USER_API_ENDPOINT: ${WEB_DASHBOARD_USER_API}
-      REACT_APP_SITE_API_ENDPOINT: ${WEB_DASHBOARD_SITE_API}
-      REACT_APP_STATION_API_ENDPOINT: ${WEB_DASHBOARD_STATION_API}
-      REACT_APP_ANALYTICS_STATION_API_ENDPOINT: ${WEB_DASHBOARD_ANALYTICS_STATION_API}
-      REACT_APP_STATION_STATUS_API_ENDPOINT: ${WEB_DASHBOARD_STATION_STATUS_API}
-      REACT_APP_STATION_EVENT_API_ENDPOINT: ${WEB_DASHBOARD_STATION_EVENT_API}
-      REACT_APP_STATION_EVENT_WS_ENDPOINT: ${WEB_DASHBOARD_STATION_EVENT_WS}
-      REACT_APP_STATION_PREDICTION_ENDPOINT: ${WEB_DASHBOARD_STATION_PREDICTION_API}
-      REACT_APP_ENERGY_FORECAST_API_ENDPOINT: ${WEB_DASHBOARD_ENERGY_FORECAST_API}
-      REACT_APP_STATION_WAIT_TIME_ESTIMATION_API: ${WEB_DASHBOARD_STATION_WAIT_TIME_ESTIMATION_API}
-      REACT_APP_SECURE_LOCAL_STORAGE_PREFIX: ${WEB_DASHBOARD_SECURE_LOCAL_STORAGE_PREFIX}
-      REACT_APP_SECURE_LOCAL_STORAGE_HASH_KEY: ${WEB_DASHBOARD_SECURE_LOCAL_STORAGE_HASH_KEY}
+      VITE_AUTH_API: ${WEB_DASHBOARD_AUTH_API}
+      VITE_USER_API: ${WEB_DASHBOARD_USER_API}
+      VITE_SITE_API: ${WEB_DASHBOARD_SITE_API}
+      VITE_STATION_API: ${WEB_DASHBOARD_STATION_API}
+      VITE_STATION_ANALYTICS_API: ${WEB_DASHBOARD_STATION_ANALYTICS_API}
+      VITE_STATION_STATUS_API: ${WEB_DASHBOARD_STATION_STATUS_API}
+      VITE_STATION_EVENT_API: ${WEB_DASHBOARD_STATION_EVENT_API}
+      VITE_STATION_EVENT_WS: ${WEB_DASHBOARD_STATION_EVENT_WS}
+      VITE_STATION_PREDICTION_API: ${WEB_DASHBOARD_STATION_PREDICTION_API}
+      VITE_STATION_ENERGY_FORECAST_API: ${WEB_DASHBOARD_ENERGY_FORECAST_API}
+      VITE_STATION_WAIT_TIME_ESTIMATION_API: ${WEB_DASHBOARD_STATION_WAIT_TIME_ESTIMATION_API}
+      VITE_SECURE_LOCAL_STORAGE_PREFIX: ${WEB_DASHBOARD_SECURE_LOCAL_STORAGE_PREFIX}
+      VITE_SECURE_LOCAL_STORAGE_HASH_KEY: ${WEB_DASHBOARD_SECURE_LOCAL_STORAGE_HASH_KEY}
     depends_on:
       - user-management
       - station-management
@@ -40,7 +40,7 @@ services:
     build:
       target: development
     environment:
-      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
+      WEB_DOMAINS: ${WEB_DASHBOARD_DOMAIN}
       MYSQL_URI: ${MYSQL_URI}
       JWT_SECRET: ${USER_JWT_SECRET}
     develop:
@@ -59,7 +59,7 @@ services:
       target: development
     environment:
       WEB_DOMAINS: ${WEB_DASHBOARD_DOMAIN},${SIMULATOR_CLIENT_DOMAIN}
-      AUTH_API_ENDPOINT: ${STATION_AUTH_API_ENDPOINT}
+      AUTH_API: ${STATION_AUTH_API}
       MYSQL_URI: ${MYSQL_URI}
       GEOIP_ACCOUNT_ID: ${STATION_GEOIP_ACCOUNT_ID}
       GEOIP_LICENSE_KEY: ${STATION_GEOIP_LICENSE_KEY}
@@ -73,29 +73,6 @@ services:
         - action: rebuild
           path: ./station-management/requirements.txt
 
-  monitoring:
-    extends:
-      file: compose.prod.yaml
-      service: monitoring
-    build:
-      target: development
-    environment:
-      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
-      AUTH_API_ENDPOINT: ${MONITORING_AUTH_API_ENDPOINT}
-      STATION_API_ENDPOINT: ${MONITORING_STATION_API_ENDPOINT}
-      MYSQL_URI: ${MYSQL_URI}
-      MONGODB_URI: ${MONGODB_URI}
-    depends_on:
-      - user-management
-      - station-management
-    develop:
-      watch:
-        - action: sync
-          path: ./monitoring
-          target: /app
-        - action: rebuild
-          path: ./monitoring/package.json
-
   analytics:
     extends:
       file: compose.prod.yaml
@@ -103,8 +80,8 @@ services:
     build:
       target: development
     environment:
-      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
-      AUTH_API_ENDPOINT: ${ANALYTICS_AUTH_API_ENDPOINT}
+      WEB_DOMAINS: ${WEB_DASHBOARD_DOMAIN}
+      AUTH_API: ${ANALYTICS_AUTH_API}
       MYSQL_URI: ${MYSQL_URI}
       MONGODB_URI: ${MONGODB_URI}
       ENERGY_FORECAST_MODEL_PATH: ${ANALYTICS_ENERGY_FORECAST_MODEL_PATH}
@@ -118,6 +95,29 @@ services:
         - action: rebuild
           path: ./analytics/requirements.txt
 
+  monitoring:
+    extends:
+      file: compose.prod.yaml
+      service: monitoring
+    build:
+      target: development
+    environment:
+      WEB_DOMAINS: ${WEB_DASHBOARD_DOMAIN}
+      AUTH_API: ${MONITORING_AUTH_API}
+      STATION_API: ${MONITORING_STATION_API}
+      MYSQL_URI: ${MYSQL_URI}
+      MONGODB_URI: ${MONGODB_URI}
+    depends_on:
+      - user-management
+      - station-management
+    develop:
+      watch:
+        - action: sync
+          path: ./monitoring
+          target: /app
+        - action: rebuild
+          path: ./monitoring/package.json
+
   ml-service:
     extends:
       file: compose.prod.yaml
@@ -125,9 +125,9 @@ services:
     build:
       target: development
     environment:
-      WEB_DOMAIN: ${WEB_DASHBOARD_DOMAIN}
-      AUTH_API_ENDPOINT: ${ML_SERVICE_AUTH_API_ENDPOINT}
-      STATION_API_ENDPOINT: ${ML_SERVICE_STATION_API_ENDPOINT}
+      WEB_DOMAINS: ${WEB_DASHBOARD_DOMAIN}
+      AUTH_API: ${ML_SERVICE_AUTH_API}
+      STATION_API: ${ML_SERVICE_STATION_API}
       MONGODB_URI: ${MONGODB_URI}
       STATION_PREDICTION_MODEL_PATH: ${ML_SERVICE_STATION_PREDICTION_MODEL_PATH}
       WAIT_TIME_MODEL_PATH: ${ML_SERVICE_WAIT_TIME_PREDICTION_MODEL_PATH}
@@ -149,8 +149,8 @@ services:
     build:
       target: development
     environment:
-      REACT_APP_WS_ENDPOINT: ${SIMULATOR_CLIENT_SERVER_WS}
-      REACT_APP_STATION_API_ENDPOINT: ${SIMULATOR_CLIENT_STATION_API_ENDPOINT}
+      VITE_APP_SIMULATOR_SERVER_WS: ${SIMULATOR_CLIENT_SERVER_WS}
+      VITE_APP_STATION_API: ${SIMULATOR_CLIENT_STATION_API}
     depends_on:
       - simulator-server
       - station-management
@@ -169,9 +169,9 @@ services:
     build:
       target: development
     environment:
-      WEB_DOMAIN: ${SIMULATOR_CLIENT_DOMAIN}
-      STATION_API_ENDPOINT: ${SIMULATOR_SERVER_STATION_API_ENDPOINT}
-      CSMS_WS_ENDPOINT: ${SIMULATOR_CSMS_WS}
+      WEB_DOMAINS: ${SIMULATOR_CLIENT_DOMAIN}
+      STATION_API: ${SIMULATOR_SERVER_STATION_API}
+      CSMS_WS: ${SIMULATOR_SERVER_CSMS_WS}
     depends_on:
       - station-management
       - monitoring

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import { StationAnalyticsAPI } from "configs";
 import ChartWidgetContainer from "components/ChartWidgetContainer";
 import { apiInstance, handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 
 const DriverSessionCountByStationChartWidget = ({ className = "", style = {} }) => {
-  const StationAnalyticsAPI = process.env.REACT_APP_ANALYTICS_STATION_API_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
 
   const [data, setData] = useState(null);
@@ -22,7 +22,7 @@ const DriverSessionCountByStationChartWidget = ({ className = "", style = {} }) 
     } catch (error) {
       handleError({ error, dispatch });
     }
-  }, [StationAnalyticsAPI, token, dispatch]);
+  }, [token, dispatch]);
 
   useEffect(() => {
     fetchData();

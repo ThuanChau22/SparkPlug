@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ReadyState } from "react-use-websocket";
 import ms from "ms";
 
+import { StationEventWS } from "configs";
 import useSocket from "hooks/useSocket";
 import useBatchUpdate from "hooks/useBatchUpdate";
 import { handleError } from "redux/api";
@@ -22,7 +23,6 @@ const useStationEventSocket = ({
   batchUpdate = false,
   batchDelay = ms("5s"),
 } = {}) => {
-  const StationEventWS = process.env.REACT_APP_STATION_EVENT_WS_ENDPOINT;
   const token = useSelector(selectAuthAccessToken);
   const {
     readyState,

@@ -1,8 +1,8 @@
 import axios from "axios";
 
 import {
-  AUTH_API_ENDPOINT,
-  STATION_API_ENDPOINT,
+  AUTH_API,
+  STATION_API,
 } from "../config.js";
 import utils from "../utils/utils.js";
 
@@ -13,7 +13,7 @@ export const authenticate = async (req, res, next) => {
       return res.status(401).json({ message: "Missing token" });
     }
     const [_, token] = authHeader.split(" ");
-    const { data } = await axios.post(`${AUTH_API_ENDPOINT}/verify`, { token });
+    const { data } = await axios.post(`${AUTH_API}/verify`, { token });
     req.user = data;
     req.token = token;
     next();
@@ -33,7 +33,7 @@ export const authorizeResource = async (req, res, next) => {
   try {
     const { id } = req.params;
     const headers = { Authorization: `Bearer ${req.token}` };
-    const { data } = await axios.get(`${STATION_API_ENDPOINT}/${id}`, { headers });
+    const { data } = await axios.get(`${STATION_API}/${id}`, { headers });
     if (!data) {
       throw { code: 403, message: "Access denied" };
     }

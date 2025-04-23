@@ -5,6 +5,7 @@ import {
   createSelector,
 } from "@reduxjs/toolkit";
 
+import { StationAPI } from "configs";
 import {
   EvseStatus,
   selectEvseStatusByStation,
@@ -15,8 +16,6 @@ import {
   tokenConfig,
   handleError,
 } from "redux/api";
-
-const StationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
 
 export const StationFields = {
   id: "id",
@@ -34,8 +33,9 @@ export const StationFields = {
 
 const stationEntityAdapter = createEntityAdapter({
   sortComparer: (a, b) => {
-    const result = new Date(a.created_at) - new Date(b.created_at);
-    return result || a.id - b.id;
+    const byDistance = a.distance - b.distance || 0;
+    const byCreatedAt = new Date(a.created_at) - new Date(b.created_at);
+    return byDistance || byCreatedAt || a.id - b.id;
   }
 });
 
@@ -61,7 +61,7 @@ export const stationSlice = createSlice({
     stationStateDeleteById(state, { payload }) {
       stationEntityAdapter.removeOne(state, payload);
     },
-    stationStateClear(_) {
+    stationStateClear() {
       return initialState;
     },
   },

@@ -2,7 +2,7 @@ from flask import Flask, request
 from flask_cors import CORS
 
 from datetime import datetime
-from src.config import WEB_DOMAIN
+from src.config import WEB_DOMAINS
 from src.middlewares import auth
 from src.station_prediction.model import StationPredictionModel
 from src.wait_time.model import WaitTimeModel
@@ -10,7 +10,7 @@ from src.utils import handle_error
 
 app = Flask(__name__)
 app.json.sort_keys = False
-CORS(app, resources={r"/api/*": {"origins": WEB_DOMAIN}})
+CORS(app, resources={r"/api/*": {"origins": WEB_DOMAINS}})
 
 
 # Handle price prediction

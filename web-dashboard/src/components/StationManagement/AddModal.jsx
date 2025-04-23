@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import {
   CButton,
@@ -11,19 +11,22 @@ import {
 } from "@coreui/react";
 
 import FormInput from "components/FormInput";
-import { mapStateSet } from "redux/map/mapSlice";
+import useMapZoom from "hooks/useMapZoom";
 import { stationAdd } from "redux/station/stationSlice";
 import utils from "utils";
 
 const StationAddModal = ({ isOpen, onClose }) => {
-  const initialFormData = {
+  const initialFormData = useMemo(() => ({
     name: "",
     siteId: "",
     latitude: "",
     longitude: "",
-  };
+  }), []);
+
   const [formData, setFormData] = useState(initialFormData);
   const [validated, setValidated] = useState(false);
+
+  const [mapZoom, setMapZoom] = useMapZoom();
 
   const dispatch = useDispatch();
 
@@ -44,22 +47,21 @@ const StationAddModal = ({ isOpen, onClose }) => {
     const station = await dispatch(stationAdd(formData)).unwrap();
     if (station) {
       const { latitude: lat, longitude: lng } = station;
-      if (utils.hasLatLngValue({ lat, lng })) {
-        dispatch(mapStateSet({
-          center: { lat, lng },
-          lowerBound: { lat, lng },
-          upperBound: { lat, lng },
-          zoom: 20,
-        }));
-      }
+      setMapZoom({ lat, lng });
     }
-    handleClose();
   };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setFormData(initialFormData);
     onClose();
-  };
+  }, [initialFormData, onClose]);
+
+  useEffect(() => {
+    const { lat, lng } = mapZoom;
+    if (utils.hasLatLngValue({ lat, lng })) {
+      handleClose();
+    }
+  }, [mapZoom, handleClose]);
 
   return (
     <CModal

@@ -4,7 +4,7 @@ import ms from "ms";
 import { RPCClient } from "ocpp-rpc";
 import WebSocket from "ws";
 
-import { CSMS_WS_ENDPOINT } from "../config.js";
+import { CSMS_WS } from "../config.js";
 import utils from "../utils.js";
 
 class Station {
@@ -95,7 +95,7 @@ class Station {
     this._rpcClient = new RPCClient({
       identity: this._securityCtrlr.identity,
       password: this._securityCtrlr.basicAuthPassword,
-      endpoint: CSMS_WS_ENDPOINT,
+      endpoint: CSMS_WS,
       protocols: ["ocpp2.0.1"],
       strictMode: true,
     });

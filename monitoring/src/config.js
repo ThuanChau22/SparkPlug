@@ -9,12 +9,13 @@ dotenvExpand.expand(dotenv.config());
 
 export const {
   PORT,
-  WEB_DOMAIN,
-  AUTH_API_ENDPOINT,
-  STATION_API_ENDPOINT,
+  AUTH_API,
+  STATION_API,
   MYSQL_URI,
   MONGODB_URI,
 } = process.env;
+
+export const WEB_DOMAINS = process.env.WEB_DOMAINS?.split(",") || "*";
 
 const parser = new ConnectionStringParser({ scheme: "mysql" });
 const mysqlCredential = parser.parse(MYSQL_URI);

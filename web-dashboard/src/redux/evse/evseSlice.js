@@ -5,14 +5,13 @@ import {
   createSelector,
 } from "@reduxjs/toolkit";
 
+import { StationAPI } from "configs";
 import {
   apiInstance,
   toUrlParams,
   tokenConfig,
   handleError,
 } from "redux/api";
-
-const StationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
 
 export const EvseFields = {
   id: "id",
@@ -59,7 +58,7 @@ export const evseSlice = createSlice({
       const id = evseEntityAdapter.selectId(payload);
       evseEntityAdapter.removeOne(state, id);
     },
-    evseStateClear(_) {
+    evseStateClear() {
       return initialState;
     },
   },

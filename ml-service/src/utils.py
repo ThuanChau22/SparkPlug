@@ -3,7 +3,7 @@ from flask import request
 from sys import stderr
 
 from src.config import mongo
-from src.config import STATION_API_ENDPOINT
+from src.config import STATION_API
 
 
 def get_charging_sessions_by_zip_code(zip_code):
@@ -14,7 +14,7 @@ def get_charging_sessions_by_zip_code(zip_code):
 def get_stations_by_zip_code(zip_code):
     params = f"?zip_code={zip_code}"
     headers = request.headers
-    response = requests.get(f"{STATION_API_ENDPOINT}{params}", headers=headers)
+    response = requests.get(f"{STATION_API}{params}", headers=headers)
     data = response.json()
     if not response.status_code == 200:
         raise Exception(data, response.status_code)

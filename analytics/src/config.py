@@ -13,8 +13,8 @@ else:
     dotenv_path = ".env"
 dotenv.load_dotenv(dotenv_path=dotenv_path)
 PORT = os.environ["PORT"]
-WEB_DOMAIN = os.environ["WEB_DOMAIN"]
-AUTH_API_ENDPOINT = os.environ["AUTH_API_ENDPOINT"]
+WEB_DOMAINS = os.environ["WEB_DOMAINS"].split(",") or "*"
+AUTH_API = os.environ["AUTH_API"]
 ENERGY_FORECAST_MODEL_PATH = os.environ["ENERGY_FORECAST_MODEL_PATH"]
 
 # MySQL Configuration

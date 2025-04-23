@@ -84,7 +84,7 @@ const StationManagement = () => {
   return (
     <CCard className="flex-grow-1 border border-0 rounded-0">
       <CRow className="flex-grow-1" xs={{ gutterX: 0 }}>
-        <CCol md={6} lg={5}>
+        <CCol md={6} lg={5} xl={4}>
           <CCardBody className="d-flex flex-column h-100 p-0">
             <StickyContainer ref={titleRef} style={{ top: `${headerHeight}px` }}>
               <CCardTitle
@@ -107,7 +107,7 @@ const StationManagement = () => {
             />
           </CCardBody>
         </CCol>
-        <CCol md={6} lg={7}>
+        <CCol md={6} lg={7} xl={8}>
           <StationMapView handleViewStation={handleViewStation} />
         </CCol>
       </CRow>

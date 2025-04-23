@@ -1,7 +1,7 @@
 import axios from "axios";
 import WebSocket from "ws";
 
-import { STATION_API_ENDPOINT } from "../../config.js";
+import { STATION_API } from "../../config.js";
 import utils from "../../utils.js";
 import Connector from "../../model/connector.js";
 import EVSE from "../../model/evse.js";
@@ -23,7 +23,7 @@ server.on("connection", async (ws, req) => {
   try {
     const { params: { id } } = req;
     if (!stations.has(id)) {
-      const { data } = await axios.get(`${STATION_API_ENDPOINT}/${id}/evses`);
+      const { data } = await axios.get(`${STATION_API}/${id}/evses`);
       if (data.length === 0) {
         throw { code: 404, message: `Station ${id} not found` };
       }

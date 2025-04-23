@@ -5,14 +5,13 @@ import {
   createSelector,
 } from "@reduxjs/toolkit";
 
+import { StationStatusAPI } from "configs";
 import {
   apiInstance,
   toUrlParams,
   tokenConfig,
   handleError,
 } from "redux/api";
-
-const StationStatusAPI = process.env.REACT_APP_STATION_STATUS_API_ENDPOINT;
 
 export const EvseStatus = {
   Available: "Available",
@@ -45,7 +44,7 @@ export const evseStatusSlice = createSlice({
       });
       evseStatusEntityAdapter.removeMany(state, evseStatusIds);
     },
-    evseStatusStateClear(_) {
+    evseStatusStateClear() {
       return initialState;
     },
   },
@@ -139,9 +138,10 @@ export const selectEvseStatusEntities = createSelector(
   [selectEvseStatusList],
   (evseStatusList) => {
     const entities = {};
-    for (const { stationId, ...remain } of evseStatusList) {
+    for (const evseStatus of evseStatusList) {
+      const { stationId } = evseStatus;
       entities[stationId] = entities[stationId] || [];
-      entities[stationId].push(remain);
+      entities[stationId].push(evseStatus);
     }
     return entities;
   },

@@ -12,7 +12,6 @@ import {
   Outlet,
   RouterProvider,
 } from "react-router-dom";
-import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 import { store } from "redux/store";
 import routes from "routes";
@@ -112,14 +111,17 @@ const router = createBrowserRouter([
     path: routes.Unauthorized.path,
     element: routes.Unauthorized.element,
   },
-]);
+], { future: { v7_relativeSplatPath: true } });
 
 const container = document.getElementById("root");
 const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <StateProvider store={store}>
-      <RouterProvider router={router} />
+      <RouterProvider
+        router={router}
+        future={{ v7_startTransition: true }}
+      />
     </StateProvider>
   </React.StrictMode>
 );

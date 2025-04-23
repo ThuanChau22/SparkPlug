@@ -18,7 +18,6 @@ const createDefaultMarker = ({
 );
 
 const getIconSize = (count) => ({
-  // Math.log10(0) = -Infinity
   icon: 40 + 8 * Math.floor(Math.log10(count || 1)),
   count: 30 + 6 * Math.floor(Math.log10(count || 1)),
 });
@@ -68,7 +67,7 @@ const createClusterIcon = ({ count, size, style }) => L.divIcon({
 
 const createCluster = (cluster, { customizeIcon, eventHandlers }) => {
   const { properties, geometry } = cluster;
-  const { cluster_id: clusterId, point_count, } = properties;
+  const { cluster_id: clusterId, point_count } = properties;
   const { coordinates: [longitude, latitude] } = geometry;
   const changes = customizeIcon(cluster) || {};
   const { count = point_count, style, tooltip } = changes;
@@ -110,7 +109,7 @@ const MapMarkerCluster = ({
 
   useEffect(() => {
     map.on("load moveend", updateCoordinates);
-    return () => map.off("load moveend", updateCoordinates)
+    return () => map.off("load moveend", updateCoordinates);
   }, [map, updateCoordinates]);
 
   const points = useMemo(() => data.map((item) => ({

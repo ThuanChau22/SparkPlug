@@ -1,8 +1,70 @@
-@import "@coreui/coreui/scss/coreui";
-@import "@coreui/chartjs/scss/coreui-chartjs";
+@use "@coreui/coreui/scss/coreui" as * with ($enable-deprecation-messages: false);
+@use "@coreui/chartjs/scss/coreui-chartjs";
 
-@import "variables";
-@import "theme";
+body {
+  background-color: var(--cui-tertiary-bg);
+}
+
+.wrapper {
+  width: 100%;
+  padding-inline: var(--cui-sidebar-occupy-start, 0) var(--cui-sidebar-occupy-end, 0);
+  will-change: auto;
+  @include transition(padding .15s);
+}
+
+.header>.container-fluid,
+.sidebar-header {
+  min-height: calc(4rem + 1px); // stylelint-disable-line function-disallowed-list
+}
+
+.sidebar-brand-full {
+  margin-left: 3px;
+}
+
+.sidebar-header {
+  .nav-underline-border {
+    --cui-nav-underline-border-link-padding-x: 1rem;
+    --cui-nav-underline-border-gap: 0;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    min-height: calc(4rem + 1px); // stylelint-disable-line function-disallowed-list
+  }
+}
+
+.sidebar-toggler {
+  margin-inline-start: auto;
+}
+
+.sidebar-narrow,
+.sidebar-narrow-unfoldable:not(:hover) {
+  .sidebar-toggler {
+    margin-inline-end: auto;
+  }
+}
+
+.header>.container-fluid+.container-fluid {
+  min-height: 3rem;
+}
+
+.footer {
+  min-height: calc(3rem + 1px); // stylelint-disable-line function-disallowed-list
+}
+
+@include color-mode(dark) {
+  body {
+    background-color: var(--cui-dark-bg-subtle);
+  }
+
+  .footer {
+    --cui-footer-bg: var(--cui-body-bg);
+  }
+}
+
+
+/* SPARKPLUG CONFIG */
 
 .accordion-button {
   --cui-accordion-btn-focus-box-shadow: none;
@@ -16,22 +78,6 @@
 .form-control:focus {
   border: none;
   box-shadow: none;
-}
-
-// (CoreUI Bug) Undone
-// .sidebar-narrow-unfoldable:not(.sidebar-end) ~ * {
-//   --cui-sidebar-occupy-start: 4rem !important;
-// }
-.sidebar {
-  &.hide:not(.sidebar-end)~* {
-    --cui-sidebar-occupy-start: 0 !important;
-  }
-
-  @media (max-width: 991.98px) {
-    &:not(.sidebar-end)~* {
-      --cui-sidebar-occupy-start: 0 !important;
-    }
-  }
 }
 
 .footer {
@@ -82,4 +128,24 @@
       border-right-color: var(--cui-body-bg);
     }
   }
+}
+
+// Multi Item Carousel
+.react-multiple-carousel__arrow {
+  min-width: 32px !important;
+  min-height: 32px !important;
+  padding: 0;
+}
+
+.react-multiple-carousel__arrow--left {
+  left: 0 !important;
+}
+
+.react-multiple-carousel__arrow--right {
+  right: 0 !important;
+}
+
+// Typeahead
+.rbt-input-hint {
+  display: none !important;
 }

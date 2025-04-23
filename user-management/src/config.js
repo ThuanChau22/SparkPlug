@@ -6,10 +6,11 @@ import mysql from "mysql2/promise";
 dotenvExpand.expand(dotenv.config());
 export const {
   PORT,
-  WEB_DOMAIN,
   MYSQL_URI,
   JWT_SECRET,
 } = process.env;
+
+export const WEB_DOMAINS = process.env.WEB_DOMAINS?.split(",") || "*";
 
 const parser = new ConnectionStringParser({ scheme: "mysql" });
 const mysqlCredential = parser.parse(MYSQL_URI);

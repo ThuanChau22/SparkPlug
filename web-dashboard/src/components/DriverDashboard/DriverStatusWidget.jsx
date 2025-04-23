@@ -63,7 +63,7 @@ const DriverStatusWidget = ({ className = "" }) => {
               xs={{ cols: 1, gutter: 2 }}
             >
               {Object.values(driverStatusData).map(({ label, color, count, percentage }) => (
-                <CCol key={label} sm={label === driverStatusData.Total.label ? 12 : 6} md={2}>
+                <CCol key={label} sm={label === driverStatusData.SessionCount.label ? 12 : 6} md={2}>
                   <div className="fw-semibold text-center mb-2">
                     <span className={`d-block text-${color}`}>{label}</span>
                     <span className="d-block">{count} ({percentage.toFixed(2)}%)</span>

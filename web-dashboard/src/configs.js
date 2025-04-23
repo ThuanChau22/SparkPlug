@@ -1,0 +1,12 @@
+export const APIDomain = import.meta.env.VITE_API_DOMAIN;
+export const AuthAPI = import.meta.env.VITE_AUTH_API;
+export const UserAPI = import.meta.env.VITE_USER_API;
+export const SiteAPI = import.meta.env.VITE_SITE_API;
+export const StationAPI = import.meta.env.VITE_STATION_API;
+export const StationAnalyticsAPI = import.meta.env.VITE_STATION_ANALYTICS_API;
+export const StationStatusAPI = import.meta.env.VITE_STATION_STATUS_API;
+export const StationEventAPI = import.meta.env.VITE_STATION_EVENT_API;
+export const StationEventWS = import.meta.env.VITE_STATION_EVENT_WS;
+export const StationPredictionAPI = import.meta.env.VITE_STATION_PREDICTION_API;
+export const StationEnergyForecastAPI = import.meta.env.VITE_STATION_ENERGY_FORECAST_API;
+export const StationEstWaitTimeAPI = import.meta.env.VITE_STATION_WAIT_TIME_ESTIMATION_API;

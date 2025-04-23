@@ -5,6 +5,7 @@ import {
   createSelector,
 } from "@reduxjs/toolkit";
 
+import { UserAPI } from "configs";
 import {
   apiInstance,
   toUrlParams,
@@ -12,8 +13,6 @@ import {
   handleError,
 } from "redux/api";
 import { AuthRoles } from "redux/auth/authSlice";
-
-const UserAPI = process.env.REACT_APP_USER_API_ENDPOINT;
 
 export const UserStatus = {
   Active: "active",
@@ -42,7 +41,7 @@ export const userSlice = createSlice({
     userStateDeleteById(state, { payload }) {
       userEntityAdapter.removeOne(state, payload);
     },
-    userStateClear(_) {
+    userStateClear() {
       return initialState;
     },
   },

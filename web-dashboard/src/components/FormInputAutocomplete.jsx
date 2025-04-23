@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AsyncTypeahead } from "react-bootstrap-typeahead";
+import "react-bootstrap-typeahead/css/Typeahead.css";
 
 import FormInput from "components/FormInput";
 
@@ -11,7 +12,7 @@ const FormInputAutocomplete = ({ id, onSearch, ...remain }) => {
       InputForm={AsyncTypeahead}
       id={id}
       filterBy={() => true}
-      minLength={0}
+      minLength={1}
       isLoading={loading}
       onSearch={async (query) => {
         setLoading(true);

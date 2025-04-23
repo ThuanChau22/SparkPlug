@@ -11,6 +11,7 @@ import {
   EvStationOutlined,
 } from "@mui/icons-material";
 
+import { SimulatorServerWS } from "configs";
 import useSocket from "hooks/useSocket";
 import { ToastContext } from "contexts";
 
@@ -18,13 +19,11 @@ const Demo = ({ search }) => {
   const DemoLimit = 150;
 
   const { setToastMessage } = useContext(ToastContext);
-
-  const WS_ENDPOINT = process.env.REACT_APP_WS_ENDPOINT;
   const {
     readyState,
     lastJsonMessage,
     sendJsonMessage,
-  } = useSocket(`${WS_ENDPOINT}/demo`);
+  } = useSocket(`${SimulatorServerWS}/demo`);
 
   const DemoStatus = useMemo(() => ({
     IDLE: "Idle",

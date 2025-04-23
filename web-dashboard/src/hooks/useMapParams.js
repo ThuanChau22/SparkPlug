@@ -1,24 +1,35 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 
 const useMapParams = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  return useMemo(() => {
-    const current = {
+  const mapParams = useMemo(() => {
+    const params = {
       lat: searchParams.get("lat"),
       lng: searchParams.get("lng"),
       zoom: searchParams.get("z"),
     };
-    const currentValues = Object.values(current);
-    const filter = (e) => e === null;
-    const exist = currentValues.filter(filter).length === 0;
-    const setMapParams = ({ lat, lng, zoom }) => {
-      if (currentValues.join() !== `${lat},${lng},${zoom}`) {
-        setSearchParams((s) => ({ ...s, lat, lng, z: zoom }));
+    const values = Object.values(params);
+    const isNull = (v) => v === null;
+    const exist = values.filter(isNull).length === 0;
+    return { ...params, exist };
+  }, [searchParams]);
+  const setMapParams = useCallback(({ lat, lng, zoom }) => {
+    setSearchParams((searchParams) => {
+      const current = Object.values({
+        lat: searchParams.get("lat"),
+        lng: searchParams.get("lng"),
+        zoom: searchParams.get("z"),
+      }).join();
+      if (current !== `${lat},${lng},${zoom}`) {
+        searchParams.set("lat", lat);
+        searchParams.set("lng", lng);
+        searchParams.set("z", zoom);
       }
-    };
-    return [{ ...current, exist }, setMapParams];
-  }, [searchParams, setSearchParams]);
+      return searchParams;
+    });
+  }, [setSearchParams]);
+  return [mapParams, setMapParams];
 };
 
 export default useMapParams;

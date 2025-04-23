@@ -1,5 +1,6 @@
 import axios from "axios";
 
+import { APIDomain } from "configs";
 import {
   authStateClear,
   selectAuthAuthenticated,
@@ -11,7 +12,7 @@ import {
 } from "redux/error/errorSlice";
 
 // Create Axios API instance with base URL
-export const apiInstance = axios.create({ baseURL: process.env.REACT_APP_API_DOMAIN || "/" });
+export const apiInstance = axios.create({ baseURL: APIDomain || "/" });
 
 // Retrieve/Attach access token
 export const tokenConfig = async ({ config = apiInstance.defaults, getState }) => {
@@ -29,7 +30,7 @@ export const tokenConfig = async ({ config = apiInstance.defaults, getState }) =
 // Convert url parameters
 export const toUrlParams = (data) => {
   const entries = Object.entries(data);
-  const filtered = entries.filter(([_, value]) => value);
+  const filtered = entries.filter(([, value]) => value);
   const mapped = filtered.map(([key, value]) => `${key}=${value}`);
   return mapped.join("&");
 };

@@ -4,14 +4,13 @@ import {
   createEntityAdapter,
 } from "@reduxjs/toolkit";
 
+import { StationEventAPI } from "configs";
 import {
   apiInstance,
   toUrlParams,
   tokenConfig,
   handleError,
 } from "redux/api";
-
-const StationEventAPI = process.env.REACT_APP_STATION_EVENT_API_ENDPOINT;
 
 export const StationEventSources = {
   Central: "Central",
@@ -37,7 +36,7 @@ export const stationEventSlice = createSlice({
     stationEventStateSetById(state, { payload }) {
       stationEventEntityAdapter.setOne(state, payload);
     },
-    stationEventStateClear(_) {
+    stationEventStateClear() {
       return initialState;
     },
   },

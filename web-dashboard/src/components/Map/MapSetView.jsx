@@ -5,6 +5,7 @@ import { useMapEvents } from "react-leaflet";
 import useMapParams from "hooks/useMapParams";
 import {
   mapStateSet,
+  selectMapExist,
   selectMapCenter,
   selectMapZoom,
 } from "redux/map/mapSlice";
@@ -12,6 +13,7 @@ import {
 const MapSetView = ({ delay = 0 }) => {
   const moveTimeoutRef = useRef({});
 
+  const mapExist = useSelector(selectMapExist);
   const mapCenter = useSelector(selectMapCenter);
   const mapZoom = useSelector(selectMapZoom);
 
@@ -40,23 +42,26 @@ const MapSetView = ({ delay = 0 }) => {
   useEffect(() => () => clearTimeout(moveTimeoutRef.current), []);
 
   useEffect(() => {
-    if (mapParams.exist) {
-      const { lat, lng, zoom } = mapParams;
+    const { exist, lat, lng, zoom } = mapParams;
+    const current = Object.values({
+      lat: map.getCenter().lat.toFixed(6),
+      lng: map.getCenter().lng.toFixed(6),
+      zoom: map.getZoom(),
+    }).join();
+    if (exist && `${lat},${lng},${zoom}` !== current) {
       map.setView([lat, lng], zoom);
     }
   }, [map, mapParams]);
 
   useEffect(() => {
-    const { lat, lng } = mapCenter;
-    const condition = (e) => e === null;
-    if ([lat, lng, mapZoom].filter(condition).length === 0) {
+    if (mapExist) {
       setMapParams({
-        lat: lat.toFixed(6),
-        lng: lng.toFixed(6),
+        lat: mapCenter.lat.toFixed(6),
+        lng: mapCenter.lng.toFixed(6),
         zoom: mapZoom,
       });
     }
-  }, [mapCenter, mapZoom, setMapParams]);
+  }, [mapExist, mapCenter, mapZoom, setMapParams]);
 
   return (<></>);
 };

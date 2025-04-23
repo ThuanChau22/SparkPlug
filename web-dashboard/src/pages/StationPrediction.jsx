@@ -9,6 +9,10 @@ import {
   CButton,
 } from "@coreui/react";
 
+import {
+  StationAPI,
+  StationPredictionAPI,
+} from "configs";
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
 import StationPredictionMarkerCluster from "components/StationPrediction/MarkerCluster";
@@ -24,9 +28,6 @@ import {
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 
 const StationPrediction = () => {
-  const StationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
-  const StationPredictionAPI = process.env.REACT_APP_STATION_PREDICTION_ENDPOINT;
-
   const headerHeight = useSelector(selectLayoutHeaderHeight);
   const footerHeight = useSelector(selectLayoutFooterHeight);
 

@@ -7,7 +7,7 @@ services:
     ports:
       - ${WEB_DASHBOARD_PORT}:${WEB_DASHBOARD_PORT}
     environment:
-      PORT: ${WEB_DASHBOARD_PORT}
+      VITE_PORT: ${WEB_DASHBOARD_PORT}
       NGINX_PORT: ${WEB_DASHBOARD_PORT}
 
   user-management:
@@ -68,7 +68,7 @@ services:
     ports:
       - ${SIMULATOR_CLIENT_PORT}:${SIMULATOR_CLIENT_PORT}
     environment:
-      PORT: ${SIMULATOR_CLIENT_PORT}
+      VITE_PORT: ${SIMULATOR_CLIENT_PORT}
       NGINX_PORT: ${SIMULATOR_CLIENT_PORT}
 
   simulator-server:

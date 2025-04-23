@@ -1,13 +1,13 @@
 import axios from "axios";
 
-const StationAPI = process.env.REACT_APP_STATION_API_ENDPOINT;
+import { APIDomain, StationAPI } from "configs";
 
-const apiInstance = axios.create({ baseURL: process.env.REACT_APP_API_DOMAIN || "/" });
+const apiInstance = axios.create({ baseURL: APIDomain || "/" });
 
 // Convert url parameters
 export const toUrlParams = (data) => {
   const entries = Object.entries(data);
-  const filtered = entries.filter(([_, value]) => value);
+  const filtered = entries.filter(([, value]) => value);
   const mapped = filtered.map(([key, value]) => `${key}=${value}`);
   return mapped.join("&");
 };

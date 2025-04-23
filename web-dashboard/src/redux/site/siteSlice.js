@@ -5,14 +5,13 @@ import {
   createSelector,
 } from "@reduxjs/toolkit";
 
+import { SiteAPI } from "configs";
 import {
   apiInstance,
   tokenConfig,
   toUrlParams,
   handleError,
 } from "redux/api";
-
-const SiteAPI = process.env.REACT_APP_SITE_API_ENDPOINT;
 
 export const SiteFields = {
   id: "id",
@@ -55,7 +54,7 @@ export const siteSlice = createSlice({
     siteStateDeleteById(state, { payload }) {
       siteEntityAdapter.removeOne(state, payload);
     },
-    siteStateClear(_) {
+    siteStateClear() {
       return initialState;
     },
   },

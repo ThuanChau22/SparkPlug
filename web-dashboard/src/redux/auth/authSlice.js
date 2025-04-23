@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import secureStorage from "react-secure-storage";
 import { jwtDecode } from "jwt-decode";
 
+import { AuthAPI } from "configs";
 import {
   apiInstance,
   clearHeader,
@@ -14,8 +15,6 @@ import { stationEventStateClear } from "redux/station/stationEventSlice";
 import { evseStateClear } from "redux/evse/evseSlice";
 import { evseStatusStateClear } from "redux/evse/evseStatusSlice";
 import { userStateClear } from "redux/user/userSlice";
-
-const AuthAPI = process.env.REACT_APP_AUTH_API_ENDPOINT;
 
 export const AuthRoles = {
   Staff: "staff",
@@ -45,7 +44,7 @@ export const authSlice = createSlice({
       state.authenticated = true;
       secureStorage.setItem(authSlice.name, token);
     },
-    authStateClear(_) {
+    authStateClear() {
       secureStorage.removeItem(authSlice.name);
       return initialState;
     },
@@ -114,7 +113,7 @@ export const selectAuthRoleIsDriver = (state) => selectAuth(state).role === Auth
 
 export const selectAuthAccessToken = (state) => selectAuth(state).accessToken;
 
-export const selectAuthSecureStorage = (_) => secureStorage.getItem(authSlice.name);
+export const selectAuthSecureStorage = () => secureStorage.getItem(authSlice.name);
 
 export const selectAuthExpiredTime = (state) => {
   const token = selectAuthAccessToken(state);
