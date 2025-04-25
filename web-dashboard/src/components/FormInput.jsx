@@ -3,11 +3,16 @@ import {
   CInputGroupText,
 } from "@coreui/react";
 
-const FormInput = ({ Icon, InputForm, label, ...remain }) => (
-  <CInputGroup className="mb-3">
-    {Icon && <CInputGroupText><Icon /></CInputGroupText>}
-    {label && <CInputGroupText>{label}</CInputGroupText>}
-    <InputForm className="border rounded-end shadow-none" {...remain} />
+const FormInput = ({ InputForm, className, icon, label, button, ...remain }) => (
+  <CInputGroup className={className}>
+    {(icon || label) && (<CInputGroupText>{icon}{label}</CInputGroupText>)}
+    {InputForm && (
+      <InputForm
+        className={`border ${button ? "border-end-0" : "rounded-end"} shadow-none`}
+        {...remain}
+      />
+    )}
+    {button}
   </CInputGroup>
 );
 

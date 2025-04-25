@@ -90,6 +90,7 @@ const FilterModal = ({ isOpen, onClose }) => {
             <CCol sm={6}>
               <FormInput
                 InputForm={CFormInput}
+                className="mb-3"
                 name="startDate"
                 type="date"
                 label={formInput.startDate.label}
@@ -100,6 +101,7 @@ const FilterModal = ({ isOpen, onClose }) => {
             <CCol sm={6}>
               <FormInput
                 InputForm={CFormInput}
+                className="mb-3"
                 name="endDate"
                 type="date"
                 label={formInput.endDate.label}
@@ -111,6 +113,7 @@ const FilterModal = ({ isOpen, onClose }) => {
           <CRow xs={{ gutterX: 2 }}>
             <CCol sm={6}>
               <FormInputAutocomplete
+                className="mb-3"
                 id="city-input-autocomplete"
                 placeholder="Enter city"
                 label={formInput.city.label}
@@ -127,6 +130,7 @@ const FilterModal = ({ isOpen, onClose }) => {
             </CCol>
             <CCol sm={6}>
               <FormInputAutocomplete
+                className="mb-3"
                 id="state-input-autocomplete"
                 placeholder="Enter state"
                 label={formInput.state.label}
@@ -143,6 +147,7 @@ const FilterModal = ({ isOpen, onClose }) => {
             </CCol>
             <CCol sm={6}>
               <FormInputAutocomplete
+                className="mb-3"
                 id="zip-code-input-autocomplete"
                 placeholder="Enter zip code"
                 label={formInput.zipCode.label}
@@ -159,6 +164,7 @@ const FilterModal = ({ isOpen, onClose }) => {
             </CCol>
             <CCol sm={6}>
               <FormInputAutocomplete
+                className="mb-3"
                 id="country-input-autocomplete"
                 placeholder="Enter country"
                 label={formInput.country.label}
@@ -178,6 +184,7 @@ const FilterModal = ({ isOpen, onClose }) => {
             <CCol xs={12}>
               <FormInput
                 InputForm={CFormSelect}
+                className="mb-3"
                 name="viewBy"
                 label={formInput.viewBy.label}
                 value={formInput.viewBy.value}
@@ -207,6 +214,7 @@ const FilterModal = ({ isOpen, onClose }) => {
               <CCol xs={12}>
                 <FormInput
                   InputForm={CFormSelect}
+                  className="mb-3"
                   name="interval"
                   label={formInput.interval.label}
                   value={formInput.interval.value}
@@ -224,6 +232,7 @@ const FilterModal = ({ isOpen, onClose }) => {
                 <CCol sm={6}>
                   <FormInput
                     InputForm={CFormSelect}
+                    className="mb-3"
                     name="orderBy"
                     label={formInput.orderBy.label}
                     value={formInput.orderBy.value}
@@ -238,6 +247,7 @@ const FilterModal = ({ isOpen, onClose }) => {
                 <CCol sm={6}>
                   <FormInput
                     InputForm={CFormInput}
+                    className="mb-3"
                     name="count"
                     type="number"
                     min="1"

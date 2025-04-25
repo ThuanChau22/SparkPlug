@@ -24,6 +24,7 @@ import {
 
 import ErrorToast from "components/ErrorToast";
 import FormInput from "components/FormInput";
+import FormInputPassword from "components/FormInputPassword";
 import LoadingIndicator from "components/LoadingIndicator";
 import useTheme from "hooks/useTheme";
 import {
@@ -94,21 +95,22 @@ const Login = () => {
                     <h1>Login</h1>
                     <p className="text-medium-emphasis">Sign In to your account</p>
                     <FormInput
-                      name="email"
-                      Icon={EmailOutlined}
                       InputForm={CFormInput}
+                      className="mb-3"
+                      icon={<EmailOutlined />}
                       type="text"
+                      name="email"
                       placeholder="Email"
                       value={input.email}
                       onChange={handleInputChange}
                       feedbackInvalid="Please provide email"
                       required
                     />
-                    <FormInput
-                      name="password"
-                      Icon={LockOutlined}
+                    <FormInputPassword
                       InputForm={CFormInput}
-                      type="password"
+                      className="mb-3"
+                      icon={<LockOutlined />}
+                      name="password"
                       placeholder="Password"
                       value={input.password}
                       onChange={handleInputChange}
@@ -116,9 +118,10 @@ const Login = () => {
                       required
                     />
                     <FormInput
-                      name="role"
-                      Icon={PeopleOutlined}
                       InputForm={CFormSelect}
+                      className="mb-3"
+                      icon={<PeopleOutlined />}
+                      name="role"
                       options={[
                         { label: "Select Role", value: "", disabled: true },
                         ...Object.entries(AuthRoles).map(([label, value]) => ({ label, value })),

@@ -131,6 +131,7 @@ const EvseDetails = ({ stationId, evseId }) => {
       <CForm noValidate validated={validated}>
         <FormInput
           InputForm={CFormInput}
+          className="mb-3"
           label="EVSE ID"
           name="evseId"
           type="number"
@@ -143,6 +144,7 @@ const EvseDetails = ({ stationId, evseId }) => {
         />
         <FormInput
           InputForm={CFormSelect}
+          className="mb-3"
           label="Charge Level"
           name="chargeLevel"
           options={[
@@ -158,6 +160,7 @@ const EvseDetails = ({ stationId, evseId }) => {
         />
         <FormInput
           InputForm={CFormInput}
+          className="mb-3"
           label="Connector Type"
           name="connectorType"
           type="text"
@@ -169,6 +172,7 @@ const EvseDetails = ({ stationId, evseId }) => {
         />
         <FormInput
           InputForm={CFormInput}
+          className="mb-3"
           label="Price"
           name="price"
           type="number"
@@ -214,33 +218,37 @@ const EvseDetails = ({ stationId, evseId }) => {
 
     return (
       <CForm>
-        <label htmlFor="deleteForm">Type "{confirmation}" to delete EVSE</label>
-        <CFormInput
-          className="mb-3 shadow-none"
+        <label
+          className="mb-2"
+          htmlFor="deleteForm"
+        >
+          Type "{confirmation}" to delete EVSE
+        </label>
+        <FormInput
+          InputForm={CFormInput}
+          className="mb-3"
           id="deleteForm"
           placeholder="Confirmation"
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
-        <div className="float-end">
-          <CButton
-            variant="outline"
-            color="secondary"
-            onClick={() => setIsDelete(false)}
-          >
-            Cancel
-          </CButton>
-          <CButton
-            className="ms-2"
-            variant="outline"
-            color="danger"
-            disabled={input !== confirmation}
-            onClick={handleDelete}
-          >
-            Delete
-          </CButton>
-        </div>
+        <CButton
+          variant="outline"
+          color="danger"
+          disabled={input !== confirmation}
+          onClick={handleDelete}
+        >
+          Delete
+        </CButton>
+        <CButton
+          className="ms-2"
+          variant="outline"
+          color="secondary"
+          onClick={() => setIsDelete(false)}
+        >
+          Cancel
+        </CButton>
       </CForm>
     );
   };
