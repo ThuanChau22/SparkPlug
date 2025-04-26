@@ -1144,7 +1144,7 @@ def chart_station_growth(
     country: Optional[str] = Query(None, description="Title case", examples=["USA", "Burkina+Faso"]),
     state: Optional[str] = Query(None, description="Full state name, title case", examples=["California", "New+York"]),
     city: Optional[str] = Query(None, description="Title case", examples=["Palo+Alto", "Fremont"]),
-    postal: Optional[int] = Query(None, description="Currently only supports US zip codes, as int", examples=[94040, 6001]),
+    postal: Optional[str] = Query(None, description="Postal code", examples=[94040, 6001]),
     interval: str = Query("months", description="Time interval represented by each unit of the X-axis", examples=["days", "months", "years"]),
     user: dict = require_permission("staff", "owner"),
     owner_id: Optional[int] = None,

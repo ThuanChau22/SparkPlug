@@ -12,7 +12,7 @@ class SQLQueryParams(BaseModel):
     country: Optional[str] = Field(default=None, title="The country of the station.")
     state: Optional[str] = Field(default=None, title="The state of the station.")
     city: Optional[str] = Field(default=None, title="The city of the station.")
-    zip_code: Optional[int] = Field(default=None, title="The postal code of the station.")
+    zip_code: Optional[str] = Field(default=None, title="The postal code of the station.")
 
 def build_query(table, query_params: SQLQueryParams):
     params = query_params

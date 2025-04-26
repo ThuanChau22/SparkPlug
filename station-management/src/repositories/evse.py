@@ -21,7 +21,14 @@ def get_evses(connection, filter={}, select={}, sort={}, limit=None, cursor=None
 
     query = select_fields(select, field_list)
 
-    search_fields = ["site_name", "street_address", "city"]
+    search_fields = [
+        "site_name",
+        "street_address",
+        "city",
+        "state",
+        "zip_code",
+        "country",
+    ]
     search_term = filter.get("search")
     query = select_search(query, query_values, search_fields, search_term, field_list)
 

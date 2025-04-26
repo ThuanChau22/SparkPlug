@@ -14,11 +14,11 @@ def is_exclude(s):
 
 def extract_args_search(args):
     if args.get("search"):
-      search = []
-      words = args.get("search").split()
-      for word in words:
-        search.append(f"{'+' if len(words) > 1 else ''}{word}*")
-      return {"search": " ".join(search)}
+        search = []
+        words = re.sub(r"[^a-zA-Z0-9\s]", "", args.get("search")).split()
+        for word in words:
+            search.append(f"{'+' if len(words) > 1 else ''}{word}*")
+        return {"search": " ".join(search)}
     return {}
 
 
