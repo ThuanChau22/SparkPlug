@@ -32,7 +32,7 @@ const StationList = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const ListLimit = 50;
+  const ListLimit = 25;
   const listRef = useRef({});
 
   const { headerHeight, footerHeight } = useContext(LayoutContext);
@@ -52,7 +52,7 @@ const StationList = () => {
     searchInput,
     setSearchInput,
     searchTerm,
-  ] = useTypeInput(searchParams.get("search") || "", { delay: 350 });
+  ] = useTypeInput(searchParams.get("search") || "", { delay: 500 });
 
   const [stationList, setStationList] = useState([]);
   const [listCursor, setListCursor] = useState({});
