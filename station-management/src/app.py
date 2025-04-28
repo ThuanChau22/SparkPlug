@@ -22,10 +22,10 @@ def get_sites():
     return site.get_sites()
 
 
-@app.route("/api/sites/locations", methods=["GET"])
+@app.route("/api/sites/location-autocomplete", methods=["GET"])
 @auth.require_permission("anonymous", "staff", "owner", "driver")
-def get_site_locations():
-    return site.get_site_locations()
+def get_site_location_autocomplete():
+    return site.get_site_location_autocomplete()
 
 
 @app.route("/api/sites/<int:site_id>", methods=["GET"])

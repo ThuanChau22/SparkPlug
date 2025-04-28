@@ -32,11 +32,11 @@ def get_sites():
         return handle_error(e)
 
 
-def get_site_locations():
+def get_site_location_autocomplete():
     def session(connection):
-        location = request.args.to_dict()
-        limit = int(location.get("limit") or 0) or None
-        return site.get_site_locations(connection, location, limit)
+        filter = request.args.to_dict()
+        limit = int(filter.get("limit") or 0) or None
+        return site.get_site_location_autocomplete(connection, filter, limit)
 
     try:
         return transaction(session), 200

@@ -22,12 +22,12 @@ def get_sites(connection, filter={}, select={}, sort={}, limit=None, cursor=None
     query = select_fields(select, field_list)
 
     search_fields = [
-        "name",
-        "street_address",
-        "city",
-        "state",
-        "zip_code",
         "country",
+        "state",
+        "city",
+        "zip_code",
+        "street_address",
+        "name",
     ]
     search_term = filter.get("search")
     query = select_search(query, query_values, search_fields, search_term, field_list)
@@ -64,37 +64,52 @@ def get_sites(connection, filter={}, select={}, sort={}, limit=None, cursor=None
     }
 
 
-def get_site_locations(connection, location={}, limit=None):
-    field = ""
-    value = ""
+def get_site_location_autocomplete(connection, filter={}, limit=None):
+    select_fields = []
+    query_values = []
 
-    location_fields = [
-        "street_address",
-        "city",
-        "state",
-        "country",
-        "zip_code",
-    ]
-    for location_field in location_fields:
-        if location.get(location_field):
-            field = location_field
-            value = location.get(location_field)
-            break
+    search_field_dict = {
+        "country": {"country"},
+        "state": {"state", "country"},
+        "city": {"city", "state", "country"},
+        "zip_code": {"city", "state", "zip_code", "country"},
+        "street_address": {"street_address", "city", "state", "country"},
+        "name": {"name", "street_address", "city", "state", "country"},
+    }
 
-    if not field or not value:
+    def select_distinct(field, value, select_set):
+        select = []
+        for select_field in search_field_dict:
+            if select_field not in select_set:
+                select_field = f"NULL as {select_field}"
+            select.append(select_field)
+        select = ", ".join(select)
+        statement = f"SELECT DISTINCT {select} FROM {Table.Site.value}"
+        statement = f"{statement} WHERE {field} LIKE %s ORDER BY {field}"
+        select_fields.append(field)
+        query_values.append(value)
+        return statement
+
+    query = ""
+    for field in search_field_dict:
+        if not filter.get(field):
+            continue
+        value = f"{'%'if field == 'name' else ''}{filter.get(field)}%"
+        select_set = search_field_dict.get(field)
+        statement = select_distinct(field, value, select_set)
+        query = f"{query}{' UNION ALL ' if query else ''}({statement})"
+    if not query:
         return []
 
-    query = f"SELECT DISTINCT {field} FROM {Table.Site.value}"
-    query = f"{query} WHERE {field} LIKE %s"
-    query = sort_by_fields(query, {f"{field}": 1}, location_fields)
+    select = ", ".join(select_fields)
+    query = f"SELECT DISTINCT {select} FROM ({query}) as locations"
     query = limit_at(query, limit)
-    query_values = f"{value}%"
 
     with connection.cursor() as cursor:
         cursor.execute(query, query_values)
         locations = cursor.fetchall()
 
-    return [entry.get(field) for entry in locations]
+    return locations or []
 
 
 def get_site_by_id(connection, site_id):
