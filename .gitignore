@@ -13,3 +13,4 @@ node_modules
 .code-workspace
 venv
 analytics-original
+db_script_dev.sql
