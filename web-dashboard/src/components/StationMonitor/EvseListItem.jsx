@@ -57,9 +57,7 @@ const StationMonitorEvseListItem = ({ stationId, evseId }) => {
       <p className="text-secondary my-auto">
         <span>EVSE ID: {evseId} - </span>
         <span className="fw-medium">
-          <EvseAvailabilityStatus
-            status={evseStatus?.status || EvseStatus.Unavailable}
-          />
+          <EvseAvailabilityStatus status={evseStatus} />
         </span>
       </p>
       <div className="d-flex align-items-center">

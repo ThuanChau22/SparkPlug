@@ -33,9 +33,10 @@ export const StationFields = {
 
 const stationEntityAdapter = createEntityAdapter({
   sortComparer: (a, b) => {
-    const byDistance = a.distance - b.distance || 0;
+    const byDistance = a.distance - b.distance;
+    const bySearchScore = b.search_score - a.search_score;
     const byCreatedAt = new Date(a.created_at) - new Date(b.created_at);
-    return byDistance || byCreatedAt || a.id - b.id;
+    return byDistance || bySearchScore || byCreatedAt || a.id - b.id;
   }
 });
 
@@ -48,12 +49,8 @@ export const stationSlice = createSlice({
     stationStateUpsertMany(state, { payload }) {
       stationEntityAdapter.upsertMany(state, payload);
     },
-    stationStateSetById(state, { payload }) {
-      stationEntityAdapter.setOne(state, payload);
-    },
-    stationStateUpdateById(state, { payload }) {
-      const { id, ...changes } = payload;
-      stationEntityAdapter.updateOne(state, { id, changes });
+    stationStateUpsertById(state, { payload }) {
+      stationEntityAdapter.upsertOne(state, payload);
     },
     stationStateDeleteMany(state, { payload }) {
       stationEntityAdapter.removeMany(state, payload);
@@ -68,9 +65,8 @@ export const stationSlice = createSlice({
 });
 
 export const {
-  stationStateSetById,
   stationStateUpsertMany,
-  stationStateUpdateById,
+  stationStateUpsertById,
   stationStateDeleteMany,
   stationStateDeleteById,
   stationStateClear,
@@ -79,7 +75,7 @@ export const {
 export const stationGetList = createAsyncThunk(
   `${stationSlice.name}/getList`,
   async ({
-    fields, name,
+    fields, search, name,
     latitude, longitude,
     city, state, country,
     limit, cursor,
@@ -94,7 +90,7 @@ export const stationGetList = createAsyncThunk(
   } = {}, { dispatch, getState }) => {
     try {
       const params = toUrlParams({
-        fields, name, site_id, owner_id, latitude, longitude,
+        fields, search, name, site_id, owner_id, latitude, longitude,
         street_address, city, state, country, zip_code,
         lat_lng_origin, lat_lng_min, lat_lng_max,
         sort_by, cursor, limit,
@@ -116,7 +112,7 @@ export const stationGetById = createAsyncThunk(
     try {
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(`${StationAPI}/${id}`, config);
-      dispatch(stationStateSetById(data));
+      dispatch(stationStateUpsertById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -134,7 +130,7 @@ export const stationAdd = createAsyncThunk(
       const body = { name, site_id, latitude, longitude };
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.post(`${StationAPI}`, body, config);
-      dispatch(stationStateSetById(data));
+      dispatch(stationStateUpsertById(data));
       return data;
     } catch (error) {
       handleError({ error, dispatch });
@@ -153,7 +149,7 @@ export const stationUpdateById = createAsyncThunk(
       const body = { name, site_id, latitude, longitude };
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.patch(`${StationAPI}/${id}`, body, config);
-      dispatch(stationStateUpdateById(data));
+      dispatch(stationStateUpsertById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }

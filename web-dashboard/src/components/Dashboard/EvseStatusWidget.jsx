@@ -10,6 +10,7 @@ import {
 } from "@coreui/react";
 
 import LoadingIndicator from "components/LoadingIndicator";
+import useGetEvseStatusColor from "hooks/useGetEvseStatusColor";
 import useFetchData from "hooks/useFetchData";
 import useStationEventSocket from "hooks/useStationEventSocket";
 import {
@@ -77,31 +78,33 @@ const EvseStatusWidget = ({ className = "" }) => {
     }
   }, [evseStatusCount]);
 
+  const getColor = useGetEvseStatusColor();
+
   const evseStatusData = useMemo(() => {
     const data = {
       Total: {
         label: "Total",
-        color: "info",
+        color: "primary",
         count: 0,
       },
       [EvseStatus.Available]: {
         label: "Available",
-        color: "success",
+        color: getColor(EvseStatus.Available),
         count: 0,
       },
       [EvseStatus.Occupied]: {
         label: "In Use",
-        color: "warning",
+        color: getColor(EvseStatus.Occupied),
         count: 0,
       },
       [EvseStatus.Faulted]: {
         label: "Out of Service",
-        color: "danger",
+        color: getColor(EvseStatus.Faulted),
         count: 0,
       },
       [EvseStatus.Unavailable]: {
         label: "Unavailable",
-        color: "secondary",
+        color: getColor(EvseStatus.Unavailable),
         count: 0,
       },
     };
@@ -121,7 +124,7 @@ const EvseStatusWidget = ({ className = "" }) => {
       data[EvseStatus.Unavailable].count += absentCount;
     }
     return data;
-  }, [evseCount, evseStatusCount]);
+  }, [evseCount, evseStatusCount, getColor]);
 
   const loading = useMemo(() => (
     evseLoadState.loading && evseStatusLoadState.loading
@@ -141,10 +144,11 @@ const EvseStatusWidget = ({ className = "" }) => {
               xs={{ cols: 1, gutter: 2 }}
             >
               {Object.values(evseStatusData).map(({ label, color, count }) => {
+                const isTotal = label === evseStatusData.Total.label;
                 const { count: totalCount } = evseStatusData.Total;
                 const percentage = totalCount ? (count / totalCount) * 100 : 0;
                 return (
-                  <CCol key={label} sm={label === evseStatusData.Total.label ? 12 : 6} md={2}>
+                  <CCol key={label} sm={isTotal ? 12 : 6} md={2}>
                     <div className="fw-semibold text-center mb-2">
                       <span className={`d-block text-${color}`}>{label}</span>
                       <span className="d-block">{count} ({percentage.toFixed(2)}%)</span>

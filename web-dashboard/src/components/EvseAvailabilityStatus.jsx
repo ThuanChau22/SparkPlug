@@ -1,19 +1,12 @@
-import { EvseStatus } from "redux/evse/evseStatusSlice";
+import useGetEvseStatusColor from "hooks/useGetEvseStatusColor";
 
-const EvseAvailabilityStatus = ({ status }) => (
-  <span className={
-    status === EvseStatus.Available
-      ? "text-success"
-      : status === EvseStatus.Occupied
-        ? "text-warning"
-        : status === EvseStatus.Reserved
-          ? "text-info"
-          : status === EvseStatus.Faulted
-            ? "text-danger"
-            : "text-secondary"
-  }>
-    {status || "Unknown"}
-  </span>
-);
+const EvseAvailabilityStatus = ({ status }) => {
+  const getColor = useGetEvseStatusColor();
+  return (
+    <span className={`text-${getColor(status)}`}>
+      {status || "Unknown"}
+    </span>
+  )
+};
 
 export default EvseAvailabilityStatus;

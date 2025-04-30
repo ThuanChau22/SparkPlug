@@ -1,16 +1,21 @@
 import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 import {
+  CCardTitle,
   CListGroup,
   CListGroupItem,
 } from "@coreui/react";
 
 import LoadingIndicator from "components/LoadingIndicator";
+import SearchBar from "components/SearchBar";
+import StickyContainer from "components/StickyContainer";
 import StationMonitorListItem from "components/StationMonitor/StationListItem";
 import useMapParams from "hooks/useMapParams";
+import useSearchParam from "hooks/useSearchParam";
 import useFetchData from "hooks/useFetchData";
 import useFetchDataOnScroll from "hooks/useFetchDataOnScroll";
 import useWindowResize from "hooks/useWindowResize";
+import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import { selectAuthRoleIsOwner } from "redux/auth/authSlice";
 import {
   selectMapExist,
@@ -25,9 +30,11 @@ import {
 } from "redux/station/stationSlice";
 import utils from "utils";
 
-const StationMonitorListView = ({ refHeight, handleViewStation }) => {
+const StationMonitorListView = ({ title, openViewModal }) => {
   const ListLimit = 25;
   const listRef = useRef({});
+
+  const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
 
@@ -38,8 +45,12 @@ const StationMonitorListView = ({ refHeight, handleViewStation }) => {
 
   const stationSelectedFields = useMemo(() => ([
     StationFields.name,
+    StationFields.latitude,
+    StationFields.longitude,
     StationFields.streetAddress,
     StationFields.city,
+    StationFields.state,
+    StationFields.zipCode,
   ]), []);
 
   const stationList = useSelector((state) => {
@@ -53,24 +64,26 @@ const StationMonitorListView = ({ refHeight, handleViewStation }) => {
   ), [stationList, listPage]);
 
   const [mapParams] = useMapParams();
+  const [search] = useSearchParam();
 
   const { latLngOrigin, latLngMin, latLngMax } = useMemo(() => ({
-    latLngOrigin: authIsOwner || mapExist ? "" : "default",
-    latLngMin: utils.toLatLngString(mapLowerBound),
-    latLngMax: utils.toLatLngString(mapUpperBound),
-  }), [authIsOwner, mapExist, mapLowerBound, mapUpperBound]);
+    latLngOrigin: authIsOwner || mapExist || search ? "" : "default",
+    latLngMin: search ? "" : utils.toLatLngString(mapLowerBound),
+    latLngMax: search ? "" : utils.toLatLngString(mapUpperBound),
+  }), [authIsOwner, mapExist, search, mapLowerBound, mapUpperBound]);
 
   const limit = useMemo(() => (
-    authIsOwner && !mapExist ? 5 : ListLimit
-  ), [authIsOwner, mapExist]);
+    !authIsOwner || mapExist || search ? ListLimit : 1
+  ), [authIsOwner, mapExist, search]);
 
   const fetchParams = useMemo(() => ({
     fields: stationSelectedFields.join(),
-    latLngOrigin, latLngMin, latLngMax, limit,
-  }), [stationSelectedFields, latLngOrigin, latLngMin, latLngMax, limit]);
+    sortBy: search ? "-search_score" : "",
+    search, latLngOrigin, latLngMin, latLngMax, limit,
+  }), [stationSelectedFields, search, latLngOrigin, latLngMin, latLngMax, limit]);
 
   const { data, loadState } = useFetchData({
-    condition: !mapParams.exist || mapIsZoomInLimit,
+    condition: !mapParams.exist || search | mapIsZoomInLimit,
     action: useCallback(() => stationGetList(fetchParams), [fetchParams]),
   });
 
@@ -80,17 +93,18 @@ const StationMonitorListView = ({ refHeight, handleViewStation }) => {
   } = useFetchDataOnScroll({
     action: useCallback(() => stationGetList({
       fields: stationSelectedFields.join(),
-      latLngMin, latLngMax,
+      sortBy: search ? "-search_score" : "",
       limit: ListLimit,
       cursor: listCursor.next,
-    }), [stationSelectedFields, latLngMin, latLngMax, listCursor.next]),
+      search, latLngMin, latLngMax,
+    }), [stationSelectedFields, search, latLngMin, latLngMax, listCursor.next]),
     ref: listRef,
     cursor: listCursor,
   });
 
   const loading = useMemo(() => (
-    !data && loadState.loading
-  ), [data, loadState]);
+    !(mapExist && data) && loadState.loading
+  ), [mapExist, data, loadState]);
 
   useEffect(() => {
     if (data && loadState.done) {
@@ -109,52 +123,65 @@ const StationMonitorListView = ({ refHeight, handleViewStation }) => {
     }
   }, [dataOnScroll, loadStateOnScroll]);
 
+  const [titleHeight, setTitleHeight] = useState(0);
+  const titleRef = useCallback((node) => {
+    setTitleHeight(node?.getBoundingClientRect().height);
+  }, []);
+
   const [listHeight, setListHeight] = useState(0);
   useWindowResize(useCallback(() => {
+    const refHeight = headerHeight + titleHeight;
     setListHeight(window.innerHeight - refHeight);
-  }, [refHeight]));
+  }, [headerHeight, titleHeight]));
 
-  return (loading
-    ? <LoadingIndicator loading={loading} />
-    : (
-      <CListGroup
-        ref={listRef}
-        className="overflow-auto px-3 pb-3"
-        style={{ height: `${listHeight}px` }}
-      >
-        {stationListByPage.length > 0
-          ? (
-            <>
-              {stationListByPage.map(({ id }) => {
-                return (
-                  <CListGroupItem
-                    key={id}
-                    className="d-flex justify-content-between align-items-center border rounded py-3 my-1 shadow-sm"
-                    as="button"
-                    onClick={() => handleViewStation(id)}
-                  >
-                    <StationMonitorListItem stationId={id} />
-                  </CListGroupItem>
-                )
-              })}
-              {loadStateOnScroll.loading && (
-                <LoadingIndicator loading={loadStateOnScroll.loading} />
-              )}
-            </>
-          )
-          : (
-            <div className="d-flex flex-grow-1 justify-content-center align-items-center">
-              <span className="text-secondary">
-                {mapIsZoomInLimit
-                  ? "No stations found"
-                  : "Zoom in on map to display information"
-                }
-              </span>
-            </div>
-          )
-        }
-      </CListGroup>
-    ));
+  return (
+    <div ref={listRef} className="overflow-auto">
+      <StickyContainer ref={titleRef} style={{ top: "0px" }}>
+        <CCardTitle
+          className="px-3 py-2 m-0 shadow-sm"
+          style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
+        >
+          {title && (<p className="my-2">{title}</p>)}
+          <SearchBar placeholder="Search by name or location" />
+        </CCardTitle>
+      </StickyContainer>
+      <div className="d-flex flex-column" style={{ height: `${listHeight}px` }}>
+        {loading
+          ? (<LoadingIndicator loading={loading} />)
+          : (stationListByPage.length > 0
+            ? (
+              <CListGroup className="px-3 pb-3">
+                <>
+                  {stationListByPage.map(({ id }) => (
+                    <CListGroupItem
+                      key={id}
+                      className="border-0 p-0"
+                      as="button"
+                      onClick={() => openViewModal(id)}
+                    >
+                      <StationMonitorListItem stationId={id} />
+                    </CListGroupItem>
+                  ))}
+                  {loadStateOnScroll.loading && (
+                    <LoadingIndicator loading={loadStateOnScroll.loading} />
+                  )}
+                </>
+              </CListGroup>
+            )
+            : (
+              <div className="d-flex flex-grow-1 justify-content-center align-items-center">
+                <span className="text-secondary">
+                  {mapIsZoomInLimit
+                    ? "No stations found"
+                    : "Zoom in on map to display information"
+                  }
+                </span>
+              </div>
+            )
+          )}
+      </div>
+    </div>
+  );
 };
 
 export default StationMonitorListView;
