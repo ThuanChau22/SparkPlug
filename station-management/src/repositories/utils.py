@@ -47,6 +47,11 @@ def fetch_by_id(connection, table, id):
         return cursor.fetchone()
 
 
+def append_projection(statement="", field="*"):
+    separator = "SELECT " if not statement else ", "
+    return f"{statement}{separator}{field}"
+
+
 def append_condition(statement, condition):
     hasCondition = re.search("^.*( WHERE ){1}.*$", statement, re.IGNORECASE)
     separator = "" if not condition else " AND " if hasCondition else " WHERE "
@@ -72,20 +77,28 @@ def select_fields(params={}, table_fields=[]):
         elif len(exclude) < len(table_fields):
             exclude = [field for field in table_fields if field in exclude]
             statement = ", ".join(exclude)
-    return f"SELECT {statement}"
+    return append_projection("", statement)
 
 
 def select_search(statement, values, search_fields, search_term, table_fields=[]):
     if search_fields and search_term:
-        statement += f", MATCH ({','.join(search_fields)}) AGAINST(%s IN BOOLEAN MODE) as search_score"
-        values.append(search_term)
+        weight_factor = 3
+        search_scores = []
+        for priority, field in enumerate(search_fields):
+            weight = f"POW({weight_factor}, -{priority})"
+            search_score = f"MATCH({field}) AGAINST (%s IN BOOLEAN MODE) * {weight}"
+            search_scores.append(search_score)
+            values.append(search_term)
+        search_score = f"({' + '.join(search_scores)}) as search_score"
+        statement = append_projection(statement, search_score)
         table_fields.append("search_score")
     return statement
 
 
 def select_distance(statement, values, lat_lng_origin, table_fields=[]):
     if lat_lng_origin and len(lat_lng_origin.split(",")) == 2:
-        statement += ", haversine(%s, %s, latitude, longitude) as distance"
+        distance = "haversine(%s, %s, latitude, longitude) as distance"
+        statement = append_projection(statement, distance)
         values.extend(lat_lng_origin.split(","))
         table_fields.append("distance")
     return statement

@@ -40,7 +40,7 @@ const MapContainer = ({ loading = false, refHeight = 0, children }) => {
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxNativeZoom={19}
-          maxZoom={21}
+          maxZoom={20}
           updateWhenZooming={true}
         />
         {children}

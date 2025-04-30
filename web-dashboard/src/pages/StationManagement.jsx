@@ -1,20 +1,16 @@
-import { useCallback, useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  CButton,
   CRow,
   CCol,
   CCard,
-  CCardTitle,
   CCardBody,
 } from "@coreui/react";
 
-import StickyContainer from "components/StickyContainer";
 import StationAddModal from "components/StationManagement/AddModal";
 import StationDetailsModal from "components/StationManagement/DetailsModal";
 import StationListView from "components/StationManagement/ListView";
 import StationMapView from "components/StationManagement/MapView";
-import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
   selectMapLowerBound,
   selectMapUpperBound,
@@ -32,22 +28,11 @@ import {
 import utils from "utils";
 
 const StationManagement = () => {
-  const headerHeight = useSelector(selectLayoutHeaderHeight);
-
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
 
   const stationList = useSelector(selectStationList);
   const evseList = useSelector(selectEvseList);
-
-  const [titleHeight, setTitleHeight] = useState(0);
-  const titleRef = useCallback((node) => {
-    setTitleHeight(node?.getBoundingClientRect().height);
-  }, []);
-
-  const listRefHeight = useMemo(() => {
-    return headerHeight + titleHeight;
-  }, [headerHeight, titleHeight]);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -76,41 +61,31 @@ const StationManagement = () => {
     dispatch(evseStateClear());
   }, [dispatch]);
 
-  const handleViewStation = (stationId) => {
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenViewModal = (stationId) => {
     setStationId(stationId);
     setIsDetailsModalOpen(true);
   };
 
   return (
     <CCard className="flex-grow-1 border border-0 rounded-0">
-      <CRow className="flex-grow-1" xs={{ gutterX: 0 }}>
-        <CCol md={6} lg={5} xl={4}>
-          <CCardBody className="d-flex flex-column h-100 p-0">
-            <StickyContainer ref={titleRef} style={{ top: `${headerHeight}px` }}>
-              <CCardTitle
-                className="d-flex justify-content-between align-items-center px-3 py-2 m-0 shadow-sm"
-                style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
-              >
-                Stations Management
-                <CButton
-                  variant="outline"
-                  color="info"
-                  onClick={() => setIsAddModalOpen(true)}
-                >
-                  Add
-                </CButton>
-              </CCardTitle>
-            </StickyContainer>
+      <CCardBody className="d-flex flex-column h-100 p-0">
+        <CRow className="flex-grow-1" xs={{ gutterX: 0 }}>
+          <CCol md={6} lg={5} xl={4}>
             <StationListView
-              refHeight={listRefHeight}
-              handleViewStation={handleViewStation}
+              title={"Station Management"}
+              openAddModal={handleOpenAddModal}
+              openViewModal={handleOpenViewModal}
             />
-          </CCardBody>
-        </CCol>
-        <CCol md={6} lg={7} xl={8}>
-          <StationMapView handleViewStation={handleViewStation} />
-        </CCol>
-      </CRow>
+          </CCol>
+          <CCol md={6} lg={7} xl={8}>
+            <StationMapView openViewModal={handleOpenViewModal} />
+          </CCol>
+        </CRow>
+      </CCardBody>
       {isAddModalOpen && (
         <StationAddModal
           isOpen={isAddModalOpen}

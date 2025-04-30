@@ -1,5 +1,5 @@
-import { useCallback, useMemo } from "react";
-import { useSelector } from "react-redux";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
@@ -8,9 +8,11 @@ import MapUserLocation from "components/Map/MapUserLocation";
 import StickyContainer from "components/StickyContainer";
 import StationStatusMarkerCluster from "components/StationMonitor/MarkerCluster";
 import useMapParams from "hooks/useMapParams";
+import useSearchParam from "hooks/useSearchParam";
 import useFetchData from "hooks/useFetchData";
 import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
+  mapStateSet,
   selectMapExist,
   selectMapLowerBound,
   selectMapUpperBound,
@@ -28,7 +30,7 @@ import {
 } from "redux/evse/evseStatusSlice";
 import utils from "utils";
 
-const DriverStationMapView = ({ handleViewStation }) => {
+const DriverStationMapView = ({ openViewModal }) => {
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const mapExist = useSelector(selectMapExist);
@@ -56,28 +58,42 @@ const DriverStationMapView = ({ handleViewStation }) => {
   ), [stationList, evseStatusEntities]);
 
   const [mapParams] = useMapParams();
+  const [search, setSearch] = useSearchParam();
 
   const latLngOrigin = useMemo(() => {
-    const latLng = utils.toLatLngString(mapLocation);
-    return mapLocation.located ? latLng : mapExist ? "" : "default";
-  }, [mapExist, mapLocation]);
+    if (mapLocation.located) {
+      return utils.toLatLngString(mapLocation);
+    }
+    return mapExist || search ? "" : "default";
+  }, [mapExist, search, mapLocation]);
 
   const { latLngMin, latLngMax } = useMemo(() => ({
-    latLngMin: utils.toLatLngString(mapLowerBound),
-    latLngMax: utils.toLatLngString(mapUpperBound),
-  }), [mapLowerBound, mapUpperBound]);
+    latLngMin: search ? "" : utils.toLatLngString(mapLowerBound),
+    latLngMax: search ? "" : utils.toLatLngString(mapUpperBound),
+  }), [search, mapLowerBound, mapUpperBound]);
+
+  const sortBy = useMemo(() => {
+    const orders = [];
+    if (search) {
+      orders.push("-search_score");
+    }
+    if (latLngOrigin) {
+      orders.push("distance");
+    }
+    return orders.join();
+  }, [search, latLngOrigin]);
 
   const limit = useMemo(() => (
-    !mapExist ? 5 : 0
-  ), [mapExist]);
+    search ? 25 : !mapExist ? 5 : 0
+  ), [mapExist, search]);
 
   const fetchParams = useMemo(() => ({
     fields: stationSelectedFields.join(),
-    latLngOrigin, latLngMin, latLngMax, limit
-  }), [stationSelectedFields, latLngOrigin, latLngMin, latLngMax, limit]);
+    search, latLngOrigin, latLngMin, latLngMax, sortBy, limit
+  }), [stationSelectedFields, search, latLngOrigin, latLngMin, latLngMax, sortBy, limit]);
 
   const { data, loadState } = useFetchData({
-    condition: !mapParams.exist || mapIsZoomInLimit,
+    condition: !mapParams.exist || search || mapIsZoomInLimit,
     action: useCallback(() => stationGetList(fetchParams), [fetchParams]),
   });
 
@@ -92,13 +108,57 @@ const DriverStationMapView = ({ handleViewStation }) => {
   });
 
   const loading = useMemo(() => (
-    (!data && loadState.loading)
+    (!(mapExist && data) && loadState.loading)
     || (!evseStatusData && evseStatusLoadState.loading)
-  ), [data, loadState, evseStatusData, evseStatusLoadState]);
+  ), [mapExist, data, loadState, evseStatusData, evseStatusLoadState]);
+
+  const [mapParamsPrev, setMapParamsPrev] = useState(mapParams);
+  const [searchPrev, setSearchPrev] = useState(search);
+  const [isDataUpdated, setIsDataUpdated] = useState(false);
 
   const bounds = useMemo(() => {
-    const hasData = data?.data.length > 0;
-    return !mapExist && hasData ? data.data : [];
+    if (data?.data.length > 0 && isDataUpdated) {
+      const filtered = data.data.filter((e) => e.search_score);
+      const searchScores = filtered.map((e) => e.search_score);
+      const index = utils.localMaxDiffIndex(searchScores);
+      return index ? data.data.slice(0, index) : data.data;
+    }
+    return [];
+  }, [data, isDataUpdated]);
+
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (search && search !== searchPrev) {
+      setSearchPrev(search);
+      dispatch(mapStateSet({
+        center: null,
+        lowerBound: null,
+        upperBound: null,
+        zoom: null,
+      }));
+    }
+  }, [search, searchPrev, dispatch]);
+
+  useEffect(() => {
+    const current = Object.values(mapParams).join();
+    const previous = Object.values(mapParamsPrev).join();
+    if (mapParams.exist && current !== previous) {
+      setMapParamsPrev(mapParams);
+      setSearch("");
+    }
+  }, [mapParams, mapParamsPrev, setSearch]);
+
+  useEffect(() => {
+    if (data) {
+      setIsDataUpdated(true);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (mapExist && data) {
+      setIsDataUpdated(false);
+    }
   }, [mapExist, data]);
 
   return (
@@ -113,7 +173,7 @@ const DriverStationMapView = ({ handleViewStation }) => {
         <StationStatusMarkerCluster
           stationList={stationStatusList}
           loading={loadState.loading || evseStatusLoadState.loading}
-          onClick={handleViewStation}
+          onClick={openViewModal}
         />
       </MapContainer>
     </StickyContainer>

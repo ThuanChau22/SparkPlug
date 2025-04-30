@@ -65,6 +65,7 @@ const EvseAdd = ({ stationId }) => {
       <CForm className="mt-3" noValidate validated={validated}>
         <FormInput
           InputForm={CFormInput}
+          className="mb-3"
           label="EVSE ID"
           name="evseId"
           type="number"
@@ -77,6 +78,7 @@ const EvseAdd = ({ stationId }) => {
         />
         <FormInput
           InputForm={CFormSelect}
+          className="mb-3"
           name="chargeLevel"
           options={[
             { label: "Select Charge Level", value: "", disabled: true },
@@ -91,6 +93,7 @@ const EvseAdd = ({ stationId }) => {
         />
         <FormInput
           InputForm={CFormInput}
+          className="mb-3"
           name="connectorType"
           type="text"
           placeholder="Connector Type"
@@ -101,6 +104,7 @@ const EvseAdd = ({ stationId }) => {
         />
         <FormInput
           InputForm={CFormInput}
+          className="mb-3"
           name="price"
           type="number"
           min="0"

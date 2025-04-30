@@ -15,7 +15,7 @@ import {
 
 import FormInput from "components/FormInput";
 import FormInputAutocomplete from "components/FormInputAutocomplete";
-import { siteSearchLocation } from "redux/site/siteSlice";
+import { siteLocationAutocomplete } from "redux/site/siteSlice";
 import {
   filterDashboardStateSetAll,
   filterDashboardStateClearAll,
@@ -39,10 +39,14 @@ const FilterModal = ({ isOpen, onClose }) => {
     return text === options.station;
   };
 
-  const handleSearchLocation = async (params) => {
-    params = { ...params, limit: 5 };
-    const locations = await dispatch(siteSearchLocation(params)).unwrap();
-    return locations.map((value) => ({ value, label: value.toString() }));
+  const handleLocationAutocomplete = async (params = {}) => {
+    const locations = await dispatch(siteLocationAutocomplete({
+      ...params, limit: 5,
+    })).unwrap();
+    return locations.map((location) => {
+      const [value] = Object.values(location);
+      return ({ value, label: `${value}` });
+    });
   };
 
   const handleInputChange = ({ target }) => {
@@ -90,6 +94,7 @@ const FilterModal = ({ isOpen, onClose }) => {
             <CCol sm={6}>
               <FormInput
                 InputForm={CFormInput}
+                className="mb-3"
                 name="startDate"
                 type="date"
                 label={formInput.startDate.label}
@@ -100,6 +105,7 @@ const FilterModal = ({ isOpen, onClose }) => {
             <CCol sm={6}>
               <FormInput
                 InputForm={CFormInput}
+                className="mb-3"
                 name="endDate"
                 type="date"
                 label={formInput.endDate.label}
@@ -111,11 +117,12 @@ const FilterModal = ({ isOpen, onClose }) => {
           <CRow xs={{ gutterX: 2 }}>
             <CCol sm={6}>
               <FormInputAutocomplete
+                className="mb-3"
                 id="city-input-autocomplete"
                 placeholder="Enter city"
                 label={formInput.city.label}
                 defaultInputValue={formInput.city.value}
-                onSearch={(city) => handleSearchLocation({ city })}
+                onSearch={(city) => handleLocationAutocomplete({ city })}
                 onChange={([selected]) => handleInputChange({
                   target: {
                     name: "city",
@@ -127,11 +134,12 @@ const FilterModal = ({ isOpen, onClose }) => {
             </CCol>
             <CCol sm={6}>
               <FormInputAutocomplete
+                className="mb-3"
                 id="state-input-autocomplete"
                 placeholder="Enter state"
                 label={formInput.state.label}
                 defaultInputValue={formInput.state.value}
-                onSearch={(state) => handleSearchLocation({ state })}
+                onSearch={(state) => handleLocationAutocomplete({ state })}
                 onChange={([selected]) => handleInputChange({
                   target: {
                     name: "state",
@@ -143,11 +151,12 @@ const FilterModal = ({ isOpen, onClose }) => {
             </CCol>
             <CCol sm={6}>
               <FormInputAutocomplete
+                className="mb-3"
                 id="zip-code-input-autocomplete"
                 placeholder="Enter zip code"
                 label={formInput.zipCode.label}
                 defaultInputValue={formInput.zipCode.value}
-                onSearch={(zipCode) => handleSearchLocation({ zipCode })}
+                onSearch={(zipCode) => handleLocationAutocomplete({ zipCode })}
                 onChange={([selected]) => handleInputChange({
                   target: {
                     name: "zipCode",
@@ -159,11 +168,12 @@ const FilterModal = ({ isOpen, onClose }) => {
             </CCol>
             <CCol sm={6}>
               <FormInputAutocomplete
+                className="mb-3"
                 id="country-input-autocomplete"
                 placeholder="Enter country"
                 label={formInput.country.label}
                 defaultInputValue={formInput.country.value}
-                onSearch={(country) => handleSearchLocation({ country })}
+                onSearch={(country) => handleLocationAutocomplete({ country })}
                 onChange={([selected]) => handleInputChange({
                   target: {
                     name: "country",
@@ -178,6 +188,7 @@ const FilterModal = ({ isOpen, onClose }) => {
             <CCol xs={12}>
               <FormInput
                 InputForm={CFormSelect}
+                className="mb-3"
                 name="viewBy"
                 label={formInput.viewBy.label}
                 value={formInput.viewBy.value}
@@ -207,6 +218,7 @@ const FilterModal = ({ isOpen, onClose }) => {
               <CCol xs={12}>
                 <FormInput
                   InputForm={CFormSelect}
+                  className="mb-3"
                   name="interval"
                   label={formInput.interval.label}
                   value={formInput.interval.value}
@@ -224,6 +236,7 @@ const FilterModal = ({ isOpen, onClose }) => {
                 <CCol sm={6}>
                   <FormInput
                     InputForm={CFormSelect}
+                    className="mb-3"
                     name="orderBy"
                     label={formInput.orderBy.label}
                     value={formInput.orderBy.value}
@@ -238,6 +251,7 @@ const FilterModal = ({ isOpen, onClose }) => {
                 <CCol sm={6}>
                   <FormInput
                     InputForm={CFormInput}
+                    className="mb-3"
                     name="count"
                     type="number"
                     min="1"

@@ -77,6 +77,7 @@ const StationAddModal = ({ isOpen, onClose }) => {
         <CForm noValidate validated={validated}>
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             name="siteId"
             type="text"
             placeholder="Site ID"
@@ -87,6 +88,7 @@ const StationAddModal = ({ isOpen, onClose }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             name="name"
             type="text"
             placeholder="Name"
@@ -97,6 +99,7 @@ const StationAddModal = ({ isOpen, onClose }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             name="latitude"
             type="text"
             placeholder="Latitude"
@@ -107,6 +110,7 @@ const StationAddModal = ({ isOpen, onClose }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             name="longitude"
             type="text"
             placeholder="Longitude"

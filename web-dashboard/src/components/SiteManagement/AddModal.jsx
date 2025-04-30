@@ -101,6 +101,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
           {authIsAdmin &&
             <FormInput
               InputForm={CFormInput}
+              className="mb-3"
               name="ownerId"
               type="text"
               placeholder="Owner ID"
@@ -111,6 +112,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
             />}
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             name="name"
             type="text"
             placeholder="Name"
@@ -121,6 +123,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             name="latitude"
             type="text"
             placeholder="Latitude"
@@ -131,6 +134,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             name="longitude"
             type="text"
             placeholder="Longitude"
@@ -141,6 +145,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             name="streetAddress"
             type="text"
             placeholder="Street Address"
@@ -151,6 +156,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             name="city"
             type="text"
             placeholder="City"
@@ -161,6 +167,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             name="state"
             type="text"
             placeholder="State"
@@ -171,6 +178,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             name="zipCode"
             type="text"
             placeholder="Zip Code"
@@ -181,6 +189,7 @@ const SiteAddModal = ({ isOpen, onClose }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             name="country"
             type="text"
             placeholder="Country"

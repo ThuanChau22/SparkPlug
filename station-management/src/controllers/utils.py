@@ -14,11 +14,10 @@ def is_exclude(s):
 
 def extract_args_search(args):
     if args.get("search"):
-      search = []
-      words = args.get("search").split()
-      for word in words:
-        search.append(f"{'+' if len(words) > 1 else ''}{word}*")
-      return {"search": " ".join(search)}
+        searchArg = args.get("search")
+        words = re.sub(r"[^a-zA-Z0-9,\s]", "", searchArg).split(",")
+        search = [f'"{word.strip()}"' for word in words]
+        return {"search": " ".join(search)}
     return {}
 
 
@@ -31,18 +30,15 @@ def extract_args_lat_lng(args):
         lat_origin = float(geo_data.get("latitude") or lat_origin)
         lng_origin = float(geo_data.get("longitude") or lng_origin)
         lat_lng_data["lat_lng_origin"] = f"{lat_origin},{lng_origin}"
-
         lat_lng_delta = Constants.Lat_lng_delta.value
         if not args.get("lat_lng_max"):
             lat_max = lat_origin + lat_lng_delta
             lng_max = lng_origin + lat_lng_delta
             lat_lng_data["lat_lng_max"] = f"{lat_max},{lng_max}"
-
         if not args.get("lat_lng_min"):
             lat_min = lat_origin - lat_lng_delta
             lng_min = lng_origin - lat_lng_delta
             lat_lng_data["lat_lng_min"] = f"{lat_min},{lng_min}"
-
     return lat_lng_data
 
 

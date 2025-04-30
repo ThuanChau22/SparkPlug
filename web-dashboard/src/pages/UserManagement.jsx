@@ -95,7 +95,7 @@ const UserManagement = () => {
             className="p-3 m-0 shadow-sm"
             style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
           >
-            Users Management
+            User Management
           </CCardTitle>
         </StickyContainer>
         {loadState.loading

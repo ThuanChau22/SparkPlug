@@ -160,6 +160,7 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
         <CForm noValidate validated={validated}>
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             label="Site ID"
             name="siteId"
             type="text"
@@ -171,6 +172,7 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             label="Name"
             name="name"
             type="text"
@@ -182,6 +184,7 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             label="Latitude"
             name="latitude"
             type="text"
@@ -193,6 +196,7 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             label="Longitude"
             name="longitude"
             type="text"
@@ -243,9 +247,15 @@ const StationDetailsModal = ({ isOpen, onClose, stationId }) => {
     return (
       <CModalBody>
         <CForm>
-          <label htmlFor="stationName">Type "{name}" to delete station</label>
-          <CFormInput
-            className="mb-3 shadow-none"
+          <label
+            className="mb-2"
+            htmlFor="stationName"
+          >
+            Type "{name}" to delete station
+          </label>
+          <FormInput
+            InputForm={CFormInput}
+            className="mb-3"
             id="stationName"
             type="text"
             name="name"

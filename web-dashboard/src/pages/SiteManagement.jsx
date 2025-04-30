@@ -1,20 +1,16 @@
-import { useCallback, useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  CButton,
   CRow,
   CCol,
   CCard,
-  CCardTitle,
   CCardBody,
 } from "@coreui/react";
 
-import StickyContainer from "components/StickyContainer";
 import SiteAddModal from "components/SiteManagement/AddModal";
 import SiteDetailsModal from "components/SiteManagement/DetailsModal";
 import SiteListView from "components/SiteManagement/ListView";
 import SiteMapView from "components/SiteManagement/MapView";
-import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
   selectMapLowerBound,
   selectMapUpperBound,
@@ -27,21 +23,10 @@ import {
 import utils from "utils";
 
 const SiteManagement = () => {
-  const headerHeight = useSelector(selectLayoutHeaderHeight);
-
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
 
   const siteList = useSelector(selectSiteList);
-
-  const [titleHeight, setTitleHeight] = useState(0);
-  const titleRef = useCallback((node) => {
-    setTitleHeight(node?.getBoundingClientRect().height);
-  }, []);
-
-  const listRefHeight = useMemo(() => {
-    return headerHeight + titleHeight;
-  }, [headerHeight, titleHeight]);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -59,41 +44,31 @@ const SiteManagement = () => {
 
   useEffect(() => () => dispatch(siteStateClear()), [dispatch]);
 
-  const handleViewSite = (siteId) => {
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenViewModal = (siteId) => {
     setSiteId(siteId);
     setIsDetailsModalOpen(true);
   };
 
   return (
     <CCard className="flex-grow-1 border border-0 rounded-0">
-      <CRow className="flex-grow-1" xs={{ gutterX: 0 }}>
-        <CCol md={6} lg={5} xl={4}>
-          <CCardBody className="d-flex flex-column h-100 p-0">
-            <StickyContainer ref={titleRef} style={{ top: `${headerHeight}px` }}>
-              <CCardTitle
-                className="d-flex justify-content-between align-items-center px-3 py-2 m-0 shadow-sm"
-                style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
-              >
-                Sites Management
-                <CButton
-                  variant="outline"
-                  color="info"
-                  onClick={() => setIsAddModalOpen(true)}
-                >
-                  Add
-                </CButton>
-              </CCardTitle>
-            </StickyContainer>
+      <CCardBody className="p-0">
+        <CRow xs={{ gutterX: 0 }}>
+          <CCol md={6} lg={5} xl={4}>
             <SiteListView
-              refHeight={listRefHeight}
-              handleViewSite={handleViewSite}
+              title={"Site Management"}
+              openAddModal={handleOpenAddModal}
+              openViewModal={handleOpenViewModal}
             />
-          </CCardBody>
-        </CCol>
-        <CCol md={6} lg={7} xl={8}>
-          <SiteMapView handleViewSite={handleViewSite} />
-        </CCol>
-      </CRow>
+          </CCol>
+          <CCol md={6} lg={7} xl={8}>
+            <SiteMapView openViewModal={handleOpenViewModal} />
+          </CCol>
+        </CRow>
+      </CCardBody>
       {isAddModalOpen &&
         <SiteAddModal
           isOpen={isAddModalOpen}

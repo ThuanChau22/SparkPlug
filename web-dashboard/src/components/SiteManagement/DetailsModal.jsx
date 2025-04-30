@@ -172,6 +172,7 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
           {authIsAdmin && (
             <FormInput
               InputForm={CFormInput}
+              className="mb-3"
               label="Owner ID"
               name="ownerId"
               type="text"
@@ -184,6 +185,7 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
           )}
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             label="Name"
             name="name"
             type="text"
@@ -195,6 +197,7 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             label="Latitude"
             name="latitude"
             type="text"
@@ -206,6 +209,7 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             label="Longitude"
             name="longitude"
             type="text"
@@ -217,6 +221,7 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             label="Street Address"
             name="streetAddress"
             type="text"
@@ -228,6 +233,7 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             label="City"
             name="city"
             type="text"
@@ -239,6 +245,7 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             label="State"
             name="state"
             type="text"
@@ -250,6 +257,7 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             label="Zip Code"
             name="zipCode"
             type="text"
@@ -261,6 +269,7 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
           />
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             label="Country"
             name="country"
             type="text"
@@ -311,9 +320,15 @@ const SiteDetailsModal = ({ isOpen, onClose, siteId }) => {
     return (
       <CModalBody>
         <CForm>
-          <label htmlFor="siteName">Type "{name}" to delete site</label>
-          <CFormInput
-            className="mb-3 shadow-none"
+          <label
+            className="mb-2"
+            htmlFor="siteName"
+          >
+            Type "{name}" to delete site
+          </label>
+          <FormInput
+            InputForm={CFormInput}
+            className="mb-3"
             type="text"
             name="name"
             placeholder="Confirmation"

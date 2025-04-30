@@ -150,6 +150,7 @@ services:
       target: development
     environment:
       VITE_APP_SIMULATOR_SERVER_WS: ${SIMULATOR_CLIENT_SERVER_WS}
+      VITE_APP_SITE_API: ${SIMULATOR_CLIENT_SITE_API}
       VITE_APP_STATION_API: ${SIMULATOR_CLIENT_STATION_API}
     depends_on:
       - simulator-server

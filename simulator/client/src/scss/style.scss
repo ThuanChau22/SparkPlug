@@ -78,6 +78,17 @@ body {
   --cui-btn-close-focus-shadow: none;
 }
 
+.form-control,
+.form-control:focus {
+  border: none;
+  box-shadow: none;
+}
+
 .footer {
   --cui-footer-bg: var(--cui-body-bg);
+}
+
+// Typeahead
+.rbt-input-hint {
+  display: none !important;
 }

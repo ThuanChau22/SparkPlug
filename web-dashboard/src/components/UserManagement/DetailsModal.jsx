@@ -142,6 +142,7 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
         <CForm noValidate validated={validated}>
           <FormInput
             InputForm={CFormInput}
+            className="mb-3"
             label="Name"
             name="name"
             type="text"
@@ -153,6 +154,7 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
           />
           <FormInput
             InputForm={CFormSelect}
+            className="mb-3"
             label="Status"
             name="status"
             options={[
@@ -205,9 +207,15 @@ const UserDetailsModal = ({ isOpen, onClose, userId }) => {
     return (
       <CModalBody>
         <CForm>
-          <label htmlFor="userName">Type "{email}" to delete user</label>
-          <CFormInput
-            className="mb-3 shadow-none"
+          <label
+            className="mb-2"
+            htmlFor="userName"
+          >
+            Type "{email}" to delete user
+          </label>
+          <FormInput
+            InputForm={CFormInput}
+            className="mb-3"
             id="userName"
             name="email"
             type="text"

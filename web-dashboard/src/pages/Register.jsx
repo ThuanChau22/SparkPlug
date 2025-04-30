@@ -24,6 +24,7 @@ import {
 
 import ErrorToast from "components/ErrorToast";
 import FormInput from "components/FormInput";
+import FormInputPassword from "components/FormInputPassword";
 import LoadingIndicator from "components/LoadingIndicator";
 import useTheme from "hooks/useTheme";
 import {
@@ -94,10 +95,11 @@ const Register = () => {
                   <h1>Register</h1>
                   <p className="text-medium-emphasis">Create your account</p>
                   <FormInput
-                    Icon={PersonOutlined}
                     InputForm={CFormInput}
-                    name="name"
+                    className="mb-3"
+                    icon={<PersonOutlined />}
                     type="text"
+                    name="name"
                     placeholder="Username"
                     value={input.name}
                     feedbackInvalid="Please provide username"
@@ -105,35 +107,37 @@ const Register = () => {
                     required
                   />
                   <FormInput
-                    Icon={EmailOutlined}
                     InputForm={CFormInput}
-                    name="email"
+                    className="mb-3"
+                    icon={<EmailOutlined />}
                     type="text"
+                    name="email"
                     placeholder="Email"
                     value={input.email}
                     onChange={handleInputChange}
                     feedbackInvalid="Please provide email"
                     required
                   />
-                  <FormInput
-                    Icon={LockOutlined}
+                  <FormInputPassword
                     InputForm={CFormInput}
+                    className="mb-3"
+                    icon={<LockOutlined />}
                     name="password"
                     placeholder="Password"
-                    type="password"
                     value={input.password}
                     onChange={handleInputChange}
                     feedbackInvalid="Please provide password"
                     required
                   />
                   <FormInput
-                    Icon={PeopleOutlined}
                     InputForm={CFormSelect}
+                    className="mb-3"
+                    icon={<PeopleOutlined />}
                     name="role"
                     options={[
                       { label: "Select Role", value: "", disabled: true },
                       ...Object.entries(AuthRoles)
-                        .filter(([_, value]) => value !== AuthRoles.Staff)
+                        .filter(([, value]) => value !== AuthRoles.Staff)
                         .map(([label, value]) => ({ label, value })),
                     ]}
                     value={input.role}
