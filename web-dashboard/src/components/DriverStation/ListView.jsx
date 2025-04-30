@@ -1,17 +1,22 @@
 import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  CCardTitle,
   CListGroup,
   CListGroupItem,
 } from "@coreui/react";
 
 import { StationEstWaitTimeAPI } from "configs";
 import LoadingIndicator from "components/LoadingIndicator";
+import SearchBar from "components/SearchBar";
+import StickyContainer from "components/StickyContainer";
 import DriverStationListItem from "components/DriverStation/StationListItem";
+import useSearchParam from "hooks/useSearchParam";
 import useFetchData from "hooks/useFetchData";
 import useFetchDataOnScroll from "hooks/useFetchDataOnScroll";
 import useMapParams from "hooks/useMapParams";
 import useWindowResize from "hooks/useWindowResize";
+import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import { apiInstance, handleError } from "redux/api";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
@@ -33,9 +38,11 @@ import {
 } from "redux/evse/evseStatusSlice";
 import utils from "utils";
 
-const DriverStationListView = ({ refHeight, handleViewStation }) => {
+const DriverStationListView = ({ title, openViewModal }) => {
   const ListLimit = 25;
   const listRef = useRef({});
+
+  const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const authToken = useSelector(selectAuthAccessToken);
 
@@ -47,8 +54,12 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
 
   const stationSelectedFields = useMemo(() => ([
     StationFields.name,
+    StationFields.latitude,
+    StationFields.longitude,
     StationFields.streetAddress,
     StationFields.city,
+    StationFields.state,
+    StationFields.zipCode,
     ...mapLocation.located ? ["distance"] : [],
   ]), [mapLocation]);
 
@@ -67,27 +78,40 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
   }, [stationList, listPage]);
 
   const [mapParams] = useMapParams();
+  const [search] = useSearchParam();
 
   const latLngOrigin = useMemo(() => {
-    const latLng = utils.toLatLngString(mapLocation);
-    return mapLocation.located ? latLng : mapExist ? "" : "default";
-  }, [mapExist, mapLocation]);
+    if (mapLocation.located) {
+      return utils.toLatLngString(mapLocation);
+    }
+    return mapExist || search ? "" : "default";
+  }, [mapExist, search, mapLocation]);
 
   const { latLngMin, latLngMax } = useMemo(() => {
-    const latLngMin = utils.toLatLngString(mapLowerBound);
-    const latLngMax = utils.toLatLngString(mapUpperBound);
+    const latLngMin = search ? "" : utils.toLatLngString(mapLowerBound);
+    const latLngMax = search ? "" : utils.toLatLngString(mapUpperBound);
     return { latLngMin, latLngMax };
-  }, [mapLowerBound, mapUpperBound]);
+  }, [search, mapLowerBound, mapUpperBound]);
+
+  const sortBy = useMemo(() => {
+    const orders = [];
+    if (search) {
+      orders.push("-search_score");
+    }
+    if (latLngOrigin) {
+      orders.push("distance");
+    }
+    return orders.join();
+  }, [search, latLngOrigin]);
 
   const limit = useMemo(() => (
-    !mapExist ? 5 : ListLimit
-  ), [mapExist]);
+    mapExist || search ? ListLimit : 5
+  ), [mapExist, search]);
 
   const fetchParams = useMemo(() => ({
     fields: stationSelectedFields.join(),
-    sortBy: "distance",
-    latLngOrigin, latLngMin, latLngMax, limit,
-  }), [stationSelectedFields, latLngOrigin, latLngMin, latLngMax, limit]);
+    search, latLngOrigin, latLngMin, latLngMax, sortBy, limit,
+  }), [stationSelectedFields, search, latLngOrigin, latLngMin, latLngMax, sortBy, limit]);
 
   const { data, loadState } = useFetchData({
     condition: !mapParams.exist || mapIsZoomInLimit,
@@ -100,21 +124,17 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
   } = useFetchDataOnScroll({
     action: useCallback(() => stationGetList({
       fields: stationSelectedFields.join(),
-      latLngMin, latLngMax,
       limit: ListLimit,
       cursor: listCursor.next,
-      ...!mapLocation.located ? {} : {
-        latLngOrigin: utils.toLatLngString(mapLocation),
-        sortBy: "distance",
-      },
-    }), [stationSelectedFields, latLngMin, latLngMax, listCursor.next, mapLocation]),
+      search, latLngOrigin, latLngMin, latLngMax, sortBy,
+    }), [stationSelectedFields, search, latLngOrigin, latLngMin, latLngMax, sortBy, listCursor.next]),
     ref: listRef,
     cursor: listCursor,
   });
 
   const loading = useMemo(() => (
-    !data && loadState.loading
-  ), [data, loadState]);
+    !(mapExist && data) && loadState.loading
+  ), [mapExist, data, loadState]);
 
   useEffect(() => {
     if (data && loadState.done) {
@@ -172,49 +192,69 @@ const DriverStationListView = ({ refHeight, handleViewStation }) => {
     fetchWaitTimes(occupiedEvses);
   }, [stationList, stationStatusEntities, evseStatusEntities, fetchWaitTimes]);
 
+  const [titleHeight, setTitleHeight] = useState(0);
+  const titleRef = useCallback((node) => {
+    setTitleHeight(node?.getBoundingClientRect().height);
+  }, []);
+
   const [listHeight, setListHeight] = useState(0);
   useWindowResize(useCallback(() => {
+    const refHeight = headerHeight + titleHeight;
     setListHeight(window.innerHeight - refHeight);
-  }, [refHeight]));
+  }, [headerHeight, titleHeight]));
 
-  return loading
-    ? <LoadingIndicator loading={loading} />
-    : (
-      <CListGroup
-        ref={listRef}
-        className="overflow-auto px-3 pb-3"
-        style={{ height: `${listHeight}px` }}
-      >
-        {stationListByPage.length > 0
-          ? (
-            <>
-              {stationListByPage.map(({ id }) => (
-                <CListGroupItem
-                  key={id}
-                  className="d-flex justify-content-between align-items-center border rounded py-3 my-1 shadow-sm"
-                  as="button"
-                  onClick={() => handleViewStation(id)}
-                >
-                  <DriverStationListItem
-                    stationId={id}
-                    waitTime={Math.round(waitTimeByStation[id] || 0) || null}
-                  />
-                </CListGroupItem>
-              ))}
-            </>
+  return (
+    <div ref={listRef} className="overflow-auto">
+      <StickyContainer ref={titleRef} style={{ top: "0px" }}>
+        <CCardTitle
+          className="px-3 py-2 m-0 shadow-sm"
+          style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
+        >
+          {title && (<p className="my-2">{title}</p>)}
+          <SearchBar placeholder="Search by name or location" />
+        </CCardTitle>
+      </StickyContainer>
+      <div className="d-flex flex-column" style={{ height: `${listHeight}px` }}>
+        {loading
+          ? (<LoadingIndicator loading={loading} />)
+          : (stationListByPage.length > 0
+            ? (
+              <CListGroup className="px-3 pb-3">
+                <>
+                  {stationListByPage.map(({ id }) => (
+                    <CListGroupItem
+                      key={id}
+                      className="border-0 p-0"
+                      as="button"
+                      onClick={() => openViewModal(id)}
+                    >
+                      <DriverStationListItem
+                        stationId={id}
+                        waitTime={Math.round(waitTimeByStation[id] || 0)}
+                      />
+                    </CListGroupItem>
+                  ))}
+                  {loadStateOnScroll.loading && (
+                    <LoadingIndicator loading={loadStateOnScroll.loading} />
+                  )}
+                </>
+              </CListGroup>
+            )
+            : (
+              <div className="d-flex flex-grow-1 justify-content-center align-items-center">
+                <span className="text-secondary">
+                  {mapIsZoomInLimit
+                    ? "No stations found"
+                    : "Zoom in on map to display information"
+                  }
+                </span>
+              </div>
+            )
           )
-          : (
-            <div className="d-flex flex-grow-1 justify-content-center align-items-center">
-              <span className="text-secondary">
-                {mapIsZoomInLimit
-                  ? "No stations found"
-                  : "Zoom in on map to display information"
-                }
-              </span>
-            </div>
-          )}
-      </CListGroup>
-    );
+        }
+      </div>
+    </div>
+  );
 };
 
 export default DriverStationListView;

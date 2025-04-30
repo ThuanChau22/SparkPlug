@@ -1,19 +1,16 @@
-import { useCallback, useState, useEffect, useMemo } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CRow,
   CCol,
   CCard,
-  CCardTitle,
   CCardBody,
 } from "@coreui/react";
 
-import StickyContainer from "components/StickyContainer";
 import DriverStationListView from "components/DriverStation/ListView";
 import DriverStationMapView from "components/DriverStation/MapView";
 import DriverStationDetailsModal from "components/DriverStation/DetailsModal";
 import useStationEventSocket from "hooks/useStationEventSocket";
-import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import {
   selectMapLowerBound,
   selectMapUpperBound,
@@ -40,8 +37,6 @@ import {
 import utils from "utils";
 
 const DriverStation = () => {
-  const headerHeight = useSelector(selectLayoutHeaderHeight);
-
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
 
@@ -50,15 +45,6 @@ const DriverStation = () => {
   const evseList = useSelector(selectEvseList);
   const evseStatusList = useSelector(selectEvseStatusList);
   const evseStatusEntities = useSelector(selectEvseStatusEntities);
-
-  const [titleHeight, setTitleHeight] = useState(0);
-  const titleRef = useCallback((node) => {
-    setTitleHeight(node?.getBoundingClientRect().height);
-  }, []);
-
-  const listRefHeight = useMemo(() => {
-    return headerHeight + titleHeight;
-  }, [headerHeight, titleHeight]);
 
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [stationId, setStationId] = useState(null);
@@ -130,34 +116,26 @@ const DriverStation = () => {
     dispatch(evseStatusStateClear());
   }, [dispatch]);
 
-  const handleViewStation = (stationId) => {
+  const handleOpenViewModal = (stationId) => {
     setStationId(stationId);
     setIsAnalyticsModalOpen(true);
   };
 
   return (
     <CCard className="flex-grow-1 border border-0 rounded-0">
-      <CRow className="flex-grow-1" xs={{ gutterX: 0 }}>
-        <CCol md={6} lg={5} xl={4}>
-          <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
-            <StickyContainer ref={titleRef} style={{ top: `${headerHeight}px` }}>
-              <CCardTitle
-                className="p-3 shadow-sm"
-                style={{ backgroundColor: "rgba(var(--cui-body-bg-rgb), 0.9)" }}
-              >
-                Stations
-              </CCardTitle>
-            </StickyContainer>
+      <CCardBody className="d-flex flex-column h-100 p-0 pb-3">
+        <CRow className="flex-grow-1" xs={{ gutterX: 0 }}>
+          <CCol md={6} lg={5} xl={4}>
             <DriverStationListView
-              refHeight={listRefHeight}
-              handleViewStation={handleViewStation}
+              title="Stations"
+              openViewModal={handleOpenViewModal}
             />
-          </CCardBody>
-        </CCol>
-        <CCol md={6} lg={7} xl={8}>
-          <DriverStationMapView handleViewStation={handleViewStation} />
-        </CCol>
-      </CRow>
+          </CCol>
+          <CCol md={6} lg={7} xl={8}>
+            <DriverStationMapView openViewModal={handleOpenViewModal} />
+          </CCol>
+        </CRow>
+      </CCardBody>
       {isAnalyticsModalOpen && (
         <DriverStationDetailsModal
           isOpen={isAnalyticsModalOpen}
