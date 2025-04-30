@@ -8,6 +8,7 @@ import {
 } from "react";
 import {
   useParams,
+  useLocation,
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
@@ -27,6 +28,7 @@ import { LayoutContext, ToastContext } from "contexts";
 
 const StationList = () => {
   const params = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -51,7 +53,7 @@ const StationList = () => {
       const { data, cursor } = await getStationList({
         fields: selectedFields,
         search: searchTerm,
-        sortBy: "-search_score",
+        sortBy: searchTerm ? "-search_score" : "",
         limit: ListLimit,
       });
       setStationList(data);
@@ -71,7 +73,7 @@ const StationList = () => {
       const { data, cursor } = await getStationList({
         fields: selectedFields,
         search: searchTerm,
-        sortBy: "-search_score",
+        sortBy: searchTerm ? "-search_score" : "",
         limit: ListLimit,
         cursor: listCursor.next,
       });
@@ -144,7 +146,7 @@ const StationList = () => {
   useEffect(() => {
     const handleOnKeydown = ({ code }) => {
       if (code === "Escape") {
-        navigate("/stations")
+        navigate(`/stations${location.search}`);
       }
     };
     document.addEventListener("keydown", handleOnKeydown);
@@ -199,7 +201,7 @@ const StationList = () => {
                           className={`border rounded py-3 my-1 shadow-sm${isActive ? " border-primary" : ""}`}
                           as="button"
                           disabled={isActive}
-                          onClick={() => navigate(`/stations/${id}`)}
+                          onClick={() => navigate(`/stations/${id}${location.search}`)}
                         >
                           <p className={`mb-0${isActive ? "" : " text-secondary"}`}>
                             {`ID: ${id}`}
