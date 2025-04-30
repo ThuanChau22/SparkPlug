@@ -28,8 +28,9 @@ export const SiteFields = {
 
 const siteEntityAdapter = createEntityAdapter({
   sortComparer: (a, b) => {
-    const result = new Date(a.created_at) - new Date(b.created_at);
-    return result || a.id - b.id;
+    const bySearchScore = b.search_score - a.search_score;
+    const byCreatedAt = new Date(a.created_at) - new Date(b.created_at);
+    return bySearchScore || byCreatedAt || a.id - b.id;
   },
 });
 const initialState = siteEntityAdapter.getInitialState();
@@ -41,12 +42,8 @@ export const siteSlice = createSlice({
     siteStateUpsertMany(state, { payload }) {
       siteEntityAdapter.upsertMany(state, payload);
     },
-    siteStateSetById(state, { payload }) {
-      siteEntityAdapter.setOne(state, payload);
-    },
-    siteStateUpdateById(state, { payload }) {
-      const { id, ...changes } = payload;
-      siteEntityAdapter.updateOne(state, { id, changes });
+    siteStateUpsertById(state, { payload }) {
+      siteEntityAdapter.upsertOne(state, payload);
     },
     siteStateDeleteMany(state, { payload }) {
       siteEntityAdapter.removeMany(state, payload);
@@ -62,8 +59,7 @@ export const siteSlice = createSlice({
 
 export const {
   siteStateUpsertMany,
-  siteStateSetById,
-  siteStateUpdateById,
+  siteStateUpsertById,
   siteStateDeleteMany,
   siteStateDeleteById,
   siteStateClear,
@@ -72,7 +68,7 @@ export const {
 export const siteGetList = createAsyncThunk(
   `${siteSlice.name}/getList`,
   async ({
-    fields, name,
+    fields, search, name,
     latitude, longitude,
     city, state, country,
     limit, cursor,
@@ -86,7 +82,7 @@ export const siteGetList = createAsyncThunk(
   } = {}, { dispatch, getState }) => {
     try {
       const params = toUrlParams({
-        fields, name, owner_id, latitude, longitude,
+        fields, search, name, owner_id, latitude, longitude,
         street_address, city, state, country, zip_code,
         lat_lng_origin, lat_lng_min, lat_lng_max,
         sort_by, limit, cursor,
@@ -108,7 +104,7 @@ export const siteGetById = createAsyncThunk(
     try {
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.get(`${SiteAPI}/${id}`, config);
-      dispatch(siteStateSetById(data));
+      dispatch(siteStateUpsertById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -131,7 +127,7 @@ export const siteAdd = createAsyncThunk(
       };
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.post(`${SiteAPI}`, body, config);
-      dispatch(siteStateSetById(data));
+      dispatch(siteStateUpsertById(data));
       return data;
     } catch (error) {
       handleError({ error, dispatch });
@@ -156,7 +152,7 @@ export const siteUpdateById = createAsyncThunk(
       };
       const config = await tokenConfig({ dispatch, getState });
       const { data } = await apiInstance.patch(`${SiteAPI}/${id}`, body, config);
-      dispatch(siteStateUpdateById(data));
+      dispatch(siteStateUpsertById(data));
     } catch (error) {
       handleError({ error, dispatch });
     }
@@ -176,17 +172,18 @@ export const siteDeleteById = createAsyncThunk(
   },
 );
 
-export const siteSearchLocation = createAsyncThunk(
-  `${siteSlice.name}/locations`,
+export const siteLocationAutocomplete = createAsyncThunk(
+  `${siteSlice.name}/locationAutocomplete`,
   async ({
-    city, state, country, limit,
+    name, city, state, country, limit,
+    streetAddress: street_address,
     zipCode: zip_code,
   } = {}, { dispatch, getState }) => {
     try {
-      const endpoint = `${SiteAPI}/locations`;
+      const endpoint = `${SiteAPI}/location-autocomplete`;
       const params = toUrlParams({
-        limit, city, state,
-        zip_code, country,
+        name, street_address, city,
+        state, zip_code, country, limit,
       });
       const query = `${endpoint}${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });

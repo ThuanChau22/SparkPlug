@@ -15,7 +15,7 @@ import {
 
 import FormInput from "components/FormInput";
 import FormInputAutocomplete from "components/FormInputAutocomplete";
-import { siteSearchLocation } from "redux/site/siteSlice";
+import { siteLocationAutocomplete } from "redux/site/siteSlice";
 import {
   filterDashboardStateSetAll,
   filterDashboardStateClearAll,
@@ -39,10 +39,14 @@ const FilterModal = ({ isOpen, onClose }) => {
     return text === options.station;
   };
 
-  const handleSearchLocation = async (params) => {
-    params = { ...params, limit: 5 };
-    const locations = await dispatch(siteSearchLocation(params)).unwrap();
-    return locations.map((value) => ({ value, label: value.toString() }));
+  const handleLocationAutocomplete = async (params = {}) => {
+    const locations = await dispatch(siteLocationAutocomplete({
+      ...params, limit: 5,
+    })).unwrap();
+    return locations.map((location) => {
+      const [value] = Object.values(location);
+      return ({ value, label: `${value}` });
+    });
   };
 
   const handleInputChange = ({ target }) => {
@@ -118,7 +122,7 @@ const FilterModal = ({ isOpen, onClose }) => {
                 placeholder="Enter city"
                 label={formInput.city.label}
                 defaultInputValue={formInput.city.value}
-                onSearch={(city) => handleSearchLocation({ city })}
+                onSearch={(city) => handleLocationAutocomplete({ city })}
                 onChange={([selected]) => handleInputChange({
                   target: {
                     name: "city",
@@ -135,7 +139,7 @@ const FilterModal = ({ isOpen, onClose }) => {
                 placeholder="Enter state"
                 label={formInput.state.label}
                 defaultInputValue={formInput.state.value}
-                onSearch={(state) => handleSearchLocation({ state })}
+                onSearch={(state) => handleLocationAutocomplete({ state })}
                 onChange={([selected]) => handleInputChange({
                   target: {
                     name: "state",
@@ -152,7 +156,7 @@ const FilterModal = ({ isOpen, onClose }) => {
                 placeholder="Enter zip code"
                 label={formInput.zipCode.label}
                 defaultInputValue={formInput.zipCode.value}
-                onSearch={(zipCode) => handleSearchLocation({ zipCode })}
+                onSearch={(zipCode) => handleLocationAutocomplete({ zipCode })}
                 onChange={([selected]) => handleInputChange({
                   target: {
                     name: "zipCode",
@@ -169,7 +173,7 @@ const FilterModal = ({ isOpen, onClose }) => {
                 placeholder="Enter country"
                 label={formInput.country.label}
                 defaultInputValue={formInput.country.value}
-                onSearch={(country) => handleSearchLocation({ country })}
+                onSearch={(country) => handleLocationAutocomplete({ country })}
                 onChange={([selected]) => handleInputChange({
                   target: {
                     name: "country",

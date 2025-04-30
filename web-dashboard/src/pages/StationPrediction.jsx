@@ -19,6 +19,7 @@ import StationPredictionMarkerCluster from "components/StationPrediction/MarkerC
 import StickyContainer from "components/StickyContainer";
 import {
   apiInstance,
+  toUrlParams,
   handleError,
 } from "redux/api";
 import {
@@ -56,9 +57,10 @@ const StationPrediction = () => {
 
   const fetchData = async (apiEndpoint) => {
     const endpoint = `${apiEndpoint}`;
-    const params = `?zip_code=${parseInt(input)}`;
+    const params = toUrlParams({ zip_code: input });
+    const query = `${endpoint}${params ? `?${params}` : ""}`;
     const headers = { Authorization: `Bearer ${token}` };
-    const { data } = await apiInstance(`${endpoint}${params}`, { headers });
+    const { data } = await apiInstance(query, { headers });
     return data;
   }
 

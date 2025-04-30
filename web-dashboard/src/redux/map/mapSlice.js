@@ -16,7 +16,10 @@ export const mapSlice = createSlice({
   reducers: {
     mapStateSet(state, { payload }) {
       for (const key of Object.keys(initialState)) {
-        if (payload[key]) {
+        const value = payload[key];
+        if (value === null) {
+          state[key] = initialState[key];
+        } else if (value) {
           state[key] = payload[key];
         }
       }
