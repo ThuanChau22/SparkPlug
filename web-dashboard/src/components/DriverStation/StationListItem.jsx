@@ -9,6 +9,7 @@ import EvseAvailabilityStatus from "components/EvseAvailabilityStatus";
 import LoadingIndicator from "components/LoadingIndicator";
 import useFetchData from "hooks/useFetchData";
 import useGetEvseStatusColor from "hooks/useGetEvseStatusColor";
+import { selectMapLocation } from "redux/map/mapSlice";
 import {
   stationGetById,
   selectStationById,
@@ -17,6 +18,8 @@ import {
 import utils from "utils";
 
 const DriverStationListItem = ({ stationId, waitTime = 0 }) => {
+  const mapLocation = useSelector(selectMapLocation);
+
   const station = useSelector((state) => selectStationById(state, stationId));
   const stationStatus = useSelector((state) => selectStationStatusById(state, stationId));
 
@@ -46,14 +49,19 @@ const DriverStationListItem = ({ stationId, waitTime = 0 }) => {
                 <EvStationOutlined />
                 <EvseAvailabilityStatus status={stationStatus} />
               </div>
-              {station?.distance && (
+              {mapLocation.located && station.distance !== undefined && (
                 <span className="d-block text-secondary small">
                   {`${utils.kmToMi(station.distance).toFixed(2)} mi`}
                 </span>
               )}
             </div>
             {waitTime !== 0 && (
-              <div className={`${waitTime <= 15 ? "text-success" : waitTime <= 60 ? "text-warning" : "text-danger"} d-flex align-items-center`}>
+              <div className={`${waitTime <= 15
+                  ? "text-success"
+                  : waitTime <= 60
+                    ? "text-warning"
+                    : "text-danger"
+                } d-flex align-items-center`}>
                 <AccessTimeOutlined fontSize="small" />
                 <span className="small">{`Estimated wait: ${waitTime} minutes`}</span>
               </div>
