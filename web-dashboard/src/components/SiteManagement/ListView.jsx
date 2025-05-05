@@ -8,14 +8,19 @@ import {
 } from "@coreui/react";
 
 import LoadingIndicator from "components/LoadingIndicator";
-import SearchBar from "components/SearchBar";
 import StickyContainer from "components/StickyContainer";
-import useMapParams from "hooks/useMapParams";
+import SearchBar from "components/SiteManagement/SearchBar";
+import useMapParam from "hooks/useMapParam";
+import useViewParam from "hooks/useViewParam";
 import useSearchParam from "hooks/useSearchParam";
 import useFetchData from "hooks/useFetchData";
 import useFetchDataOnScroll from "hooks/useFetchDataOnScroll";
 import useWindowResize from "hooks/useWindowResize";
-import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
+import {
+  LayoutView,
+  selectLayoutMobile,
+  selectLayoutHeaderHeight,
+} from "redux/app/layoutSlice";
 import { selectAuthRoleIsOwner } from "redux/auth/authSlice";
 import {
   selectMapExist,
@@ -34,6 +39,7 @@ const SiteListView = ({ title, openAddModal, openViewModal }) => {
   const ListLimit = 25;
   const listRef = useRef({});
 
+  const isMobile = useSelector(selectLayoutMobile);
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
@@ -63,27 +69,33 @@ const SiteListView = ({ title, openAddModal, openViewModal }) => {
     siteList.filter((_, index) => index < ListLimit * listPage)
   ), [siteList, listPage]);
 
-  const [mapParams] = useMapParams();
-  const [search] = useSearchParam();
+  const [mapParam] = useMapParam();
+  const [viewParam] = useViewParam();
+  const [searchParam] = useSearchParam();
+
+  const isMobileListView = useMemo(() => (
+    isMobile && viewParam === LayoutView.List
+  ), [isMobile, viewParam]);
 
   const { latLngOrigin, latLngMin, latLngMax } = useMemo(() => ({
-    latLngOrigin: authIsOwner || mapExist || search ? "" : "default",
-    latLngMin: search ? "" : utils.toLatLngString(mapLowerBound),
-    latLngMax: search ? "" : utils.toLatLngString(mapUpperBound),
-  }), [authIsOwner, mapExist, search, mapLowerBound, mapUpperBound]);
+    latLngOrigin: authIsOwner || mapExist || searchParam ? "" : "default",
+    latLngMin: searchParam ? "" : utils.toLatLngString(mapLowerBound),
+    latLngMax: searchParam ? "" : utils.toLatLngString(mapUpperBound),
+  }), [authIsOwner, mapExist, searchParam, mapLowerBound, mapUpperBound]);
 
   const limit = useMemo(() => (
-    !authIsOwner || mapExist || search ? ListLimit : 1
-  ), [authIsOwner, mapExist, search]);
+    isMobile || !authIsOwner || mapExist || searchParam ? ListLimit : 1
+  ), [isMobile, authIsOwner, mapExist, searchParam]);
 
   const fetchParams = useMemo(() => ({
     fields: siteSelectedFields.join(),
-    sortBy: search ? "-search_score" : "",
-    search, latLngOrigin, latLngMin, latLngMax, limit,
-  }), [siteSelectedFields, search, latLngOrigin, latLngMin, latLngMax, limit]);
+    search: searchParam,
+    sortBy: searchParam ? "-search_score" : "",
+    latLngOrigin, latLngMin, latLngMax, limit,
+  }), [siteSelectedFields, searchParam, latLngOrigin, latLngMin, latLngMax, limit]);
 
   const { data, loadState } = useFetchData({
-    condition: !mapParams.exist || search || mapIsZoomInLimit,
+    condition: isMobileListView || !mapParam || searchParam || mapIsZoomInLimit,
     action: useCallback(() => siteGetList(fetchParams), [fetchParams]),
   });
 
@@ -93,11 +105,12 @@ const SiteListView = ({ title, openAddModal, openViewModal }) => {
   } = useFetchDataOnScroll({
     action: useCallback(() => siteGetList({
       fields: siteSelectedFields.join(),
-      sortBy: search ? "-search_score" : "",
+      search: searchParam,
+      sortBy: searchParam ? "-search_score" : "",
       limit: ListLimit,
       cursor: listCursor.next,
-      search, latLngMin, latLngMax,
-    }), [siteSelectedFields, search, latLngMin, latLngMax, listCursor.next]),
+      latLngOrigin, latLngMin, latLngMax,
+    }), [siteSelectedFields, searchParam, latLngOrigin, latLngMin, latLngMax, listCursor.next]),
     ref: listRef,
     cursor: listCursor,
   });

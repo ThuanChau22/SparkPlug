@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
 import MapSetView from "components/Map/MapSetView";
 import StickyContainer from "components/StickyContainer";
 import StationMarkerCluster from "components/StationManagement/MarkerCluster";
-import useMapParams from "hooks/useMapParams";
+import useMapParam from "hooks/useMapParam";
 import useSearchParam from "hooks/useSearchParam";
 import useFetchData from "hooks/useFetchData";
-import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
+import { selectLayoutHeaderHeight } from "redux/app/layoutSlice";
 import { selectAuthRoleIsOwner } from "redux/auth/authSlice";
 import {
-  mapStateSet,
   selectMapExist,
   selectMapLowerBound,
   selectMapUpperBound,
@@ -44,82 +43,48 @@ const StationMapView = ({ openViewModal }) => {
     return selectStationListByFields(state, stationSelectedFields);
   });
 
-  const [mapParams] = useMapParams();
-  const [search, setSearch] = useSearchParam();
+  const [mapParam] = useMapParam();
+  const [searchParam] = useSearchParam();
 
   const { latLngOrigin, latLngMin, latLngMax } = useMemo(() => ({
-    latLngOrigin: authIsOwner || mapExist || search ? "" : "default",
-    latLngMin: search ? "" : utils.toLatLngString(mapLowerBound),
-    latLngMax: search ? "" : utils.toLatLngString(mapUpperBound),
-  }), [authIsOwner, mapExist, search, mapLowerBound, mapUpperBound]);
+    latLngOrigin: authIsOwner || mapExist || searchParam ? "" : "default",
+    latLngMin: searchParam ? "" : utils.toLatLngString(mapLowerBound),
+    latLngMax: searchParam ? "" : utils.toLatLngString(mapUpperBound),
+  }), [authIsOwner, mapExist, searchParam, mapLowerBound, mapUpperBound]);
 
   const limit = useMemo(() => (
-    search ? 25 : authIsOwner && !mapExist ? 1 : 0
-  ), [authIsOwner, mapExist, search]);
+    searchParam ? 25 : authIsOwner && !mapExist ? 1 : 0
+  ), [authIsOwner, mapExist, searchParam]);
 
   const fetchParams = useMemo(() => ({
     fields: stationSelectedFields.join(),
-    sortBy: search ? "-search_score" : "",
-    search, latLngOrigin, latLngMin, latLngMax, limit,
-  }), [stationSelectedFields, search, latLngOrigin, latLngMin, latLngMax, limit]);
+    search: searchParam,
+    sortBy: searchParam ? "-search_score" : "",
+    latLngOrigin, latLngMin, latLngMax, limit,
+  }), [stationSelectedFields, searchParam, latLngOrigin, latLngMin, latLngMax, limit]);
 
-  const { data, loadState } = useFetchData({
-    condition: !mapParams.exist || search || mapIsZoomInLimit,
+  const { loadState } = useFetchData({
+    condition: !mapParam || searchParam || mapIsZoomInLimit,
     action: useCallback(() => stationGetList(fetchParams), [fetchParams]),
   });
 
   const loading = useMemo(() => (
-    !(mapExist && data) && loadState.loading
-  ), [mapExist, data, loadState]);
+    !(mapExist && stationList.length) && loadState.loading
+  ), [mapExist, stationList, loadState]);
 
-  const [mapParamsPrev, setMapParamsPrev] = useState(mapParams);
-  const [searchPrev, setSearchPrev] = useState(search);
-  const [isDataUpdated, setIsDataUpdated] = useState(false);
-
-  const bounds = useMemo(() => {
-    if (data?.data.length > 0 && isDataUpdated) {
-      const filtered = data.data.filter((e) => e.search_score);
-      const searchScores = filtered.map((e) => e.search_score);
-      const index = utils.localMaxDiffIndex(searchScores);
-      return index ? data.data.slice(0, index) : data.data;
-    }
-    return [];
-  }, [data, isDataUpdated]);
-
-  const dispatch = useDispatch();
+  const [bounds, setBounds] = useState([]);
 
   useEffect(() => {
-    if (search && search !== searchPrev) {
-      setSearchPrev(search);
-      dispatch(mapStateSet({
-        center: null,
-        lowerBound: null,
-        upperBound: null,
-        zoom: null,
-      }));
-    }
-  }, [search, searchPrev, dispatch]);
-
-  useEffect(() => {
-    const current = Object.values(mapParams).join();
-    const previous = Object.values(mapParamsPrev).join();
-    if (mapParams.exist && current !== previous) {
-      setMapParamsPrev(mapParams);
-      setSearch("");
-    }
-  }, [mapParams, mapParamsPrev, setSearch]);
-
-  useEffect(() => {
-    if (data) {
-      setIsDataUpdated(true);
-    }
-  }, [data]);
-
-  useEffect(() => {
-    if (mapExist && data) {
-      setIsDataUpdated(false);
-    }
-  }, [mapExist, data]);
+    setBounds((current) => {
+      if (current.length === 0) {
+        const filtered = stationList.filter((e) => e.search_score);
+        const searchScores = filtered.map((e) => e.search_score);
+        const index = utils.localMaxDiffIndex(searchScores);
+        return index ? stationList.slice(0, index) : stationList;
+      }
+      return stationList.length !== 0 ? current : [];
+    })
+  }, [stationList]);
 
   return (
     <StickyContainer style={{ top: `${headerHeight}px` }}>

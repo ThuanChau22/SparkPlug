@@ -3,20 +3,20 @@ import { useSearchParams } from "react-router-dom";
 
 const useSearchParam = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const search = useMemo(() => {
-    return searchParams.get("search");
+  const searchParam = useMemo(() => {
+    return searchParams.get("search") || "";
   }, [searchParams]);
-  const setSearch = useCallback((text)=>{
+  const setSearchParam = useCallback((search = "") => {
     setSearchParams((searchParams) => {
-      if (text) {
-        searchParams.set("search", text);
+      if (search) {
+        searchParams.set("search", search);
       } else {
         searchParams.delete("search");
       }
       return searchParams;
     });
-  },[setSearchParams]);
-  return [search, setSearch];
+  }, [setSearchParams]);
+  return [searchParam, setSearchParam];
 };
 
 export default useSearchParam;

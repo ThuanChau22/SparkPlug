@@ -36,7 +36,7 @@ const stationEntityAdapter = createEntityAdapter({
     const byDistance = a.distance - b.distance;
     const bySearchScore = b.search_score - a.search_score;
     const byCreatedAt = new Date(a.created_at) - new Date(b.created_at);
-    return byDistance || bySearchScore || byCreatedAt || a.id - b.id;
+    return bySearchScore || byDistance || byCreatedAt || a.id - b.id;
   }
 });
 

@@ -16,7 +16,7 @@ import UserActiveStatus from "components/UserManagement/ActiveStatus";
 import UserDetailsModal from "components/UserManagement/DetailsModal";
 import useFetchData from "hooks/useFetchData";
 import useFetchDataOnScroll from "hooks/useFetchDataOnScroll";
-import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
+import { selectLayoutHeaderHeight } from "redux/app/layoutSlice";
 import {
   userStateClear,
   userGetList,

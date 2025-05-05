@@ -109,7 +109,11 @@ const router = createBrowserRouter([
   },
   {
     path: routes.Unauthorized.path,
-    element: routes.Unauthorized.element,
+    element: (
+      <div className="min-vh-100 d-flex align-items-center">
+        {routes.Unauthorized.element}
+      </div>
+    ),
   },
 ], { future: { v7_relativeSplatPath: true } });
 

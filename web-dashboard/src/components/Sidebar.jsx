@@ -26,18 +26,17 @@ import logoBrand from "assets/logo-brand";
 import routes from "routes";
 import useWindowResize from "hooks/useWindowResize";
 import {
+  selectLayoutHeaderActive,
+  selectLayoutSidebarShow,
+  selectLayoutSidebarFold,
+  layoutStateSetSidebarShow,
+  layoutStateSetSidebarFold,
+} from "redux/app/layoutSlice";
+import {
   selectAuthRoleIsStaff,
   selectAuthRoleIsOwner,
   selectAuthRoleIsDriver,
 } from "redux/auth/authSlice";
-import {
-  selectLayoutHeaderActive,
-  selectLayoutSidebarShow,
-  selectLayoutSidebarFold,
-  layoutStateSetMobile,
-  layoutStateSetSidebarShow,
-  layoutStateSetSidebarFold,
-} from "redux/layout/layoutSlice";
 
 const SidebarNav = ({ items }) => {
   const location = useLocation();
@@ -89,8 +88,6 @@ const Sidebar = () => {
   const dispatch = useDispatch();
 
   useWindowResize(useCallback(() => {
-    const medium = "only screen and (min-width: 768px)";
-    dispatch(layoutStateSetMobile(!window.matchMedia(medium).matches));
     const extraLarge = "only screen and (min-width: 1200px)";
     if (!window.matchMedia(extraLarge).matches) {
       dispatch(layoutStateSetSidebarFold(true));

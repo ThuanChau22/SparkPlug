@@ -59,14 +59,16 @@ utils.localMaxDiffIndex = (numbers) => {
     differences.push(numbers[i] - numbers[i + 1]);
   }
   const sum = differences.reduce((sum, diff) => sum + diff);
-  const mean = sum / differences.length;
-  const squares = differences.map((diff) => Math.pow(diff - mean, 2));
-  const sumSquare = squares.reduce((sq) => sum + sq);
-  const stdDev = Math.sqrt(sumSquare / differences.length);
-  const threshold = Math.max(...numbers) * 0.05;
-  for (let i = 0; i < differences.length; i++) {
-    if (differences[i] >= mean + stdDev || differences[i] >= threshold) {
-      return i + 1;
+  if (sum !== 0) {
+    const mean = sum / differences.length;
+    const squares = differences.map((diff) => Math.pow(diff - mean, 2));
+    const sumSquare = squares.reduce((sq) => sum + sq);
+    const stdDev = Math.sqrt(sumSquare / differences.length);
+    const threshold = Math.max(...numbers) * 0.05;
+    for (let i = 0; i < differences.length; i++) {
+      if (differences[i] >= mean + stdDev || differences[i] >= threshold) {
+        return i + 1;
+      }
     }
   }
   return null;

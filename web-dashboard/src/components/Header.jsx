@@ -3,6 +3,7 @@ import {
   useState,
   useRef,
   useCallback,
+  useMemo,
 } from "react";
 import {
   useDispatch,
@@ -13,6 +14,7 @@ import {
   NavLink,
 } from "react-router-dom";
 import {
+  CButton,
   CContainer,
   CHeader,
   CHeaderNav,
@@ -26,24 +28,34 @@ import {
   cilMenu,
 } from "@coreui/icons"
 import CIcon from "@coreui/icons-react";
+import {
+  FormatListBulletedOutlined,
+  MapOutlined,
+} from "@mui/icons-material";
 
 import logoBrand from "assets/logo-brand";
 import Breadcrumb from "components/Breadcrumb";
 import HeaderDropdown from "components/HeaderDropdown";
 import useWindowResize from "hooks/useWindowResize";
 import {
-  selectLayoutSidebarShow,
+  LayoutView,
   layoutStateSetHeaderActive,
   layoutStateSetHeaderHeight,
   layoutStateSetSidebarShow,
-} from "redux/layout/layoutSlice";
+  layoutStateSetView,
+  selectLayoutMobile,
+  selectLayoutSidebarShow,
+  selectLayoutView,
+} from "redux/app/layoutSlice";
 import routes from "routes";
 import "scss/style.scss";
 
 const Header = () => {
   const headerRef = useRef({});
 
+  const isMobile = useSelector(selectLayoutMobile);
   const sidebarShow = useSelector(selectLayoutSidebarShow);
+  const layoutView = useSelector(selectLayoutView);
 
   const [components, setComponents] = useState([]);
 
@@ -74,9 +86,20 @@ const Header = () => {
     }
   }, [location, dispatch]);
 
+  const showViewButton = useMemo(() => {
+    const hasPath = new Set([
+      routes.Sites.path,
+      routes.Stations.Components.Management.path,
+      routes.Stations.Components.Monitor.path,
+      routes.Stations.Components.Analytics.path,
+      routes.Driver.Components.Stations.path,
+    ]).has(location.pathname.replace(/\/$/, ""));
+    return isMobile && hasPath;
+  }, [location, isMobile]);
+
   return (
     <CHeader ref={headerRef} position="sticky" className="p-0">
-      <CContainer className="border-bottom" fluid>
+      <CContainer className={`${isMobile ? "" : "border-bottom"}`} fluid>
         <CHeaderToggler
           className="ps-1"
           onClick={() => dispatch(layoutStateSetSidebarShow(!sidebarShow))}
@@ -88,7 +111,7 @@ const Header = () => {
         </CHeaderBrand>
         <CHeaderNav className="d-none d-md-flex me-auto" >
           <CNav layout="fill">
-            {components && components.map(({ name, path }, index) => (
+            {components.map(({ name, path }, index) => (
               <CNavItem key={index}>
                 <CNavLink to={path} as={NavLink}>
                   {name}
@@ -104,6 +127,28 @@ const Header = () => {
       <CContainer className="d-none d-md-flex" fluid>
         <Breadcrumb />
       </CContainer>
+      {showViewButton && (
+        <div
+          className="position-absolute bottom-0 end-0"
+          style={{ transform: "translateY(100%)" }}
+        >
+          <CButton
+            className="bg-body mt-2 me-3"
+            onClick={() => {
+              dispatch(layoutStateSetView(
+                layoutView === LayoutView.List
+                  ? LayoutView.Map
+                  : LayoutView.List
+              ));
+            }}
+          >
+            {layoutView === LayoutView.List
+              ? <FormatListBulletedOutlined fontSize="small" />
+              : <MapOutlined fontSize="small" />
+            }
+          </CButton>
+        </div>
+      )}
     </CHeader >
   );
 };

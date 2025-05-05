@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   useNavigate,
@@ -12,7 +12,11 @@ import Footer from "components/Footer";
 import ErrorToast from "components/ErrorToast";
 import LoadingIndicator from "components/LoadingIndicator";
 import useTheme from "hooks/useTheme";
+import useWindowResize from "hooks/useWindowResize";
 import { clearHeader } from "redux/api";
+import {
+  layoutStateSetMobile,
+} from "redux/app/layoutSlice";
 import {
   authStateSet,
   authStateClear,
@@ -38,6 +42,11 @@ const App = () => {
 
   useTheme();
 
+  useWindowResize(useCallback(() => {
+    const medium = "only screen and (min-width: 768px)";
+    dispatch(layoutStateSetMobile(!window.matchMedia(medium).matches));
+  }, [dispatch]));
+
   useEffect(() => {
     if (token) {
       dispatch(authStateSet({ token }));
@@ -52,17 +61,39 @@ const App = () => {
   }, [authenticated, expiredTime, dispatch]);
 
   useEffect(() => {
-    if (!authenticated && !token) {
-      navigate(routes.Login.path, { replace: true });
-    }
-  }, [authenticated, token, navigate]);
-
-  useEffect(() => {
     const options = { replace: true };
-    const path = location.pathname.split("/");
-    if (path.length < 2) return;
 
-    const [, resource, component] = path;
+    // Navigate on unauthenticated
+    if (!authenticated && !token) {
+      navigate(routes.Login.path, options);
+    }
+
+    // Navigate with restriction
+    const restricted = new Set();
+    if (authIsAdmin || authIsOwner) {
+      restricted.add(routes.Driver.Components.Dashboard.path);
+      restricted.add(routes.Driver.Components.Stations.path);
+      if (authIsOwner) {
+        restricted.add(routes.Users.path);
+      }
+    }
+    if (authIsDriver) {
+      restricted.add(routes.Dashboard.path);
+      restricted.add(routes.Stations.Components.Management.path);
+      restricted.add(routes.Stations.Components.Monitor.path);
+      restricted.add(routes.Stations.Components.Analytics.path);
+      restricted.add(routes.Sites.path);
+      restricted.add(routes.Users.path);
+      restricted.add(routes.StationPrediction.path);
+    }
+    if (restricted.has(location.pathname.replace(/\/$/, ""))) {
+      navigate(routes.Unauthorized.path, { replace: true });
+      return;
+    }
+
+    // Navigate resource components
+    const path = location.pathname.split("/") || [];
+    const [_, resource, component] = path;
     if (!resource) {
       if (authIsAdmin || authIsOwner) {
         navigate(routes.Dashboard.path, options);
@@ -81,35 +112,7 @@ const App = () => {
         }
       }
     }
-  }, [authIsAdmin, authIsOwner, authIsDriver, location, navigate]);
-
-  useEffect(() => {
-    const restricted = new Set();
-    if (authIsAdmin || authIsOwner) {
-      restricted.add(routes.Driver.Components.Dashboard.path);
-      restricted.add(routes.Driver.Components.Stations.path);
-      if (authIsOwner) {
-        restricted.add(routes.Users.path);
-      }
-    }
-    if (authIsDriver) {
-      restricted.add(routes.Dashboard.path);
-      restricted.add(routes.Stations.Components.Management.path);
-      restricted.add(routes.Stations.Components.Monitor.path);
-      restricted.add(routes.Stations.Components.Analytics.path);
-      restricted.add(routes.Sites.path);
-      restricted.add(routes.Users.path);
-      restricted.add(routes.StationPrediction.path);
-    }
-    let path = location.pathname;
-    if (path.charAt(path.length - 1) === "/") {
-      path = path.substring(0, path.length - 1);
-    }
-    if (restricted.has(path)) {
-      navigate(routes.Unauthorized.path, { replace: true });
-      return;
-    }
-  }, [authIsAdmin, authIsOwner, authIsDriver, location, navigate]);
+  }, [authenticated, token, authIsAdmin, authIsOwner, authIsDriver, location, navigate]);
 
   return (
     <div className="min-vh-100 d-flex flex-row align-items-center">

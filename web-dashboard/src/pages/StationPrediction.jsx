@@ -25,7 +25,7 @@ import {
 import {
   selectLayoutHeaderHeight,
   selectLayoutFooterHeight,
-} from "redux/layout/layoutSlice";
+} from "redux/app/layoutSlice";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 
 const StationPrediction = () => {

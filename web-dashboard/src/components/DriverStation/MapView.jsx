@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import MapContainer from "components/Map/MapContainer";
 import MapFitBound from "components/Map/MapFitBound";
@@ -7,12 +7,11 @@ import MapSetView from "components/Map/MapSetView";
 import MapUserLocation from "components/Map/MapUserLocation";
 import StickyContainer from "components/StickyContainer";
 import StationStatusMarkerCluster from "components/StationMonitor/MarkerCluster";
-import useMapParams from "hooks/useMapParams";
+import useMapParam from "hooks/useMapParam";
 import useSearchParam from "hooks/useSearchParam";
 import useFetchData from "hooks/useFetchData";
-import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
+import { selectLayoutHeaderHeight } from "redux/app/layoutSlice";
 import {
-  mapStateSet,
   selectMapExist,
   selectMapLowerBound,
   selectMapUpperBound,
@@ -57,50 +56,48 @@ const DriverStationMapView = ({ openViewModal }) => {
     }))
   ), [stationList, evseStatusEntities]);
 
-  const [mapParams] = useMapParams();
-  const [search, setSearch] = useSearchParam();
+  const [mapParam] = useMapParam();
+  const [searchParam] = useSearchParam();
 
   const latLngOrigin = useMemo(() => {
     if (mapLocation.located) {
       return utils.toLatLngString(mapLocation);
     }
-    return mapExist || search ? "" : "default";
-  }, [mapExist, search, mapLocation]);
+    return mapExist || searchParam ? "" : "default";
+  }, [mapExist, searchParam, mapLocation]);
 
   const { latLngMin, latLngMax } = useMemo(() => ({
-    latLngMin: search ? "" : utils.toLatLngString(mapLowerBound),
-    latLngMax: search ? "" : utils.toLatLngString(mapUpperBound),
-  }), [search, mapLowerBound, mapUpperBound]);
+    latLngMin: searchParam ? "" : utils.toLatLngString(mapLowerBound),
+    latLngMax: searchParam ? "" : utils.toLatLngString(mapUpperBound),
+  }), [searchParam, mapLowerBound, mapUpperBound]);
 
   const sortBy = useMemo(() => {
     const orders = [];
-    if (search) {
+    if (searchParam) {
       orders.push("-search_score");
     }
     if (latLngOrigin) {
       orders.push("distance");
     }
     return orders.join();
-  }, [search, latLngOrigin]);
+  }, [searchParam, latLngOrigin]);
 
   const limit = useMemo(() => (
-    search ? 25 : !mapExist ? 5 : 0
-  ), [mapExist, search]);
+    searchParam ? 25 : !mapExist ? 5 : 0
+  ), [mapExist, searchParam]);
 
   const fetchParams = useMemo(() => ({
     fields: stationSelectedFields.join(),
-    search, latLngOrigin, latLngMin, latLngMax, sortBy, limit
-  }), [stationSelectedFields, search, latLngOrigin, latLngMin, latLngMax, sortBy, limit]);
+    search: searchParam,
+    latLngOrigin, latLngMin, latLngMax, sortBy, limit
+  }), [stationSelectedFields, searchParam, latLngOrigin, latLngMin, latLngMax, sortBy, limit]);
 
-  const { data, loadState } = useFetchData({
-    condition: !mapParams.exist || search || mapIsZoomInLimit,
+  const { loadState } = useFetchData({
+    condition: !mapParam || searchParam || mapIsZoomInLimit,
     action: useCallback(() => stationGetList(fetchParams), [fetchParams]),
   });
 
-  const {
-    data: evseStatusData,
-    loadState: evseStatusLoadState,
-  } = useFetchData({
+  const { loadState: evseStatusLoadState } = useFetchData({
     condition: mapExist && mapIsZoomInLimit,
     action: useCallback(() => evseStatusGetList({
       latLngMin, latLngMax,
@@ -108,58 +105,23 @@ const DriverStationMapView = ({ openViewModal }) => {
   });
 
   const loading = useMemo(() => (
-    (!(mapExist && data) && loadState.loading)
-    || (!evseStatusData && evseStatusLoadState.loading)
-  ), [mapExist, data, loadState, evseStatusData, evseStatusLoadState]);
+    !(mapExist && stationStatusList.length)
+    && (loadState.loading || evseStatusLoadState.loading)
+  ), [mapExist, stationStatusList, loadState, evseStatusLoadState]);
 
-  const [mapParamsPrev, setMapParamsPrev] = useState(mapParams);
-  const [searchPrev, setSearchPrev] = useState(search);
-  const [isDataUpdated, setIsDataUpdated] = useState(false);
-
-  const bounds = useMemo(() => {
-    if (data?.data.length > 0 && isDataUpdated) {
-      const filtered = data.data.filter((e) => e.search_score);
-      const searchScores = filtered.map((e) => e.search_score);
-      const index = utils.localMaxDiffIndex(searchScores);
-      return index ? data.data.slice(0, index) : data.data;
-    }
-    return [];
-  }, [data, isDataUpdated]);
-
-  const dispatch = useDispatch();
+  const [bounds, setBounds] = useState([]);
 
   useEffect(() => {
-    if (search && search !== searchPrev) {
-      setSearchPrev(search);
-      dispatch(mapStateSet({
-        center: null,
-        lowerBound: null,
-        upperBound: null,
-        zoom: null,
-      }));
-    }
-  }, [search, searchPrev, dispatch]);
-
-  useEffect(() => {
-    const current = Object.values(mapParams).join();
-    const previous = Object.values(mapParamsPrev).join();
-    if (mapParams.exist && current !== previous) {
-      setMapParamsPrev(mapParams);
-      setSearch("");
-    }
-  }, [mapParams, mapParamsPrev, setSearch]);
-
-  useEffect(() => {
-    if (data) {
-      setIsDataUpdated(true);
-    }
-  }, [data]);
-
-  useEffect(() => {
-    if (mapExist && data) {
-      setIsDataUpdated(false);
-    }
-  }, [mapExist, data]);
+    setBounds((current) => {
+      if (current.length === 0) {
+        const filtered = stationStatusList.filter((e) => e.search_score);
+        const searchScores = filtered.map((e) => e.search_score);
+        const index = utils.localMaxDiffIndex(searchScores);
+        return index ? stationStatusList.slice(0, index) : stationStatusList;
+      }
+      return stationStatusList.length !== 0 ? current : [];
+    })
+  }, [stationStatusList]);
 
   return (
     <StickyContainer style={{ top: `${headerHeight}px` }}>
