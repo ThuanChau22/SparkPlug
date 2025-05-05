@@ -2,7 +2,8 @@ import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useMapEvents } from "react-leaflet";
 
-import useMapParams from "hooks/useMapParams";
+import useMapParam from "hooks/useMapParam";
+import { searchParamsStateSetMap } from "redux/app/searchParamsSlice";
 import {
   mapStateSet,
   selectMapExist,
@@ -17,7 +18,7 @@ const MapSetView = ({ delay = 0 }) => {
   const mapCenter = useSelector(selectMapCenter);
   const mapZoom = useSelector(selectMapZoom);
 
-  const [mapParams, setMapParams] = useMapParams();
+  const [mapParam] = useMapParam();
 
   const dispatch = useDispatch();
 
@@ -28,13 +29,25 @@ const MapSetView = ({ delay = 0 }) => {
     moveend: () => {
       clearTimeout(moveTimeoutRef.current);
       moveTimeoutRef.current = setTimeout(() => {
-        const latLng = ({ lat, lng }) => ({ lat, lng });
-        dispatch(mapStateSet({
-          zoom: map.getZoom(),
-          center: latLng(map.getCenter()),
-          lowerBound: latLng(map.getBounds().getSouthWest()),
-          upperBound: latLng(map.getBounds().getNorthEast()),
-        }));
+        const update = [
+          map.getCenter().lat,
+          map.getCenter().lng,
+          map.getZoom(),
+        ].join();
+        const current = [
+          mapCenter.lat,
+          mapCenter.lng,
+          mapZoom,
+        ].filter((e) => e).join();
+        if (update !== current) {
+          const latLng = ({ lat, lng }) => ({ lat, lng });
+          dispatch(mapStateSet({
+            zoom: map.getZoom(),
+            center: latLng(map.getCenter()),
+            lowerBound: latLng(map.getBounds().getSouthWest()),
+            upperBound: latLng(map.getBounds().getNorthEast()),
+          }));
+        }
       }, delay);
     },
   });
@@ -42,26 +55,21 @@ const MapSetView = ({ delay = 0 }) => {
   useEffect(() => () => clearTimeout(moveTimeoutRef.current), []);
 
   useEffect(() => {
-    const { exist, lat, lng, zoom } = mapParams;
-    const current = Object.values({
-      lat: map.getCenter().lat.toFixed(6),
-      lng: map.getCenter().lng.toFixed(6),
-      zoom: map.getZoom(),
-    }).join();
-    if (exist && `${lat},${lng},${zoom}` !== current) {
-      map.setView([lat, lng], zoom);
+    if (mapParam) {
+      const [lat, lng, zoom] = mapParam.split(",").map((e) => Number(e));
+      map.setView([lat, lng], zoom, { animate: false });
     }
-  }, [map, mapParams]);
+  }, [map, mapParam]);
 
   useEffect(() => {
     if (mapExist) {
-      setMapParams({
-        lat: mapCenter.lat.toFixed(6),
-        lng: mapCenter.lng.toFixed(6),
-        zoom: mapZoom,
-      });
+      dispatch(searchParamsStateSetMap({
+        lat: mapCenter.lat,
+        lng: mapCenter.lng,
+        z: mapZoom,
+      }));
     }
-  }, [mapExist, mapCenter, mapZoom, setMapParams]);
+  }, [mapExist, mapCenter, mapZoom, dispatch]);
 
   return (<></>);
 };

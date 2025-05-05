@@ -10,8 +10,18 @@ import {
 import StationMonitorDetailsModal from "components/StationMonitor/DetailsModal";
 import StationMonitorListView from "components/StationMonitor/ListView";
 import StationMonitorMapView from "components/StationMonitor/MapView";
+import useViewParam from "hooks/useViewParam";
+import useSearchParam from "hooks/useSearchParam";
+import useSearchParamsHandler from "hooks/useSearchParamsHandler";
 import useStationEventSocket from "hooks/useStationEventSocket";
 import {
+  LayoutView,
+  layoutStateSetView,
+  selectLayoutMobile,
+  selectLayoutView,
+} from "redux/app/layoutSlice";
+import {
+  mapStateSet,
   selectMapLowerBound,
   selectMapUpperBound,
 } from "redux/map/mapSlice";
@@ -37,6 +47,9 @@ import {
 import utils from "utils";
 
 const StationMonitor = () => {
+  const isMobile = useSelector(selectLayoutMobile);
+  const layoutView = useSelector(selectLayoutView);
+
   const mapLowerBound = useSelector(selectMapLowerBound);
   const mapUpperBound = useSelector(selectMapUpperBound);
 
@@ -45,6 +58,16 @@ const StationMonitor = () => {
   const evseList = useSelector(selectEvseList);
   const evseStatusList = useSelector(selectEvseStatusList);
   const evseStatusEntities = useSelector(selectEvseStatusEntities);
+
+  const [viewParam] = useViewParam();
+  const [searchParam] = useSearchParam();
+
+  const {
+    syncSearchParams,
+    clearSearchOnMap,
+    setViewOnMobile,
+    clearMapOnSearchInMobileListView,
+  } = useSearchParamsHandler();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [stationId, setStationId] = useState(null);
@@ -87,6 +110,42 @@ const StationMonitor = () => {
   }, [stationIds, isSocketReady, watchStatusEventStart, watchStatusEventStop]);
 
   useEffect(() => {
+    syncSearchParams();
+  }, [syncSearchParams]);
+
+  useEffect(() => {
+    clearSearchOnMap();
+  }, [clearSearchOnMap]);
+
+  useEffect(() => {
+    setViewOnMobile();
+  }, [setViewOnMobile]);
+
+  useEffect(() => {
+    clearMapOnSearchInMobileListView();
+  }, [clearMapOnSearchInMobileListView]);
+
+  useEffect(() => {
+    if (isMobile && viewParam) {
+      dispatch(layoutStateSetView(viewParam));
+    }
+  }, [isMobile, viewParam, dispatch]);
+
+  useEffect(() => {
+    if (searchParam) {
+      dispatch(mapStateSet({
+        center: null,
+        lowerBound: null,
+        upperBound: null,
+        zoom: null,
+      }));
+      dispatch(stationStateClear());
+      dispatch(evseStateClear());
+      dispatch(evseStatusStateClear());
+    }
+  }, [searchParam, dispatch]);
+
+  useEffect(() => {
     const stationIds = utils.outOfBoundResources(stationList, {
       lowerBound: mapLowerBound,
       upperBound: mapUpperBound,
@@ -125,15 +184,19 @@ const StationMonitor = () => {
     <CCard className="flex-grow-1 border border-0 rounded-0">
       <CCardBody className="d-flex flex-column h-100 p-0">
         <CRow className="flex-grow-1" xs={{ gutterX: 0 }}>
-          <CCol md={6} lg={5} xl={4}>
-            <StationMonitorListView
-              title={"Station Monitoring"}
-              openViewModal={handleOpenViewModal}
-            />
-          </CCol>
-          <CCol md={6} lg={7} xl={8}>
-            <StationMonitorMapView openViewModal={handleOpenViewModal} />
-          </CCol>
+          {(!isMobile || layoutView === LayoutView.List) && (
+            <CCol md={6} lg={5} xl={4}>
+              <StationMonitorListView
+                title={"Station Monitoring"}
+                openViewModal={handleOpenViewModal}
+              />
+            </CCol>
+          )}
+          {(!isMobile || layoutView === LayoutView.Map) && (
+            <CCol md={6} lg={7} xl={8}>
+              <StationMonitorMapView openViewModal={handleOpenViewModal} />
+            </CCol>
+          )}
         </CRow>
       </CCardBody>
       {isModalOpen && (

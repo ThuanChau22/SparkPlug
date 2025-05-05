@@ -1,5 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+export const LayoutView = {
+  List: "list",
+  Map: "map",
+};
+
 const initialState = {
   mobile: false,
   headerActive: "",
@@ -7,6 +12,7 @@ const initialState = {
   footerHeight: 0,
   sideBarShow: true,
   sideBarFold: false,
+  view: LayoutView.List,
 };
 
 export const layoutSlice = createSlice({
@@ -31,6 +37,9 @@ export const layoutSlice = createSlice({
     layoutStateSetSidebarFold(state, { payload }) {
       state.sideBarFold = payload;
     },
+    layoutStateSetView(state, { payload }) {
+      state.view = payload;
+    },
     layoutStateClear() {
       return initialState;
     },
@@ -44,6 +53,7 @@ export const {
   layoutStateSetFooterHeight,
   layoutStateSetSidebarShow,
   layoutStateSetSidebarFold,
+  layoutStateSetView,
   layoutStateClear,
 } = layoutSlice.actions;
 
@@ -60,5 +70,7 @@ export const selectLayoutFooterHeight = (state) => selectLayout(state).footerHei
 export const selectLayoutSidebarShow = (state) => selectLayout(state).sideBarShow;
 
 export const selectLayoutSidebarFold = (state) => selectLayout(state).sideBarFold;
+
+export const selectLayoutView = (state) => selectLayout(state).view;
 
 export default layoutSlice.reducer;

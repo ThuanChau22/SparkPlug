@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 import { CFooter } from "@coreui/react";
 
 import useWindowResize from "hooks/useWindowResize";
-import { layoutStateSetFooterHeight } from "redux/layout/layoutSlice";
+import { layoutStateSetFooterHeight } from "redux/app/layoutSlice";
 
 const Footer = () => {
   const footerRef = useRef({});

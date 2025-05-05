@@ -8,16 +8,21 @@ import {
 
 import { StationEstWaitTimeAPI } from "configs";
 import LoadingIndicator from "components/LoadingIndicator";
-import SearchBar from "components/SearchBar";
 import StickyContainer from "components/StickyContainer";
+import SearchBar from "components/SiteManagement/SearchBar";
 import DriverStationListItem from "components/DriverStation/StationListItem";
 import useSearchParam from "hooks/useSearchParam";
 import useFetchData from "hooks/useFetchData";
 import useFetchDataOnScroll from "hooks/useFetchDataOnScroll";
-import useMapParams from "hooks/useMapParams";
+import useMapParam from "hooks/useMapParam";
+import useViewParam from "hooks/useViewParam";
 import useWindowResize from "hooks/useWindowResize";
-import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 import { apiInstance, handleError } from "redux/api";
+import {
+  LayoutView,
+  selectLayoutMobile,
+  selectLayoutHeaderHeight,
+} from "redux/app/layoutSlice";
 import { selectAuthAccessToken } from "redux/auth/authSlice";
 import {
   selectMapExist,
@@ -42,6 +47,7 @@ const DriverStationListView = ({ title, openViewModal }) => {
   const ListLimit = 25;
   const listRef = useRef({});
 
+  const isMobile = useSelector(selectLayoutMobile);
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
   const authToken = useSelector(selectAuthAccessToken);
@@ -60,8 +66,7 @@ const DriverStationListView = ({ title, openViewModal }) => {
     StationFields.city,
     StationFields.state,
     StationFields.zipCode,
-    ...mapLocation.located ? ["distance"] : [],
-  ]), [mapLocation]);
+  ]), []);
 
   const stationList = useSelector((state) => {
     return selectStationListByFields(state, stationSelectedFields);
@@ -77,44 +82,50 @@ const DriverStationListView = ({ title, openViewModal }) => {
     return stationList.filter((_, index) => index < ListLimit * listPage);
   }, [stationList, listPage]);
 
-  const [mapParams] = useMapParams();
-  const [search] = useSearchParam();
+  const [mapParam] = useMapParam();
+  const [viewParam] = useViewParam();
+  const [searchParam] = useSearchParam();
+
+  const isMobileListView = useMemo(() => (
+    isMobile && viewParam === LayoutView.List
+  ), [isMobile, viewParam]);
 
   const latLngOrigin = useMemo(() => {
     if (mapLocation.located) {
       return utils.toLatLngString(mapLocation);
     }
-    return mapExist || search ? "" : "default";
-  }, [mapExist, search, mapLocation]);
+    return mapExist || searchParam ? "" : "default";
+  }, [mapExist, mapLocation, searchParam]);
 
   const { latLngMin, latLngMax } = useMemo(() => {
-    const latLngMin = search ? "" : utils.toLatLngString(mapLowerBound);
-    const latLngMax = search ? "" : utils.toLatLngString(mapUpperBound);
+    const latLngMin = searchParam ? "" : utils.toLatLngString(mapLowerBound);
+    const latLngMax = searchParam ? "" : utils.toLatLngString(mapUpperBound);
     return { latLngMin, latLngMax };
-  }, [search, mapLowerBound, mapUpperBound]);
+  }, [searchParam, mapLowerBound, mapUpperBound]);
 
   const sortBy = useMemo(() => {
     const orders = [];
-    if (search) {
+    if (searchParam) {
       orders.push("-search_score");
     }
-    if (latLngOrigin) {
+    if (mapLocation.located) {
       orders.push("distance");
     }
     return orders.join();
-  }, [search, latLngOrigin]);
+  }, [mapLocation, searchParam]);
 
   const limit = useMemo(() => (
-    mapExist || search ? ListLimit : 5
-  ), [mapExist, search]);
+    isMobile || mapExist || searchParam ? ListLimit : 5
+  ), [isMobile, mapExist, searchParam]);
 
   const fetchParams = useMemo(() => ({
     fields: stationSelectedFields.join(),
-    search, latLngOrigin, latLngMin, latLngMax, sortBy, limit,
-  }), [stationSelectedFields, search, latLngOrigin, latLngMin, latLngMax, sortBy, limit]);
+    search: searchParam,
+    latLngOrigin, latLngMin, latLngMax, sortBy, limit,
+  }), [stationSelectedFields, searchParam, latLngOrigin, latLngMin, latLngMax, sortBy, limit]);
 
   const { data, loadState } = useFetchData({
-    condition: !mapParams.exist || mapIsZoomInLimit,
+    condition: isMobileListView || !mapParam || mapIsZoomInLimit,
     action: useCallback(() => stationGetList(fetchParams), [fetchParams]),
   });
 
@@ -124,10 +135,11 @@ const DriverStationListView = ({ title, openViewModal }) => {
   } = useFetchDataOnScroll({
     action: useCallback(() => stationGetList({
       fields: stationSelectedFields.join(),
+      search: searchParam,
       limit: ListLimit,
       cursor: listCursor.next,
-      search, latLngOrigin, latLngMin, latLngMax, sortBy,
-    }), [stationSelectedFields, search, latLngOrigin, latLngMin, latLngMax, sortBy, listCursor.next]),
+      latLngOrigin, latLngMin, latLngMax, sortBy,
+    }), [stationSelectedFields, searchParam, latLngOrigin, latLngMin, latLngMax, sortBy, listCursor.next]),
     ref: listRef,
     cursor: listCursor,
   });

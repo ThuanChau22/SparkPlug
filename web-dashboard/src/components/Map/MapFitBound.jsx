@@ -10,7 +10,7 @@ const MapFitBound = ({ bounds = [] }) => {
 
   useEffect(() => {
     if (latlngs.length > 0) {
-      map.fitBounds(latlngs, { padding: [50, 25] });
+      map.fitBounds(latlngs, { animate: false });
     }
   }, [latlngs, map]);
 

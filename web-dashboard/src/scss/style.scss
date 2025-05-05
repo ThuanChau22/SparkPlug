@@ -84,6 +84,12 @@ body {
   --cui-footer-bg: var(--cui-body-bg);
 }
 
+.leaflet-control-zoom {
+  border-width: 1px !important;
+  margin-top: $spacer * .5 !important;
+  margin-left: $spacer !important;
+}
+
 @if $enable-dark-mode {
   @include color-mode(dark) {
     .leaflet-layer {

@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 
-import { layoutSlice } from "redux/layout/layoutSlice";
+import { layoutSlice } from "redux/app/layoutSlice";
+import { searchParamsSlice } from "redux/app/searchParamsSlice";
 import { filterDashboardSlice } from "redux/filter/dashboardSlice";
 import { mapSlice } from "redux/map/mapSlice";
 import { authSlice } from "redux/auth/authSlice";
@@ -16,6 +17,7 @@ import { errorSlice } from "redux/error/errorSlice";
 export const store = configureStore({
   reducer: {
     [layoutSlice.name]: layoutSlice.reducer,
+    [searchParamsSlice.name]: searchParamsSlice.reducer,
     [filterDashboardSlice.name]: filterDashboardSlice.reducer,
     [mapSlice.name]: mapSlice.reducer,
     [authSlice.name]: authSlice.reducer,

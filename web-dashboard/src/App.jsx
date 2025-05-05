@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   useNavigate,
@@ -12,7 +12,11 @@ import Footer from "components/Footer";
 import ErrorToast from "components/ErrorToast";
 import LoadingIndicator from "components/LoadingIndicator";
 import useTheme from "hooks/useTheme";
+import useWindowResize from "hooks/useWindowResize";
 import { clearHeader } from "redux/api";
+import {
+  layoutStateSetMobile,
+} from "redux/app/layoutSlice";
 import {
   authStateSet,
   authStateClear,
@@ -37,6 +41,11 @@ const App = () => {
   const dispatch = useDispatch();
 
   useTheme();
+
+  useWindowResize(useCallback(() => {
+    const medium = "only screen and (min-width: 768px)";
+    dispatch(layoutStateSetMobile(!window.matchMedia(medium).matches));
+  }, [dispatch]));
 
   useEffect(() => {
     if (token) {
@@ -83,9 +92,8 @@ const App = () => {
     }
 
     // Navigate resource components
-    const path = location.pathname.split("/");
-    if (path.length < 2) return;
-    const [, resource, component] = path;
+    const path = location.pathname.split("/") || [];
+    const [_, resource, component] = path;
     if (!resource) {
       if (authIsAdmin || authIsOwner) {
         navigate(routes.Dashboard.path, options);

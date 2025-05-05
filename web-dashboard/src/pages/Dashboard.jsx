@@ -17,8 +17,8 @@ import PeakTimeChartWidget from "components/Dashboard/PeakTimeChartWidget";
 import RevenueChartWidget from "components/Dashboard/RevenueChartWidget";
 import SessionCountChartWidget from "components/Dashboard/SessionCountChartWidget";
 import StationGrowthChartWidget from "components/Dashboard/StationGrowthChartWidget";
+import { selectLayoutHeaderHeight } from "redux/app/layoutSlice";
 import { selectAuthRoleIsStaff } from "redux/auth/authSlice";
-import { selectLayoutHeaderHeight } from "redux/layout/layoutSlice";
 
 const Dashboard = () => {
   const authIsAdmin = useSelector(selectAuthRoleIsStaff);
