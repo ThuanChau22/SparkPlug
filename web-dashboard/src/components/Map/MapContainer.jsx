@@ -1,27 +1,44 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { MapContainer as Map, TileLayer } from "react-leaflet";
+import { useDispatch, useSelector } from "react-redux";
 import "leaflet/dist/leaflet.css";
 
 import LoadingIndicator from "components/LoadingIndicator";
 import useWindowResize from "hooks/useWindowResize";
+import {
+  mapStateSet,
+  selectMapReady,
+} from "redux/map/mapSlice";
 
 const MapContainer = ({ loading = false, refHeight = 0, children }) => {
   const mapRef = useRef();
 
+  const mapStateReady = useSelector(selectMapReady);
+
   const [mapHeight, setMapHeight] = useState(0);
-  const [resize, setResize] = useState(false);
+  const [shouldResize, setShouldResize] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+
+  const dispatch = useDispatch();
 
   useWindowResize(useCallback(() => {
     setMapHeight(window.innerHeight - refHeight);
-    setResize(true);
+    setShouldResize(true);
   }, [refHeight]));
 
   useEffect(() => {
-    if (resize) {
+    if (shouldResize) {
       mapRef.current?.invalidateSize();
-      setResize(false);
+      setShouldResize(false);
     }
-  }, [resize]);
+  }, [shouldResize]);
+
+  useEffect(() => {
+    if (mapReady) {
+      dispatch(mapStateSet({ ready: true }));
+    }
+    return () => dispatch(mapStateSet({ ready: false }));
+  }, [mapReady, dispatch]);
 
   return (
     <div style={{ height: `${mapHeight}px` }}>
@@ -34,6 +51,7 @@ const MapContainer = ({ loading = false, refHeight = 0, children }) => {
         minZoom={2}
         worldCopyJump={true}
         preferCanvas={true}
+        whenReady={() => setMapReady(true)}
         placeholder={<noscript>You need to enable JavaScript to see this map.</noscript>}
       >
         <LoadingIndicator loading={loading} overlay={true} />
@@ -43,7 +61,7 @@ const MapContainer = ({ loading = false, refHeight = 0, children }) => {
           maxZoom={20}
           updateWhenZooming={true}
         />
-        {children}
+        {mapStateReady && children}
       </Map>
     </div>
   );
