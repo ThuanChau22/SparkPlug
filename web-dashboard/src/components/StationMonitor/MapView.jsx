@@ -86,11 +86,11 @@ const StationMonitorMapView = ({ openViewModal }) => {
   });
 
   const { loadState: evseStatusLoadState } = useFetchData({
-    condition: mapExist && mapIsZoomInLimit,
+    condition: latLngMin && latLngMax && mapIsZoomInLimit,
     action: useCallback(() => evseStatusGetList({
       ownerId: authIsOwner ? authUserId : 0,
       latLngMin, latLngMax,
-    }), [latLngMin, latLngMax, authIsOwner, authUserId]),
+    }), [authUserId, authIsOwner, latLngMin, latLngMax]),
   });
 
   const loading = useMemo(() => (

@@ -98,7 +98,7 @@ const DriverStationMapView = ({ openViewModal }) => {
   });
 
   const { loadState: evseStatusLoadState } = useFetchData({
-    condition: mapExist && mapIsZoomInLimit,
+    condition: latLngMin && latLngMax && mapIsZoomInLimit,
     action: useCallback(() => evseStatusGetList({
       latLngMin, latLngMax,
     }), [latLngMin, latLngMax]),

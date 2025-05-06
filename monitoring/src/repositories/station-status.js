@@ -79,17 +79,25 @@ schema.loadClass(class {
         evseId: "$evseId",
         connectorId: "$connectorId",
         status: "$status",
-        rdbId: "$rdbId",
         latitude: { $arrayElemAt: ["$location.coordinates", 1] },
         longitude: { $arrayElemAt: ["$location.coordinates", 0] },
+        rdbId: "$rdbId",
         createdAt: "$createdAt",
       };
 
       // Filter
       const $match = {};
       if (filter) {
+        const { stationIdList, latLngOrigin, latLngMin, latLngMax, ...remain } = filter;
+        // StationId from List
+        if (stationIdList) {
+          const $in = `${stationIdList}`.split(",")
+            .filter((e) => utils.isInteger(e))
+            .map((e) => parseInt(e));
+          $match.stationId = { $in };
+        }
+
         // Distance
-        const { latLngOrigin, latLngMin, latLngMax, ...remain } = filter;
         const [latOrigin, lngOrigin] = latLngOrigin?.split(",") || [];
         if (latOrigin && lngOrigin) {
           const coordinates = [parseFloat(lngOrigin), parseFloat(latOrigin)];

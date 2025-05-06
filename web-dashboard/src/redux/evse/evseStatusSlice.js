@@ -61,8 +61,10 @@ export const evseStatusGetList = createAsyncThunk(
   `${evseStatusSlice.name}/getStatusList`,
   async ({
     limit, cursor,
-    siteId: site_id,
     ownerId: owner_id,
+    siteId: site_id,
+    stationId: station_id,
+    stationIdList: station_id_list,
     latLngOrigin: lat_lng_origin,
     latLngMin: lat_lng_min,
     latLngMax: lat_lng_max,
@@ -71,7 +73,8 @@ export const evseStatusGetList = createAsyncThunk(
     try {
       const params = toUrlParams({
         lat_lng_origin, lat_lng_min, lat_lng_max,
-        site_id, owner_id, sort_by, cursor, limit,
+        owner_id, site_id, station_id, station_id_list,
+        sort_by, cursor, limit,
       });
       const query = `${StationStatusAPI}${params ? `?${params}` : ""}`;
       const config = await tokenConfig({ dispatch, getState });
