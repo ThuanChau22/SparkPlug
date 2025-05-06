@@ -21,7 +21,10 @@ import {
   selectLayoutMobile,
   selectLayoutHeaderHeight,
 } from "redux/app/layoutSlice";
-import { selectAuthRoleIsOwner } from "redux/auth/authSlice";
+import {
+  selectAuthUserId,
+  selectAuthRoleIsOwner,
+} from "redux/auth/authSlice";
 import {
   selectMapExist,
   selectMapLowerBound,
@@ -33,6 +36,10 @@ import {
   stationGetList,
   selectStationListByFields,
 } from "redux/station/stationSlice";
+import {
+  evseStatusGetList,
+  selectEvseStatusEntities,
+} from "redux/evse/evseStatusSlice";
 import utils from "utils";
 
 const StationMonitorListView = ({ title, openViewModal }) => {
@@ -42,6 +49,7 @@ const StationMonitorListView = ({ title, openViewModal }) => {
   const isMobile = useSelector(selectLayoutMobile);
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
+  const authUserId = useSelector(selectAuthUserId);
   const authIsOwner = useSelector(selectAuthRoleIsOwner);
 
   const mapExist = useSelector(selectMapExist);
@@ -62,6 +70,8 @@ const StationMonitorListView = ({ title, openViewModal }) => {
   const stationList = useSelector((state) => {
     return selectStationListByFields(state, stationSelectedFields);
   });
+
+  const evseStatusEntities = useSelector(selectEvseStatusEntities);
 
   const [listPage, setListPage] = useState(0);
   const [listCursor, setListCursor] = useState({});
@@ -95,7 +105,7 @@ const StationMonitorListView = ({ title, openViewModal }) => {
   }), [stationSelectedFields, searchParam, latLngOrigin, latLngMin, latLngMax, limit]);
 
   const { data, loadState } = useFetchData({
-    condition: isMobileListView || !mapParam || searchParam | mapIsZoomInLimit,
+    condition: isMobileListView || !mapParam || searchParam || mapIsZoomInLimit,
     action: useCallback(() => stationGetList(fetchParams), [fetchParams]),
   });
 
@@ -113,6 +123,20 @@ const StationMonitorListView = ({ title, openViewModal }) => {
     }), [stationSelectedFields, searchParam, latLngOrigin, latLngMin, latLngMax, listCursor.next]),
     ref: listRef,
     cursor: listCursor,
+  });
+
+  const stationIdList = useMemo(() => {
+    const source = dataOnScroll || data;
+    const isUnknown = ({ id }) => !evseStatusEntities[id];
+    return source?.data.filter(isUnknown).map(({ id }) => id) || [];
+  }, [evseStatusEntities, data, dataOnScroll]);
+
+  useFetchData({
+    condition: isMobileListView && stationIdList.length,
+    action: useCallback(() => evseStatusGetList({
+      ownerId: authIsOwner ? authUserId : 0,
+      stationIdList, latLngMin, latLngMax,
+    }), [authUserId, authIsOwner, stationIdList, latLngMin, latLngMax]),
   });
 
   const loading = useMemo(() => (

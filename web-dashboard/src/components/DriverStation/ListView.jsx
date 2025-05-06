@@ -23,7 +23,11 @@ import {
   selectLayoutMobile,
   selectLayoutHeaderHeight,
 } from "redux/app/layoutSlice";
-import { selectAuthAccessToken } from "redux/auth/authSlice";
+import {
+  selectAuthUserId,
+  selectAuthRoleIsOwner,
+  selectAuthAccessToken,
+} from "redux/auth/authSlice";
 import {
   selectMapExist,
   selectMapLowerBound,
@@ -39,6 +43,7 @@ import {
 } from "redux/station/stationSlice";
 import {
   EvseStatus,
+  evseStatusGetList,
   selectEvseStatusEntities,
 } from "redux/evse/evseStatusSlice";
 import utils from "utils";
@@ -50,6 +55,8 @@ const DriverStationListView = ({ title, openViewModal }) => {
   const isMobile = useSelector(selectLayoutMobile);
   const headerHeight = useSelector(selectLayoutHeaderHeight);
 
+  const authUserId = useSelector(selectAuthUserId);
+  const authIsOwner = useSelector(selectAuthRoleIsOwner);
   const authToken = useSelector(selectAuthAccessToken);
 
   const mapExist = useSelector(selectMapExist);
@@ -125,7 +132,7 @@ const DriverStationListView = ({ title, openViewModal }) => {
   }), [stationSelectedFields, searchParam, latLngOrigin, latLngMin, latLngMax, sortBy, limit]);
 
   const { data, loadState } = useFetchData({
-    condition: isMobileListView || !mapParam || mapIsZoomInLimit,
+    condition: isMobileListView || !mapParam || searchParam || mapIsZoomInLimit,
     action: useCallback(() => stationGetList(fetchParams), [fetchParams]),
   });
 
@@ -142,6 +149,20 @@ const DriverStationListView = ({ title, openViewModal }) => {
     }), [stationSelectedFields, searchParam, latLngOrigin, latLngMin, latLngMax, sortBy, listCursor.next]),
     ref: listRef,
     cursor: listCursor,
+  });
+
+  const stationIdList = useMemo(() => {
+    const source = dataOnScroll || data;
+    const isUnknown = ({ id }) => !evseStatusEntities[id];
+    return source?.data.filter(isUnknown).map(({ id }) => id) || [];
+  }, [evseStatusEntities, data, dataOnScroll]);
+
+  useFetchData({
+    condition: isMobileListView && stationIdList.length,
+    action: useCallback(() => evseStatusGetList({
+      ownerId: authIsOwner ? authUserId : 0,
+      stationIdList, latLngMin, latLngMax,
+    }), [authUserId, authIsOwner, stationIdList, latLngMin, latLngMax]),
   });
 
   const loading = useMemo(() => (
