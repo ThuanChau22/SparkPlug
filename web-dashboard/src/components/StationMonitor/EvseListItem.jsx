@@ -53,34 +53,39 @@ const StationMonitorEvseListItem = ({ stationId, evseId }) => {
   useEffect(() => () => clearTimeout(meterTimeoutRef.current), []);
 
   return (
-    <div className="d-flex justify-content-between">
+    <div className="d-flex justify-content-between align-items-center">
       <p className="text-secondary my-auto">
-        <span>EVSE ID: {evseId} - </span>
-        <span className="fw-medium">
-          <EvseAvailabilityStatus status={evseStatus} />
+        <span>EVSE ID: {evseId}</span>
+        <span className="d-none d-sm-inline"> - </span>
+        <span className="d-block d-sm-inline fw-medium">
+          <EvseAvailabilityStatus status={evseStatus?.status} />
         </span>
       </p>
-      <div className="d-flex align-items-center">
+      <div className="d-none d-sm-flex align-items-center">
         <EvStation color="warning" />
         <h5 className="text-warning p-1 m-0">{meterValue}Wh</h5>
       </div>
       <div>
+        <div className="d-flex d-sm-none justify-content-between align-items-center">
+          <EvStation color="warning" fontSize="small" />
+          <span className="text-warning fw-medium p-1">{meterValue}Wh</span>
+        </div>
         <CButton
-          className="me-1"
           variant="outline"
           color="success"
           onClick={() => remoteStart(stationId, evseId)}
           disabled={!isSocketReady || isDisabled}
         >
-          Remote Start
+          Start
         </CButton>
+        <span className="me-1"></span>
         <CButton
           variant="outline"
           color="info"
           onClick={() => remoteStop(stationId, evseId)}
           disabled={!isSocketReady || isDisabled}
         >
-          Remote Stop
+          Stop
         </CButton>
       </div>
     </div>
