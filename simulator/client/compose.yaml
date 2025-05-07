@@ -1,6 +1,5 @@
 services:
-
-  web-dashboard:
+  simulator-client:
     image: sparkplug-simulator-client
     container_name: sparkplug-simulator-client
     build:
