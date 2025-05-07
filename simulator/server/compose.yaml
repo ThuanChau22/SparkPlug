@@ -1,5 +1,4 @@
 services:
-
   simulator-server:
     image: sparkplug-simulator-server
     container_name: sparkplug-simulator-server

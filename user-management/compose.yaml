@@ -1,5 +1,4 @@
 services:
-
   monitoring:
     image: sparkplug-user-management
     container_name: sparkplug-user-management

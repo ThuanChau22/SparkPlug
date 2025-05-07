@@ -1,6 +1,5 @@
 services:
-
-  sql-db-service:
+  station-management:
     image: sparkplug-station-management
     container_name: sparkplug-station-management
     build:

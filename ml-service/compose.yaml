@@ -1,7 +1,7 @@
 services:
-  monitoring:
-    image: sparkplug-monitoring
-    container_name: sparkplug-monitoring
+  ml-service:
+    image: sparkplug-ml-service
+    container_name: sparkplug-ml-service
     build:
       context: .
       dockerfile: Dockerfile
