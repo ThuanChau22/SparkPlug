@@ -2,7 +2,13 @@
 
 An Electric Vehicle Charging Station Hub Infrastructure Platform
 
-## **Developing**
+## **Demo**
+
+### [Web Dashboard](http://sparkplug.thuanqchau.com)
+
+### [Station Simulator](https://sparkplug-simulator.thuanqchau.com)
+
+## **Development**
 
 ### I. Prerequisites
 
